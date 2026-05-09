@@ -1,0 +1,2 @@
+// Reuses admin notifications view for current user
+export { Route } from "../_app/admin/notifications";
