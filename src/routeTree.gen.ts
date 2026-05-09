@@ -15,7 +15,16 @@ import { Route as PendingRouteImport } from './routes/pending'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AccountLockedRouteImport } from './routes/account-locked'
+import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppAdminIndexRouteImport } from './routes/_app/admin/index'
+import { Route as AppAdminSettingsRouteImport } from './routes/_app/admin/settings'
+import { Route as AppAdminReportsRouteImport } from './routes/_app/admin/reports'
+import { Route as AppAdminNotificationsRouteImport } from './routes/_app/admin/notifications'
+import { Route as AppAdminLeavesRouteImport } from './routes/_app/admin/leaves'
+import { Route as AppAdminEmployeesRouteImport } from './routes/_app/admin/employees'
+import { Route as AppAdminAttendanceRouteImport } from './routes/_app/admin/attendance'
+import { Route as AppAdminApprovalsRouteImport } from './routes/_app/admin/approvals'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -47,10 +56,54 @@ const AccountLockedRoute = AccountLockedRouteImport.update({
   path: '/account-locked',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminSettingsRoute = AppAdminSettingsRouteImport.update({
+  id: '/admin/settings',
+  path: '/admin/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminReportsRoute = AppAdminReportsRouteImport.update({
+  id: '/admin/reports',
+  path: '/admin/reports',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminNotificationsRoute = AppAdminNotificationsRouteImport.update({
+  id: '/admin/notifications',
+  path: '/admin/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminLeavesRoute = AppAdminLeavesRouteImport.update({
+  id: '/admin/leaves',
+  path: '/admin/leaves',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminEmployeesRoute = AppAdminEmployeesRouteImport.update({
+  id: '/admin/employees',
+  path: '/admin/employees',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminAttendanceRoute = AppAdminAttendanceRouteImport.update({
+  id: '/admin/attendance',
+  path: '/admin/attendance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminApprovalsRoute = AppAdminApprovalsRouteImport.update({
+  id: '/admin/approvals',
+  path: '/admin/approvals',
+  getParentRoute: () => AppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -61,6 +114,14 @@ export interface FileRoutesByFullPath {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/admin/approvals': typeof AppAdminApprovalsRoute
+  '/admin/attendance': typeof AppAdminAttendanceRoute
+  '/admin/employees': typeof AppAdminEmployeesRoute
+  '/admin/leaves': typeof AppAdminLeavesRoute
+  '/admin/notifications': typeof AppAdminNotificationsRoute
+  '/admin/reports': typeof AppAdminReportsRoute
+  '/admin/settings': typeof AppAdminSettingsRoute
+  '/admin/': typeof AppAdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,16 +131,33 @@ export interface FileRoutesByTo {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/admin/approvals': typeof AppAdminApprovalsRoute
+  '/admin/attendance': typeof AppAdminAttendanceRoute
+  '/admin/employees': typeof AppAdminEmployeesRoute
+  '/admin/leaves': typeof AppAdminLeavesRoute
+  '/admin/notifications': typeof AppAdminNotificationsRoute
+  '/admin/reports': typeof AppAdminReportsRoute
+  '/admin/settings': typeof AppAdminSettingsRoute
+  '/admin': typeof AppAdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
   '/account-locked': typeof AccountLockedRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/_app/admin/approvals': typeof AppAdminApprovalsRoute
+  '/_app/admin/attendance': typeof AppAdminAttendanceRoute
+  '/_app/admin/employees': typeof AppAdminEmployeesRoute
+  '/_app/admin/leaves': typeof AppAdminLeavesRoute
+  '/_app/admin/notifications': typeof AppAdminNotificationsRoute
+  '/_app/admin/reports': typeof AppAdminReportsRoute
+  '/_app/admin/settings': typeof AppAdminSettingsRoute
+  '/_app/admin/': typeof AppAdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +169,14 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/admin/approvals'
+    | '/admin/attendance'
+    | '/admin/employees'
+    | '/admin/leaves'
+    | '/admin/notifications'
+    | '/admin/reports'
+    | '/admin/settings'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,19 +186,37 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/admin/approvals'
+    | '/admin/attendance'
+    | '/admin/employees'
+    | '/admin/leaves'
+    | '/admin/notifications'
+    | '/admin/reports'
+    | '/admin/settings'
+    | '/admin'
   id:
     | '__root__'
     | '/'
+    | '/_app'
     | '/account-locked'
     | '/forgot-password'
     | '/login'
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/_app/admin/approvals'
+    | '/_app/admin/attendance'
+    | '/_app/admin/employees'
+    | '/_app/admin/leaves'
+    | '/_app/admin/notifications'
+    | '/_app/admin/reports'
+    | '/_app/admin/settings'
+    | '/_app/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
   AccountLockedRoute: typeof AccountLockedRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
@@ -165,6 +269,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountLockedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -172,11 +283,92 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/admin/': {
+      id: '/_app/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AppAdminIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/settings': {
+      id: '/_app/admin/settings'
+      path: '/admin/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AppAdminSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/reports': {
+      id: '/_app/admin/reports'
+      path: '/admin/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AppAdminReportsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/notifications': {
+      id: '/_app/admin/notifications'
+      path: '/admin/notifications'
+      fullPath: '/admin/notifications'
+      preLoaderRoute: typeof AppAdminNotificationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/leaves': {
+      id: '/_app/admin/leaves'
+      path: '/admin/leaves'
+      fullPath: '/admin/leaves'
+      preLoaderRoute: typeof AppAdminLeavesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/employees': {
+      id: '/_app/admin/employees'
+      path: '/admin/employees'
+      fullPath: '/admin/employees'
+      preLoaderRoute: typeof AppAdminEmployeesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/attendance': {
+      id: '/_app/admin/attendance'
+      path: '/admin/attendance'
+      fullPath: '/admin/attendance'
+      preLoaderRoute: typeof AppAdminAttendanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/approvals': {
+      id: '/_app/admin/approvals'
+      path: '/admin/approvals'
+      fullPath: '/admin/approvals'
+      preLoaderRoute: typeof AppAdminApprovalsRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppAdminApprovalsRoute: typeof AppAdminApprovalsRoute
+  AppAdminAttendanceRoute: typeof AppAdminAttendanceRoute
+  AppAdminEmployeesRoute: typeof AppAdminEmployeesRoute
+  AppAdminLeavesRoute: typeof AppAdminLeavesRoute
+  AppAdminNotificationsRoute: typeof AppAdminNotificationsRoute
+  AppAdminReportsRoute: typeof AppAdminReportsRoute
+  AppAdminSettingsRoute: typeof AppAdminSettingsRoute
+  AppAdminIndexRoute: typeof AppAdminIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAdminApprovalsRoute: AppAdminApprovalsRoute,
+  AppAdminAttendanceRoute: AppAdminAttendanceRoute,
+  AppAdminEmployeesRoute: AppAdminEmployeesRoute,
+  AppAdminLeavesRoute: AppAdminLeavesRoute,
+  AppAdminNotificationsRoute: AppAdminNotificationsRoute,
+  AppAdminReportsRoute: AppAdminReportsRoute,
+  AppAdminSettingsRoute: AppAdminSettingsRoute,
+  AppAdminIndexRoute: AppAdminIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
   AccountLockedRoute: AccountLockedRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
@@ -187,3 +379,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
