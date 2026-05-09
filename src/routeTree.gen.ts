@@ -17,6 +17,12 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AccountLockedRouteImport } from './routes/account-locked'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppProfileRouteImport } from './routes/_app/profile'
+import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
+import { Route as AppMyLeavesRouteImport } from './routes/_app/my-leaves'
+import { Route as AppMyAttendanceRouteImport } from './routes/_app/my-attendance'
+import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppCheckInRouteImport } from './routes/_app/check-in'
 import { Route as AppAdminIndexRouteImport } from './routes/_app/admin/index'
 import { Route as AppAdminSettingsRouteImport } from './routes/_app/admin/settings'
 import { Route as AppAdminReportsRouteImport } from './routes/_app/admin/reports'
@@ -64,6 +70,36 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotificationsRoute = AppNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyLeavesRoute = AppMyLeavesRouteImport.update({
+  id: '/my-leaves',
+  path: '/my-leaves',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyAttendanceRoute = AppMyAttendanceRouteImport.update({
+  id: '/my-attendance',
+  path: '/my-attendance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCheckInRoute = AppCheckInRouteImport.update({
+  id: '/check-in',
+  path: '/check-in',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
   id: '/admin/',
@@ -114,6 +150,12 @@ export interface FileRoutesByFullPath {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/check-in': typeof AppCheckInRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/my-attendance': typeof AppMyAttendanceRoute
+  '/my-leaves': typeof AppMyLeavesRoute
+  '/notifications': typeof AppNotificationsRoute
+  '/profile': typeof AppProfileRoute
   '/admin/approvals': typeof AppAdminApprovalsRoute
   '/admin/attendance': typeof AppAdminAttendanceRoute
   '/admin/employees': typeof AppAdminEmployeesRoute
@@ -131,6 +173,12 @@ export interface FileRoutesByTo {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/check-in': typeof AppCheckInRoute
+  '/dashboard': typeof AppDashboardRoute
+  '/my-attendance': typeof AppMyAttendanceRoute
+  '/my-leaves': typeof AppMyLeavesRoute
+  '/notifications': typeof AppNotificationsRoute
+  '/profile': typeof AppProfileRoute
   '/admin/approvals': typeof AppAdminApprovalsRoute
   '/admin/attendance': typeof AppAdminAttendanceRoute
   '/admin/employees': typeof AppAdminEmployeesRoute
@@ -150,6 +198,12 @@ export interface FileRoutesById {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/_app/check-in': typeof AppCheckInRoute
+  '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/my-attendance': typeof AppMyAttendanceRoute
+  '/_app/my-leaves': typeof AppMyLeavesRoute
+  '/_app/notifications': typeof AppNotificationsRoute
+  '/_app/profile': typeof AppProfileRoute
   '/_app/admin/approvals': typeof AppAdminApprovalsRoute
   '/_app/admin/attendance': typeof AppAdminAttendanceRoute
   '/_app/admin/employees': typeof AppAdminEmployeesRoute
@@ -169,6 +223,12 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/check-in'
+    | '/dashboard'
+    | '/my-attendance'
+    | '/my-leaves'
+    | '/notifications'
+    | '/profile'
     | '/admin/approvals'
     | '/admin/attendance'
     | '/admin/employees'
@@ -186,6 +246,12 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/check-in'
+    | '/dashboard'
+    | '/my-attendance'
+    | '/my-leaves'
+    | '/notifications'
+    | '/profile'
     | '/admin/approvals'
     | '/admin/attendance'
     | '/admin/employees'
@@ -204,6 +270,12 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/_app/check-in'
+    | '/_app/dashboard'
+    | '/_app/my-attendance'
+    | '/_app/my-leaves'
+    | '/_app/notifications'
+    | '/_app/profile'
     | '/_app/admin/approvals'
     | '/_app/admin/attendance'
     | '/_app/admin/employees'
@@ -283,6 +355,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/profile': {
+      id: '/_app/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/notifications': {
+      id: '/_app/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AppNotificationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-leaves': {
+      id: '/_app/my-leaves'
+      path: '/my-leaves'
+      fullPath: '/my-leaves'
+      preLoaderRoute: typeof AppMyLeavesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-attendance': {
+      id: '/_app/my-attendance'
+      path: '/my-attendance'
+      fullPath: '/my-attendance'
+      preLoaderRoute: typeof AppMyAttendanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/check-in': {
+      id: '/_app/check-in'
+      path: '/check-in'
+      fullPath: '/check-in'
+      preLoaderRoute: typeof AppCheckInRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/admin/': {
       id: '/_app/admin/'
       path: '/admin'
@@ -343,6 +457,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppCheckInRoute: typeof AppCheckInRoute
+  AppDashboardRoute: typeof AppDashboardRoute
+  AppMyAttendanceRoute: typeof AppMyAttendanceRoute
+  AppMyLeavesRoute: typeof AppMyLeavesRoute
+  AppNotificationsRoute: typeof AppNotificationsRoute
+  AppProfileRoute: typeof AppProfileRoute
   AppAdminApprovalsRoute: typeof AppAdminApprovalsRoute
   AppAdminAttendanceRoute: typeof AppAdminAttendanceRoute
   AppAdminEmployeesRoute: typeof AppAdminEmployeesRoute
@@ -354,6 +474,12 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppCheckInRoute: AppCheckInRoute,
+  AppDashboardRoute: AppDashboardRoute,
+  AppMyAttendanceRoute: AppMyAttendanceRoute,
+  AppMyLeavesRoute: AppMyLeavesRoute,
+  AppNotificationsRoute: AppNotificationsRoute,
+  AppProfileRoute: AppProfileRoute,
   AppAdminApprovalsRoute: AppAdminApprovalsRoute,
   AppAdminAttendanceRoute: AppAdminAttendanceRoute,
   AppAdminEmployeesRoute: AppAdminEmployeesRoute,
@@ -379,3 +505,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
