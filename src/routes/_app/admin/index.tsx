@@ -39,12 +39,12 @@ function AdminDashboard() {
       for (let i = 6; i >= 0; i--) {
         const d = subDays(new Date(), i);
         const ds = d.toISOString().slice(0, 10);
-        const { data } = await supabase.from("attendance").select("status").eq("date", ds);
+        const { data } = await supabase.from("attendance").select("status,is_late").eq("date", ds);
         days.push({
           day: format(d, "EEE"),
-          present: data?.filter((x) => x.status === "present").length ?? 0,
-          late: data?.filter((x) => x.status === "late" || x.is_late).length ?? 0,
-          wfh: data?.filter((x) => x.status === "wfh").length ?? 0,
+          present: data?.filter((x: any) => x.status === "present").length ?? 0,
+          late: data?.filter((x: any) => x.status === "late" || x.is_late).length ?? 0,
+          wfh: data?.filter((x: any) => x.status === "wfh").length ?? 0,
         });
       }
       setWeekly(days);

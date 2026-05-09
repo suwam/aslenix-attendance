@@ -22,7 +22,7 @@ function ReportsPage() {
   const run = async () => {
     setLoading(true);
     let q = supabase.from("attendance").select("*").gte("date", from).lte("date", to).order("date", { ascending: false });
-    if (statusFilter !== "all") q = q.eq("status", statusFilter);
+    if (statusFilter !== "all") q = q.eq("status", statusFilter as any);
     const { data } = await q;
     const ids = [...new Set((data ?? []).map((r) => r.user_id))];
     const { data: profs } = await supabase.from("profiles").select("user_id, full_name, email, department").in("user_id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
