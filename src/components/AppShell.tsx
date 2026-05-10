@@ -17,6 +17,7 @@ const adminNav: NavItem[] = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { to: "/admin/approvals", label: "User Approvals", icon: UserCheck },
   { to: "/admin/employees", label: "Employees", icon: Users },
+  { to: "/admin/tasks", label: "Tasks", icon: ClipboardList },
   { to: "/admin/attendance", label: "Attendance", icon: Clock },
   { to: "/admin/leaves", label: "Leave Requests", icon: Calendar },
   { to: "/admin/reports", label: "Reports", icon: FileBarChart2 },
@@ -26,6 +27,8 @@ const adminNav: NavItem[] = [
 
 const empNav: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/tasks", label: "My Tasks", icon: ClipboardList },
+  { to: "/standup", label: "Daily Standup", icon: ClipboardList },
   { to: "/check-in", label: "Check-in", icon: Clock },
   { to: "/my-attendance", label: "My Attendance", icon: ClipboardList },
   { to: "/my-leaves", label: "My Leaves", icon: Calendar },
