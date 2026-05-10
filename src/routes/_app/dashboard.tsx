@@ -35,6 +35,31 @@ function EmployeeDashboard() {
       leave: m?.filter((x) => x.status === "leave").length ?? 0,
       hours: Math.round((m?.reduce((a, x) => a + Number(x.work_hours || 0), 0) ?? 0) * 10) / 10,
     });
+
+    // Tasks + productivity
+    const { data: tasks } = await supabase.from("tasks").select("*").eq("assigned_to", user.id);
+    const total = tasks?.length || 0;
+    const completed = tasks?.filter((t) => t.status === "completed").length || 0;
+    const active = tasks?.filter((t) => t.status === "in_progress" || t.status === "review").length || 0;
+    const now = Date.now();
+    const overdue = tasks?.filter((t) => t.deadline && new Date(t.deadline).getTime() < now && t.status !== "completed").length || 0;
+    const onTime = tasks?.filter((t) => t.status === "completed" && (!t.deadline || !t.completed_at || new Date(t.completed_at) <= new Date(t.deadline))).length || 0;
+    const score = productivityScore({
+      completed, total, onTimeRate: completed ? onTime / completed : 0,
+      hours: monthStats.hours, targetHours: 160,
+    });
+    setTaskStats({ total, completed, active, overdue, score });
+
+    // Recent activity = recent task updates + own standups
+    const [{ data: rt }, { data: rs }] = await Promise.all([
+      supabase.from("tasks").select("id,title,status,updated_at").eq("assigned_to", user.id).order("updated_at", { ascending: false }).limit(5),
+      supabase.from("standups").select("id,date,today,updated_at").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(5),
+    ]);
+    const items = [
+      ...(rt || []).map((t: any) => ({ kind: "Task", when: t.updated_at, text: `${t.title} → ${t.status}` })),
+      ...(rs || []).map((s: any) => ({ kind: "Standup", when: s.updated_at, text: `Logged standup for ${s.date}` })),
+    ].sort((a, b) => +new Date(b.when) - +new Date(a.when)).slice(0, 6);
+    setRecent(items);
   };
   useEffect(() => { load(); }, [user]);
 
