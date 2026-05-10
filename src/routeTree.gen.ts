@@ -17,6 +17,8 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AccountLockedRouteImport } from './routes/account-locked'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppTasksRouteImport } from './routes/_app/tasks'
+import { Route as AppStandupRouteImport } from './routes/_app/standup'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
 import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
 import { Route as AppMyLeavesRouteImport } from './routes/_app/my-leaves'
@@ -24,6 +26,7 @@ import { Route as AppMyAttendanceRouteImport } from './routes/_app/my-attendance
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppCheckInRouteImport } from './routes/_app/check-in'
 import { Route as AppAdminIndexRouteImport } from './routes/_app/admin/index'
+import { Route as AppAdminTasksRouteImport } from './routes/_app/admin/tasks'
 import { Route as AppAdminSettingsRouteImport } from './routes/_app/admin/settings'
 import { Route as AppAdminReportsRouteImport } from './routes/_app/admin/reports'
 import { Route as AppAdminNotificationsRouteImport } from './routes/_app/admin/notifications'
@@ -71,6 +74,16 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppTasksRoute = AppTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStandupRoute = AppStandupRouteImport.update({
+  id: '/standup',
+  path: '/standup',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProfileRoute = AppProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -104,6 +117,11 @@ const AppCheckInRoute = AppCheckInRouteImport.update({
 const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminTasksRoute = AppAdminTasksRouteImport.update({
+  id: '/admin/tasks',
+  path: '/admin/tasks',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAdminSettingsRoute = AppAdminSettingsRouteImport.update({
@@ -156,6 +174,8 @@ export interface FileRoutesByFullPath {
   '/my-leaves': typeof AppMyLeavesRoute
   '/notifications': typeof AppNotificationsRoute
   '/profile': typeof AppProfileRoute
+  '/standup': typeof AppStandupRoute
+  '/tasks': typeof AppTasksRoute
   '/admin/approvals': typeof AppAdminApprovalsRoute
   '/admin/attendance': typeof AppAdminAttendanceRoute
   '/admin/employees': typeof AppAdminEmployeesRoute
@@ -163,6 +183,7 @@ export interface FileRoutesByFullPath {
   '/admin/notifications': typeof AppAdminNotificationsRoute
   '/admin/reports': typeof AppAdminReportsRoute
   '/admin/settings': typeof AppAdminSettingsRoute
+  '/admin/tasks': typeof AppAdminTasksRoute
   '/admin/': typeof AppAdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -179,6 +200,8 @@ export interface FileRoutesByTo {
   '/my-leaves': typeof AppMyLeavesRoute
   '/notifications': typeof AppNotificationsRoute
   '/profile': typeof AppProfileRoute
+  '/standup': typeof AppStandupRoute
+  '/tasks': typeof AppTasksRoute
   '/admin/approvals': typeof AppAdminApprovalsRoute
   '/admin/attendance': typeof AppAdminAttendanceRoute
   '/admin/employees': typeof AppAdminEmployeesRoute
@@ -186,6 +209,7 @@ export interface FileRoutesByTo {
   '/admin/notifications': typeof AppAdminNotificationsRoute
   '/admin/reports': typeof AppAdminReportsRoute
   '/admin/settings': typeof AppAdminSettingsRoute
+  '/admin/tasks': typeof AppAdminTasksRoute
   '/admin': typeof AppAdminIndexRoute
 }
 export interface FileRoutesById {
@@ -204,6 +228,8 @@ export interface FileRoutesById {
   '/_app/my-leaves': typeof AppMyLeavesRoute
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/profile': typeof AppProfileRoute
+  '/_app/standup': typeof AppStandupRoute
+  '/_app/tasks': typeof AppTasksRoute
   '/_app/admin/approvals': typeof AppAdminApprovalsRoute
   '/_app/admin/attendance': typeof AppAdminAttendanceRoute
   '/_app/admin/employees': typeof AppAdminEmployeesRoute
@@ -211,6 +237,7 @@ export interface FileRoutesById {
   '/_app/admin/notifications': typeof AppAdminNotificationsRoute
   '/_app/admin/reports': typeof AppAdminReportsRoute
   '/_app/admin/settings': typeof AppAdminSettingsRoute
+  '/_app/admin/tasks': typeof AppAdminTasksRoute
   '/_app/admin/': typeof AppAdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -229,6 +256,8 @@ export interface FileRouteTypes {
     | '/my-leaves'
     | '/notifications'
     | '/profile'
+    | '/standup'
+    | '/tasks'
     | '/admin/approvals'
     | '/admin/attendance'
     | '/admin/employees'
@@ -236,6 +265,7 @@ export interface FileRouteTypes {
     | '/admin/notifications'
     | '/admin/reports'
     | '/admin/settings'
+    | '/admin/tasks'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -252,6 +282,8 @@ export interface FileRouteTypes {
     | '/my-leaves'
     | '/notifications'
     | '/profile'
+    | '/standup'
+    | '/tasks'
     | '/admin/approvals'
     | '/admin/attendance'
     | '/admin/employees'
@@ -259,6 +291,7 @@ export interface FileRouteTypes {
     | '/admin/notifications'
     | '/admin/reports'
     | '/admin/settings'
+    | '/admin/tasks'
     | '/admin'
   id:
     | '__root__'
@@ -276,6 +309,8 @@ export interface FileRouteTypes {
     | '/_app/my-leaves'
     | '/_app/notifications'
     | '/_app/profile'
+    | '/_app/standup'
+    | '/_app/tasks'
     | '/_app/admin/approvals'
     | '/_app/admin/attendance'
     | '/_app/admin/employees'
@@ -283,6 +318,7 @@ export interface FileRouteTypes {
     | '/_app/admin/notifications'
     | '/_app/admin/reports'
     | '/_app/admin/settings'
+    | '/_app/admin/tasks'
     | '/_app/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -355,6 +391,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/tasks': {
+      id: '/_app/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof AppTasksRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/standup': {
+      id: '/_app/standup'
+      path: '/standup'
+      fullPath: '/standup'
+      preLoaderRoute: typeof AppStandupRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/profile': {
       id: '/_app/profile'
       path: '/profile'
@@ -402,6 +452,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AppAdminIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/tasks': {
+      id: '/_app/admin/tasks'
+      path: '/admin/tasks'
+      fullPath: '/admin/tasks'
+      preLoaderRoute: typeof AppAdminTasksRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/admin/settings': {
@@ -463,6 +520,8 @@ interface AppRouteChildren {
   AppMyLeavesRoute: typeof AppMyLeavesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppProfileRoute: typeof AppProfileRoute
+  AppStandupRoute: typeof AppStandupRoute
+  AppTasksRoute: typeof AppTasksRoute
   AppAdminApprovalsRoute: typeof AppAdminApprovalsRoute
   AppAdminAttendanceRoute: typeof AppAdminAttendanceRoute
   AppAdminEmployeesRoute: typeof AppAdminEmployeesRoute
@@ -470,6 +529,7 @@ interface AppRouteChildren {
   AppAdminNotificationsRoute: typeof AppAdminNotificationsRoute
   AppAdminReportsRoute: typeof AppAdminReportsRoute
   AppAdminSettingsRoute: typeof AppAdminSettingsRoute
+  AppAdminTasksRoute: typeof AppAdminTasksRoute
   AppAdminIndexRoute: typeof AppAdminIndexRoute
 }
 
@@ -480,6 +540,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppMyLeavesRoute: AppMyLeavesRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppProfileRoute: AppProfileRoute,
+  AppStandupRoute: AppStandupRoute,
+  AppTasksRoute: AppTasksRoute,
   AppAdminApprovalsRoute: AppAdminApprovalsRoute,
   AppAdminAttendanceRoute: AppAdminAttendanceRoute,
   AppAdminEmployeesRoute: AppAdminEmployeesRoute,
@@ -487,6 +549,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminNotificationsRoute: AppAdminNotificationsRoute,
   AppAdminReportsRoute: AppAdminReportsRoute,
   AppAdminSettingsRoute: AppAdminSettingsRoute,
+  AppAdminTasksRoute: AppAdminTasksRoute,
   AppAdminIndexRoute: AppAdminIndexRoute,
 }
 

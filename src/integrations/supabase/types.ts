@@ -242,6 +242,163 @@ export type Database = {
         }
         Relationships: []
       }
+      standups: {
+        Row: {
+          blockers: string | null
+          created_at: string
+          date: string
+          id: string
+          today: string | null
+          updated_at: string
+          user_id: string
+          work_hours: number | null
+          yesterday: string | null
+        }
+        Insert: {
+          blockers?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          today?: string | null
+          updated_at?: string
+          user_id: string
+          work_hours?: number | null
+          yesterday?: string | null
+        }
+        Update: {
+          blockers?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          today?: string | null
+          updated_at?: string
+          user_id?: string
+          work_hours?: number | null
+          yesterday?: string | null
+        }
+        Relationships: []
+      }
+      task_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_attachments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_comments: {
+        Row: {
+          comment: string
+          created_at: string
+          id: string
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          comment: string
+          created_at?: string
+          id?: string
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          id?: string
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_comments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          assigned_to: string
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          deadline: string | null
+          description: string | null
+          id: string
+          priority: Database["public"]["Enums"]["task_priority"]
+          progress: number
+          status: Database["public"]["Enums"]["task_status"]
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to: string
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["task_priority"]
+          progress?: number
+          status?: Database["public"]["Enums"]["task_status"]
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["task_priority"]
+          progress?: number
+          status?: Database["public"]["Enums"]["task_status"]
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -289,6 +446,8 @@ export type Database = {
         | "wfh"
       leave_status: "pending" | "approved" | "rejected" | "cancelled"
       leave_type: "sick" | "casual" | "vacation" | "emergency" | "wfh"
+      task_priority: "low" | "medium" | "high" | "urgent"
+      task_status: "todo" | "in_progress" | "review" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -428,6 +587,8 @@ export const Constants = {
       ],
       leave_status: ["pending", "approved", "rejected", "cancelled"],
       leave_type: ["sick", "casual", "vacation", "emergency", "wfh"],
+      task_priority: ["low", "medium", "high", "urgent"],
+      task_status: ["todo", "in_progress", "review", "completed"],
     },
   },
 } as const
