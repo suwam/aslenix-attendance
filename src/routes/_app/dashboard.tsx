@@ -6,9 +6,10 @@ import { PageHeader, StatCard } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { LiveClock } from "@/components/LiveClock";
 import { Button } from "@/components/ui/button";
-import { Clock, CheckCircle2, Calendar, TrendingUp, LogIn, LogOut } from "lucide-react";
+import { Clock, CheckCircle2, Calendar, TrendingUp, LogIn, LogOut, ListTodo, Activity, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfMonth } from "date-fns";
+import { productivityScore } from "@/lib/tasks-utils";
 
 export const Route = createFileRoute("/_app/dashboard")({ component: EmployeeDashboard });
 
@@ -16,6 +17,8 @@ function EmployeeDashboard() {
   const { user, profile } = useAuth();
   const [today, setToday] = useState<any>(null);
   const [monthStats, setMonthStats] = useState({ present: 0, late: 0, leave: 0, hours: 0 });
+  const [taskStats, setTaskStats] = useState({ total: 0, completed: 0, active: 0, overdue: 0, score: 0 });
+  const [recent, setRecent] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
 
   const todayDate = new Date().toISOString().slice(0, 10);
