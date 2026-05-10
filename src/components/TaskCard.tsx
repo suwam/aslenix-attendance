@@ -114,6 +114,7 @@ export function TaskCard({
           {initials}
         </div>
       </div>
+    </div>
     </motion.div>
   );
 }
