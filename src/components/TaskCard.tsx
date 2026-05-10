@@ -41,11 +41,12 @@ export function TaskCard({
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      whileHover={{ y: -2 }}
+    >
+    <div
       draggable
       onDragStart={onDragStart}
       onClick={onClick}
-      className="glass rounded-xl p-3.5 cursor-grab active:cursor-grabbing select-none border border-border hover:border-primary/40 transition-colors"
+      className="glass rounded-xl p-3.5 cursor-grab active:cursor-grabbing select-none border border-border hover:border-primary/40 hover:-translate-y-0.5 transition-all"
     >
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex-1 min-w-0">
