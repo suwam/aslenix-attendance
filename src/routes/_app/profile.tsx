@@ -13,12 +13,32 @@ import { Save, Camera, Loader2 } from "lucide-react";
 export const Route = createFileRoute("/_app/profile")({ component: ProfilePage });
 
 function ProfilePage() {
-  const { profile, refresh } = useAuth();
+  const { profile, user, refresh } = useAuth();
   const [form, setForm] = useState<any>(null);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => { if (profile) setForm(profile); }, [profile]);
   if (!form) return null;
+
+  const uploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (file.size > 5 * 1024 * 1024) return toast.error("Image must be under 5MB");
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr) { setUploading(false); return toast.error(upErr.message); }
+    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+    const { error: dbErr } = await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("id", form.id);
+    setUploading(false);
+    if (dbErr) return toast.error(dbErr.message);
+    setForm({ ...form, avatar_url: publicUrl });
+    toast.success("Profile photo updated");
+    refresh();
+  };
+
 
   const save = async () => {
     setSaving(true);
