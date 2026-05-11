@@ -57,10 +57,19 @@ function ProfilePage() {
       <PageHeader title="My Profile" subtitle="Manage your personal information" />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 max-w-5xl">
         <GlassCard className="lg:col-span-1 text-center">
-          {form.avatar_url ? <img src={form.avatar_url} className="h-28 w-28 mx-auto rounded-full object-cover ring-2 ring-primary/40" /> :
-            <div className="h-28 w-28 mx-auto rounded-full flex items-center justify-center text-3xl font-bold text-white" style={{ background: "var(--gradient-brand)", boxShadow: "var(--shadow-neon-red)" }}>
-              {form.full_name?.split(" ").map((s: string) => s[0]).slice(0, 2).join("").toUpperCase()}
-            </div>}
+          <div className="relative h-28 w-28 mx-auto group">
+            {form.avatar_url ? (
+              <img src={form.avatar_url} alt="Avatar" className="h-28 w-28 rounded-full object-cover ring-2 ring-primary/40" />
+            ) : (
+              <div className="h-28 w-28 rounded-full flex items-center justify-center text-3xl font-bold text-white" style={{ background: "var(--gradient-brand)", boxShadow: "var(--shadow-neon-red)" }}>
+                {form.full_name?.split(" ").map((s: string) => s[0]).slice(0, 2).join("").toUpperCase()}
+              </div>
+            )}
+            <label className="absolute bottom-0 right-0 h-9 w-9 rounded-full flex items-center justify-center cursor-pointer ring-2 ring-background hover:scale-105 transition" style={{ background: "var(--gradient-brand)" }}>
+              {uploading ? <Loader2 size={16} className="animate-spin text-white" /> : <Camera size={16} className="text-white" />}
+              <input type="file" accept="image/*" className="hidden" onChange={uploadAvatar} disabled={uploading} />
+            </label>
+          </div>
           <div className="mt-4 font-semibold text-lg">{form.full_name}</div>
           <div className="text-sm text-muted-foreground">{form.email}</div>
           <div className="mt-3 inline-block px-3 py-1 rounded-full text-xs" style={{ background: "var(--gradient-brand-soft)", color: "var(--primary)" }}>{form.department || "Unassigned"}</div>
