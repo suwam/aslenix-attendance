@@ -3,7 +3,7 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard, UserCheck, Users, Calendar, FileBarChart2, BellDot,
   Settings, LogOut, ClipboardList, Clock, User as UserIcon, Menu, X, Bell,
-  Search, ChevronDown,
+  Search, ChevronDown, QrCode,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
