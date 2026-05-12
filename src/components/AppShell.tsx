@@ -3,7 +3,7 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard, UserCheck, Users, Calendar, FileBarChart2, BellDot,
   Settings, LogOut, ClipboardList, Clock, User as UserIcon, Menu, X, Bell,
-  Search, ChevronDown,
+  Search, ChevronDown, QrCode,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
@@ -17,6 +17,7 @@ const adminNav: NavItem[] = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { to: "/admin/approvals", label: "User Approvals", icon: UserCheck },
   { to: "/admin/employees", label: "Employees", icon: Users },
+  { to: "/admin/qr-ids", label: "Digital QR IDs", icon: QrCode },
   { to: "/admin/tasks", label: "Tasks", icon: ClipboardList },
   { to: "/admin/attendance", label: "Attendance", icon: Clock },
   { to: "/admin/leaves", label: "Leave Requests", icon: Calendar },

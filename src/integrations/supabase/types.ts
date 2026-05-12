@@ -166,6 +166,9 @@ export type Database = {
           joining_date: string | null
           phone: string | null
           position: string | null
+          qr_generated_at: string | null
+          qr_status: Database["public"]["Enums"]["qr_status"]
+          qr_token: string | null
           salary: number | null
           updated_at: string
           user_id: string
@@ -186,6 +189,9 @@ export type Database = {
           joining_date?: string | null
           phone?: string | null
           position?: string | null
+          qr_generated_at?: string | null
+          qr_status?: Database["public"]["Enums"]["qr_status"]
+          qr_token?: string | null
           salary?: number | null
           updated_at?: string
           user_id: string
@@ -206,6 +212,9 @@ export type Database = {
           joining_date?: string | null
           phone?: string | null
           position?: string | null
+          qr_generated_at?: string | null
+          qr_status?: Database["public"]["Enums"]["qr_status"]
+          qr_token?: string | null
           salary?: number | null
           updated_at?: string
           user_id?: string
@@ -446,6 +455,7 @@ export type Database = {
         | "wfh"
       leave_status: "pending" | "approved" | "rejected" | "cancelled"
       leave_type: "sick" | "casual" | "vacation" | "emergency" | "wfh"
+      qr_status: "active" | "inactive" | "revoked"
       task_priority: "low" | "medium" | "high" | "urgent"
       task_status: "todo" | "in_progress" | "review" | "completed"
     }
@@ -587,6 +597,7 @@ export const Constants = {
       ],
       leave_status: ["pending", "approved", "rejected", "cancelled"],
       leave_type: ["sick", "casual", "vacation", "emergency", "wfh"],
+      qr_status: ["active", "inactive", "revoked"],
       task_priority: ["low", "medium", "high", "urgent"],
       task_status: ["todo", "in_progress", "review", "completed"],
     },

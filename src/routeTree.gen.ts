@@ -29,6 +29,7 @@ import { Route as AppAdminIndexRouteImport } from './routes/_app/admin/index'
 import { Route as AppAdminTasksRouteImport } from './routes/_app/admin/tasks'
 import { Route as AppAdminSettingsRouteImport } from './routes/_app/admin/settings'
 import { Route as AppAdminReportsRouteImport } from './routes/_app/admin/reports'
+import { Route as AppAdminQrIdsRouteImport } from './routes/_app/admin/qr-ids'
 import { Route as AppAdminNotificationsRouteImport } from './routes/_app/admin/notifications'
 import { Route as AppAdminLeavesRouteImport } from './routes/_app/admin/leaves'
 import { Route as AppAdminEmployeesRouteImport } from './routes/_app/admin/employees'
@@ -134,6 +135,11 @@ const AppAdminReportsRoute = AppAdminReportsRouteImport.update({
   path: '/admin/reports',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminQrIdsRoute = AppAdminQrIdsRouteImport.update({
+  id: '/admin/qr-ids',
+  path: '/admin/qr-ids',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminNotificationsRoute = AppAdminNotificationsRouteImport.update({
   id: '/admin/notifications',
   path: '/admin/notifications',
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/admin/employees': typeof AppAdminEmployeesRoute
   '/admin/leaves': typeof AppAdminLeavesRoute
   '/admin/notifications': typeof AppAdminNotificationsRoute
+  '/admin/qr-ids': typeof AppAdminQrIdsRoute
   '/admin/reports': typeof AppAdminReportsRoute
   '/admin/settings': typeof AppAdminSettingsRoute
   '/admin/tasks': typeof AppAdminTasksRoute
@@ -207,6 +214,7 @@ export interface FileRoutesByTo {
   '/admin/employees': typeof AppAdminEmployeesRoute
   '/admin/leaves': typeof AppAdminLeavesRoute
   '/admin/notifications': typeof AppAdminNotificationsRoute
+  '/admin/qr-ids': typeof AppAdminQrIdsRoute
   '/admin/reports': typeof AppAdminReportsRoute
   '/admin/settings': typeof AppAdminSettingsRoute
   '/admin/tasks': typeof AppAdminTasksRoute
@@ -235,6 +243,7 @@ export interface FileRoutesById {
   '/_app/admin/employees': typeof AppAdminEmployeesRoute
   '/_app/admin/leaves': typeof AppAdminLeavesRoute
   '/_app/admin/notifications': typeof AppAdminNotificationsRoute
+  '/_app/admin/qr-ids': typeof AppAdminQrIdsRoute
   '/_app/admin/reports': typeof AppAdminReportsRoute
   '/_app/admin/settings': typeof AppAdminSettingsRoute
   '/_app/admin/tasks': typeof AppAdminTasksRoute
@@ -263,6 +272,7 @@ export interface FileRouteTypes {
     | '/admin/employees'
     | '/admin/leaves'
     | '/admin/notifications'
+    | '/admin/qr-ids'
     | '/admin/reports'
     | '/admin/settings'
     | '/admin/tasks'
@@ -289,6 +299,7 @@ export interface FileRouteTypes {
     | '/admin/employees'
     | '/admin/leaves'
     | '/admin/notifications'
+    | '/admin/qr-ids'
     | '/admin/reports'
     | '/admin/settings'
     | '/admin/tasks'
@@ -316,6 +327,7 @@ export interface FileRouteTypes {
     | '/_app/admin/employees'
     | '/_app/admin/leaves'
     | '/_app/admin/notifications'
+    | '/_app/admin/qr-ids'
     | '/_app/admin/reports'
     | '/_app/admin/settings'
     | '/_app/admin/tasks'
@@ -475,6 +487,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminReportsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin/qr-ids': {
+      id: '/_app/admin/qr-ids'
+      path: '/admin/qr-ids'
+      fullPath: '/admin/qr-ids'
+      preLoaderRoute: typeof AppAdminQrIdsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/admin/notifications': {
       id: '/_app/admin/notifications'
       path: '/admin/notifications'
@@ -527,6 +546,7 @@ interface AppRouteChildren {
   AppAdminEmployeesRoute: typeof AppAdminEmployeesRoute
   AppAdminLeavesRoute: typeof AppAdminLeavesRoute
   AppAdminNotificationsRoute: typeof AppAdminNotificationsRoute
+  AppAdminQrIdsRoute: typeof AppAdminQrIdsRoute
   AppAdminReportsRoute: typeof AppAdminReportsRoute
   AppAdminSettingsRoute: typeof AppAdminSettingsRoute
   AppAdminTasksRoute: typeof AppAdminTasksRoute
@@ -547,6 +567,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminEmployeesRoute: AppAdminEmployeesRoute,
   AppAdminLeavesRoute: AppAdminLeavesRoute,
   AppAdminNotificationsRoute: AppAdminNotificationsRoute,
+  AppAdminQrIdsRoute: AppAdminQrIdsRoute,
   AppAdminReportsRoute: AppAdminReportsRoute,
   AppAdminSettingsRoute: AppAdminSettingsRoute,
   AppAdminTasksRoute: AppAdminTasksRoute,
