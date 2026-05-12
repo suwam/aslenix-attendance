@@ -442,6 +442,22 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      verify_employee_qr: {
+        Args: { _token: string }
+        Returns: {
+          approval_status: Database["public"]["Enums"]["approval_status"]
+          avatar_url: string
+          department: string
+          employee_code: string
+          full_name: string
+          is_valid: boolean
+          job_position: string
+          joining_date: string
+          qr_generated_at: string
+          qr_status: Database["public"]["Enums"]["qr_status"]
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
     }
     Enums: {
       app_role: "super_admin" | "admin" | "hr_manager" | "employee" | "viewer"
