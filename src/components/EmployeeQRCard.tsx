@@ -15,18 +15,14 @@ export type QRProfile = {
   avatar_url: string | null;
 };
 
+export function buildVerifyUrl(token: string | null) {
+  const base = typeof window !== "undefined" ? window.location.origin : "";
+  return `${base}/verify-employee/${token ?? ""}`;
+}
+
 export function buildQRPayload(p: QRProfile) {
-  return JSON.stringify({
-    v: 1,
-    eid: p.employee_code,
-    uid: p.user_id,
-    name: p.full_name,
-    email: p.email,
-    dept: p.department,
-    pos: p.position,
-    tok: p.qr_token,
-    st: p.approval_status,
-  });
+  // QR encodes the verification URL — scanning opens the public verify page.
+  return buildVerifyUrl(p.qr_token);
 }
 
 export const EmployeeQRCard = forwardRef<HTMLDivElement, { profile: QRProfile; size?: number }>(

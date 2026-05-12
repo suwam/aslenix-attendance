@@ -17,6 +17,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AccountLockedRouteImport } from './routes/account-locked'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VerifyEmployeeQrTokenRouteImport } from './routes/verify-employee.$qrToken'
 import { Route as AppTasksRouteImport } from './routes/_app/tasks'
 import { Route as AppStandupRouteImport } from './routes/_app/standup'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
@@ -73,6 +74,11 @@ const AppRoute = AppRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyEmployeeQrTokenRoute = VerifyEmployeeQrTokenRouteImport.update({
+  id: '/verify-employee/$qrToken',
+  path: '/verify-employee/$qrToken',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppTasksRoute = AppTasksRouteImport.update({
@@ -182,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof AppProfileRoute
   '/standup': typeof AppStandupRoute
   '/tasks': typeof AppTasksRoute
+  '/verify-employee/$qrToken': typeof VerifyEmployeeQrTokenRoute
   '/admin/approvals': typeof AppAdminApprovalsRoute
   '/admin/attendance': typeof AppAdminAttendanceRoute
   '/admin/employees': typeof AppAdminEmployeesRoute
@@ -209,6 +216,7 @@ export interface FileRoutesByTo {
   '/profile': typeof AppProfileRoute
   '/standup': typeof AppStandupRoute
   '/tasks': typeof AppTasksRoute
+  '/verify-employee/$qrToken': typeof VerifyEmployeeQrTokenRoute
   '/admin/approvals': typeof AppAdminApprovalsRoute
   '/admin/attendance': typeof AppAdminAttendanceRoute
   '/admin/employees': typeof AppAdminEmployeesRoute
@@ -238,6 +246,7 @@ export interface FileRoutesById {
   '/_app/profile': typeof AppProfileRoute
   '/_app/standup': typeof AppStandupRoute
   '/_app/tasks': typeof AppTasksRoute
+  '/verify-employee/$qrToken': typeof VerifyEmployeeQrTokenRoute
   '/_app/admin/approvals': typeof AppAdminApprovalsRoute
   '/_app/admin/attendance': typeof AppAdminAttendanceRoute
   '/_app/admin/employees': typeof AppAdminEmployeesRoute
@@ -267,6 +276,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/standup'
     | '/tasks'
+    | '/verify-employee/$qrToken'
     | '/admin/approvals'
     | '/admin/attendance'
     | '/admin/employees'
@@ -294,6 +304,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/standup'
     | '/tasks'
+    | '/verify-employee/$qrToken'
     | '/admin/approvals'
     | '/admin/attendance'
     | '/admin/employees'
@@ -322,6 +333,7 @@ export interface FileRouteTypes {
     | '/_app/profile'
     | '/_app/standup'
     | '/_app/tasks'
+    | '/verify-employee/$qrToken'
     | '/_app/admin/approvals'
     | '/_app/admin/attendance'
     | '/_app/admin/employees'
@@ -343,6 +355,7 @@ export interface RootRouteChildren {
   PendingRoute: typeof PendingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  VerifyEmployeeQrTokenRoute: typeof VerifyEmployeeQrTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -401,6 +414,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify-employee/$qrToken': {
+      id: '/verify-employee/$qrToken'
+      path: '/verify-employee/$qrToken'
+      fullPath: '/verify-employee/$qrToken'
+      preLoaderRoute: typeof VerifyEmployeeQrTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/tasks': {
@@ -585,6 +605,7 @@ const rootRouteChildren: RootRouteChildren = {
   PendingRoute: PendingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  VerifyEmployeeQrTokenRoute: VerifyEmployeeQrTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
