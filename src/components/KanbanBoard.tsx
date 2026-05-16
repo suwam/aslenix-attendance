@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { TaskCard, TaskCardData } from "./TaskCard";
 import { TaskDialog } from "./TaskDialog";
 import { TASK_STATUSES, STATUS_LABELS, STATUS_COLORS, type TaskStatus } from "@/lib/tasks-utils";
+import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
 import { toast } from "sonner";
 
 export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
@@ -24,9 +25,15 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
       .select("*")
       .order("created_at", { ascending: false });
     const taskIds = (data || []).map((t) => t.id);
-    const { data: assignees } = taskIds.length
+    const assigneeResult = taskIds.length
       ? await supabase.from("task_assignees").select("task_id,user_id").in("task_id", taskIds)
       : { data: [] };
+    const assignees =
+      "error" in assigneeResult &&
+      assigneeResult.error &&
+      isMissingSupabaseTableError(assigneeResult.error, "task_assignees")
+        ? []
+        : assigneeResult.data;
     const ids = Array.from(
       new Set([
         ...(data || []).map((t) => t.assigned_to),

@@ -21,6 +21,7 @@ import {
   type TaskStatus,
   type TaskPriority,
 } from "@/lib/tasks-utils";
+import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
 import { Send, Paperclip, Trash2, Download, X } from "lucide-react";
 import { format } from "date-fns";
 
@@ -83,12 +84,16 @@ export function TaskDialog({
 
   const loadTask = async () => {
     if (!taskId) return;
-    const [{ data: t }, { data: c }, { data: a }, { data: assignees }] = await Promise.all([
+    const [{ data: t }, { data: c }, { data: a }, assigneeResult] = await Promise.all([
       supabase.from("tasks").select("*").eq("id", taskId).maybeSingle(),
       supabase.from("task_comments").select("*").eq("task_id", taskId).order("created_at"),
       supabase.from("task_attachments").select("*").eq("task_id", taskId).order("created_at"),
       supabase.from("task_assignees").select("user_id").eq("task_id", taskId),
     ]);
+    const assignees =
+      assigneeResult.error && isMissingSupabaseTableError(assigneeResult.error, "task_assignees")
+        ? []
+        : assigneeResult.data;
     if (t) {
       setTitle(t.title);
       setDescription(t.description || "");
@@ -160,6 +165,7 @@ export function TaskDialog({
       error = result.error;
       savedTaskId = result.data?.id ?? null;
     }
+    let usedLegacyAssignment = false;
     if (!error && savedTaskId && isAdmin) {
       const rows = selectedAssignees.map((assigneeId) => ({
         task_id: savedTaskId,
@@ -169,15 +175,31 @@ export function TaskDialog({
         .from("task_assignees")
         .delete()
         .eq("task_id", savedTaskId);
-      if (deleteResult.error) error = deleteResult.error;
+      if (deleteResult.error) {
+        if (isMissingSupabaseTableError(deleteResult.error, "task_assignees")) {
+          usedLegacyAssignment = true;
+        } else {
+          error = deleteResult.error;
+        }
+      }
       else if (rows.length) {
         const insertResult = await supabase.from("task_assignees").insert(rows);
-        error = insertResult.error;
+        if (insertResult.error) {
+          if (isMissingSupabaseTableError(insertResult.error, "task_assignees")) {
+            usedLegacyAssignment = true;
+          } else {
+            error = insertResult.error;
+          }
+        }
       }
     }
     setLoading(false);
     if (error) return toast.error(error.message);
-    toast.success(taskId ? "Task updated" : "Task created");
+    if (usedLegacyAssignment && selectedAssignees.length > 1) {
+      toast.warning("Task saved for the first assignee. Apply the task_assignees migration to enable multiple assignees.");
+    } else {
+      toast.success(taskId ? "Task updated" : "Task created");
+    }
     onSaved?.();
     onOpenChange(false);
   };

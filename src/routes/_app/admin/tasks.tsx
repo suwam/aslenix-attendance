@@ -16,6 +16,7 @@ import { KanbanBoard } from "@/components/KanbanBoard";
 import { TaskDialog } from "@/components/TaskDialog";
 import { Plus, ListTodo, CheckCircle2, AlertTriangle, Activity } from "lucide-react";
 import { format } from "date-fns";
+import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
 
 export const Route = createFileRoute("/_app/admin/tasks")({ component: AdminTasks });
 
@@ -52,9 +53,15 @@ function AdminTasks() {
         .limit(10),
     ]);
     const taskIds = (tUpdated || []).map((t) => t.id);
-    const { data: taskAssignees } = taskIds.length
+    const taskAssigneeResult = taskIds.length
       ? await supabase.from("task_assignees").select("task_id,user_id").in("task_id", taskIds)
       : { data: [] };
+    const taskAssignees =
+      "error" in taskAssigneeResult &&
+      taskAssigneeResult.error &&
+      isMissingSupabaseTableError(taskAssigneeResult.error, "task_assignees")
+        ? []
+        : taskAssigneeResult.data;
     const userIds = Array.from(
       new Set([
         ...(tUpdated || []).map((t) => t.assigned_to),
