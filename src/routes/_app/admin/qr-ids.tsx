@@ -6,11 +6,25 @@ import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Loader2, Download, Printer, RefreshCw, Ban, CheckCircle2, QrCode } from "lucide-react";
+import {
+  Search,
+  Loader2,
+  Download,
+  Printer,
+  RefreshCw,
+  Ban,
+  CheckCircle2,
+  QrCode,
+} from "lucide-react";
 import { EmployeeQRCard, QRProfile } from "@/components/EmployeeQRCard";
-import jsPDF from "jspdf";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/admin/qr-ids")({ component: QRIdsPage });
@@ -32,28 +46,35 @@ function QRIdsPage() {
     setLoading(true);
     const { data } = await supabase
       .from("profiles")
-      .select("user_id,full_name,email,department,position,employee_code,qr_token,qr_status,approval_status,avatar_url,is_suspended")
+      .select(
+        "user_id,full_name,email,department,position,employee_code,qr_token,qr_status,approval_status,avatar_url,is_suspended",
+      )
       .order("full_name");
     setUsers((data ?? []) as any);
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   if (!isAdmin) return <Navigate to="/dashboard" />;
 
-  const filtered = users.filter((u) =>
-    (dept === "All" || u.department === dept) &&
-    (status === "All" || u.qr_status === status) &&
-    (!search ||
-      u.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-      u.email?.toLowerCase().includes(search.toLowerCase()) ||
-      u.employee_code?.toLowerCase().includes(search.toLowerCase()))
+  const filtered = users.filter(
+    (u) =>
+      (dept === "All" || u.department === dept) &&
+      (status === "All" || u.qr_status === status) &&
+      (!search ||
+        u.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+        u.email?.toLowerCase().includes(search.toLowerCase()) ||
+        u.employee_code?.toLowerCase().includes(search.toLowerCase())),
   );
 
   const regenerate = async (u: QRProfile) => {
     const token = crypto.getRandomValues(new Uint8Array(24));
-    const hex = Array.from(token).map((b) => b.toString(16).padStart(2, "0")).join("");
+    const hex = Array.from(token)
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
     const { error } = await supabase
       .from("profiles")
       .update({ qr_token: hex, qr_generated_at: new Date().toISOString(), qr_status: "active" })
@@ -65,7 +86,10 @@ function QRIdsPage() {
   };
 
   const setQrStatus = async (u: QRProfile, newStatus: "active" | "inactive" | "revoked") => {
-    const { error } = await supabase.from("profiles").update({ qr_status: newStatus }).eq("user_id", u.user_id);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ qr_status: newStatus })
+      .eq("user_id", u.user_id);
     if (error) return toast.error(error.message);
     toast.success(`QR ${newStatus}`);
     load();
@@ -82,10 +106,11 @@ function QRIdsPage() {
     link.click();
   };
 
-  const downloadPDF = () => {
+  const downloadPDF = async () => {
     if (!selected || !cardRef.current) return;
     const canvas = cardRef.current.querySelector("canvas") as HTMLCanvasElement | null;
     if (!canvas) return;
+    const { default: jsPDF } = await import("jspdf");
     const pdf = new jsPDF({ unit: "mm", format: [90, 130] });
     pdf.setFillColor(15, 20, 35);
     pdf.rect(0, 0, 90, 130, "F");
@@ -145,25 +170,54 @@ function QRIdsPage() {
 
   return (
     <>
-      <PageHeader title="Digital QR IDs" subtitle={`${filtered.length} employee ${filtered.length === 1 ? "card" : "cards"}`} />
+      <PageHeader
+        title="Digital QR IDs"
+        subtitle={`${filtered.length} employee ${filtered.length === 1 ? "card" : "cards"}`}
+      />
 
       <div className="flex flex-col sm:flex-row gap-3 mb-5">
         <div className="relative flex-1 max-w-md">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search name, email, ID…" className="pl-9" />
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search name, email, ID…"
+            className="pl-9"
+          />
         </div>
         <Select value={dept} onValueChange={setDept}>
-          <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
-          <SelectContent>{DEPARTMENTS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+          <SelectTrigger className="w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {DEPARTMENTS.map((d) => (
+              <SelectItem key={d} value={d}>
+                {d}
+              </SelectItem>
+            ))}
+          </SelectContent>
         </Select>
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-          <SelectContent>{STATUSES.map((s) => <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>)}</SelectContent>
+          <SelectTrigger className="w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUSES.map((s) => (
+              <SelectItem key={s} value={s} className="capitalize">
+                {s}
+              </SelectItem>
+            ))}
+          </SelectContent>
         </Select>
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div>
+        <div className="flex justify-center py-20">
+          <Loader2 className="animate-spin text-primary" />
+        </div>
       ) : filtered.length === 0 ? (
         <GlassCard className="text-center py-16 text-muted-foreground">
           <QrCode className="mx-auto mb-3 opacity-50" /> No QR cards found.
@@ -171,7 +225,11 @@ function QRIdsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {filtered.map((u) => (
-            <button key={u.user_id} onClick={() => setSelected(u)} className="text-left transition-transform hover:scale-[1.015]">
+            <button
+              key={u.user_id}
+              onClick={() => setSelected(u)}
+              className="text-left transition-transform hover:scale-[1.015]"
+            >
               <EmployeeQRCard profile={u} size={110} />
             </button>
           ))}
@@ -180,27 +238,51 @@ function QRIdsPage() {
 
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Employee QR ID</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Employee QR ID</DialogTitle>
+          </DialogHeader>
           {selected && (
             <div className="flex flex-col items-center gap-5">
               <EmployeeQRCard ref={cardRef} profile={selected} size={180} />
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
-                <Button onClick={downloadPNG} variant="secondary" size="sm"><Download size={14} className="mr-1" /> PNG</Button>
-                <Button onClick={downloadPDF} variant="secondary" size="sm"><Download size={14} className="mr-1" /> PDF</Button>
-                <Button onClick={printCard} variant="secondary" size="sm"><Printer size={14} className="mr-1" /> Print</Button>
-                <Button onClick={() => regenerate(selected)} variant="secondary" size="sm"><RefreshCw size={14} className="mr-1" /> Regen</Button>
+                <Button onClick={downloadPNG} variant="secondary" size="sm">
+                  <Download size={14} className="mr-1" /> PNG
+                </Button>
+                <Button onClick={downloadPDF} variant="secondary" size="sm">
+                  <Download size={14} className="mr-1" /> PDF
+                </Button>
+                <Button onClick={printCard} variant="secondary" size="sm">
+                  <Printer size={14} className="mr-1" /> Print
+                </Button>
+                <Button onClick={() => regenerate(selected)} variant="secondary" size="sm">
+                  <RefreshCw size={14} className="mr-1" /> Regen
+                </Button>
               </div>
               <div className="flex gap-2 w-full">
                 {selected.qr_status !== "active" ? (
-                  <Button onClick={() => setQrStatus(selected, "active")} className="flex-1" size="sm">
+                  <Button
+                    onClick={() => setQrStatus(selected, "active")}
+                    className="flex-1"
+                    size="sm"
+                  >
                     <CheckCircle2 size={14} className="mr-1" /> Activate
                   </Button>
                 ) : (
-                  <Button onClick={() => setQrStatus(selected, "inactive")} variant="outline" className="flex-1" size="sm">
+                  <Button
+                    onClick={() => setQrStatus(selected, "inactive")}
+                    variant="outline"
+                    className="flex-1"
+                    size="sm"
+                  >
                     Deactivate
                   </Button>
                 )}
-                <Button onClick={() => setQrStatus(selected, "revoked")} variant="destructive" className="flex-1" size="sm">
+                <Button
+                  onClick={() => setQrStatus(selected, "revoked")}
+                  variant="destructive"
+                  className="flex-1"
+                  size="sm"
+                >
                   <Ban size={14} className="mr-1" /> Revoke
                 </Button>
               </div>

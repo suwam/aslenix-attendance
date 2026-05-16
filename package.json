@@ -4,10 +4,10 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
-    "build:dev": "vite build --mode development",
-    "preview": "vite preview",
+    "dev": "node ./scripts/vite-with-local-wrangler-config.mjs dev",
+    "build": "node ./scripts/vite-with-local-wrangler-config.mjs build",
+    "build:dev": "node ./scripts/vite-with-local-wrangler-config.mjs build --mode development",
+    "preview": "node ./scripts/vite-with-local-wrangler-config.mjs preview",
     "lint": "eslint .",
     "format": "prettier --write ."
   },

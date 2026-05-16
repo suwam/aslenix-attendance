@@ -9,7 +9,7 @@ export const Route = createFileRoute("/account-locked")({ component: Page });
 function Page() {
   const { signOut, profile } = useAuth();
   const nav = useNavigate();
-  const status = profile?.is_suspended ? "suspended" : profile?.approval_status ?? "locked";
+  const status = profile?.is_suspended ? "suspended" : (profile?.approval_status ?? "locked");
   return (
     <AuthShell title="Account locked" subtitle={`Your account is ${status}`}>
       <div className="flex flex-col items-center gap-5 py-2">
@@ -19,7 +19,13 @@ function Page() {
         <p className="text-center text-muted-foreground text-sm leading-relaxed">
           Please contact your administrator to restore access.
         </p>
-        <Button variant="ghost" onClick={async () => { await signOut(); nav({ to: "/login" }); }}>
+        <Button
+          variant="ghost"
+          onClick={async () => {
+            await signOut();
+            nav({ to: "/login" });
+          }}
+        >
           <LogOut size={16} className="mr-2" /> Sign out
         </Button>
       </div>

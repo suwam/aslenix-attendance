@@ -1,5 +1,5 @@
 export const TASK_STATUSES = ["todo", "in_progress", "review", "completed"] as const;
-export type TaskStatus = typeof TASK_STATUSES[number];
+export type TaskStatus = (typeof TASK_STATUSES)[number];
 
 export const STATUS_LABELS: Record<TaskStatus, string> = {
   todo: "To Do",
@@ -16,7 +16,7 @@ export const STATUS_COLORS: Record<TaskStatus, string> = {
 };
 
 export const PRIORITIES = ["low", "medium", "high", "urgent"] as const;
-export type TaskPriority = typeof PRIORITIES[number];
+export type TaskPriority = (typeof PRIORITIES)[number];
 
 export const PRIORITY_COLORS: Record<TaskPriority, string> = {
   low: "oklch(0.7 0.05 250)",

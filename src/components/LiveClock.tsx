@@ -9,10 +9,20 @@ export function LiveClock({ className }: { className?: string }) {
   return (
     <div className={className}>
       <div className="text-4xl sm:text-5xl font-bold tabular-nums tracking-tight gradient-text">
-        {now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })}
+        {now.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+        })}
       </div>
       <div className="text-sm text-muted-foreground mt-1">
-        {now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+        {now.toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })}
       </div>
     </div>
   );

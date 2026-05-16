@@ -35,7 +35,12 @@ function Index() {
     );
   }
   if (profile.approval_status === "pending") return <Navigate to="/pending" />;
-  if (profile.approval_status === "rejected" || profile.approval_status === "suspended" || profile.is_suspended) return <Navigate to="/account-locked" />;
+  if (
+    profile.approval_status === "rejected" ||
+    profile.approval_status === "suspended" ||
+    profile.is_suspended
+  )
+    return <Navigate to="/account-locked" />;
   if (!isApproved) return <Navigate to="/pending" />;
   return <Navigate to={isAdmin ? "/admin" : "/dashboard"} />;
 }

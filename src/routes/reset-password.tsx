@@ -33,11 +33,22 @@ function Page() {
       <form onSubmit={submit} className="space-y-4">
         <div className="space-y-2">
           <Label>New password</Label>
-          <Input type="password" required minLength={6} value={pw} onChange={(e) => setPw(e.target.value)} />
+          <Input
+            type="password"
+            required
+            minLength={6}
+            value={pw}
+            onChange={(e) => setPw(e.target.value)}
+          />
         </div>
         <div className="space-y-2">
           <Label>Confirm</Label>
-          <Input type="password" required value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+          <Input
+            type="password"
+            required
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+          />
         </div>
         <Button type="submit" disabled={loading} className="w-full neon-button rounded-xl h-11">
           {loading ? <Loader2 className="animate-spin" size={18} /> : "Update password"}

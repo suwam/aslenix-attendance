@@ -12,4 +12,25 @@ export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
   },
+  vite: {
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes("node_modules")) return;
+            if (id.includes("recharts")) return "charts";
+            if (id.includes("jspdf") || id.includes("html2canvas") || id.includes("dompurify")) {
+              return "export-tools";
+            }
+            if (id.includes("framer-motion")) return "animation";
+            if (id.includes("@supabase")) return "supabase";
+            if (id.includes("@radix-ui")) return "radix-ui";
+            if (id.includes("lucide-react")) return "icons";
+            if (id.includes("date-fns")) return "date";
+            if (id.includes("sonner")) return "toast";
+          },
+        },
+      },
+    },
+  },
 });

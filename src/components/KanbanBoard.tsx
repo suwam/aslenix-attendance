@@ -19,47 +19,85 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
 
   const load = useCallback(async () => {
     if (!user) return;
-    let q = supabase.from("tasks").select("*").order("created_at", { ascending: false });
-    if (scope === "mine") q = q.eq("assigned_to", user.id);
-    const { data } = await q;
-    const ids = Array.from(new Set((data || []).map((t) => t.assigned_to)));
+    const { data } = await supabase
+      .from("tasks")
+      .select("*")
+      .order("created_at", { ascending: false });
+    const taskIds = (data || []).map((t) => t.id);
+    const { data: assignees } = taskIds.length
+      ? await supabase.from("task_assignees").select("task_id,user_id").in("task_id", taskIds)
+      : { data: [] };
+    const ids = Array.from(
+      new Set([
+        ...(data || []).map((t) => t.assigned_to),
+        ...(assignees || []).map((a) => a.user_id),
+      ]),
+    );
     let names: Record<string, string> = {};
     if (ids.length) {
-      const { data: profs } = await supabase.from("profiles").select("user_id, full_name").in("user_id", ids);
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", ids);
       names = Object.fromEntries((profs || []).map((p) => [p.user_id, p.full_name]));
     }
+    const assigneesByTask: Record<string, string[]> = {};
+    (assignees || []).forEach((a) => {
+      assigneesByTask[a.task_id] ||= [];
+      assigneesByTask[a.task_id].push(names[a.user_id] || "User");
+    });
     // counts
-    const taskIds = (data || []).map((t) => t.id);
-    let cCounts: Record<string, number> = {};
-    let aCounts: Record<string, number> = {};
+    const cCounts: Record<string, number> = {};
+    const aCounts: Record<string, number> = {};
     if (taskIds.length) {
       const [{ data: cs }, { data: as }] = await Promise.all([
         supabase.from("task_comments").select("task_id").in("task_id", taskIds),
         supabase.from("task_attachments").select("task_id").in("task_id", taskIds),
       ]);
-      (cs || []).forEach((c: any) => { cCounts[c.task_id] = (cCounts[c.task_id] || 0) + 1; });
-      (as || []).forEach((a: any) => { aCounts[a.task_id] = (aCounts[a.task_id] || 0) + 1; });
+      (cs || []).forEach((c: any) => {
+        cCounts[c.task_id] = (cCounts[c.task_id] || 0) + 1;
+      });
+      (as || []).forEach((a: any) => {
+        aCounts[a.task_id] = (aCounts[a.task_id] || 0) + 1;
+      });
     }
-    setTasks((data || []).map((t: any) => ({
-      ...t,
-      assignee_name: names[t.assigned_to],
-      comments_count: cCounts[t.id] || 0,
-      attachments_count: aCounts[t.id] || 0,
-    })));
-  }, [user, scope]);
+    setTasks(
+      (data || []).map((t: any) => ({
+        ...t,
+        assignee_name: names[t.assigned_to],
+        assignee_names: assigneesByTask[t.id]?.length
+          ? assigneesByTask[t.id]
+          : [names[t.assigned_to] || "User"],
+        comments_count: cCounts[t.id] || 0,
+        attachments_count: aCounts[t.id] || 0,
+      })),
+    );
+  }, [user]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const moveTo = async (id: string, status: TaskStatus) => {
     const t = tasks.find((x) => x.id === id);
     if (!t || t.status === status) return;
-    setTasks((prev) => prev.map((x) => x.id === id ? { ...x, status, progress: status === "completed" ? 100 : x.progress } : x));
-    const { error } = await supabase.from("tasks").update({
-      status,
-      progress: status === "completed" ? 100 : t.progress,
-      completed_at: status === "completed" ? new Date().toISOString() : null,
-    }).eq("id", id);
-    if (error) { toast.error(error.message); load(); }
+    setTasks((prev) =>
+      prev.map((x) =>
+        x.id === id ? { ...x, status, progress: status === "completed" ? 100 : x.progress } : x,
+      ),
+    );
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        status,
+        progress: status === "completed" ? 100 : t.progress,
+        completed_at: status === "completed" ? new Date().toISOString() : null,
+      })
+      .eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      load();
+    }
   };
 
   return (
@@ -70,19 +108,35 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
           return (
             <div
               key={status}
-              onDragOver={(e) => { e.preventDefault(); setDragOver(status); }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOver(status);
+              }}
               onDragLeave={() => setDragOver(null)}
-              onDrop={() => { if (dragId) moveTo(dragId, status); setDragId(null); setDragOver(null); }}
+              onDrop={() => {
+                if (dragId) moveTo(dragId, status);
+                setDragId(null);
+                setDragOver(null);
+              }}
               className={`glass rounded-2xl p-3 flex flex-col min-h-[60vh] transition-colors ${dragOver === status ? "ring-2 ring-primary" : ""}`}
             >
               <div className="flex items-center justify-between mb-3 px-1">
                 <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full" style={{ background: STATUS_COLORS[status] }} />
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ background: STATUS_COLORS[status] }}
+                  />
                   <h3 className="text-sm font-semibold">{STATUS_LABELS[status]}</h3>
-                  <span className="text-xs text-muted-foreground tabular-nums">{colTasks.length}</span>
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    {colTasks.length}
+                  </span>
                 </div>
                 <button
-                  onClick={() => { setEditId(null); setDefaultStatus(status); setOpen(true); }}
+                  onClick={() => {
+                    setEditId(null);
+                    setDefaultStatus(status);
+                    setOpen(true);
+                  }}
                   className="p-1 rounded-md hover:bg-primary/15 hover:text-primary transition-colors"
                   title="Add task"
                 >
@@ -95,13 +149,18 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
                     <TaskCard
                       key={t.id}
                       task={t}
-                      onClick={() => { setEditId(t.id); setOpen(true); }}
+                      onClick={() => {
+                        setEditId(t.id);
+                        setOpen(true);
+                      }}
                       onDragStart={() => setDragId(t.id)}
                     />
                   ))}
                 </AnimatePresence>
                 {colTasks.length === 0 && (
-                  <div className="text-xs text-muted-foreground text-center py-8 opacity-50">Drop tasks here</div>
+                  <div className="text-xs text-muted-foreground text-center py-8 opacity-50">
+                    Drop tasks here
+                  </div>
                 )}
               </div>
             </div>

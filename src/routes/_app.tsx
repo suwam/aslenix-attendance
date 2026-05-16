@@ -16,7 +16,13 @@ function ProtectedLayout() {
     if (loading) return;
     if (!user) nav({ to: "/login" });
     else if (profile && profile.approval_status === "pending") nav({ to: "/pending" });
-    else if (profile && (profile.approval_status === "rejected" || profile.approval_status === "suspended" || profile.is_suspended)) nav({ to: "/account-locked" });
+    else if (
+      profile &&
+      (profile.approval_status === "rejected" ||
+        profile.approval_status === "suspended" ||
+        profile.is_suspended)
+    )
+      nav({ to: "/account-locked" });
   }, [loading, user, profile, nav]);
 
   if (loading || !user || !profile || !isApproved) {

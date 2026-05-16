@@ -1,11 +1,24 @@
 import { ReactNode, useState } from "react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
-  LayoutDashboard, UserCheck, Users, Calendar, FileBarChart2, BellDot,
-  Settings, LogOut, ClipboardList, Clock, User as UserIcon, Menu, X, Bell,
-  Search, ChevronDown, QrCode,
+  LayoutDashboard,
+  UserCheck,
+  Users,
+  Calendar,
+  FileBarChart2,
+  BellDot,
+  Settings,
+  LogOut,
+  ClipboardList,
+  Clock,
+  User as UserIcon,
+  Menu,
+  X,
+  Bell,
+  Search,
+  ChevronDown,
+  QrCode,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/auth-context";
 import { AslenixLogo } from "@/components/AslenixLogo";
 import { useEffect } from "react";
@@ -56,23 +69,49 @@ export function AppShell({ children }: { children: ReactNode }) {
       .then(({ count }) => setUnread(count ?? 0));
     const ch = supabase
       .channel("notif-" + profile.user_id)
-      .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${profile.user_id}` }, () => {
-        supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", profile.user_id).eq("is_read", false).then(({ count }) => setUnread(count ?? 0));
-      })
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${profile.user_id}`,
+        },
+        () => {
+          supabase
+            .from("notifications")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", profile.user_id)
+            .eq("is_read", false)
+            .then(({ count }) => setUnread(count ?? 0));
+        },
+      )
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, [profile]);
 
-  const handleSignOut = async () => { await signOut(); nav({ to: "/login" }); };
+  const handleSignOut = async () => {
+    await signOut();
+    nav({ to: "/login" });
+  };
 
   return (
     <div className="min-h-screen flex">
       {/* Sidebar (desktop) */}
-      <aside className="hidden lg:flex flex-col w-64 shrink-0 sticky top-0 h-screen p-4 gap-2 border-r border-sidebar-border" style={{ background: "var(--sidebar)", backdropFilter: "blur(20px)" }}>
-        <div className="px-2 py-3"><AslenixLogo /></div>
+      <aside
+        className="hidden lg:flex flex-col w-64 shrink-0 sticky top-0 h-screen p-4 gap-2 border-r border-sidebar-border"
+        style={{ background: "var(--sidebar)", backdropFilter: "blur(20px)" }}
+      >
+        <div className="px-2 py-3">
+          <AslenixLogo />
+        </div>
         <nav className="flex-1 mt-4 space-y-1">
           {items.map((item) => {
-            const active = currentPath === item.to || (item.to !== "/admin" && item.to !== "/dashboard" && currentPath.startsWith(item.to));
+            const active =
+              currentPath === item.to ||
+              (item.to !== "/admin" && item.to !== "/dashboard" && currentPath.startsWith(item.to));
             const Icon = item.icon;
             return (
               <Link
@@ -81,7 +120,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                 className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all relative ${active ? "text-white" : "text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent"}`}
               >
                 {active && (
-                  <motion.div layoutId="active-pill" className="absolute inset-0 rounded-xl -z-10" style={{ background: "var(--gradient-brand)", boxShadow: "var(--shadow-neon-red)" }} transition={{ type: "spring", stiffness: 380, damping: 32 }} />
+                  <div
+                    className="absolute inset-0 rounded-xl -z-10"
+                    style={{
+                      background: "var(--gradient-brand)",
+                      boxShadow: "var(--shadow-neon-red)",
+                    }}
+                  />
                 )}
                 <Icon size={18} />
                 <span>{item.label}</span>
@@ -93,60 +138,94 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Mobile drawer */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="lg:hidden fixed inset-0 z-40 bg-black/60" onClick={() => setMobileOpen(false)} />
-            <motion.aside initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }} transition={{ type: "spring", damping: 28, stiffness: 280 }} className="lg:hidden fixed left-0 top-0 bottom-0 w-72 z-50 p-4 flex flex-col gap-2 border-r border-sidebar-border" style={{ background: "var(--sidebar)" }}>
-              <div className="flex items-center justify-between px-2 py-3">
-                <AslenixLogo />
-                <button onClick={() => setMobileOpen(false)} className="p-2 rounded-lg hover:bg-sidebar-accent"><X size={18} /></button>
-              </div>
-              <nav className="flex-1 mt-2 space-y-1">
-                {items.map((item) => {
-                  const active = currentPath === item.to;
-                  const Icon = item.icon;
-                  return (
-                    <Link key={item.to} to={item.to} onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium ${active ? "text-white" : "text-sidebar-foreground/75 hover:bg-sidebar-accent"}`} style={active ? { background: "var(--gradient-brand)" } : undefined}>
-                      <Icon size={18} /> {item.label}
-                    </Link>
-                  );
-                })}
-              </nav>
-              <UserCard onSignOut={handleSignOut} />
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+      {mobileOpen && (
+        <>
+          <div
+            className="lg:hidden fixed inset-0 z-40 bg-black/60"
+            onClick={() => setMobileOpen(false)}
+          />
+          <aside
+            className="lg:hidden fixed left-0 top-0 bottom-0 w-72 z-50 p-4 flex flex-col gap-2 border-r border-sidebar-border"
+            style={{ background: "var(--sidebar)" }}
+          >
+            <div className="flex items-center justify-between px-2 py-3">
+              <AslenixLogo />
+              <button
+                onClick={() => setMobileOpen(false)}
+                className="p-2 rounded-lg hover:bg-sidebar-accent"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <nav className="flex-1 mt-2 space-y-1">
+              {items.map((item) => {
+                const active = currentPath === item.to;
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium ${active ? "text-white" : "text-sidebar-foreground/75 hover:bg-sidebar-accent"}`}
+                    style={active ? { background: "var(--gradient-brand)" } : undefined}
+                  >
+                    <Icon size={18} /> {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
+            <UserCard onSignOut={handleSignOut} />
+          </aside>
+        </>
+      )}
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="sticky top-0 z-30 h-16 px-4 sm:px-6 flex items-center gap-3 border-b border-border" style={{ background: "color-mix(in oklab, var(--background) 75%, transparent)", backdropFilter: "blur(20px)" }}>
-          <button className="lg:hidden p-2 rounded-lg hover:bg-muted" onClick={() => setMobileOpen(true)}><Menu size={20} /></button>
+        <header
+          className="sticky top-0 z-30 h-16 px-4 sm:px-6 flex items-center gap-3 border-b border-border"
+          style={{
+            background: "color-mix(in oklab, var(--background) 75%, transparent)",
+            backdropFilter: "blur(20px)",
+          }}
+        >
+          <button
+            className="lg:hidden p-2 rounded-lg hover:bg-muted"
+            onClick={() => setMobileOpen(true)}
+          >
+            <Menu size={20} />
+          </button>
           <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
             <Search size={16} />
             <span className="hidden md:inline">Quick search…</span>
           </div>
           <div className="flex-1" />
-          <Link to={isAdmin ? "/admin/notifications" : "/notifications"} className="relative p-2 rounded-lg hover:bg-muted">
+          <Link
+            to={isAdmin ? "/admin/notifications" : "/notifications"}
+            className="relative p-2 rounded-lg hover:bg-muted"
+          >
             <Bell size={18} />
             {unread > 0 && (
-              <span className="absolute top-1 right-1 h-4 min-w-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center text-white" style={{ background: "var(--gradient-brand)" }}>{unread > 9 ? "9+" : unread}</span>
+              <span
+                className="absolute top-1 right-1 h-4 min-w-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
+                style={{ background: "var(--gradient-brand)" }}
+              >
+                {unread > 9 ? "9+" : unread}
+              </span>
             )}
           </Link>
           <div className="flex items-center gap-3 pl-2 border-l border-border">
             <div className="hidden sm:block text-right leading-tight">
               <div className="text-sm font-medium truncate max-w-[160px]">{profile?.full_name}</div>
-              <div className="text-[11px] text-muted-foreground capitalize">{isAdmin ? "Administrator" : "Employee"}</div>
+              <div className="text-[11px] text-muted-foreground capitalize">
+                {isAdmin ? "Administrator" : "Employee"}
+              </div>
             </div>
             <Avatar profile={profile} />
           </div>
         </header>
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
-          <motion.div key={currentPath} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-            {children}
-          </motion.div>
+          <div key={currentPath}>{children}</div>
         </main>
       </div>
     </div>
@@ -160,9 +239,15 @@ function UserCard({ onSignOut }: { onSignOut: () => void }) {
       <Avatar profile={profile} />
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium truncate">{profile?.full_name}</div>
-        <div className="text-[11px] text-muted-foreground truncate">{isAdmin ? "Administrator" : profile?.position || "Employee"}</div>
+        <div className="text-[11px] text-muted-foreground truncate">
+          {isAdmin ? "Administrator" : profile?.position || "Employee"}
+        </div>
       </div>
-      <button onClick={onSignOut} className="p-2 rounded-lg hover:bg-destructive/15 hover:text-destructive transition-colors" aria-label="Sign out">
+      <button
+        onClick={onSignOut}
+        className="p-2 rounded-lg hover:bg-destructive/15 hover:text-destructive transition-colors"
+        aria-label="Sign out"
+      >
         <LogOut size={16} />
       </button>
     </div>
@@ -170,10 +255,24 @@ function UserCard({ onSignOut }: { onSignOut: () => void }) {
 }
 
 function Avatar({ profile }: { profile: any }) {
-  const initials = (profile?.full_name || "U").split(" ").map((s: string) => s[0]).slice(0, 2).join("").toUpperCase();
+  const initials = (profile?.full_name || "U")
+    .split(" ")
+    .map((s: string) => s[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
   return profile?.avatar_url ? (
-    <img src={profile.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover ring-2 ring-primary/40" />
+    <img
+      src={profile.avatar_url}
+      alt=""
+      className="h-9 w-9 rounded-full object-cover ring-2 ring-primary/40"
+    />
   ) : (
-    <div className="h-9 w-9 rounded-full flex items-center justify-center text-white text-sm font-semibold" style={{ background: "var(--gradient-brand)" }}>{initials}</div>
+    <div
+      className="h-9 w-9 rounded-full flex items-center justify-center text-white text-sm font-semibold"
+      style={{ background: "var(--gradient-brand)" }}
+    >
+      {initials}
+    </div>
   );
 }

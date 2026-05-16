@@ -31,7 +31,13 @@ function Page() {
     <AuthShell
       title="Reset your password"
       subtitle={sent ? "Check your inbox for a reset link" : "We'll email you a secure link"}
-      footer={<><Link to="/login" className="text-primary font-medium hover:underline">Back to sign in</Link></>}
+      footer={
+        <>
+          <Link to="/login" className="text-primary font-medium hover:underline">
+            Back to sign in
+          </Link>
+        </>
+      }
     >
       {!sent && (
         <form onSubmit={submit} className="space-y-4">

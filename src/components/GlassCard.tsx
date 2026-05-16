@@ -17,8 +17,8 @@ export function GlassCard({
         glow === "red"
           ? { boxShadow: "var(--shadow-neon-red), var(--shadow-glass)" }
           : glow === "blue"
-          ? { boxShadow: "var(--shadow-neon-blue), var(--shadow-glass)" }
-          : undefined
+            ? { boxShadow: "var(--shadow-neon-blue), var(--shadow-glass)" }
+            : undefined
       }
     >
       {children}
