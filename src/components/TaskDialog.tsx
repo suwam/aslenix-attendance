@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -22,8 +22,19 @@ import {
   type TaskPriority,
 } from "@/lib/tasks-utils";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
-import { Send, Paperclip, Trash2, Download, X } from "lucide-react";
+import { Send, Paperclip, Trash2, Download, X, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
+
+type ProgressUpdate = {
+  id: string;
+  task_id: string;
+  user_id: string;
+  old_progress: number;
+  new_progress: number;
+  note: string;
+  created_at: string;
+  author?: string;
+};
 
 export function TaskDialog({
   open,
@@ -39,12 +50,17 @@ export function TaskDialog({
   onSaved?: () => void;
 }) {
   const { user, isAdmin } = useAuth();
+  const canEditTaskFields = isAdmin || !taskId;
+  const canDeleteTask = isAdmin && Boolean(taskId);
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<TaskStatus>(defaultStatus || "todo");
   const [priority, setPriority] = useState<TaskPriority>("medium");
   const [progress, setProgress] = useState(0);
+  const [initialProgress, setInitialProgress] = useState(0);
+  const [progressNote, setProgressNote] = useState("");
+  const [progressUpdates, setProgressUpdates] = useState<ProgressUpdate[]>([]);
   const [deadline, setDeadline] = useState("");
   const [assignedTo, setAssignedTo] = useState<string>(user?.id || "");
   const [assignedToMany, setAssignedToMany] = useState<string[]>(user?.id ? [user.id] : []);
@@ -54,6 +70,77 @@ export function TaskDialog({
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
   const [attachments, setAttachments] = useState<any[]>([]);
+
+  const resetForm = useCallback(() => {
+    setTitle("");
+    setDescription("");
+    setPriority("medium");
+    setProgress(0);
+    setInitialProgress(0);
+    setProgressNote("");
+    setProgressUpdates([]);
+    setDeadline("");
+    setAssignedTo(isAdmin ? "" : user?.id || "");
+    setAssignedToMany(isAdmin ? [] : user?.id ? [user.id] : []);
+    setTags("");
+    setComments([]);
+    setAttachments([]);
+  }, [isAdmin, user?.id]);
+
+  const loadTask = useCallback(async () => {
+    if (!taskId) return;
+    const [{ data: t }, { data: c }, { data: a }, progressResult, assigneeResult] = await Promise.all([
+      supabase.from("tasks").select("*").eq("id", taskId).maybeSingle(),
+      supabase.from("task_comments").select("*").eq("task_id", taskId).order("created_at"),
+      supabase.from("task_attachments").select("*").eq("task_id", taskId).order("created_at"),
+      (supabase as any)
+        .from("task_progress_updates")
+        .select("*")
+        .eq("task_id", taskId)
+        .order("created_at", { ascending: false }),
+      supabase.from("task_assignees").select("user_id").eq("task_id", taskId),
+    ]);
+    const assignees =
+      assigneeResult.error && isMissingSupabaseTableError(assigneeResult.error, "task_assignees")
+        ? []
+        : assigneeResult.data;
+    if (t) {
+      setTitle(t.title);
+      setDescription(t.description || "");
+      setStatus(t.status);
+      setPriority(t.priority);
+      setProgress(t.progress);
+      setInitialProgress(t.progress);
+      setProgressNote("");
+      setAssignedTo(t.assigned_to);
+      setAssignedToMany(
+        assignees?.length ? assignees.map((a) => a.user_id) : t.assigned_to ? [t.assigned_to] : [],
+      );
+      setDeadline(t.deadline ? toDateTimeLocalValue(t.deadline) : "");
+      setTags((t.tags || []).join(", "));
+    }
+    // hydrate user names for comments
+    const progressRows =
+      progressResult.error && isMissingSupabaseTableError(progressResult.error, "task_progress_updates")
+        ? []
+        : progressResult.data || [];
+    const ids = Array.from(
+      new Set([...(c || []).map((x: any) => x.user_id), ...progressRows.map((x: any) => x.user_id)]),
+    );
+    let names: Record<string, string> = {};
+    if (ids.length) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", ids);
+      names = Object.fromEntries((profs || []).map((p) => [p.user_id, p.full_name]));
+    }
+    setComments((c || []).map((x: any) => ({ ...x, author: names[x.user_id] || "User" })));
+    setProgressUpdates(
+      progressRows.map((x: any) => ({ ...x, author: names[x.user_id] || "User" })) as ProgressUpdate[],
+    );
+    setAttachments(a || []);
+  }, [taskId]);
 
   useEffect(() => {
     if (!open) return;
@@ -67,76 +154,48 @@ export function TaskDialog({
     }
     if (taskId) loadTask();
     else resetForm();
-  }, [open, taskId]);
-
-  const resetForm = () => {
-    setTitle("");
-    setDescription("");
-    setPriority("medium");
-    setProgress(0);
-    setDeadline("");
-    setAssignedTo(user?.id || "");
-    setAssignedToMany(user?.id ? [user.id] : []);
-    setTags("");
-    setComments([]);
-    setAttachments([]);
-  };
-
-  const loadTask = async () => {
-    if (!taskId) return;
-    const [{ data: t }, { data: c }, { data: a }, assigneeResult] = await Promise.all([
-      supabase.from("tasks").select("*").eq("id", taskId).maybeSingle(),
-      supabase.from("task_comments").select("*").eq("task_id", taskId).order("created_at"),
-      supabase.from("task_attachments").select("*").eq("task_id", taskId).order("created_at"),
-      supabase.from("task_assignees").select("user_id").eq("task_id", taskId),
-    ]);
-    const assignees =
-      assigneeResult.error && isMissingSupabaseTableError(assigneeResult.error, "task_assignees")
-        ? []
-        : assigneeResult.data;
-    if (t) {
-      setTitle(t.title);
-      setDescription(t.description || "");
-      setStatus(t.status);
-      setPriority(t.priority);
-      setProgress(t.progress);
-      setAssignedTo(t.assigned_to);
-      setAssignedToMany(
-        assignees?.length ? assignees.map((a) => a.user_id) : t.assigned_to ? [t.assigned_to] : [],
-      );
-      setDeadline(t.deadline ? t.deadline.slice(0, 16) : "");
-      setTags((t.tags || []).join(", "));
-    }
-    // hydrate user names for comments
-    const ids = Array.from(new Set((c || []).map((x: any) => x.user_id)));
-    let names: Record<string, string> = {};
-    if (ids.length) {
-      const { data: profs } = await supabase
-        .from("profiles")
-        .select("user_id, full_name")
-        .in("user_id", ids);
-      names = Object.fromEntries((profs || []).map((p) => [p.user_id, p.full_name]));
-    }
-    setComments((c || []).map((x: any) => ({ ...x, author: names[x.user_id] || "User" })));
-    setAttachments(a || []);
-  };
+  }, [open, taskId, defaultStatus, isAdmin, loadTask, resetForm]);
 
   const save = async () => {
     if (!user || !title.trim()) return toast.error("Title required");
+    const nextProgress = status === "completed" ? 100 : progress;
+    const progressIncreased = taskId ? nextProgress > initialProgress : false;
+    if (progressIncreased && !progressNote.trim()) {
+      return toast.error("Progress update note is required when progress increases");
+    }
+
     setLoading(true);
+    if (taskId && !isAdmin) {
+      let { error } = await supabase.from("tasks").update({ progress }).eq("id", taskId);
+      if (!error && progressIncreased) {
+        error = await saveProgressUpdate(taskId, initialProgress, progress, progressNote.trim());
+      }
+      setLoading(false);
+      if (error) return toast.error(error.message);
+      toast.success("Progress updated");
+      onSaved?.();
+      onOpenChange(false);
+      return;
+    }
+
     const tagsArr = tags
       .split(",")
       .map((t) => t.trim())
       .filter(Boolean);
-    const selectedAssignees = isAdmin
-      ? assignedToMany.length
-        ? assignedToMany
-        : assignedTo
-          ? [assignedTo]
-          : []
-      : taskId
-        ? [assignedTo || user.id]
-        : [user.id];
+    const selectedAssignees = Array.from(
+      new Set(
+        (isAdmin
+          ? assignedToMany.length
+            ? assignedToMany
+            : assignedTo
+              ? [assignedTo]
+              : []
+          : taskId
+            ? [assignedTo || user.id]
+            : [user.id]
+        ).filter(Boolean),
+      ),
+    );
     if (!selectedAssignees.length) {
       setLoading(false);
       return toast.error("Select at least one assignee");
@@ -146,7 +205,7 @@ export function TaskDialog({
       description: description || null,
       status,
       priority,
-      progress: status === "completed" ? 100 : progress,
+      progress: nextProgress,
       deadline: deadline ? new Date(deadline).toISOString() : null,
       assigned_to: selectedAssignees[0],
       tags: tagsArr,
@@ -181,8 +240,7 @@ export function TaskDialog({
         } else {
           error = deleteResult.error;
         }
-      }
-      else if (rows.length) {
+      } else if (rows.length) {
         const insertResult = await supabase.from("task_assignees").insert(rows);
         if (insertResult.error) {
           if (isMissingSupabaseTableError(insertResult.error, "task_assignees")) {
@@ -193,10 +251,15 @@ export function TaskDialog({
         }
       }
     }
+    if (!error && savedTaskId && progressIncreased) {
+      error = await saveProgressUpdate(savedTaskId, initialProgress, nextProgress, progressNote.trim());
+    }
     setLoading(false);
     if (error) return toast.error(error.message);
     if (usedLegacyAssignment && selectedAssignees.length > 1) {
-      toast.warning("Task saved for the first assignee. Apply the task_assignees migration to enable multiple assignees.");
+      toast.warning(
+        "Task saved for the first assignee. Apply the task_assignees migration to enable multiple assignees.",
+      );
     } else {
       toast.success(taskId ? "Task updated" : "Task created");
     }
@@ -204,8 +267,28 @@ export function TaskDialog({
     onOpenChange(false);
   };
 
+  const saveProgressUpdate = async (
+    savedTaskId: string,
+    oldProgress: number,
+    newProgress: number,
+    note: string,
+  ) => {
+    const { error } = await (supabase as any).from("task_progress_updates").insert({
+      task_id: savedTaskId,
+      user_id: user!.id,
+      old_progress: oldProgress,
+      new_progress: newProgress,
+      note,
+    });
+    if (error && isMissingSupabaseTableError(error, "task_progress_updates")) {
+      return new Error("Apply the task_progress_updates migration before saving progress notes");
+    }
+    return error as Error | null;
+  };
+
   const remove = async () => {
     if (!taskId) return;
+    if (!isAdmin) return toast.error("Only admins can delete tasks");
     if (!confirm("Delete this task?")) return;
     const { error } = await supabase.from("tasks").delete().eq("id", taskId);
     if (error) return toast.error(error.message);
@@ -216,6 +299,7 @@ export function TaskDialog({
 
   const addComment = async () => {
     if (!taskId || !user || !newComment.trim()) return;
+    if (!isAdmin) return toast.error("Only admins can add comments");
     const { error } = await supabase
       .from("task_comments")
       .insert({ task_id: taskId, user_id: user.id, comment: newComment.trim() });
@@ -278,6 +362,7 @@ export function TaskDialog({
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              disabled={!canEditTaskFields}
               placeholder="What needs to be done?"
             />
           </div>
@@ -287,6 +372,7 @@ export function TaskDialog({
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              disabled={!canEditTaskFields}
               rows={3}
               placeholder="Add details…"
             />
@@ -295,7 +381,11 @@ export function TaskDialog({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Status</Label>
-              <Select value={status} onValueChange={(v) => setStatus(v as TaskStatus)}>
+              <Select
+                value={status}
+                onValueChange={(v) => setStatus(v as TaskStatus)}
+                disabled={!canEditTaskFields}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -310,7 +400,11 @@ export function TaskDialog({
             </div>
             <div>
               <Label>Priority</Label>
-              <Select value={priority} onValueChange={(v) => setPriority(v as TaskPriority)}>
+              <Select
+                value={priority}
+                onValueChange={(v) => setPriority(v as TaskPriority)}
+                disabled={!canEditTaskFields}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -347,6 +441,43 @@ export function TaskDialog({
                 className="w-20 tabular-nums"
               />
             </div>
+            {taskId && progress > initialProgress && (
+              <div className="mt-3">
+                <Label>Progress update note</Label>
+                <Textarea
+                  value={progressNote}
+                  onChange={(e) => setProgressNote(e.target.value)}
+                  rows={3}
+                  placeholder={`What was completed from ${initialProgress}% to ${progress}%?`}
+                  className="mt-1"
+                />
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Required because progress increased.
+                </div>
+              </div>
+            )}
+            {taskId && progressUpdates.length > 0 && (
+              <div className="mt-4 rounded-lg border border-border bg-muted/20 p-3">
+                <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+                  <TrendingUp size={14} className="text-primary" />
+                  Progress updates
+                </div>
+                <div className="max-h-44 space-y-2 overflow-y-auto">
+                  {progressUpdates.map((update) => (
+                    <div key={update.id} className="rounded-md bg-background/50 p-2 text-sm">
+                      <div className="mb-1 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">
+                          {update.old_progress}% -&gt; {update.new_progress}%
+                        </span>
+                        <span>{format(new Date(update.created_at), "MMM d, HH:mm")}</span>
+                      </div>
+                      <div className="text-foreground">{update.note}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">{update.author}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -356,6 +487,7 @@ export function TaskDialog({
                 type="datetime-local"
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
+                disabled={!canEditTaskFields}
               />
             </div>
             <div>
@@ -363,6 +495,7 @@ export function TaskDialog({
               <Input
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
+                disabled={!canEditTaskFields}
                 placeholder="frontend, urgent"
               />
             </div>
@@ -442,24 +575,28 @@ export function TaskDialog({
                     <div className="text-xs text-muted-foreground">No comments yet</div>
                   )}
                 </div>
-                <div className="flex gap-2">
-                  <Input
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Write a comment…"
-                    onKeyDown={(e) => e.key === "Enter" && addComment()}
-                  />
-                  <Button onClick={addComment} size="icon" className="neon-button">
-                    <Send size={14} />
-                  </Button>
-                </div>
+                {isAdmin ? (
+                  <div className="flex gap-2">
+                    <Input
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Write a comment..."
+                      onKeyDown={(e) => e.key === "Enter" && addComment()}
+                    />
+                    <Button onClick={addComment} size="icon" className="neon-button">
+                      <Send size={14} />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-xs text-muted-foreground">Comments are added by admins.</div>
+                )}
               </div>
             </>
           )}
 
           <div className="flex justify-between pt-4 border-t border-border">
             <div>
-              {taskId && (
+              {canDeleteTask && (
                 <Button
                   variant="outline"
                   onClick={remove}
@@ -476,7 +613,13 @@ export function TaskDialog({
                 Cancel
               </Button>
               <Button onClick={save} disabled={loading} className="neon-button">
-                {loading ? "Saving…" : taskId ? "Save changes" : "Create task"}
+                {loading
+                  ? "Saving..."
+                  : taskId && !isAdmin
+                    ? "Save progress"
+                    : taskId
+                      ? "Save changes"
+                      : "Create task"}
               </Button>
             </div>
           </div>
@@ -484,4 +627,22 @@ export function TaskDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+function toDateTimeLocalValue(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const pad = (part: number) => String(part).padStart(2, "0");
+  return [
+    date.getFullYear(),
+    "-",
+    pad(date.getMonth() + 1),
+    "-",
+    pad(date.getDate()),
+    "T",
+    pad(date.getHours()),
+    ":",
+    pad(date.getMinutes()),
+  ].join("");
 }

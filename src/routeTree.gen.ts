@@ -28,6 +28,7 @@ import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppCheckInRouteImport } from './routes/_app/check-in'
 import { Route as AppAdminIndexRouteImport } from './routes/_app/admin/index'
 import { Route as AppAdminTasksRouteImport } from './routes/_app/admin/tasks'
+import { Route as AppAdminStandupsRouteImport } from './routes/_app/admin/standups'
 import { Route as AppAdminSettingsRouteImport } from './routes/_app/admin/settings'
 import { Route as AppAdminReportsRouteImport } from './routes/_app/admin/reports'
 import { Route as AppAdminQrIdsRouteImport } from './routes/_app/admin/qr-ids'
@@ -131,6 +132,11 @@ const AppAdminTasksRoute = AppAdminTasksRouteImport.update({
   path: '/admin/tasks',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminStandupsRoute = AppAdminStandupsRouteImport.update({
+  id: '/admin/standups',
+  path: '/admin/standups',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminSettingsRoute = AppAdminSettingsRouteImport.update({
   id: '/admin/settings',
   path: '/admin/settings',
@@ -197,6 +203,7 @@ export interface FileRoutesByFullPath {
   '/admin/qr-ids': typeof AppAdminQrIdsRoute
   '/admin/reports': typeof AppAdminReportsRoute
   '/admin/settings': typeof AppAdminSettingsRoute
+  '/admin/standups': typeof AppAdminStandupsRoute
   '/admin/tasks': typeof AppAdminTasksRoute
   '/admin/': typeof AppAdminIndexRoute
 }
@@ -225,6 +232,7 @@ export interface FileRoutesByTo {
   '/admin/qr-ids': typeof AppAdminQrIdsRoute
   '/admin/reports': typeof AppAdminReportsRoute
   '/admin/settings': typeof AppAdminSettingsRoute
+  '/admin/standups': typeof AppAdminStandupsRoute
   '/admin/tasks': typeof AppAdminTasksRoute
   '/admin': typeof AppAdminIndexRoute
 }
@@ -255,6 +263,7 @@ export interface FileRoutesById {
   '/_app/admin/qr-ids': typeof AppAdminQrIdsRoute
   '/_app/admin/reports': typeof AppAdminReportsRoute
   '/_app/admin/settings': typeof AppAdminSettingsRoute
+  '/_app/admin/standups': typeof AppAdminStandupsRoute
   '/_app/admin/tasks': typeof AppAdminTasksRoute
   '/_app/admin/': typeof AppAdminIndexRoute
 }
@@ -285,6 +294,7 @@ export interface FileRouteTypes {
     | '/admin/qr-ids'
     | '/admin/reports'
     | '/admin/settings'
+    | '/admin/standups'
     | '/admin/tasks'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -313,6 +323,7 @@ export interface FileRouteTypes {
     | '/admin/qr-ids'
     | '/admin/reports'
     | '/admin/settings'
+    | '/admin/standups'
     | '/admin/tasks'
     | '/admin'
   id:
@@ -342,6 +353,7 @@ export interface FileRouteTypes {
     | '/_app/admin/qr-ids'
     | '/_app/admin/reports'
     | '/_app/admin/settings'
+    | '/_app/admin/standups'
     | '/_app/admin/tasks'
     | '/_app/admin/'
   fileRoutesById: FileRoutesById
@@ -493,6 +505,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminTasksRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin/standups': {
+      id: '/_app/admin/standups'
+      path: '/admin/standups'
+      fullPath: '/admin/standups'
+      preLoaderRoute: typeof AppAdminStandupsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/admin/settings': {
       id: '/_app/admin/settings'
       path: '/admin/settings'
@@ -569,6 +588,7 @@ interface AppRouteChildren {
   AppAdminQrIdsRoute: typeof AppAdminQrIdsRoute
   AppAdminReportsRoute: typeof AppAdminReportsRoute
   AppAdminSettingsRoute: typeof AppAdminSettingsRoute
+  AppAdminStandupsRoute: typeof AppAdminStandupsRoute
   AppAdminTasksRoute: typeof AppAdminTasksRoute
   AppAdminIndexRoute: typeof AppAdminIndexRoute
 }
@@ -590,6 +610,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminQrIdsRoute: AppAdminQrIdsRoute,
   AppAdminReportsRoute: AppAdminReportsRoute,
   AppAdminSettingsRoute: AppAdminSettingsRoute,
+  AppAdminStandupsRoute: AppAdminStandupsRoute,
   AppAdminTasksRoute: AppAdminTasksRoute,
   AppAdminIndexRoute: AppAdminIndexRoute,
 }

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader, StatCard } from "@/components/PageHeader";
@@ -24,7 +24,7 @@ function StandupPage() {
   const [history, setHistory] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!user) return;
     const { data } = await supabase
       .from("standups")
@@ -43,10 +43,10 @@ function StandupPage() {
       .order("date", { ascending: false })
       .limit(7);
     setHistory(hist || []);
-  };
+  }, [user, date]);
   useEffect(() => {
     load();
-  }, [user, date]);
+  }, [load]);
 
   const save = async () => {
     if (!user) return;
@@ -72,7 +72,7 @@ function StandupPage() {
     <>
       <PageHeader
         title="Daily Standup"
-        subtitle="Share what you did, what you'll do, and what's blocking you"
+        subtitle="Share what you worked on today, what you'll work on tomorrow, and what's blocking you"
         actions={
           <Input
             type="date"
@@ -108,7 +108,7 @@ function StandupPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <GlassCard className="lg:col-span-2 space-y-4">
           <div>
-            <Label>Yesterday I worked on</Label>
+            <Label>Today I worked on</Label>
             <Textarea
               rows={4}
               value={yesterday}
@@ -117,7 +117,7 @@ function StandupPage() {
             />
           </div>
           <div>
-            <Label>Today I plan to</Label>
+            <Label>Tomorrow I plan to work on</Label>
             <Textarea
               rows={4}
               value={today}

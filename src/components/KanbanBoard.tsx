@@ -68,8 +68,16 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
         aCounts[a.task_id] = (aCounts[a.task_id] || 0) + 1;
       });
     }
+    const visibleTasks =
+      scope === "mine"
+        ? (data || []).filter(
+            (t: any) =>
+              t.assigned_to === user.id || (assignees || []).some((a) => a.task_id === t.id && a.user_id === user.id),
+          )
+        : data || [];
+
     setTasks(
-      (data || []).map((t: any) => ({
+      visibleTasks.map((t: any) => ({
         ...t,
         assignee_name: names[t.assigned_to],
         assignee_names: assigneesByTask[t.id]?.length
@@ -79,7 +87,7 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
         attachments_count: aCounts[t.id] || 0,
       })),
     );
-  }, [user]);
+  }, [scope, user]);
 
   useEffect(() => {
     load();

@@ -29,6 +29,7 @@ export function TaskCard({
   onDragStart?: (e: React.DragEvent) => void;
 }) {
   const overdue = task.deadline && isPast(new Date(task.deadline)) && task.status !== "completed";
+  const dueCountdown = task.deadline ? getDueCountdown(task.deadline, task.status) : null;
   const assigneeNames = task.assignee_names?.length
     ? task.assignee_names
     : task.assignee_name
@@ -100,6 +101,7 @@ export function TaskCard({
               <span className={`flex items-center gap-1 ${overdue ? "text-destructive" : ""}`}>
                 <Calendar size={11} />
                 {format(new Date(task.deadline), "MMM d")}
+                {dueCountdown && <span className="font-medium">({dueCountdown})</span>}
               </span>
             )}
             {!!task.comments_count && (
@@ -143,4 +145,28 @@ export function TaskCard({
       </div>
     </motion.div>
   );
+}
+
+function getDueCountdown(deadline: string, status: TaskStatus) {
+  if (status === "completed") return "done";
+
+  const due = new Date(deadline);
+  const now = new Date();
+  const diffMs = due.getTime() - now.getTime();
+  const absMs = Math.abs(diffMs);
+  const dayMs = 24 * 60 * 60 * 1000;
+  const hourMs = 60 * 60 * 1000;
+
+  if (diffMs < 0) {
+    const overdueDays = Math.floor(absMs / dayMs);
+    if (overdueDays >= 1) return `${overdueDays}d overdue`;
+    return "overdue";
+  }
+
+  const days = Math.floor(diffMs / dayMs);
+  if (days >= 1) return `${days}d left`;
+
+  const hours = Math.ceil(diffMs / hourMs);
+  if (hours > 1) return `${hours}h left`;
+  return "due soon";
 }

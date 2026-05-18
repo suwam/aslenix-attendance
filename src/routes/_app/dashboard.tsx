@@ -16,6 +16,7 @@ import {
   ListTodo,
   Activity,
   Zap,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfMonth } from "date-fns";
@@ -35,6 +36,8 @@ function EmployeeDashboard() {
     score: 0,
   });
   const [recent, setRecent] = useState<any[]>([]);
+  const [deadlineTasks, setDeadlineTasks] = useState<any[]>([]);
+  const [nowTick, setNowTick] = useState(Date.now());
   const [busy, setBusy] = useState(false);
 
   const todayDate = new Date().toISOString().slice(0, 10);
@@ -64,7 +67,11 @@ function EmployeeDashboard() {
     });
 
     // Tasks + productivity
-    const { data: tasks } = await supabase.from("tasks").select("*").eq("assigned_to", user.id);
+    const { data: tasks } = await supabase
+      .from("tasks")
+      .select("*")
+      .eq("assigned_to", user.id)
+      .order("deadline", { ascending: true, nullsFirst: false });
     const total = tasks?.length || 0;
     const completed = tasks?.filter((t) => t.status === "completed").length || 0;
     const active =
@@ -88,6 +95,17 @@ function EmployeeDashboard() {
       targetHours: 160,
     });
     setTaskStats({ total, completed, active, overdue, score });
+    setDeadlineTasks(
+      (tasks || [])
+        .filter((t) => t.status !== "completed")
+        .sort((a, b) => {
+          if (!a.deadline && !b.deadline) return 0;
+          if (!a.deadline) return 1;
+          if (!b.deadline) return -1;
+          return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+        })
+        .slice(0, 6),
+    );
 
     // Recent activity = recent task updates + own standups
     const [{ data: rt }, { data: rs }] = await Promise.all([
@@ -123,6 +141,11 @@ function EmployeeDashboard() {
   useEffect(() => {
     load();
   }, [user]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNowTick(Date.now()), 60000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   const checkIn = async () => {
     if (!user) return;
@@ -294,6 +317,77 @@ function EmployeeDashboard() {
         />
       </div>
 
+      <GlassCard className="mb-6" glow="red">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div>
+            <h3 className="font-semibold flex items-center gap-2">
+              <Clock size={16} className="text-primary" />
+              Task deadlines
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Countdown for active tasks assigned to you
+            </p>
+          </div>
+          <Link to="/tasks" className="text-xs text-primary hover:underline">
+            Open tasks
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          {deadlineTasks.map((task) => {
+            const countdown = getTaskCountdown(task.deadline, nowTick);
+            const isOverdue = countdown.state === "overdue";
+            const isDueSoon = countdown.state === "soon";
+
+            return (
+              <Link
+                key={task.id}
+                to="/tasks"
+                className="rounded-xl border border-border bg-muted/20 p-3 transition hover:border-primary/40 hover:bg-muted/30"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium">{task.title}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {task.deadline ? format(new Date(task.deadline), "MMM d, h:mm a") : "No deadline"}
+                    </div>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-lg px-2 py-1 text-xs font-semibold tabular-nums ${
+                      isOverdue
+                        ? "bg-destructive/15 text-destructive"
+                        : isDueSoon
+                          ? "bg-amber-500/15 text-amber-400"
+                          : "bg-primary/15 text-primary"
+                    }`}
+                  >
+                    {countdown.label}
+                  </span>
+                </div>
+                <div className="mt-3">
+                  <div className="mb-1 flex items-center justify-between text-[11px] text-muted-foreground">
+                    <span className="capitalize">{task.status.replaceAll("_", " ")}</span>
+                    <span>{task.progress}%</span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-muted/50">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${task.progress}%`, background: "var(--gradient-brand)" }}
+                    />
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+          {deadlineTasks.length === 0 && (
+            <div className="md:col-span-2 xl:col-span-3 rounded-xl border border-border bg-muted/20 p-6 text-center text-sm text-muted-foreground">
+              <AlertCircle size={18} className="mx-auto mb-2 text-primary" />
+              No active task deadlines right now.
+            </div>
+          )}
+        </div>
+      </GlassCard>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <GlassCard glow="blue">
           <div className="flex items-center justify-between mb-3">
@@ -374,4 +468,35 @@ function EmployeeDashboard() {
       </div>
     </>
   );
+}
+
+function getTaskCountdown(deadline: string | null, nowMs: number) {
+  if (!deadline) return { label: "No deadline", state: "none" as const };
+
+  const dueMs = new Date(deadline).getTime();
+  const diffMs = dueMs - nowMs;
+  const absMs = Math.abs(diffMs);
+  const minuteMs = 60 * 1000;
+  const hourMs = 60 * minuteMs;
+  const dayMs = 24 * hourMs;
+
+  const formatParts = (ms: number) => {
+    const days = Math.floor(ms / dayMs);
+    const hours = Math.floor((ms % dayMs) / hourMs);
+    const minutes = Math.max(1, Math.ceil((ms % hourMs) / minuteMs));
+
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  };
+
+  if (diffMs < 0) {
+    return { label: `${formatParts(absMs)} overdue`, state: "overdue" as const };
+  }
+
+  if (diffMs <= 24 * hourMs) {
+    return { label: `${formatParts(diffMs)} left`, state: "soon" as const };
+  }
+
+  return { label: `${formatParts(diffMs)} left`, state: "ok" as const };
 }

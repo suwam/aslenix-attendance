@@ -32,6 +32,7 @@ const adminNav: NavItem[] = [
   { to: "/admin/employees", label: "Employees", icon: Users },
   { to: "/admin/qr-ids", label: "Digital QR IDs", icon: QrCode },
   { to: "/admin/tasks", label: "Tasks", icon: ClipboardList },
+  { to: "/admin/standups", label: "Daily Standups", icon: ClipboardList },
   { to: "/admin/attendance", label: "Attendance", icon: Clock },
   { to: "/admin/leaves", label: "Leave Requests", icon: Calendar },
   { to: "/admin/reports", label: "Reports", icon: FileBarChart2 },
