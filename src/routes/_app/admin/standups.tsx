@@ -6,6 +6,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { Input } from "@/components/ui/input";
 import { AlertTriangle, CalendarCheck2, Clock, Loader2, Search } from "lucide-react";
 import { format } from "date-fns";
+import { formatWorkHours } from "@/lib/work-hours";
 
 export const Route = createFileRoute("/_app/admin/standups")({ component: AdminStandupsPage });
 
@@ -77,13 +78,13 @@ function AdminStandupsPage() {
         <StatCard label="Submitted" value={filtered.length} icon={CalendarCheck2} accent="green" />
         <StatCard
           label="Total hours"
-          value={`${totalHours.toFixed(1)}h`}
+          value={formatWorkHours(totalHours)}
           icon={Clock}
           accent="blue"
         />
         <StatCard
           label="Avg hours"
-          value={`${(totalHours / Math.max(1, filtered.length)).toFixed(1)}h`}
+          value={formatWorkHours(totalHours / Math.max(1, filtered.length))}
           icon={Clock}
           accent="amber"
         />
@@ -141,7 +142,7 @@ function AdminStandupsPage() {
                         <span className="text-muted-foreground">None</span>
                       )}
                     </td>
-                    <td className="p-4 tabular-nums">{Number(row.work_hours || 0).toFixed(1)}h</td>
+                    <td className="p-4 tabular-nums">{formatWorkHours(row.work_hours)}</td>
                     <td className="p-4 text-muted-foreground whitespace-nowrap">
                       {format(new Date(row.updated_at), "MMM d HH:mm")}
                     </td>

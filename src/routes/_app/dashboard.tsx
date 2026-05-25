@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner";
 import { format, startOfMonth } from "date-fns";
 import { productivityScore } from "@/lib/tasks-utils";
+import { formatWorkHours } from "@/lib/work-hours";
 
 export const Route = createFileRoute("/_app/dashboard")({ component: EmployeeDashboard });
 
@@ -217,7 +218,7 @@ function EmployeeDashboard() {
       .eq("id", today.id);
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success(`Checked out — ${hours}h worked`);
+    toast.success(`Checked out — ${formatWorkHours(hours)} worked`);
     load();
   };
 
@@ -271,7 +272,7 @@ function EmployeeDashboard() {
                 </Button>
               ) : (
                 <div className="text-xs text-muted-foreground">
-                  Worked {Number(today.work_hours).toFixed(2)}h today
+                  Worked {formatWorkHours(today.work_hours)} today
                 </div>
               )}
             </div>
@@ -293,7 +294,7 @@ function EmployeeDashboard() {
               <div>
                 <div className="text-xs text-muted-foreground">Hours</div>
                 <div className="font-medium tabular-nums">
-                  {today.work_hours ? `${Number(today.work_hours).toFixed(2)}h` : "—"}
+                  {today.work_hours ? formatWorkHours(today.work_hours) : "—"}
                 </div>
               </div>
             </div>
@@ -342,7 +343,7 @@ function EmployeeDashboard() {
         <StatCard label="Leave days" value={monthStats.leave} icon={Calendar} accent="blue" />
         <StatCard
           label="Hours worked"
-          value={`${monthStats.hours}h`}
+          value={formatWorkHours(monthStats.hours)}
           icon={TrendingUp}
           accent="red"
         />

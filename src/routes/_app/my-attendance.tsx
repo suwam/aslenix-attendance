@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { AttendanceLocationLinks } from "@/components/AttendanceLocationLinks";
 import { Input } from "@/components/ui/input";
+import { formatWorkHours } from "@/lib/work-hours";
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -78,7 +79,7 @@ function MyAttendance() {
                       />
                     </td>
                     <td className="p-4 tabular-nums">
-                      {r.work_hours ? `${Number(r.work_hours).toFixed(2)}h` : "—"}
+                      {r.work_hours ? formatWorkHours(r.work_hours) : "—"}
                     </td>
                     <td className="p-4">
                       <span

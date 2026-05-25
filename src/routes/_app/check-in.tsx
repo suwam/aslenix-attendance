@@ -7,6 +7,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { LiveClock } from "@/components/LiveClock";
 import { Button } from "@/components/ui/button";
 import { getVerifiedAttendanceLocation } from "@/lib/attendance-location";
+import { formatWorkHours } from "@/lib/work-hours";
 import { LogIn, LogOut, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -103,7 +104,7 @@ function CheckInPage() {
       .eq("id", today.id);
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success(`Checked out — ${hours}h`);
+    toast.success(`Checked out — ${formatWorkHours(hours)}`);
     load();
   };
 
@@ -148,7 +149,7 @@ function CheckInPage() {
               <div className="text-sm text-muted-foreground">
                 {format(new Date(today.check_in_time), "HH:mm")} →{" "}
                 {format(new Date(today.check_out_time), "HH:mm")} (
-                {Number(today.work_hours).toFixed(2)}h)
+                {formatWorkHours(today.work_hours)})
               </div>
             </div>
           )}

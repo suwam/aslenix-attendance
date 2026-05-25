@@ -17,6 +17,7 @@ import { TaskDialog } from "@/components/TaskDialog";
 import { Plus, ListTodo, CheckCircle2, AlertTriangle, Activity } from "lucide-react";
 import { format } from "date-fns";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
+import { formatWorkHours } from "@/lib/work-hours";
 
 export const Route = createFileRoute("/_app/admin/tasks")({ component: AdminTasks });
 
@@ -97,7 +98,7 @@ function AdminTasks() {
         id: s.id,
         when: s.updated_at,
         who: names[s.user_id] || "User",
-        text: `Standup for ${s.date} (${Number(s.work_hours || 0).toFixed(1)}h)`,
+        text: `Standup for ${s.date} (${formatWorkHours(s.work_hours)})`,
       })),
     ]
       .sort((a, b) => +new Date(b.when) - +new Date(a.when))

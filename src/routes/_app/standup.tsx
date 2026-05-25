@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Save, Calendar, Clock, CheckCircle2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { formatWorkHours } from "@/lib/work-hours";
 
 export const Route = createFileRoute("/_app/standup")({ component: StandupPage });
 
@@ -128,7 +129,10 @@ function StandupPage() {
         <StatCard label="Standups (7d)" value={history.length} icon={Calendar} accent="blue" />
         <StatCard
           label="Avg hours"
-          value={`${(history.reduce((a, h) => a + Number(h.work_hours || 0), 0) / Math.max(1, history.length)).toFixed(1)}h`}
+          value={formatWorkHours(
+            history.reduce((a, h) => a + Number(h.work_hours || 0), 0) /
+              Math.max(1, history.length),
+          )}
           icon={Clock}
           accent="green"
         />
@@ -179,11 +183,8 @@ function StandupPage() {
             <div>
               <Label>Work hours</Label>
               <Input
-                type="number"
-                min={0}
-                max={24}
-                step={0.25}
-                value={hours}
+                type="text"
+                value={formatWorkHours(hours)}
                 readOnly
               />
               <div className="mt-1 text-xs text-muted-foreground">
@@ -217,7 +218,7 @@ function StandupPage() {
                   )}
                 </div>
                 <div className="text-[10px] text-muted-foreground mt-1">
-                  {Number(h.work_hours || 0).toFixed(1)}h logged
+                  {formatWorkHours(h.work_hours)} logged
                 </div>
               </li>
             ))}

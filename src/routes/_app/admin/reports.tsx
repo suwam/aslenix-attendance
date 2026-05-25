@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Download, Printer, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { formatWorkHours } from "@/lib/work-hours";
 
 export const Route = createFileRoute("/_app/admin/reports")({ component: ReportsPage });
 
@@ -78,7 +79,7 @@ function ReportsPage() {
         row.department || "",
         attendance?.check_in_time ? format(new Date(attendance.check_in_time), "HH:mm") : "",
         attendance?.check_out_time ? format(new Date(attendance.check_out_time), "HH:mm") : "",
-        attendance?.work_hours ?? "",
+        attendance?.work_hours ? formatWorkHours(attendance.work_hours) : "",
         attendance ? attendanceLabel(attendance) : "Absent",
         attendance?.is_late ? "Yes" : "No",
         attendance?.is_early_checkout ? "Yes" : "No",
@@ -186,7 +187,7 @@ function ReportsPage() {
                       </td>
                       <td className="p-3 tabular-nums">
                         {attendance?.work_hours
-                          ? `${Number(attendance.work_hours).toFixed(2)}h`
+                          ? formatWorkHours(attendance.work_hours)
                           : "—"}
                       </td>
                       <td className="p-3">
