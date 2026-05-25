@@ -34,6 +34,9 @@ function SettingsPage() {
         office_start_time: s.office_start_time,
         office_end_time: s.office_end_time,
         late_after_time: s.late_after_time,
+        office_latitude: parseOptionalNumber(s.office_latitude),
+        office_longitude: parseOptionalNumber(s.office_longitude),
+        attendance_radius_meters: Number(s.attendance_radius_meters) || 20,
       })
       .eq("id", s.id);
     setSaving(false);
@@ -96,6 +99,43 @@ function SettingsPage() {
             </div>
           </div>
         </GlassCard>
+        <GlassCard>
+          <h3 className="font-semibold mb-4">Office location</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Latitude</Label>
+              <Input
+                type="number"
+                step="any"
+                value={s.office_latitude ?? ""}
+                onChange={(e) => setS({ ...s, office_latitude: e.target.value })}
+                placeholder="27.7172"
+              />
+            </div>
+            <div>
+              <Label>Longitude</Label>
+              <Input
+                type="number"
+                step="any"
+                value={s.office_longitude ?? ""}
+                onChange={(e) => setS({ ...s, office_longitude: e.target.value })}
+                placeholder="85.3240"
+              />
+            </div>
+            <div className="col-span-2">
+              <Label>Allowed radius (meters)</Label>
+              <Input
+                type="number"
+                min={1}
+                value={s.attendance_radius_meters ?? 20}
+                onChange={(e) => setS({ ...s, attendance_radius_meters: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Employees must be inside this radius to check in or check out.
+              </p>
+            </div>
+          </div>
+        </GlassCard>
       </div>
       <div className="mt-6">
         <Button onClick={save} disabled={saving} className="neon-button rounded-xl">
@@ -105,4 +145,10 @@ function SettingsPage() {
       </div>
     </>
   );
+}
+
+function parseOptionalNumber(value: unknown) {
+  if (value === "" || value == null) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }

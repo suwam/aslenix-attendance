@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { LiveClock } from "@/components/LiveClock";
 import { Button } from "@/components/ui/button";
+import { getVerifiedAttendanceLocation } from "@/lib/attendance-location";
 import { LogIn, LogOut, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -38,6 +39,13 @@ function CheckInPage() {
   const checkIn = async () => {
     if (!user) return;
     setBusy(true);
+    let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
+    try {
+      location = await getVerifiedAttendanceLocation();
+    } catch (error) {
+      setBusy(false);
+      return toast.error(error instanceof Error ? error.message : "Unable to verify location");
+    }
     const { data: s } = await supabase
       .from("settings")
       .select("late_after_time")
@@ -52,6 +60,9 @@ function CheckInPage() {
       user_id: user.id,
       date: todayDate,
       check_in_time: now.toISOString(),
+      check_in_latitude: location.latitude,
+      check_in_longitude: location.longitude,
+      check_in_accuracy_meters: location.accuracy,
       status: isLate ? "late" : "present",
       is_late: isLate,
     });
@@ -63,12 +74,25 @@ function CheckInPage() {
   const checkOut = async () => {
     if (!today) return;
     setBusy(true);
+    let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
+    try {
+      location = await getVerifiedAttendanceLocation();
+    } catch (error) {
+      setBusy(false);
+      return toast.error(error instanceof Error ? error.message : "Unable to verify location");
+    }
     const now = new Date();
     const hours =
       Math.round(((now.getTime() - new Date(today.check_in_time).getTime()) / 3600000) * 100) / 100;
     const { error } = await supabase
       .from("attendance")
-      .update({ check_out_time: now.toISOString(), work_hours: hours })
+      .update({
+        check_out_time: now.toISOString(),
+        check_out_latitude: location.latitude,
+        check_out_longitude: location.longitude,
+        check_out_accuracy_meters: location.accuracy,
+        work_hours: hours,
+      })
       .eq("id", today.id);
     setBusy(false);
     if (error) return toast.error(error.message);

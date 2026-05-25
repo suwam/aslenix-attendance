@@ -34,7 +34,13 @@ export type Database = {
       };
       attendance: {
         Row: {
+          check_in_accuracy_meters: number | null;
+          check_in_latitude: number | null;
+          check_in_longitude: number | null;
           check_in_time: string | null;
+          check_out_accuracy_meters: number | null;
+          check_out_latitude: number | null;
+          check_out_longitude: number | null;
           check_out_time: string | null;
           created_at: string;
           date: string;
@@ -46,7 +52,13 @@ export type Database = {
           work_hours: number | null;
         };
         Insert: {
+          check_in_accuracy_meters?: number | null;
+          check_in_latitude?: number | null;
+          check_in_longitude?: number | null;
           check_in_time?: string | null;
+          check_out_accuracy_meters?: number | null;
+          check_out_latitude?: number | null;
+          check_out_longitude?: number | null;
           check_out_time?: string | null;
           created_at?: string;
           date: string;
@@ -58,7 +70,13 @@ export type Database = {
           work_hours?: number | null;
         };
         Update: {
+          check_in_accuracy_meters?: number | null;
+          check_in_latitude?: number | null;
+          check_in_longitude?: number | null;
           check_in_time?: string | null;
+          check_out_accuracy_meters?: number | null;
+          check_out_latitude?: number | null;
+          check_out_longitude?: number | null;
           check_out_time?: string | null;
           created_at?: string;
           date?: string;
@@ -217,29 +235,38 @@ export type Database = {
       };
       settings: {
         Row: {
+          attendance_radius_meters: number;
           company_logo: string | null;
           company_name: string;
           id: string;
           late_after_time: string;
           office_end_time: string;
+          office_latitude: number | null;
+          office_longitude: number | null;
           office_start_time: string;
           updated_at: string;
         };
         Insert: {
+          attendance_radius_meters?: number;
           company_logo?: string | null;
           company_name?: string;
           id?: string;
           late_after_time?: string;
           office_end_time?: string;
+          office_latitude?: number | null;
+          office_longitude?: number | null;
           office_start_time?: string;
           updated_at?: string;
         };
         Update: {
+          attendance_radius_meters?: number;
           company_logo?: string | null;
           company_name?: string;
           id?: string;
           late_after_time?: string;
           office_end_time?: string;
+          office_latitude?: number | null;
+          office_longitude?: number | null;
           office_start_time?: string;
           updated_at?: string;
         };
@@ -373,6 +400,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "task_comments_task_id_fkey";
+            columns: ["task_id"];
+            isOneToOne: false;
+            referencedRelation: "tasks";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      task_progress_updates: {
+        Row: {
+          created_at: string;
+          id: string;
+          new_progress: number;
+          note: string;
+          old_progress: number;
+          task_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          new_progress: number;
+          note: string;
+          old_progress: number;
+          task_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          new_progress?: number;
+          note?: string;
+          old_progress?: number;
+          task_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "task_progress_updates_task_id_fkey";
             columns: ["task_id"];
             isOneToOne: false;
             referencedRelation: "tasks";

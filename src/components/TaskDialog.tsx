@@ -70,6 +70,7 @@ export function TaskDialog({
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
   const [attachments, setAttachments] = useState<any[]>([]);
+  const [progressUpdatesUnavailable, setProgressUpdatesUnavailable] = useState(false);
 
   const resetForm = useCallback(() => {
     setTitle("");
@@ -79,6 +80,7 @@ export function TaskDialog({
     setInitialProgress(0);
     setProgressNote("");
     setProgressUpdates([]);
+    setProgressUpdatesUnavailable(false);
     setDeadline("");
     setAssignedTo(isAdmin ? "" : user?.id || "");
     setAssignedToMany(isAdmin ? [] : user?.id ? [user.id] : []);
@@ -93,7 +95,7 @@ export function TaskDialog({
       supabase.from("tasks").select("*").eq("id", taskId).maybeSingle(),
       supabase.from("task_comments").select("*").eq("task_id", taskId).order("created_at"),
       supabase.from("task_attachments").select("*").eq("task_id", taskId).order("created_at"),
-      (supabase as any)
+      supabase
         .from("task_progress_updates")
         .select("*")
         .eq("task_id", taskId)
@@ -120,10 +122,10 @@ export function TaskDialog({
       setTags((t.tags || []).join(", "));
     }
     // hydrate user names for comments
-    const progressRows =
-      progressResult.error && isMissingSupabaseTableError(progressResult.error, "task_progress_updates")
-        ? []
-        : progressResult.data || [];
+    const progressTableMissing =
+      progressResult.error && isMissingSupabaseTableError(progressResult.error, "task_progress_updates");
+    setProgressUpdatesUnavailable(Boolean(progressTableMissing));
+    const progressRows = progressTableMissing ? [] : progressResult.data || [];
     const ids = Array.from(
       new Set([...(c || []).map((x: any) => x.user_id), ...progressRows.map((x: any) => x.user_id)]),
     );
@@ -167,12 +169,27 @@ export function TaskDialog({
     setLoading(true);
     if (taskId && !isAdmin) {
       let { error } = await supabase.from("tasks").update({ progress }).eq("id", taskId);
+      let progressNoteNotSaved = false;
       if (!error && progressIncreased) {
-        error = await saveProgressUpdate(taskId, initialProgress, progress, progressNote.trim());
+        const progressUpdateResult = await saveProgressUpdate(
+          taskId,
+          initialProgress,
+          progress,
+          progressNote.trim(),
+        );
+        if (progressUpdateResult.missingTable) {
+          progressNoteNotSaved = true;
+        } else {
+          error = progressUpdateResult.error;
+        }
       }
       setLoading(false);
       if (error) return toast.error(error.message);
-      toast.success("Progress updated");
+      if (progressNoteNotSaved) {
+        toast.warning("Progress updated. Apply the task_progress_updates migration to save notes.");
+      } else {
+        toast.success("Progress updated");
+      }
       onSaved?.();
       onOpenChange(false);
       return;
@@ -251,12 +268,25 @@ export function TaskDialog({
         }
       }
     }
+    let progressNoteNotSaved = false;
     if (!error && savedTaskId && progressIncreased) {
-      error = await saveProgressUpdate(savedTaskId, initialProgress, nextProgress, progressNote.trim());
+      const progressUpdateResult = await saveProgressUpdate(
+        savedTaskId,
+        initialProgress,
+        nextProgress,
+        progressNote.trim(),
+      );
+      if (progressUpdateResult.missingTable) {
+        progressNoteNotSaved = true;
+      } else {
+        error = progressUpdateResult.error;
+      }
     }
     setLoading(false);
     if (error) return toast.error(error.message);
-    if (usedLegacyAssignment && selectedAssignees.length > 1) {
+    if (progressNoteNotSaved) {
+      toast.warning("Task saved. Apply the task_progress_updates migration to save progress notes.");
+    } else if (usedLegacyAssignment && selectedAssignees.length > 1) {
       toast.warning(
         "Task saved for the first assignee. Apply the task_assignees migration to enable multiple assignees.",
       );
@@ -273,7 +303,7 @@ export function TaskDialog({
     newProgress: number,
     note: string,
   ) => {
-    const { error } = await (supabase as any).from("task_progress_updates").insert({
+    const { error } = await supabase.from("task_progress_updates").insert({
       task_id: savedTaskId,
       user_id: user!.id,
       old_progress: oldProgress,
@@ -281,9 +311,10 @@ export function TaskDialog({
       note,
     });
     if (error && isMissingSupabaseTableError(error, "task_progress_updates")) {
-      return new Error("Apply the task_progress_updates migration before saving progress notes");
+      setProgressUpdatesUnavailable(true);
+      return { error: null, missingTable: true };
     }
-    return error as Error | null;
+    return { error: error as Error | null, missingTable: false };
   };
 
   const remove = async () => {
@@ -454,6 +485,11 @@ export function TaskDialog({
                 <div className="mt-1 text-xs text-muted-foreground">
                   Required because progress increased.
                 </div>
+                {progressUpdatesUnavailable && (
+                  <div className="mt-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+                    Progress will save, but notes need the task_progress_updates migration.
+                  </div>
+                )}
               </div>
             )}
             {taskId && progressUpdates.length > 0 && (
