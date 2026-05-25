@@ -18,6 +18,9 @@ import {
   Search,
   QrCode,
   CalendarClock,
+  Crown,
+  MessageSquare,
+  Trophy,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { AslenixLogo } from "@/components/AslenixLogo";
@@ -28,6 +31,9 @@ type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
 
 const adminNav: NavItem[] = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/admin/employee-of-month", label: "Employee of Month", icon: Crown },
+  { to: "/admin/weekly-feedback", label: "Weekly Feedback", icon: MessageSquare },
+  { to: "/admin/achievements", label: "Achievements", icon: Trophy },
   { to: "/admin/approvals", label: "User Approvals", icon: UserCheck },
   { to: "/admin/employees", label: "Employees", icon: Users },
   { to: "/admin/qr-ids", label: "Digital QR IDs", icon: QrCode },
@@ -43,6 +49,7 @@ const adminNav: NavItem[] = [
 
 const empNav: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/achievements", label: "Achievements", icon: Trophy },
   { to: "/tasks", label: "My Tasks", icon: ClipboardList },
   { to: "/meetings", label: "Meetings", icon: CalendarClock },
   { to: "/standup", label: "Daily Standup", icon: ClipboardList },

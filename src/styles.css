@@ -216,6 +216,481 @@
     content: ""; position: absolute; inset: -1px; border-radius: inherit;
     background: var(--gradient-brand); opacity: .25; filter: blur(20px); z-index: -1;
   }
+
+  .achievement-shell {
+    position: relative;
+  }
+  .achievement-tier {
+    position: relative;
+    overflow: hidden;
+    border-radius: 20px;
+    padding: 18px;
+  }
+  .achievement-tier::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(135deg, oklch(0.72 0.22 250 / 0.12), transparent 35%),
+      linear-gradient(315deg, oklch(0.7 0.26 340 / 0.1), transparent 40%);
+  }
+  .achievement-card {
+    position: relative;
+    min-height: 230px;
+    overflow: hidden;
+    border-radius: 18px;
+    border: 1px solid oklch(1 0 0 / 0.1);
+    background:
+      linear-gradient(180deg, oklch(1 0 0 / 0.08), oklch(1 0 0 / 0.025)),
+      oklch(0.14 0.025 265 / 0.78);
+    padding: 18px;
+    box-shadow: 0 18px 50px -28px oklch(0 0 0 / 0.9), inset 0 1px 0 oklch(1 0 0 / 0.1);
+    transition: transform .28s ease, border-color .28s ease, box-shadow .28s ease, filter .28s ease;
+  }
+  .achievement-card::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    opacity: 0;
+    background: linear-gradient(120deg, transparent, oklch(1 0 0 / 0.16), transparent);
+    transform: translateX(-60%);
+    transition: opacity .25s ease, transform .65s ease;
+  }
+  .achievement-card:hover {
+    transform: translateY(-5px);
+    border-color: oklch(1 0 0 / 0.2);
+    box-shadow: 0 24px 70px -32px oklch(0 0 0 / 0.95), 0 0 42px -20px oklch(0.64 0.26 280 / 0.7);
+  }
+  .achievement-card:hover::before {
+    opacity: 1;
+    transform: translateX(65%);
+  }
+  .achievement-icon {
+    display: flex;
+    height: 54px;
+    width: 54px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    color: white;
+    box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.28);
+    transition: transform .28s ease, filter .28s ease;
+  }
+  .achievement-card:hover .achievement-icon {
+    transform: scale(1.06) rotate(-2deg);
+    filter: brightness(1.12);
+  }
+  .achievement-locked {
+    filter: saturate(.75);
+  }
+  .achievement-locked > :not(.absolute) {
+    opacity: .74;
+  }
+  .achievement-unlocked {
+    animation: badge-glow 3s ease-in-out infinite;
+  }
+  .achievement-metric {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 102px;
+    overflow: hidden;
+    border-radius: 18px;
+  }
+  .achievement-bronze {
+    box-shadow: inset 0 0 0 1px oklch(0.72 0.14 55 / 0.18), 0 0 34px -24px oklch(0.72 0.14 55 / 0.9);
+  }
+  .achievement-silver {
+    box-shadow: inset 0 0 0 1px oklch(0.88 0.04 250 / 0.2), 0 0 34px -24px oklch(0.85 0.08 250 / 0.9);
+  }
+  .achievement-gold {
+    box-shadow: inset 0 0 0 1px oklch(0.86 0.16 85 / 0.24), 0 0 34px -24px oklch(0.86 0.16 85 / 0.95);
+  }
+  .achievement-diamond {
+    box-shadow: inset 0 0 0 1px oklch(0.76 0.18 230 / 0.25), 0 0 38px -20px oklch(0.7 0.22 280 / 0.95);
+  }
+
+  .eom-shell {
+    position: relative;
+  }
+  .eom-winner {
+    position: relative;
+    overflow: hidden;
+    min-height: 430px;
+    border-radius: 24px;
+    padding: 24px;
+    background:
+      radial-gradient(circle at 18% 12%, oklch(0.86 0.17 85 / 0.26), transparent 30%),
+      radial-gradient(circle at 92% 16%, oklch(0.65 0.25 300 / 0.22), transparent 34%),
+      linear-gradient(145deg, oklch(0.24 0.05 270 / 0.72), oklch(0.12 0.025 265 / 0.92));
+    border: 1px solid oklch(0.86 0.17 85 / 0.28);
+    box-shadow:
+      0 0 0 1px oklch(1 0 0 / 0.06),
+      0 26px 80px -42px oklch(0.86 0.17 85 / 0.85),
+      inset 0 1px 0 oklch(1 0 0 / 0.14);
+  }
+  .eom-winner::before {
+    content: "";
+    position: absolute;
+    inset: -40%;
+    background: conic-gradient(from 180deg, transparent, oklch(0.86 0.17 85 / 0.16), transparent, oklch(0.65 0.25 300 / 0.12), transparent);
+    animation: eom-spin 10s linear infinite;
+  }
+  .eom-crown {
+    display: flex;
+    height: 58px;
+    width: 58px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 18px;
+    color: white;
+    background: linear-gradient(135deg, #f6c453, #ff7a59 48%, #8b5cf6);
+    box-shadow: 0 0 36px oklch(0.86 0.17 85 / 0.45);
+  }
+  .eom-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    border: 1px solid oklch(1 0 0 / 0.1);
+    background: oklch(1 0 0 / 0.07);
+    padding: 7px 10px;
+    color: white;
+    font-size: 12px;
+    box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.08);
+  }
+  .eom-rank-row {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    transition: background .2s ease, transform .2s ease;
+  }
+  .eom-rank-row:hover {
+    background: oklch(1 0 0 / 0.035);
+    transform: translateX(3px);
+  }
+  .eom-rank-number {
+    display: flex;
+    height: 32px;
+    min-width: 32px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    background: oklch(1 0 0 / 0.06);
+    color: oklch(1 0 0 / 0.72);
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .eom-rank-first {
+    color: white;
+    background: linear-gradient(135deg, #f6c453, #ff4ecd);
+    box-shadow: 0 0 24px oklch(0.86 0.17 85 / 0.34);
+  }
+  .eom-progress {
+    background: linear-gradient(90deg, #21d4fd, #8b5cf6 45%, #ff2d6f);
+    box-shadow: 0 0 18px oklch(0.65 0.25 300 / 0.45);
+    animation: eom-progress-glow 2.4s ease-in-out infinite;
+  }
+  .eom-confetti {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: .8;
+    background-image:
+      radial-gradient(circle, #f6c453 0 2px, transparent 2.5px),
+      radial-gradient(circle, #21d4fd 0 1.8px, transparent 2.3px),
+      radial-gradient(circle, #ff2d6f 0 1.7px, transparent 2.2px),
+      radial-gradient(circle, #9d7cff 0 1.8px, transparent 2.3px);
+    background-position: 8% 15%, 70% 8%, 35% 90%, 92% 58%;
+    background-size: 130px 130px, 115px 115px, 150px 150px, 100px 100px;
+    animation: eom-confetti 7s linear infinite;
+  }
+  .eom-page {
+    position: relative;
+  }
+  .eom-page::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(circle, oklch(0.75 0.24 240 / 0.18) 0 1px, transparent 1.5px),
+      radial-gradient(circle, oklch(0.72 0.26 340 / 0.13) 0 1px, transparent 1.5px);
+    background-position: 10% 20%, 80% 35%;
+    background-size: 140px 140px, 180px 180px;
+    animation: eom-particles 14s linear infinite;
+  }
+  .eom-page-hero {
+    min-height: 520px;
+  }
+  .eom-stat-tile {
+    display: flex;
+    min-height: 104px;
+    align-items: center;
+    gap: 14px;
+    overflow: hidden;
+    border-radius: 18px;
+    transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+  }
+  .eom-stat-tile:hover {
+    transform: translateY(-3px);
+    border-color: oklch(0.7 0.24 300 / 0.28);
+    box-shadow: 0 18px 52px -34px oklch(0.7 0.24 300 / 0.8);
+  }
+  .eom-feedback {
+    border-color: oklch(0.65 0.27 22 / 0.18);
+    box-shadow: var(--shadow-glass), 0 0 38px -26px oklch(0.65 0.27 22 / 0.8);
+  }
+  .eom-achievement {
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    border: 1px solid oklch(1 0 0 / 0.09);
+    background: oklch(1 0 0 / 0.04);
+    padding: 14px;
+    transition: transform .2s ease, border-color .2s ease, filter .2s ease;
+  }
+  .eom-achievement:hover {
+    transform: translateY(-2px);
+    border-color: oklch(0.66 0.25 280 / 0.28);
+  }
+  .eom-achievement-locked {
+    filter: saturate(.6);
+  }
+  .eom-achievement-locked::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: oklch(0 0 0 / 0.18);
+    backdrop-filter: blur(1.5px);
+    pointer-events: none;
+  }
+  .eom-achievement-icon {
+    display: flex;
+    height: 40px;
+    width: 40px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 13px;
+    color: white;
+    background: linear-gradient(135deg, #21d4fd, #8b5cf6 50%, #ff2d6f);
+    box-shadow: 0 0 24px oklch(0.66 0.25 280 / 0.32);
+  }
+
+  .admin-achievements {
+    position: relative;
+  }
+  .admin-achievements::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(circle, oklch(0.75 0.24 240 / 0.13) 0 1px, transparent 1.5px),
+      radial-gradient(circle, oklch(0.72 0.26 340 / 0.1) 0 1px, transparent 1.5px);
+    background-position: 12% 18%, 82% 36%;
+    background-size: 160px 160px, 210px 210px;
+    animation: eom-particles 16s linear infinite;
+  }
+  .admin-achievement-stat {
+    display: flex;
+    min-height: 108px;
+    align-items: center;
+    gap: 14px;
+    overflow: hidden;
+    border-radius: 18px;
+    transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+  }
+  .admin-achievement-stat:hover,
+  .admin-achievement-panel:hover {
+    transform: translateY(-2px);
+    border-color: oklch(0.7 0.24 300 / 0.24);
+    box-shadow: var(--shadow-glass), 0 18px 52px -34px oklch(0.7 0.24 300 / 0.8);
+  }
+  .admin-achievement-panel {
+    position: relative;
+    overflow: hidden;
+    border-radius: 20px;
+    transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+  }
+  .admin-achievement-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    border: 1px solid oklch(1 0 0 / 0.1);
+    background: linear-gradient(135deg, oklch(0.62 0.25 240 / 0.16), oklch(0.68 0.25 340 / 0.14));
+    padding: 6px 9px;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.08), 0 0 24px -18px oklch(0.68 0.25 340 / 0.9);
+  }
+  .admin-achievement-status {
+    display: inline-flex;
+    border-radius: 999px;
+    padding: 5px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+  .admin-achievement-status.approved {
+    background: oklch(0.72 0.18 155 / 0.15);
+    color: var(--success);
+  }
+  .admin-achievement-status.pending {
+    background: oklch(0.82 0.17 75 / 0.15);
+    color: var(--warning);
+  }
+  .admin-achievement-status.manual {
+    background: oklch(0.6 0.25 260 / 0.15);
+    color: var(--accent);
+  }
+  .admin-achievement-leader {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    border-radius: 16px;
+    background: oklch(1 0 0 / 0.035);
+    padding: 12px;
+    transition: transform .2s ease, background .2s ease;
+  }
+  .admin-achievement-leader:hover {
+    transform: translateX(3px);
+    background: oklch(1 0 0 / 0.055);
+  }
+  .admin-achievement-rank {
+    display: flex;
+    height: 30px;
+    min-width: 30px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    background: oklch(1 0 0 / 0.06);
+    color: oklch(1 0 0 / 0.72);
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .admin-achievement-rank.top {
+    color: white;
+    background: linear-gradient(135deg, #f6c453, #ff4ecd);
+    box-shadow: 0 0 24px oklch(0.86 0.17 85 / 0.34);
+  }
+
+  .weekly-feedback {
+    position: relative;
+  }
+  .weekly-feedback::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(circle, oklch(0.75 0.24 240 / 0.12) 0 1px, transparent 1.5px),
+      radial-gradient(circle, oklch(0.72 0.26 340 / 0.1) 0 1px, transparent 1.5px);
+    background-position: 18% 24%, 78% 38%;
+    background-size: 150px 150px, 210px 210px;
+    animation: eom-particles 16s linear infinite;
+  }
+  .weekly-stat {
+    display: flex;
+    min-height: 108px;
+    align-items: center;
+    gap: 14px;
+    overflow: hidden;
+    border-radius: 18px;
+    transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+  }
+  .weekly-feedback-panel,
+  .weekly-employee-card,
+  .weekly-eom-card,
+  .weekly-leader-row,
+  .weekly-history-item {
+    transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease, background .22s ease;
+  }
+  .weekly-stat:hover,
+  .weekly-feedback-panel:hover,
+  .weekly-employee-card:hover,
+  .weekly-eom-card:hover,
+  .weekly-leader-row:hover {
+    transform: translateY(-2px);
+    border-color: oklch(0.7 0.24 300 / 0.24);
+    box-shadow: var(--shadow-glass), 0 18px 52px -34px oklch(0.7 0.24 300 / 0.8);
+  }
+  .weekly-feedback-panel {
+    position: relative;
+    overflow: hidden;
+    border-radius: 20px;
+  }
+  .weekly-employee-card {
+    display: block;
+    width: 100%;
+    border-radius: 18px;
+    border: 1px solid oklch(1 0 0 / 0.08);
+    background: oklch(1 0 0 / 0.035);
+    padding: 14px;
+  }
+  .weekly-employee-card.active {
+    border-color: oklch(0.65 0.27 22 / 0.42);
+    background: linear-gradient(135deg, oklch(0.65 0.27 22 / 0.14), oklch(0.6 0.25 260 / 0.14));
+    box-shadow: 0 0 34px -22px oklch(0.65 0.27 22 / 0.9);
+  }
+  .weekly-progress {
+    background: linear-gradient(90deg, #21d4fd, #8b5cf6 45%, #ff2d6f);
+    box-shadow: 0 0 18px oklch(0.65 0.25 300 / 0.45);
+    animation: eom-progress-glow 2.4s ease-in-out infinite;
+  }
+  .weekly-leader-row,
+  .weekly-eom-card,
+  .weekly-history-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-radius: 18px;
+    border: 1px solid oklch(1 0 0 / 0.08);
+    background: oklch(1 0 0 / 0.035);
+    padding: 13px;
+  }
+  .weekly-leader-row:hover,
+  .weekly-eom-card:hover {
+    background: oklch(1 0 0 / 0.055);
+  }
+  .weekly-rank {
+    display: flex;
+    height: 31px;
+    min-width: 31px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    background: oklch(1 0 0 / 0.06);
+    color: oklch(1 0 0 / 0.72);
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .weekly-rank.top {
+    color: white;
+    background: linear-gradient(135deg, #f6c453, #ff4ecd);
+    box-shadow: 0 0 24px oklch(0.86 0.17 85 / 0.34);
+  }
+  .weekly-history-item {
+    align-items: flex-start;
+  }
+  .weekly-history-dot {
+    margin-top: 5px;
+    height: 10px;
+    width: 10px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #21d4fd, #ff2d6f);
+    box-shadow: 0 0 18px oklch(0.65 0.25 300 / 0.55);
+  }
 }
 
 @keyframes pulse-glow {
@@ -232,6 +707,47 @@
   background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.06), transparent);
   background-size: 200% 100%;
   animation: shimmer 2s linear infinite;
+}
+
+@keyframes badge-glow {
+  0%, 100% { box-shadow: 0 18px 50px -28px oklch(0 0 0 / 0.9), 0 0 28px -18px oklch(0.65 0.27 22 / 0.45); }
+  50% { box-shadow: 0 22px 64px -30px oklch(0 0 0 / 0.9), 0 0 44px -16px oklch(0.6 0.25 260 / 0.72); }
+}
+
+@keyframes achievement-pop {
+  0% { opacity: 0; transform: translateY(-12px) scale(.92); }
+  12%, 82% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-8px) scale(.98); }
+}
+.animate-achievement-pop { animation: achievement-pop 4s ease both; }
+
+@keyframes eom-spin {
+  to { transform: rotate(1turn); }
+}
+
+@keyframes eom-progress-glow {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.25); }
+}
+
+@keyframes eom-confetti {
+  0% { transform: translateY(-10px); }
+  100% { transform: translateY(18px); }
+}
+
+@keyframes eom-particles {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(0, 26px, 0); }
+}
+
+@media (max-width: 640px) {
+  .eom-rank-row {
+    grid-template-columns: auto auto minmax(0, 1fr);
+  }
+  .eom-rank-row > div:last-child {
+    grid-column: 3;
+    text-align: left;
+  }
 }
 
 /* Scrollbar */

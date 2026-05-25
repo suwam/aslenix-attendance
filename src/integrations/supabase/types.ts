@@ -550,6 +550,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      weekly_feedback: {
+        Row: {
+          admin_id: string;
+          created_at: string;
+          employee_id: string;
+          id: string;
+          improvements: string | null;
+          notes: string | null;
+          rating: string;
+          score: number;
+          strengths: string | null;
+          updated_at: string;
+          week_start: string;
+        };
+        Insert: {
+          admin_id: string;
+          created_at?: string;
+          employee_id: string;
+          id?: string;
+          improvements?: string | null;
+          notes?: string | null;
+          rating: string;
+          score?: number;
+          strengths?: string | null;
+          updated_at?: string;
+          week_start: string;
+        };
+        Update: {
+          admin_id?: string;
+          created_at?: string;
+          employee_id?: string;
+          id?: string;
+          improvements?: string | null;
+          notes?: string | null;
+          rating?: string;
+          score?: number;
+          strengths?: string | null;
+          updated_at?: string;
+          week_start?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

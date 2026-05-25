@@ -27,7 +27,9 @@ import { Route as AppMyAttendanceRouteImport } from './routes/_app/my-attendance
 import { Route as AppMeetingsRouteImport } from './routes/_app/meetings'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppCheckInRouteImport } from './routes/_app/check-in'
+import { Route as AppAchievementsRouteImport } from './routes/_app/achievements'
 import { Route as AppAdminIndexRouteImport } from './routes/_app/admin/index'
+import { Route as AppAdminWeeklyFeedbackRouteImport } from './routes/_app/admin/weekly-feedback'
 import { Route as AppAdminTasksRouteImport } from './routes/_app/admin/tasks'
 import { Route as AppAdminStandupsRouteImport } from './routes/_app/admin/standups'
 import { Route as AppAdminSettingsRouteImport } from './routes/_app/admin/settings'
@@ -37,8 +39,10 @@ import { Route as AppAdminNotificationsRouteImport } from './routes/_app/admin/n
 import { Route as AppAdminMeetingsRouteImport } from './routes/_app/admin/meetings'
 import { Route as AppAdminLeavesRouteImport } from './routes/_app/admin/leaves'
 import { Route as AppAdminEmployeesRouteImport } from './routes/_app/admin/employees'
+import { Route as AppAdminEmployeeOfMonthRouteImport } from './routes/_app/admin/employee-of-month'
 import { Route as AppAdminAttendanceRouteImport } from './routes/_app/admin/attendance'
 import { Route as AppAdminApprovalsRouteImport } from './routes/_app/admin/approvals'
+import { Route as AppAdminAchievementsRouteImport } from './routes/_app/admin/achievements'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -129,9 +133,19 @@ const AppCheckInRoute = AppCheckInRouteImport.update({
   path: '/check-in',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAchievementsRoute = AppAchievementsRouteImport.update({
+  id: '/achievements',
+  path: '/achievements',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminWeeklyFeedbackRoute = AppAdminWeeklyFeedbackRouteImport.update({
+  id: '/admin/weekly-feedback',
+  path: '/admin/weekly-feedback',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAdminTasksRoute = AppAdminTasksRouteImport.update({
@@ -179,6 +193,11 @@ const AppAdminEmployeesRoute = AppAdminEmployeesRouteImport.update({
   path: '/admin/employees',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminEmployeeOfMonthRoute = AppAdminEmployeeOfMonthRouteImport.update({
+  id: '/admin/employee-of-month',
+  path: '/admin/employee-of-month',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminAttendanceRoute = AppAdminAttendanceRouteImport.update({
   id: '/admin/attendance',
   path: '/admin/attendance',
@@ -187,6 +206,11 @@ const AppAdminAttendanceRoute = AppAdminAttendanceRouteImport.update({
 const AppAdminApprovalsRoute = AppAdminApprovalsRouteImport.update({
   id: '/admin/approvals',
   path: '/admin/approvals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminAchievementsRoute = AppAdminAchievementsRouteImport.update({
+  id: '/admin/achievements',
+  path: '/admin/achievements',
   getParentRoute: () => AppRoute,
 } as any)
 
@@ -198,6 +222,7 @@ export interface FileRoutesByFullPath {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/achievements': typeof AppAchievementsRoute
   '/check-in': typeof AppCheckInRoute
   '/dashboard': typeof AppDashboardRoute
   '/meetings': typeof AppMeetingsRoute
@@ -208,8 +233,10 @@ export interface FileRoutesByFullPath {
   '/standup': typeof AppStandupRoute
   '/tasks': typeof AppTasksRoute
   '/verify-employee/$qrToken': typeof VerifyEmployeeQrTokenRoute
+  '/admin/achievements': typeof AppAdminAchievementsRoute
   '/admin/approvals': typeof AppAdminApprovalsRoute
   '/admin/attendance': typeof AppAdminAttendanceRoute
+  '/admin/employee-of-month': typeof AppAdminEmployeeOfMonthRoute
   '/admin/employees': typeof AppAdminEmployeesRoute
   '/admin/leaves': typeof AppAdminLeavesRoute
   '/admin/meetings': typeof AppAdminMeetingsRoute
@@ -219,6 +246,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AppAdminSettingsRoute
   '/admin/standups': typeof AppAdminStandupsRoute
   '/admin/tasks': typeof AppAdminTasksRoute
+  '/admin/weekly-feedback': typeof AppAdminWeeklyFeedbackRoute
   '/admin/': typeof AppAdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -229,6 +257,7 @@ export interface FileRoutesByTo {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/achievements': typeof AppAchievementsRoute
   '/check-in': typeof AppCheckInRoute
   '/dashboard': typeof AppDashboardRoute
   '/meetings': typeof AppMeetingsRoute
@@ -239,8 +268,10 @@ export interface FileRoutesByTo {
   '/standup': typeof AppStandupRoute
   '/tasks': typeof AppTasksRoute
   '/verify-employee/$qrToken': typeof VerifyEmployeeQrTokenRoute
+  '/admin/achievements': typeof AppAdminAchievementsRoute
   '/admin/approvals': typeof AppAdminApprovalsRoute
   '/admin/attendance': typeof AppAdminAttendanceRoute
+  '/admin/employee-of-month': typeof AppAdminEmployeeOfMonthRoute
   '/admin/employees': typeof AppAdminEmployeesRoute
   '/admin/leaves': typeof AppAdminLeavesRoute
   '/admin/meetings': typeof AppAdminMeetingsRoute
@@ -250,6 +281,7 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AppAdminSettingsRoute
   '/admin/standups': typeof AppAdminStandupsRoute
   '/admin/tasks': typeof AppAdminTasksRoute
+  '/admin/weekly-feedback': typeof AppAdminWeeklyFeedbackRoute
   '/admin': typeof AppAdminIndexRoute
 }
 export interface FileRoutesById {
@@ -262,6 +294,7 @@ export interface FileRoutesById {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/_app/achievements': typeof AppAchievementsRoute
   '/_app/check-in': typeof AppCheckInRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/meetings': typeof AppMeetingsRoute
@@ -272,8 +305,10 @@ export interface FileRoutesById {
   '/_app/standup': typeof AppStandupRoute
   '/_app/tasks': typeof AppTasksRoute
   '/verify-employee/$qrToken': typeof VerifyEmployeeQrTokenRoute
+  '/_app/admin/achievements': typeof AppAdminAchievementsRoute
   '/_app/admin/approvals': typeof AppAdminApprovalsRoute
   '/_app/admin/attendance': typeof AppAdminAttendanceRoute
+  '/_app/admin/employee-of-month': typeof AppAdminEmployeeOfMonthRoute
   '/_app/admin/employees': typeof AppAdminEmployeesRoute
   '/_app/admin/leaves': typeof AppAdminLeavesRoute
   '/_app/admin/meetings': typeof AppAdminMeetingsRoute
@@ -283,6 +318,7 @@ export interface FileRoutesById {
   '/_app/admin/settings': typeof AppAdminSettingsRoute
   '/_app/admin/standups': typeof AppAdminStandupsRoute
   '/_app/admin/tasks': typeof AppAdminTasksRoute
+  '/_app/admin/weekly-feedback': typeof AppAdminWeeklyFeedbackRoute
   '/_app/admin/': typeof AppAdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -295,6 +331,7 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/achievements'
     | '/check-in'
     | '/dashboard'
     | '/meetings'
@@ -305,8 +342,10 @@ export interface FileRouteTypes {
     | '/standup'
     | '/tasks'
     | '/verify-employee/$qrToken'
+    | '/admin/achievements'
     | '/admin/approvals'
     | '/admin/attendance'
+    | '/admin/employee-of-month'
     | '/admin/employees'
     | '/admin/leaves'
     | '/admin/meetings'
@@ -316,6 +355,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/standups'
     | '/admin/tasks'
+    | '/admin/weekly-feedback'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -326,6 +366,7 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/achievements'
     | '/check-in'
     | '/dashboard'
     | '/meetings'
@@ -336,8 +377,10 @@ export interface FileRouteTypes {
     | '/standup'
     | '/tasks'
     | '/verify-employee/$qrToken'
+    | '/admin/achievements'
     | '/admin/approvals'
     | '/admin/attendance'
+    | '/admin/employee-of-month'
     | '/admin/employees'
     | '/admin/leaves'
     | '/admin/meetings'
@@ -347,6 +390,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/standups'
     | '/admin/tasks'
+    | '/admin/weekly-feedback'
     | '/admin'
   id:
     | '__root__'
@@ -358,6 +402,7 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
+    | '/_app/achievements'
     | '/_app/check-in'
     | '/_app/dashboard'
     | '/_app/meetings'
@@ -368,8 +413,10 @@ export interface FileRouteTypes {
     | '/_app/standup'
     | '/_app/tasks'
     | '/verify-employee/$qrToken'
+    | '/_app/admin/achievements'
     | '/_app/admin/approvals'
     | '/_app/admin/attendance'
+    | '/_app/admin/employee-of-month'
     | '/_app/admin/employees'
     | '/_app/admin/leaves'
     | '/_app/admin/meetings'
@@ -379,6 +426,7 @@ export interface FileRouteTypes {
     | '/_app/admin/settings'
     | '/_app/admin/standups'
     | '/_app/admin/tasks'
+    | '/_app/admin/weekly-feedback'
     | '/_app/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -522,11 +570,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCheckInRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/achievements': {
+      id: '/_app/achievements'
+      path: '/achievements'
+      fullPath: '/achievements'
+      preLoaderRoute: typeof AppAchievementsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/admin/': {
       id: '/_app/admin/'
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AppAdminIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/weekly-feedback': {
+      id: '/_app/admin/weekly-feedback'
+      path: '/admin/weekly-feedback'
+      fullPath: '/admin/weekly-feedback'
+      preLoaderRoute: typeof AppAdminWeeklyFeedbackRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/admin/tasks': {
@@ -592,6 +654,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminEmployeesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin/employee-of-month': {
+      id: '/_app/admin/employee-of-month'
+      path: '/admin/employee-of-month'
+      fullPath: '/admin/employee-of-month'
+      preLoaderRoute: typeof AppAdminEmployeeOfMonthRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/admin/attendance': {
       id: '/_app/admin/attendance'
       path: '/admin/attendance'
@@ -606,10 +675,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminApprovalsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin/achievements': {
+      id: '/_app/admin/achievements'
+      path: '/admin/achievements'
+      fullPath: '/admin/achievements'
+      preLoaderRoute: typeof AppAdminAchievementsRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppAchievementsRoute: typeof AppAchievementsRoute
   AppCheckInRoute: typeof AppCheckInRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppMeetingsRoute: typeof AppMeetingsRoute
@@ -619,8 +696,10 @@ interface AppRouteChildren {
   AppProfileRoute: typeof AppProfileRoute
   AppStandupRoute: typeof AppStandupRoute
   AppTasksRoute: typeof AppTasksRoute
+  AppAdminAchievementsRoute: typeof AppAdminAchievementsRoute
   AppAdminApprovalsRoute: typeof AppAdminApprovalsRoute
   AppAdminAttendanceRoute: typeof AppAdminAttendanceRoute
+  AppAdminEmployeeOfMonthRoute: typeof AppAdminEmployeeOfMonthRoute
   AppAdminEmployeesRoute: typeof AppAdminEmployeesRoute
   AppAdminLeavesRoute: typeof AppAdminLeavesRoute
   AppAdminMeetingsRoute: typeof AppAdminMeetingsRoute
@@ -630,10 +709,12 @@ interface AppRouteChildren {
   AppAdminSettingsRoute: typeof AppAdminSettingsRoute
   AppAdminStandupsRoute: typeof AppAdminStandupsRoute
   AppAdminTasksRoute: typeof AppAdminTasksRoute
+  AppAdminWeeklyFeedbackRoute: typeof AppAdminWeeklyFeedbackRoute
   AppAdminIndexRoute: typeof AppAdminIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAchievementsRoute: AppAchievementsRoute,
   AppCheckInRoute: AppCheckInRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppMeetingsRoute: AppMeetingsRoute,
@@ -643,8 +724,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppProfileRoute: AppProfileRoute,
   AppStandupRoute: AppStandupRoute,
   AppTasksRoute: AppTasksRoute,
+  AppAdminAchievementsRoute: AppAdminAchievementsRoute,
   AppAdminApprovalsRoute: AppAdminApprovalsRoute,
   AppAdminAttendanceRoute: AppAdminAttendanceRoute,
+  AppAdminEmployeeOfMonthRoute: AppAdminEmployeeOfMonthRoute,
   AppAdminEmployeesRoute: AppAdminEmployeesRoute,
   AppAdminLeavesRoute: AppAdminLeavesRoute,
   AppAdminMeetingsRoute: AppAdminMeetingsRoute,
@@ -654,6 +737,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminSettingsRoute: AppAdminSettingsRoute,
   AppAdminStandupsRoute: AppAdminStandupsRoute,
   AppAdminTasksRoute: AppAdminTasksRoute,
+  AppAdminWeeklyFeedbackRoute: AppAdminWeeklyFeedbackRoute,
   AppAdminIndexRoute: AppAdminIndexRoute,
 }
 
