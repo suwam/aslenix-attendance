@@ -10,9 +10,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Save, Calendar, Clock, CheckCircle2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { format, subDays } from "date-fns";
+import { format } from "date-fns";
 
 export const Route = createFileRoute("/_app/standup")({ component: StandupPage });
+
+function getAttendanceHours(
+  attendance?: { check_in_time: string | null; check_out_time: string | null; work_hours: number | null } | null,
+) {
+  if (!attendance?.check_in_time || !attendance.check_out_time) return null;
+  if (attendance.work_hours !== null && attendance.work_hours !== undefined) {
+    return Number(attendance.work_hours);
+  }
+
+  const checkedInAt = new Date(attendance.check_in_time);
+  const checkedOutAt = new Date(attendance.check_out_time);
+  if (Number.isNaN(checkedInAt.getTime()) || Number.isNaN(checkedOutAt.getTime())) return null;
+
+  return Math.max(0, (checkedOutAt.getTime() - checkedInAt.getTime()) / 36e5);
+}
 
 function StandupPage() {
   const { user } = useAuth();
@@ -21,21 +36,40 @@ function StandupPage() {
   const [today, setToday] = useState("");
   const [blockers, setBlockers] = useState("");
   const [hours, setHours] = useState<number>(0);
+  const [hoursSource, setHoursSource] = useState<"attendance" | "standup" | "none">("none");
   const [history, setHistory] = useState<any[]>([]);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from("standups")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("date", date)
-      .maybeSingle();
+    const [{ data }, { data: attendance }] = await Promise.all([
+      supabase
+        .from("standups")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("date", date)
+        .maybeSingle(),
+      supabase
+        .from("attendance")
+        .select("check_in_time, check_out_time, work_hours")
+        .eq("user_id", user.id)
+        .eq("date", date)
+        .maybeSingle(),
+    ]);
     setYesterday(data?.yesterday || "");
     setToday(data?.today || "");
     setBlockers(data?.blockers || "");
-    setHours(Number(data?.work_hours || 0));
+    const attendanceHours = getAttendanceHours(attendance);
+    if (attendanceHours !== null) {
+      setHours(attendanceHours);
+      setHoursSource("attendance");
+    } else if (data?.work_hours) {
+      setHours(Number(data.work_hours));
+      setHoursSource("standup");
+    } else {
+      setHours(0);
+      setHoursSource("none");
+    }
     const { data: hist } = await supabase
       .from("standups")
       .select("*")
@@ -51,6 +85,13 @@ function StandupPage() {
   const save = async () => {
     if (!user) return;
     setBusy(true);
+    const { data: attendance } = await supabase
+      .from("attendance")
+      .select("check_in_time, check_out_time, work_hours")
+      .eq("user_id", user.id)
+      .eq("date", date)
+      .maybeSingle();
+    const calculatedHours = getAttendanceHours(attendance) ?? hours;
     const { error } = await supabase.from("standups").upsert(
       {
         user_id: user.id,
@@ -58,7 +99,7 @@ function StandupPage() {
         yesterday,
         today,
         blockers,
-        work_hours: hours,
+        work_hours: calculatedHours,
       },
       { onConflict: "user_id,date" },
     );
@@ -143,8 +184,15 @@ function StandupPage() {
                 max={24}
                 step={0.25}
                 value={hours}
-                onChange={(e) => setHours(Number(e.target.value))}
+                readOnly
               />
+              <div className="mt-1 text-xs text-muted-foreground">
+                {hoursSource === "attendance"
+                  ? "Auto calculated from check-in and check-out."
+                  : hoursSource === "standup"
+                    ? "Using previously saved hours. Check out to auto-calculate."
+                    : "Check in and check out to calculate work hours."}
+              </div>
             </div>
             <div className="flex items-end">
               <Button onClick={save} disabled={busy} className="neon-button w-full rounded-xl">
