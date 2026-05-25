@@ -10,7 +10,7 @@ import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
 import { toast } from "sonner";
 
 export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [tasks, setTasks] = useState<TaskCardData[]>([]);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -146,17 +146,19 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
                     {colTasks.length}
                   </span>
                 </div>
-                <button
-                  onClick={() => {
-                    setEditId(null);
-                    setDefaultStatus(status);
-                    setOpen(true);
-                  }}
-                  className="p-1 rounded-md hover:bg-primary/15 hover:text-primary transition-colors"
-                  title="Add task"
-                >
-                  <Plus size={14} />
-                </button>
+                {isAdmin && (
+                  <button
+                    onClick={() => {
+                      setEditId(null);
+                      setDefaultStatus(status);
+                      setOpen(true);
+                    }}
+                    className="p-1 rounded-md hover:bg-primary/15 hover:text-primary transition-colors"
+                    title="Add task"
+                  >
+                    <Plus size={14} />
+                  </button>
+                )}
               </div>
               <div className="flex-1 space-y-2 overflow-y-auto">
                 <AnimatePresence>

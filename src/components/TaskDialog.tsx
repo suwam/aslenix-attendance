@@ -22,7 +22,7 @@ import {
   type TaskPriority,
 } from "@/lib/tasks-utils";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
-import { Send, Paperclip, Trash2, Download, X, TrendingUp } from "lucide-react";
+import { Check, Download, Pencil, Paperclip, Send, Trash2, TrendingUp, X } from "lucide-react";
 import { format } from "date-fns";
 
 type ProgressUpdate = {
@@ -61,6 +61,9 @@ export function TaskDialog({
   const [initialProgress, setInitialProgress] = useState(0);
   const [progressNote, setProgressNote] = useState("");
   const [progressUpdates, setProgressUpdates] = useState<ProgressUpdate[]>([]);
+  const [editingProgressUpdateId, setEditingProgressUpdateId] = useState<string | null>(null);
+  const [editingProgressNote, setEditingProgressNote] = useState("");
+  const [savingProgressUpdateId, setSavingProgressUpdateId] = useState<string | null>(null);
   const [deadline, setDeadline] = useState("");
   const [assignedTo, setAssignedTo] = useState<string>(user?.id || "");
   const [assignedToMany, setAssignedToMany] = useState<string[]>(user?.id ? [user.id] : []);
@@ -80,6 +83,9 @@ export function TaskDialog({
     setInitialProgress(0);
     setProgressNote("");
     setProgressUpdates([]);
+    setEditingProgressUpdateId(null);
+    setEditingProgressNote("");
+    setSavingProgressUpdateId(null);
     setProgressUpdatesUnavailable(false);
     setDeadline("");
     setAssignedTo(isAdmin ? "" : user?.id || "");
@@ -323,6 +329,35 @@ export function TaskDialog({
     return { error: error as Error | null, missingTable: false };
   };
 
+  const startEditingProgressUpdate = (update: ProgressUpdate) => {
+    setEditingProgressUpdateId(update.id);
+    setEditingProgressNote(update.note);
+  };
+
+  const cancelEditingProgressUpdate = () => {
+    setEditingProgressUpdateId(null);
+    setEditingProgressNote("");
+  };
+
+  const saveProgressUpdateNote = async (updateId: string) => {
+    const note = editingProgressNote.trim();
+    if (!note) return toast.error("Progress update note is required");
+
+    setSavingProgressUpdateId(updateId);
+    const { error } = await supabase
+      .from("task_progress_updates")
+      .update({ note })
+      .eq("id", updateId);
+    setSavingProgressUpdateId(null);
+
+    if (error) return toast.error(error.message);
+    setProgressUpdates((prev) =>
+      prev.map((update) => (update.id === updateId ? { ...update, note } : update)),
+    );
+    cancelEditingProgressUpdate();
+    toast.success("Progress update edited");
+  };
+
   const remove = async () => {
     if (!taskId) return;
     if (!isAdmin) return toast.error("Only admins can delete tasks");
@@ -531,9 +566,53 @@ export function TaskDialog({
                         <span className="font-medium text-foreground">
                           {update.old_progress}% -&gt; {update.new_progress}%
                         </span>
-                        <span>{format(new Date(update.created_at), "MMM d, HH:mm")}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span>{format(new Date(update.created_at), "MMM d, HH:mm")}</span>
+                          {(isAdmin || update.user_id === user?.id) && (
+                            <button
+                              type="button"
+                              onClick={() => startEditingProgressUpdate(update)}
+                              className="rounded p-1 text-muted-foreground transition-colors hover:bg-primary/15 hover:text-primary"
+                              title="Edit progress update"
+                            >
+                              <Pencil size={12} />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-foreground">{update.note}</div>
+                      {editingProgressUpdateId === update.id ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            value={editingProgressNote}
+                            onChange={(e) => setEditingProgressNote(e.target.value)}
+                            rows={2}
+                            className="text-sm"
+                          />
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={cancelEditingProgressUpdate}
+                            >
+                              <X size={13} className="mr-1.5" />
+                              Cancel
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => saveProgressUpdateNote(update.id)}
+                              disabled={savingProgressUpdateId === update.id}
+                              className="neon-button"
+                            >
+                              <Check size={13} className="mr-1.5" />
+                              {savingProgressUpdateId === update.id ? "Saving..." : "Save"}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-foreground">{update.note}</div>
+                      )}
                       <div className="mt-1 text-xs text-muted-foreground">{update.author}</div>
                     </div>
                   ))}
