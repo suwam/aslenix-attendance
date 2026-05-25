@@ -45,6 +45,7 @@ function ReportsPage() {
         : merged.filter((row) => {
             if (statusFilter === "absent") return !row.attendance;
             if (statusFilter === "late") return row.attendance?.is_late;
+            if (statusFilter === "early_checkout") return row.attendance?.is_early_checkout;
             return row.attendance?.status === statusFilter;
           }),
     );
@@ -66,6 +67,7 @@ function ReportsPage() {
       "Hours",
       "Status",
       "Late",
+      "Early checkout",
     ];
     const lines = rows.map((row) => {
       const attendance = row.attendance;
@@ -77,8 +79,9 @@ function ReportsPage() {
         attendance?.check_in_time ? format(new Date(attendance.check_in_time), "HH:mm") : "",
         attendance?.check_out_time ? format(new Date(attendance.check_out_time), "HH:mm") : "",
         attendance?.work_hours ?? "",
-        attendance ? (attendance.is_late ? "Late" : attendance.status) : "Absent",
+        attendance ? attendanceLabel(attendance) : "Absent",
         attendance?.is_late ? "Yes" : "No",
+        attendance?.is_early_checkout ? "Yes" : "No",
       ]
         .map((x) => `"${String(x).replace(/"/g, '""')}"`)
         .join(",");
@@ -127,6 +130,7 @@ function ReportsPage() {
                 <SelectItem value="all">All</SelectItem>
                 <SelectItem value="present">Present</SelectItem>
                 <SelectItem value="late">Late</SelectItem>
+                <SelectItem value="early_checkout">Early checkout</SelectItem>
                 <SelectItem value="absent">Absent</SelectItem>
                 <SelectItem value="leave">Leave</SelectItem>
                 <SelectItem value="wfh">WFH</SelectItem>
@@ -188,9 +192,7 @@ function ReportsPage() {
                       <td className="p-3">
                         <span className="capitalize text-xs">
                           {attendance
-                            ? attendance.is_late
-                              ? "Late"
-                              : attendance.status.replace("_", " ")
+                            ? attendanceLabel(attendance)
                             : "Absent"}
                         </span>
                       </td>
@@ -204,4 +206,10 @@ function ReportsPage() {
       </GlassCard>
     </>
   );
+}
+
+function attendanceLabel(attendance: any) {
+  if (attendance.is_early_checkout) return "Early checkout";
+  if (attendance.is_late) return "Late";
+  return attendance.status.replace("_", " ");
 }

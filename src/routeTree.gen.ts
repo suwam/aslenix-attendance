@@ -24,6 +24,7 @@ import { Route as AppProfileRouteImport } from './routes/_app/profile'
 import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
 import { Route as AppMyLeavesRouteImport } from './routes/_app/my-leaves'
 import { Route as AppMyAttendanceRouteImport } from './routes/_app/my-attendance'
+import { Route as AppMeetingsRouteImport } from './routes/_app/meetings'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppCheckInRouteImport } from './routes/_app/check-in'
 import { Route as AppAdminIndexRouteImport } from './routes/_app/admin/index'
@@ -33,6 +34,7 @@ import { Route as AppAdminSettingsRouteImport } from './routes/_app/admin/settin
 import { Route as AppAdminReportsRouteImport } from './routes/_app/admin/reports'
 import { Route as AppAdminQrIdsRouteImport } from './routes/_app/admin/qr-ids'
 import { Route as AppAdminNotificationsRouteImport } from './routes/_app/admin/notifications'
+import { Route as AppAdminMeetingsRouteImport } from './routes/_app/admin/meetings'
 import { Route as AppAdminLeavesRouteImport } from './routes/_app/admin/leaves'
 import { Route as AppAdminEmployeesRouteImport } from './routes/_app/admin/employees'
 import { Route as AppAdminAttendanceRouteImport } from './routes/_app/admin/attendance'
@@ -112,6 +114,11 @@ const AppMyAttendanceRoute = AppMyAttendanceRouteImport.update({
   path: '/my-attendance',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMeetingsRoute = AppMeetingsRouteImport.update({
+  id: '/meetings',
+  path: '/meetings',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -157,6 +164,11 @@ const AppAdminNotificationsRoute = AppAdminNotificationsRouteImport.update({
   path: '/admin/notifications',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminMeetingsRoute = AppAdminMeetingsRouteImport.update({
+  id: '/admin/meetings',
+  path: '/admin/meetings',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminLeavesRoute = AppAdminLeavesRouteImport.update({
   id: '/admin/leaves',
   path: '/admin/leaves',
@@ -188,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/check-in': typeof AppCheckInRoute
   '/dashboard': typeof AppDashboardRoute
+  '/meetings': typeof AppMeetingsRoute
   '/my-attendance': typeof AppMyAttendanceRoute
   '/my-leaves': typeof AppMyLeavesRoute
   '/notifications': typeof AppNotificationsRoute
@@ -199,6 +212,7 @@ export interface FileRoutesByFullPath {
   '/admin/attendance': typeof AppAdminAttendanceRoute
   '/admin/employees': typeof AppAdminEmployeesRoute
   '/admin/leaves': typeof AppAdminLeavesRoute
+  '/admin/meetings': typeof AppAdminMeetingsRoute
   '/admin/notifications': typeof AppAdminNotificationsRoute
   '/admin/qr-ids': typeof AppAdminQrIdsRoute
   '/admin/reports': typeof AppAdminReportsRoute
@@ -217,6 +231,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/check-in': typeof AppCheckInRoute
   '/dashboard': typeof AppDashboardRoute
+  '/meetings': typeof AppMeetingsRoute
   '/my-attendance': typeof AppMyAttendanceRoute
   '/my-leaves': typeof AppMyLeavesRoute
   '/notifications': typeof AppNotificationsRoute
@@ -228,6 +243,7 @@ export interface FileRoutesByTo {
   '/admin/attendance': typeof AppAdminAttendanceRoute
   '/admin/employees': typeof AppAdminEmployeesRoute
   '/admin/leaves': typeof AppAdminLeavesRoute
+  '/admin/meetings': typeof AppAdminMeetingsRoute
   '/admin/notifications': typeof AppAdminNotificationsRoute
   '/admin/qr-ids': typeof AppAdminQrIdsRoute
   '/admin/reports': typeof AppAdminReportsRoute
@@ -248,6 +264,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_app/check-in': typeof AppCheckInRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/meetings': typeof AppMeetingsRoute
   '/_app/my-attendance': typeof AppMyAttendanceRoute
   '/_app/my-leaves': typeof AppMyLeavesRoute
   '/_app/notifications': typeof AppNotificationsRoute
@@ -259,6 +276,7 @@ export interface FileRoutesById {
   '/_app/admin/attendance': typeof AppAdminAttendanceRoute
   '/_app/admin/employees': typeof AppAdminEmployeesRoute
   '/_app/admin/leaves': typeof AppAdminLeavesRoute
+  '/_app/admin/meetings': typeof AppAdminMeetingsRoute
   '/_app/admin/notifications': typeof AppAdminNotificationsRoute
   '/_app/admin/qr-ids': typeof AppAdminQrIdsRoute
   '/_app/admin/reports': typeof AppAdminReportsRoute
@@ -279,6 +297,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/check-in'
     | '/dashboard'
+    | '/meetings'
     | '/my-attendance'
     | '/my-leaves'
     | '/notifications'
@@ -290,6 +309,7 @@ export interface FileRouteTypes {
     | '/admin/attendance'
     | '/admin/employees'
     | '/admin/leaves'
+    | '/admin/meetings'
     | '/admin/notifications'
     | '/admin/qr-ids'
     | '/admin/reports'
@@ -308,6 +328,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/check-in'
     | '/dashboard'
+    | '/meetings'
     | '/my-attendance'
     | '/my-leaves'
     | '/notifications'
@@ -319,6 +340,7 @@ export interface FileRouteTypes {
     | '/admin/attendance'
     | '/admin/employees'
     | '/admin/leaves'
+    | '/admin/meetings'
     | '/admin/notifications'
     | '/admin/qr-ids'
     | '/admin/reports'
@@ -338,6 +360,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_app/check-in'
     | '/_app/dashboard'
+    | '/_app/meetings'
     | '/_app/my-attendance'
     | '/_app/my-leaves'
     | '/_app/notifications'
@@ -349,6 +372,7 @@ export interface FileRouteTypes {
     | '/_app/admin/attendance'
     | '/_app/admin/employees'
     | '/_app/admin/leaves'
+    | '/_app/admin/meetings'
     | '/_app/admin/notifications'
     | '/_app/admin/qr-ids'
     | '/_app/admin/reports'
@@ -477,6 +501,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMyAttendanceRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/meetings': {
+      id: '/_app/meetings'
+      path: '/meetings'
+      fullPath: '/meetings'
+      preLoaderRoute: typeof AppMeetingsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -540,6 +571,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminNotificationsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin/meetings': {
+      id: '/_app/admin/meetings'
+      path: '/admin/meetings'
+      fullPath: '/admin/meetings'
+      preLoaderRoute: typeof AppAdminMeetingsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/admin/leaves': {
       id: '/_app/admin/leaves'
       path: '/admin/leaves'
@@ -574,6 +612,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppCheckInRoute: typeof AppCheckInRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppMeetingsRoute: typeof AppMeetingsRoute
   AppMyAttendanceRoute: typeof AppMyAttendanceRoute
   AppMyLeavesRoute: typeof AppMyLeavesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
@@ -584,6 +623,7 @@ interface AppRouteChildren {
   AppAdminAttendanceRoute: typeof AppAdminAttendanceRoute
   AppAdminEmployeesRoute: typeof AppAdminEmployeesRoute
   AppAdminLeavesRoute: typeof AppAdminLeavesRoute
+  AppAdminMeetingsRoute: typeof AppAdminMeetingsRoute
   AppAdminNotificationsRoute: typeof AppAdminNotificationsRoute
   AppAdminQrIdsRoute: typeof AppAdminQrIdsRoute
   AppAdminReportsRoute: typeof AppAdminReportsRoute
@@ -596,6 +636,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppCheckInRoute: AppCheckInRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppMeetingsRoute: AppMeetingsRoute,
   AppMyAttendanceRoute: AppMyAttendanceRoute,
   AppMyLeavesRoute: AppMyLeavesRoute,
   AppNotificationsRoute: AppNotificationsRoute,
@@ -606,6 +647,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminAttendanceRoute: AppAdminAttendanceRoute,
   AppAdminEmployeesRoute: AppAdminEmployeesRoute,
   AppAdminLeavesRoute: AppAdminLeavesRoute,
+  AppAdminMeetingsRoute: AppAdminMeetingsRoute,
   AppAdminNotificationsRoute: AppAdminNotificationsRoute,
   AppAdminQrIdsRoute: AppAdminQrIdsRoute,
   AppAdminReportsRoute: AppAdminReportsRoute,

@@ -194,6 +194,24 @@
   .neon-button:hover { transform: translateY(-1px); filter: brightness(1.08); box-shadow: 0 12px 32px -8px oklch(0.65 0.27 22 / 0.7), 0 6px 16px -4px oklch(0.6 0.25 260 / 0.6); }
   .neon-button:active { transform: translateY(0); }
 
+  .recharts-tooltip-wrapper,
+  .recharts-default-tooltip,
+  .recharts-tooltip-label,
+  .recharts-tooltip-item,
+  .recharts-tooltip-item-name,
+  .recharts-tooltip-item-value,
+  .recharts-tooltip-item-separator {
+    color: white !important;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.9;
+    cursor: pointer;
+  }
+
   .stat-glow::before {
     content: ""; position: absolute; inset: -1px; border-radius: inherit;
     background: var(--gradient-brand); opacity: .25; filter: blur(20px); z-index: -1;

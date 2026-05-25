@@ -268,6 +268,12 @@ export function TaskDialog({
         }
       }
     }
+    if (!error && savedTaskId && isAdmin) {
+      await notifyTaskAssignees(selectedAssignees, taskId ? "Task updated" : "New task assigned", {
+        title,
+        deadline,
+      });
+    }
     let progressNoteNotSaved = false;
     if (!error && savedTaskId && progressIncreased) {
       const progressUpdateResult = await saveProgressUpdate(
@@ -374,6 +380,26 @@ export function TaskDialog({
       setAssignedTo(next[0] || "");
       return next;
     });
+  };
+
+  const notifyTaskAssignees = async (
+    assigneeIds: string[],
+    notificationTitle: string,
+    task: { title: string; deadline: string },
+  ) => {
+    if (!assigneeIds.length) return;
+
+    const deadlineText = task.deadline
+      ? ` Deadline: ${format(new Date(task.deadline), "MMM d, yyyy HH:mm")}.`
+      : "";
+    await supabase.from("notifications").insert(
+      assigneeIds.map((assigneeId) => ({
+        user_id: assigneeId,
+        title: notificationTitle,
+        message: `${task.title}.${deadlineText}`,
+        type: "task",
+      })),
+    );
   };
 
   const updateProgress = (value: number) => {

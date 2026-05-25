@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
+import { AttendanceLocationLinks } from "@/components/AttendanceLocationLinks";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
@@ -51,6 +52,7 @@ function MyAttendance() {
                   <th className="p-4">Date</th>
                   <th className="p-4">Check-in</th>
                   <th className="p-4">Check-out</th>
+                  <th className="p-4">Location</th>
                   <th className="p-4">Hours</th>
                   <th className="p-4">Status</th>
                 </tr>
@@ -65,14 +67,34 @@ function MyAttendance() {
                     <td className="p-4 tabular-nums">
                       {r.check_out_time ? format(new Date(r.check_out_time), "HH:mm") : "—"}
                     </td>
+                    <td className="p-4">
+                      <AttendanceLocationLinks
+                        checkInLatitude={r.check_in_latitude}
+                        checkInLongitude={r.check_in_longitude}
+                        checkInAccuracyMeters={r.check_in_accuracy_meters}
+                        checkOutLatitude={r.check_out_latitude}
+                        checkOutLongitude={r.check_out_longitude}
+                        checkOutAccuracyMeters={r.check_out_accuracy_meters}
+                      />
+                    </td>
                     <td className="p-4 tabular-nums">
                       {r.work_hours ? `${Number(r.work_hours).toFixed(2)}h` : "—"}
                     </td>
                     <td className="p-4">
                       <span
-                        className={`px-2 py-1 rounded-full text-[10px] font-medium uppercase ${r.is_late ? "bg-warning/15 text-warning" : "bg-success/15 text-success"}`}
+                        className={`px-2 py-1 rounded-full text-[10px] font-medium uppercase ${
+                          r.is_early_checkout
+                            ? "bg-warning/15 text-warning"
+                            : r.is_late
+                              ? "bg-warning/15 text-warning"
+                              : "bg-success/15 text-success"
+                        }`}
                       >
-                        {r.is_late ? "Late" : r.status.replace("_", " ")}
+                        {r.is_early_checkout
+                          ? "Early checkout"
+                          : r.is_late
+                            ? "Late"
+                            : r.status.replace("_", " ")}
                       </span>
                     </td>
                   </tr>

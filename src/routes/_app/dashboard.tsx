@@ -196,6 +196,12 @@ function EmployeeDashboard() {
       return toast.error(error instanceof Error ? error.message : "Unable to verify location");
     }
     const now = new Date();
+    const { data: settings } = await supabase
+      .from("settings")
+      .select("office_end_time")
+      .limit(1)
+      .maybeSingle();
+    const isEarlyCheckout = isBeforeOfficeEnd(now, settings?.office_end_time);
     const inT = new Date(today.check_in_time);
     const hours = Math.round(((now.getTime() - inT.getTime()) / 3600000) * 100) / 100;
     const { error } = await supabase
@@ -205,6 +211,7 @@ function EmployeeDashboard() {
         check_out_latitude: location.latitude,
         check_out_longitude: location.longitude,
         check_out_accuracy_meters: location.accuracy,
+        is_early_checkout: isEarlyCheckout,
         work_hours: hours,
       })
       .eq("id", today.id);
@@ -492,6 +499,13 @@ function EmployeeDashboard() {
       </div>
     </>
   );
+}
+
+function isBeforeOfficeEnd(now: Date, officeEndTime?: string | null) {
+  const [hour, minute] = (officeEndTime || "18:00:00").split(":").map(Number);
+  const boundary = new Date(now);
+  boundary.setHours(hour || 18, minute || 0, 0, 0);
+  return now < boundary;
 }
 
 function getTaskCountdown(deadline: string | null, nowMs: number) {

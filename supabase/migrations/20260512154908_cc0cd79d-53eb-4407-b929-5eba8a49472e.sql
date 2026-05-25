@@ -1,4 +1,6 @@
 
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+
 -- QR status enum
 CREATE TYPE public.qr_status AS ENUM ('active', 'inactive', 'revoked');
 
@@ -23,7 +25,7 @@ BEGIN
     NEW.employee_code := 'ASL-' || LPAD(nextval('public.employee_code_seq')::text, 5, '0');
   END IF;
   IF NEW.qr_token IS NULL OR NEW.qr_token = '' THEN
-    NEW.qr_token := encode(gen_random_bytes(24), 'hex');
+    NEW.qr_token := encode(extensions.gen_random_bytes(24), 'hex');
     NEW.qr_generated_at := now();
   END IF;
   RETURN NEW;
@@ -66,7 +68,7 @@ SET employee_code = 'ASL-' || LPAD(nextval('public.employee_code_seq')::text, 5,
 WHERE employee_code IS NULL OR employee_code = '';
 
 UPDATE public.profiles
-SET qr_token = encode(gen_random_bytes(24), 'hex'),
+SET qr_token = encode(extensions.gen_random_bytes(24), 'hex'),
     qr_generated_at = COALESCE(qr_generated_at, now())
 WHERE qr_token IS NULL;
 

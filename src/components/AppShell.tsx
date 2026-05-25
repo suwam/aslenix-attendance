@@ -16,8 +16,8 @@ import {
   X,
   Bell,
   Search,
-  ChevronDown,
   QrCode,
+  CalendarClock,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { AslenixLogo } from "@/components/AslenixLogo";
@@ -32,6 +32,7 @@ const adminNav: NavItem[] = [
   { to: "/admin/employees", label: "Employees", icon: Users },
   { to: "/admin/qr-ids", label: "Digital QR IDs", icon: QrCode },
   { to: "/admin/tasks", label: "Tasks", icon: ClipboardList },
+  { to: "/admin/meetings", label: "Meetings", icon: CalendarClock },
   { to: "/admin/standups", label: "Daily Standups", icon: ClipboardList },
   { to: "/admin/attendance", label: "Attendance", icon: Clock },
   { to: "/admin/leaves", label: "Leave Requests", icon: Calendar },
@@ -43,6 +44,7 @@ const adminNav: NavItem[] = [
 const empNav: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/tasks", label: "My Tasks", icon: ClipboardList },
+  { to: "/meetings", label: "Meetings", icon: CalendarClock },
   { to: "/standup", label: "Daily Standup", icon: ClipboardList },
   { to: "/check-in", label: "Check-in", icon: Clock },
   { to: "/my-attendance", label: "My Attendance", icon: ClipboardList },

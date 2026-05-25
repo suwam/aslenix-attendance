@@ -25,7 +25,13 @@ export async function getVerifiedAttendanceLocation(): Promise<AttendanceLocatio
     .limit(1)
     .maybeSingle();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.message.includes("office_latitude")) {
+      throw new Error("Attendance location database migration is not applied yet.");
+    }
+
+    throw new Error(error.message);
+  }
 
   const locationSettings = settings as LocationSettings | null;
   const officeLatitude = locationSettings?.office_latitude;
@@ -53,12 +59,28 @@ export async function getVerifiedAttendanceLocation(): Promise<AttendanceLocatio
 
 function getCurrentPosition(): Promise<GeolocationPosition> {
   return new Promise((resolve, reject) => {
-    navigator.geolocation.getCurrentPosition(resolve, reject, {
+    navigator.geolocation.getCurrentPosition(resolve, (error) => reject(locationError(error)), {
       enableHighAccuracy: true,
       maximumAge: 0,
       timeout: 15000,
     });
   });
+}
+
+function locationError(error: GeolocationPositionError) {
+  if (error.code === error.PERMISSION_DENIED) {
+    return new Error("Location permission was denied. Please allow location access and try again.");
+  }
+
+  if (error.code === error.POSITION_UNAVAILABLE) {
+    return new Error("Current location is unavailable. Please check GPS/location services.");
+  }
+
+  if (error.code === error.TIMEOUT) {
+    return new Error("Location request timed out. Please try again near a clearer GPS signal.");
+  }
+
+  return new Error(error.message || "Unable to verify location.");
 }
 
 function distanceBetweenMeters(lat1: number, lon1: number, lat2: number, lon2: number) {

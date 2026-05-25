@@ -45,7 +45,6 @@ function SignupPage() {
       email: form.email,
       password: form.password,
       options: {
-        emailRedirectTo: `${window.location.origin}/`,
         data: {
           full_name: form.full_name,
           phone: form.phone,

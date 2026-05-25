@@ -49,7 +49,10 @@ export default function AdminCharts({
                 background: "oklch(0.18 0.025 265)",
                 border: "1px solid oklch(1 0 0 / 0.1)",
                 borderRadius: 12,
+                color: "white",
               }}
+              itemStyle={{ color: "white" }}
+              labelStyle={{ color: "white" }}
             />
             <Bar dataKey="present" stackId="a" fill="oklch(0.6 0.25 260)" radius={[0, 0, 0, 0]} />
             <Bar dataKey="late" stackId="a" fill="oklch(0.82 0.17 75)" />
@@ -83,7 +86,10 @@ export default function AdminCharts({
                   background: "oklch(0.18 0.025 265)",
                   border: "1px solid oklch(1 0 0 / 0.1)",
                   borderRadius: 12,
+                  color: "white",
                 }}
+                itemStyle={{ color: "white" }}
+                labelStyle={{ color: "white" }}
               />
             </PieChart>
           </ResponsiveContainer>

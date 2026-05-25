@@ -44,6 +44,7 @@ export type Database = {
           check_out_time: string | null;
           created_at: string;
           date: string;
+          is_early_checkout: boolean;
           id: string;
           is_late: boolean;
           remarks: string | null;
@@ -62,6 +63,7 @@ export type Database = {
           check_out_time?: string | null;
           created_at?: string;
           date: string;
+          is_early_checkout?: boolean;
           id?: string;
           is_late?: boolean;
           remarks?: string | null;
@@ -80,6 +82,7 @@ export type Database = {
           check_out_time?: string | null;
           created_at?: string;
           date?: string;
+          is_early_checkout?: boolean;
           id?: string;
           is_late?: boolean;
           remarks?: string | null;
@@ -128,6 +131,39 @@ export type Database = {
           status?: Database["public"]["Enums"]["leave_status"];
           updated_at?: string;
           user_id?: string;
+        };
+        Relationships: [];
+      };
+      meetings: {
+        Row: {
+          agenda: string | null;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          location: string | null;
+          meeting_link: string | null;
+          meeting_time: string;
+          title: string;
+        };
+        Insert: {
+          agenda?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          location?: string | null;
+          meeting_link?: string | null;
+          meeting_time: string;
+          title: string;
+        };
+        Update: {
+          agenda?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          location?: string | null;
+          meeting_link?: string | null;
+          meeting_time?: string;
+          title?: string;
         };
         Relationships: [];
       };

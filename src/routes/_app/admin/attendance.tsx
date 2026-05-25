@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
+import { AttendanceLocationLinks } from "@/components/AttendanceLocationLinks";
 import { Input } from "@/components/ui/input";
 import { Loader2, Search } from "lucide-react";
 import { format } from "date-fns";
@@ -72,6 +73,7 @@ function AttendancePage() {
                   <th className="p-4">Department</th>
                   <th className="p-4">Check-in</th>
                   <th className="p-4">Check-out</th>
+                  <th className="p-4">Location</th>
                   <th className="p-4">Hours</th>
                   <th className="p-4">Status</th>
                 </tr>
@@ -113,13 +115,27 @@ function AttendancePage() {
                         ? format(new Date(r.attendance.check_out_time), "HH:mm")
                         : "—"}
                     </td>
+                    <td className="p-4">
+                      <AttendanceLocationLinks
+                        checkInLatitude={r.attendance?.check_in_latitude}
+                        checkInLongitude={r.attendance?.check_in_longitude}
+                        checkInAccuracyMeters={r.attendance?.check_in_accuracy_meters}
+                        checkOutLatitude={r.attendance?.check_out_latitude}
+                        checkOutLongitude={r.attendance?.check_out_longitude}
+                        checkOutAccuracyMeters={r.attendance?.check_out_accuracy_meters}
+                      />
+                    </td>
                     <td className="p-4 tabular-nums">
                       {r.attendance?.work_hours
                         ? `${Number(r.attendance.work_hours).toFixed(2)}h`
                         : "—"}
                     </td>
                     <td className="p-4">
-                      <StatusPill status={r.attendance?.status} late={r.attendance?.is_late} />
+                      <StatusPill
+                        status={r.attendance?.status}
+                        late={r.attendance?.is_late}
+                        earlyCheckout={r.attendance?.is_early_checkout}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -132,13 +148,30 @@ function AttendancePage() {
   );
 }
 
-function StatusPill({ status, late }: { status?: string; late?: boolean }) {
+function StatusPill({
+  status,
+  late,
+  earlyCheckout,
+}: {
+  status?: string;
+  late?: boolean;
+  earlyCheckout?: boolean;
+}) {
   if (!status)
     return (
       <span className="px-2 py-1 rounded-full text-[10px] font-medium uppercase bg-destructive/15 text-destructive">
         Absent
       </span>
     );
+
+  if (earlyCheckout) {
+    return (
+      <span className="px-2 py-1 rounded-full text-[10px] font-medium uppercase tracking-wide bg-warning/15 text-warning">
+        Early checkout
+      </span>
+    );
+  }
+
   const map: Record<string, string> = {
     present: "bg-success/15 text-success",
     late: "bg-warning/15 text-warning",
