@@ -21,6 +21,7 @@ import {
   Crown,
   MessageSquare,
   Trophy,
+  BrainCircuit,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { AslenixLogo } from "@/components/AslenixLogo";
@@ -31,6 +32,7 @@ type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
 
 const adminNav: NavItem[] = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/admin/productivity", label: "AI Productivity", icon: BrainCircuit },
   { to: "/admin/employee-of-month", label: "Employee of Month", icon: Crown },
   { to: "/admin/weekly-feedback", label: "Weekly Feedback", icon: MessageSquare },
   { to: "/admin/achievements", label: "Achievements", icon: Trophy },

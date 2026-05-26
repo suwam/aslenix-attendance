@@ -35,6 +35,7 @@ import { Route as AppAdminStandupsRouteImport } from './routes/_app/admin/standu
 import { Route as AppAdminSettingsRouteImport } from './routes/_app/admin/settings'
 import { Route as AppAdminReportsRouteImport } from './routes/_app/admin/reports'
 import { Route as AppAdminQrIdsRouteImport } from './routes/_app/admin/qr-ids'
+import { Route as AppAdminProductivityRouteImport } from './routes/_app/admin/productivity'
 import { Route as AppAdminNotificationsRouteImport } from './routes/_app/admin/notifications'
 import { Route as AppAdminMeetingsRouteImport } from './routes/_app/admin/meetings'
 import { Route as AppAdminLeavesRouteImport } from './routes/_app/admin/leaves'
@@ -173,6 +174,11 @@ const AppAdminQrIdsRoute = AppAdminQrIdsRouteImport.update({
   path: '/admin/qr-ids',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminProductivityRoute = AppAdminProductivityRouteImport.update({
+  id: '/admin/productivity',
+  path: '/admin/productivity',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminNotificationsRoute = AppAdminNotificationsRouteImport.update({
   id: '/admin/notifications',
   path: '/admin/notifications',
@@ -241,6 +247,7 @@ export interface FileRoutesByFullPath {
   '/admin/leaves': typeof AppAdminLeavesRoute
   '/admin/meetings': typeof AppAdminMeetingsRoute
   '/admin/notifications': typeof AppAdminNotificationsRoute
+  '/admin/productivity': typeof AppAdminProductivityRoute
   '/admin/qr-ids': typeof AppAdminQrIdsRoute
   '/admin/reports': typeof AppAdminReportsRoute
   '/admin/settings': typeof AppAdminSettingsRoute
@@ -276,6 +283,7 @@ export interface FileRoutesByTo {
   '/admin/leaves': typeof AppAdminLeavesRoute
   '/admin/meetings': typeof AppAdminMeetingsRoute
   '/admin/notifications': typeof AppAdminNotificationsRoute
+  '/admin/productivity': typeof AppAdminProductivityRoute
   '/admin/qr-ids': typeof AppAdminQrIdsRoute
   '/admin/reports': typeof AppAdminReportsRoute
   '/admin/settings': typeof AppAdminSettingsRoute
@@ -313,6 +321,7 @@ export interface FileRoutesById {
   '/_app/admin/leaves': typeof AppAdminLeavesRoute
   '/_app/admin/meetings': typeof AppAdminMeetingsRoute
   '/_app/admin/notifications': typeof AppAdminNotificationsRoute
+  '/_app/admin/productivity': typeof AppAdminProductivityRoute
   '/_app/admin/qr-ids': typeof AppAdminQrIdsRoute
   '/_app/admin/reports': typeof AppAdminReportsRoute
   '/_app/admin/settings': typeof AppAdminSettingsRoute
@@ -350,6 +359,7 @@ export interface FileRouteTypes {
     | '/admin/leaves'
     | '/admin/meetings'
     | '/admin/notifications'
+    | '/admin/productivity'
     | '/admin/qr-ids'
     | '/admin/reports'
     | '/admin/settings'
@@ -385,6 +395,7 @@ export interface FileRouteTypes {
     | '/admin/leaves'
     | '/admin/meetings'
     | '/admin/notifications'
+    | '/admin/productivity'
     | '/admin/qr-ids'
     | '/admin/reports'
     | '/admin/settings'
@@ -421,6 +432,7 @@ export interface FileRouteTypes {
     | '/_app/admin/leaves'
     | '/_app/admin/meetings'
     | '/_app/admin/notifications'
+    | '/_app/admin/productivity'
     | '/_app/admin/qr-ids'
     | '/_app/admin/reports'
     | '/_app/admin/settings'
@@ -626,6 +638,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminQrIdsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin/productivity': {
+      id: '/_app/admin/productivity'
+      path: '/admin/productivity'
+      fullPath: '/admin/productivity'
+      preLoaderRoute: typeof AppAdminProductivityRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/admin/notifications': {
       id: '/_app/admin/notifications'
       path: '/admin/notifications'
@@ -704,6 +723,7 @@ interface AppRouteChildren {
   AppAdminLeavesRoute: typeof AppAdminLeavesRoute
   AppAdminMeetingsRoute: typeof AppAdminMeetingsRoute
   AppAdminNotificationsRoute: typeof AppAdminNotificationsRoute
+  AppAdminProductivityRoute: typeof AppAdminProductivityRoute
   AppAdminQrIdsRoute: typeof AppAdminQrIdsRoute
   AppAdminReportsRoute: typeof AppAdminReportsRoute
   AppAdminSettingsRoute: typeof AppAdminSettingsRoute
@@ -732,6 +752,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminLeavesRoute: AppAdminLeavesRoute,
   AppAdminMeetingsRoute: AppAdminMeetingsRoute,
   AppAdminNotificationsRoute: AppAdminNotificationsRoute,
+  AppAdminProductivityRoute: AppAdminProductivityRoute,
   AppAdminQrIdsRoute: AppAdminQrIdsRoute,
   AppAdminReportsRoute: AppAdminReportsRoute,
   AppAdminSettingsRoute: AppAdminSettingsRoute,

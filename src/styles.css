@@ -691,6 +691,129 @@
     background: linear-gradient(135deg, #21d4fd, #ff2d6f);
     box-shadow: 0 0 18px oklch(0.65 0.25 300 / 0.55);
   }
+
+  .productivity-shell {
+    position: relative;
+  }
+  .productivity-shell::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(oklch(1 0 0 / 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(1 0 0 / 0.028) 1px, transparent 1px);
+    background-size: 54px 54px;
+    mask-image: radial-gradient(circle at 52% 24%, black, transparent 68%);
+    animation: productivity-grid-drift 18s linear infinite;
+  }
+  .productivity-signal {
+    display: flex;
+    min-height: 112px;
+    align-items: center;
+    gap: 14px;
+    overflow: hidden;
+    border-radius: 18px;
+    transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+  }
+  .productivity-signal:hover,
+  .productivity-panel:hover,
+  .productivity-task-row:hover,
+  .productivity-month-row:hover {
+    transform: translateY(-2px);
+    border-color: oklch(0.7 0.24 300 / 0.24);
+    box-shadow: var(--shadow-glass), 0 18px 52px -34px oklch(0.7 0.24 300 / 0.8);
+  }
+  .productivity-hero,
+  .productivity-panel {
+    position: relative;
+    overflow: hidden;
+    border-radius: 20px;
+    transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
+  }
+  .productivity-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(circle at 16% 12%, oklch(0.75 0.24 240 / 0.2), transparent 32%),
+      radial-gradient(circle at 88% 8%, oklch(0.72 0.26 340 / 0.18), transparent 34%),
+      linear-gradient(135deg, oklch(1 0 0 / 0.08), transparent 44%);
+  }
+  .productivity-gauge {
+    display: grid;
+    height: 240px;
+    width: 240px;
+    place-items: center;
+    border-radius: 999px;
+    background:
+      conic-gradient(from 180deg, #21d4fd var(--score), oklch(1 0 0 / 0.08) 0),
+      linear-gradient(135deg, oklch(1 0 0 / 0.1), oklch(1 0 0 / 0.02));
+    box-shadow: 0 0 56px -24px oklch(0.72 0.26 340 / 0.86), inset 0 1px 0 oklch(1 0 0 / 0.18);
+  }
+  .productivity-gauge-inner {
+    display: flex;
+    height: 184px;
+    width: 184px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    border: 1px solid oklch(1 0 0 / 0.1);
+    background: oklch(0.14 0.025 265 / 0.92);
+  }
+  .productivity-rank-row,
+  .productivity-month-row,
+  .productivity-task-row {
+    border: 1px solid oklch(1 0 0 / 0.08);
+    background: oklch(1 0 0 / 0.035);
+    transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease, background .22s ease;
+  }
+  .productivity-rank-row,
+  .productivity-month-row {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 12px;
+    border-radius: 18px;
+    padding: 13px;
+  }
+  .productivity-rank-row:hover,
+  .productivity-rank-row.active,
+  .productivity-month-row:hover {
+    background: linear-gradient(135deg, oklch(0.6 0.25 260 / 0.13), oklch(0.7 0.24 340 / 0.1));
+  }
+  .productivity-rank-row.active {
+    border-color: oklch(0.75 0.24 240 / 0.35);
+  }
+  .productivity-rank-number {
+    display: flex;
+    height: 31px;
+    min-width: 31px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    background: oklch(1 0 0 / 0.06);
+    color: oklch(1 0 0 / 0.72);
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .productivity-rank-number.top {
+    color: white;
+    background: linear-gradient(135deg, #21d4fd, #8b5cf6 48%, #ff2d6f);
+    box-shadow: 0 0 24px oklch(0.7 0.24 300 / 0.38);
+  }
+  .productivity-task-row {
+    border-radius: 18px;
+    padding: 15px;
+  }
+  .productivity-progress {
+    background: linear-gradient(90deg, #21d4fd, #8b5cf6 48%, #ff2d6f);
+    box-shadow: 0 0 18px oklch(0.65 0.25 300 / 0.45);
+    transition: width .28s ease;
+    animation: eom-progress-glow 2.4s ease-in-out infinite;
+  }
 }
 
 @keyframes pulse-glow {
@@ -738,6 +861,11 @@
 @keyframes eom-particles {
   0% { transform: translate3d(0, 0, 0); }
   100% { transform: translate3d(0, 26px, 0); }
+}
+
+@keyframes productivity-grid-drift {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(54px, 54px, 0); }
 }
 
 @media (max-width: 640px) {
