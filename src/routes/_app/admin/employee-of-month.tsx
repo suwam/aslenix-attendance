@@ -48,6 +48,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import { productivityScore } from "@/lib/tasks-utils";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
 import { toast } from "sonner";
@@ -74,18 +75,23 @@ type EmployeeRank = {
 const chartColors = ["#21d4fd", "#8b5cf6", "#ff2d6f", "#f6c453", "#22c55e"];
 
 function EmployeeOfMonthPage() {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<EmployeeRank[]>([]);
   const [weekly, setWeekly] = useState<any[]>([]);
   const [rating, setRating] = useState("excellent");
   const [feedback, setFeedback] = useState("");
   const [notes, setNotes] = useState("");
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
+  const [officialAward, setOfficialAward] = useState<any>(null);
+  const [savingAward, setSavingAward] = useState(false);
+
+  const monthStart = startOfMonth(new Date()).toISOString().slice(0, 10);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
       const monthStartDate = startOfMonth(new Date());
-      const monthStart = monthStartDate.toISOString().slice(0, 10);
       const monthStartIso = `${monthStart}T00:00:00.000Z`;
       const today = new Date().toISOString().slice(0, 10);
       const [{ data: profiles }, { data: tasks }, assigneeResult, { data: attendance }] =
@@ -192,12 +198,23 @@ function EmployeeOfMonthPage() {
       });
 
       setRows(ranked);
+      setSelectedEmployeeId((current) => current || ranked[0]?.userId || "");
       setWeekly(weeklyRows);
+
+      const awardResult = await (supabase as any)
+        .from("employee_month_awards")
+        .select("*, profiles:employee_id(user_id, full_name, department, avatar_url)")
+        .eq("month_start", monthStart)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      setOfficialAward(awardResult.error ? null : awardResult.data);
       setLoading(false);
     })();
   }, []);
 
   const winner = rows[0];
+  const selectedEmployee = rows.find((row) => row.userId === selectedEmployeeId) || winner;
   const totals = useMemo(
     () => ({
       tasks: rows.reduce((sum, row) => sum + row.completedTasks, 0),
@@ -209,8 +226,38 @@ function EmployeeOfMonthPage() {
     [rows],
   );
 
-  const submitFeedback = () => {
-    toast.success("Feedback saved for review");
+  const submitFeedback = async () => {
+    if (!user || !selectedEmployee) return;
+    setSavingAward(true);
+    const { error } = await (supabase as any).from("employee_month_awards").upsert(
+      {
+        employee_id: selectedEmployee.userId,
+        admin_id: user.id,
+        month_start: monthStart,
+        score: selectedEmployee.score,
+        rating,
+        public_message: feedback || null,
+        internal_notes: notes || null,
+      },
+      { onConflict: "employee_id,month_start" },
+    );
+    setSavingAward(false);
+    if (error) return toast.error(error.message);
+    toast.success(`${selectedEmployee.name} was assigned Employee of the Month`);
+    setOfficialAward({
+      employee_id: selectedEmployee.userId,
+      month_start: monthStart,
+      score: selectedEmployee.score,
+      rating,
+      public_message: feedback,
+      internal_notes: notes,
+      profiles: {
+        user_id: selectedEmployee.userId,
+        full_name: selectedEmployee.name,
+        department: selectedEmployee.department,
+        avatar_url: selectedEmployee.avatarUrl,
+      },
+    });
     setFeedback("");
     setNotes("");
   };
@@ -252,6 +299,11 @@ function EmployeeOfMonthPage() {
           <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
             <AnalyticsPanel weekly={weekly} rows={rows} />
             <FeedbackPanel
+              rows={rows}
+              selectedEmployeeId={selectedEmployeeId}
+              setSelectedEmployeeId={setSelectedEmployeeId}
+              selectedEmployee={selectedEmployee}
+              officialAward={officialAward}
               rating={rating}
               setRating={setRating}
               feedback={feedback}
@@ -259,6 +311,7 @@ function EmployeeOfMonthPage() {
               notes={notes}
               setNotes={setNotes}
               onSubmit={submitFeedback}
+              saving={savingAward}
             />
           </section>
 
@@ -439,6 +492,11 @@ function AnalyticsPanel({ weekly, rows }: { weekly: any[]; rows: EmployeeRank[] 
 }
 
 function FeedbackPanel({
+  rows,
+  selectedEmployeeId,
+  setSelectedEmployeeId,
+  selectedEmployee,
+  officialAward,
   rating,
   setRating,
   feedback,
@@ -446,22 +504,51 @@ function FeedbackPanel({
   notes,
   setNotes,
   onSubmit,
+  saving,
 }: {
+  rows: EmployeeRank[];
+  selectedEmployeeId: string;
+  setSelectedEmployeeId: (value: string) => void;
+  selectedEmployee?: EmployeeRank;
+  officialAward: any;
   rating: string;
   setRating: (value: string) => void;
   feedback: string;
   setFeedback: (value: string) => void;
   notes: string;
   setNotes: (value: string) => void;
-  onSubmit: () => void;
+  onSubmit: () => Promise<void>;
+  saving: boolean;
 }) {
+  const awardedName = officialAward?.profiles?.full_name;
+
   return (
     <GlassCard className="eom-feedback">
       <h3 className="mb-4 flex items-center gap-2 font-semibold">
         <Medal size={16} className="text-primary" />
-        Admin feedback
+        Assign official badge
       </h3>
       <div className="space-y-4">
+        {awardedName && (
+          <div className="rounded-2xl border border-amber-200/20 bg-amber-300/10 p-3 text-sm text-amber-100">
+            Current official winner for this month: <span className="font-semibold">{awardedName}</span>
+          </div>
+        )}
+        <div>
+          <Label>Employee</Label>
+          <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
+            <SelectTrigger className="mt-1">
+              <SelectValue placeholder="Select employee" />
+            </SelectTrigger>
+            <SelectContent>
+              {rows.map((row) => (
+                <SelectItem key={row.userId} value={row.userId}>
+                  #{rows.findIndex((item) => item.userId === row.userId) + 1} {row.name} · {row.score}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <div>
           <Label>Rating</Label>
           <Select value={rating} onValueChange={setRating}>
@@ -477,12 +564,12 @@ function FeedbackPanel({
           </Select>
         </div>
         <div>
-          <Label>Feedback</Label>
+          <Label>Public employee message</Label>
           <Textarea
             value={feedback}
             onChange={(event) => setFeedback(event.target.value)}
             rows={4}
-            placeholder="Recognize performance, collaboration, and delivery..."
+            placeholder={`Congratulations message for ${selectedEmployee?.name || "the employee"}...`}
             className="mt-1"
           />
         </div>
@@ -496,9 +583,9 @@ function FeedbackPanel({
             className="mt-1"
           />
         </div>
-        <Button onClick={onSubmit} className="neon-button w-full rounded-xl">
+        <Button onClick={onSubmit} disabled={saving || !selectedEmployee} className="neon-button w-full rounded-xl">
           <Send size={14} className="mr-1.5" />
-          Submit feedback
+          {saving ? "Assigning..." : "Assign Employee of the Month"}
         </Button>
       </div>
     </GlassCard>

@@ -18,6 +18,8 @@ import {
   Activity,
   Zap,
   AlertCircle,
+  Crown,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfMonth } from "date-fns";
@@ -39,6 +41,7 @@ function EmployeeDashboard() {
   });
   const [recent, setRecent] = useState<any[]>([]);
   const [deadlineTasks, setDeadlineTasks] = useState<any[]>([]);
+  const [monthAward, setMonthAward] = useState<any>(null);
   const [nowTick, setNowTick] = useState(Date.now());
   const [busy, setBusy] = useState(false);
 
@@ -54,11 +57,16 @@ function EmployeeDashboard() {
       .maybeSingle();
     setToday(t);
     const monthStart = startOfMonth(new Date()).toISOString().slice(0, 10);
-    const { data: m } = await supabase
-      .from("attendance")
-      .select("*")
-      .eq("user_id", user.id)
-      .gte("date", monthStart);
+    const [{ data: m }, awardResult] = await Promise.all([
+      supabase.from("attendance").select("*").eq("user_id", user.id).gte("date", monthStart),
+      (supabase as any)
+        .from("employee_month_awards")
+        .select("*")
+        .eq("employee_id", user.id)
+        .eq("month_start", monthStart)
+        .maybeSingle(),
+    ]);
+    setMonthAward(awardResult.error ? null : awardResult.data);
     setMonthStats({
       present:
         m?.filter((x) => x.status === "present" || x.status === "late" || x.status === "wfh")
@@ -230,6 +238,33 @@ function EmployeeDashboard() {
         title={`Hello, ${profile?.full_name?.split(" ")[0]}`}
         subtitle="Here's your day at a glance"
       />
+
+      {monthAward && (
+        <GlassCard className="mb-6 overflow-hidden border-amber-200/20" glow="blue">
+          <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="eom-crown">
+                <Crown size={28} />
+              </div>
+              <div>
+                <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-200">
+                  <Sparkles size={14} />
+                  Employee of the Month
+                </div>
+                <h2 className="text-2xl font-bold">Congratulations, {profile?.full_name?.split(" ")[0]}!</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {monthAward.public_message ||
+                    `You earned the official ASLENIX monthly badge with a ${monthAward.score}/100 score.`}
+                </p>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-right">
+              <div className="text-3xl font-bold gradient-text tabular-nums">{monthAward.score}</div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Award score</div>
+            </div>
+          </div>
+        </GlassCard>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <GlassCard className="lg:col-span-2 relative overflow-hidden" glow="red">
