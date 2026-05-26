@@ -234,7 +234,7 @@ function ProductivityCommandCenter() {
   };
   const topEmployee = employees[0];
   const chartRows = useMemo(() => buildDailyTrend(employees), [employees]);
-  const leaderboard = employees.slice(0, 6);
+  const leaderboard = employees;
   const taskChart = [
     { name: "Completed", value: sum(employees.map((employee) => employee.completedTasks)), fill: "#21d4fd" },
     { name: "Active", value: sum(employees.map((employee) => employee.tasks.length - employee.completedTasks - employee.overdueTasks)), fill: "#8b5cf6" },
@@ -311,7 +311,7 @@ function ProductivityCommandCenter() {
               <Crown size={17} className="text-primary" />
               Live Ranking
             </h3>
-            <div className="space-y-3">
+            <div className="max-h-[560px] space-y-3 overflow-y-auto pr-1">
               {leaderboard.map((employee) => (
                 <button
                   key={employee.userId}
