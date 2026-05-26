@@ -113,13 +113,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen flex">
       {/* Sidebar (desktop) */}
       <aside
-        className="hidden lg:flex flex-col w-64 shrink-0 sticky top-0 h-screen p-4 gap-2 border-r border-sidebar-border"
+        className="hidden lg:flex flex-col w-64 shrink-0 sticky top-0 h-screen min-h-0 p-4 gap-2 border-r border-sidebar-border"
         style={{ background: "var(--sidebar)", backdropFilter: "blur(20px)" }}
       >
         <div className="px-2 py-3">
           <AslenixLogo />
         </div>
-        <nav className="flex-1 mt-4 space-y-1">
+        <nav className="flex-1 min-h-0 mt-4 space-y-1 overflow-y-auto pr-1">
           {items.map((item) => {
             const active =
               currentPath === item.to ||
@@ -157,7 +157,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             onClick={() => setMobileOpen(false)}
           />
           <aside
-            className="lg:hidden fixed left-0 top-0 bottom-0 w-72 z-50 p-4 flex flex-col gap-2 border-r border-sidebar-border"
+            className="lg:hidden fixed left-0 top-0 bottom-0 w-72 z-50 min-h-0 p-4 flex flex-col gap-2 border-r border-sidebar-border"
             style={{ background: "var(--sidebar)" }}
           >
             <div className="flex items-center justify-between px-2 py-3">
@@ -169,7 +169,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <X size={18} />
               </button>
             </div>
-            <nav className="flex-1 mt-2 space-y-1">
+            <nav className="flex-1 min-h-0 mt-2 space-y-1 overflow-y-auto overscroll-contain pr-1">
               {items.map((item) => {
                 const active = currentPath === item.to;
                 const Icon = item.icon;
