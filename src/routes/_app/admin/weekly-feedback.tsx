@@ -49,7 +49,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { productivityScore } from "@/lib/tasks-utils";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
-import { reviewScoreFromRating } from "@/lib/employee-scoring";
+import { resolvedReviewScore, reviewScoreFromRating } from "@/lib/employee-scoring";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/admin/weekly-feedback")({
@@ -253,7 +253,7 @@ function WeeklyFeedbackPage() {
   const reviewedThisWeek = feedbackRows.filter((row) => getFeedbackWeekNumber(row) === currentWeekNumber).length;
   const totalReviews = feedbackRows.length;
   const avgHrRating = average(
-    feedbackRows.map((row) => Number(row.review_score ?? reviewScoreFromRating(row.rating || "Average"))),
+    feedbackRows.map((row) => resolvedReviewScore(row)),
   );
   const lastReviewed = feedbackRows[0]?.created_at ? format(new Date(feedbackRows[0].created_at), "MMM d") : "None";
 
@@ -749,7 +749,7 @@ function ReviewDetails({
       </div>
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <ReviewDetail label="Rating" value={review.rating} />
-        <ReviewDetail label="Score" value={review.review_score ?? reviewScoreFromRating(review.rating)} />
+        <ReviewDetail label="Score" value={resolvedReviewScore(review)} />
         <ReviewDetail label="Submission date" value={format(new Date(review.created_at), "MMM d, yyyy")} />
         <ReviewDetail label="Strengths" value={review.strengths || "No strengths added."} />
         <ReviewDetail label="Improvements" value={review.improvements || "No improvements added."} />
@@ -783,7 +783,7 @@ function CompactReviewCard({
           <div className="mt-1 font-bold">{review?.rating || "Pending"}</div>
         </div>
         <div className="rounded-xl bg-white/[0.06] px-2 py-1 text-sm font-bold tabular-nums">
-          {review ? review.review_score ?? reviewScoreFromRating(review.rating) : "--"}
+          {review ? resolvedReviewScore(review) : "--"}
         </div>
       </div>
       <div className="mt-3 text-xs text-muted-foreground">

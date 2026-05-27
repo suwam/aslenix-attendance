@@ -21,12 +21,14 @@ export function reviewScoreFromRating(rating?: string | null) {
   return REVIEW_SCORE_BY_RATING[rating as ReviewRating] ?? 0;
 }
 
+export function resolvedReviewScore(review: ReviewLike) {
+  const storedScore = Number(review.review_score || 0);
+  return storedScore > 0 ? storedScore : reviewScoreFromRating(review.rating);
+}
+
 export function calculateReviewAverage(reviews: ReviewLike[]) {
   if (!reviews.length) return 0;
-  const total = reviews.reduce(
-    (sum, review) => sum + Number(review.review_score ?? reviewScoreFromRating(review.rating)),
-    0,
-  );
+  const total = reviews.reduce((sum, review) => sum + resolvedReviewScore(review), 0);
   return Number((total / reviews.length).toFixed(1));
 }
 

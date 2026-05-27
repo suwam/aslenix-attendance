@@ -62,7 +62,7 @@ import {
   calculateReviewAverage,
   calculateTaskProgressMetrics,
   ratingLabelFromAverage,
-  reviewScoreFromRating,
+  resolvedReviewScore,
 } from "@/lib/employee-scoring";
 import { eomEligibilityLabel, isEomEligible } from "@/lib/eom-eligibility";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
@@ -261,12 +261,8 @@ function EmployeeOfMonthPage() {
           const reviews = feedbackRows.filter((item) => item.employee_id === profile.user_id);
           const reviewAverage = calculateReviewAverage(reviews);
           const latestReview = reviews[0] || null;
-          const latestReviewScore = latestReview
-            ? Number(latestReview.review_score ?? reviewScoreFromRating(latestReview.rating))
-            : 0;
-          const previousReviewScore = reviews[1]
-            ? Number(reviews[1].review_score ?? reviewScoreFromRating(reviews[1].rating))
-            : null;
+          const latestReviewScore = latestReview ? resolvedReviewScore(latestReview) : 0;
+          const previousReviewScore = reviews[1] ? resolvedReviewScore(reviews[1]) : null;
           const reviewTrend =
             previousReviewScore === null
               ? latestReview
@@ -958,7 +954,7 @@ function HrReviewsSection({
       employeeName: row.name,
       department: row.department,
       weekLabel: `Week ${row.reviews.length - index}`,
-      scoreValue: Number(review.review_score ?? reviewScoreFromRating(review.rating)),
+      scoreValue: resolvedReviewScore(review),
     })),
   );
   const selectedReviews = selectedEmployee?.reviews || [];
@@ -985,7 +981,7 @@ function HrReviewsSection({
         <div className="mt-5 space-y-3">
           {selectedReviews.length ? (
             selectedReviews.map((review, index) => {
-              const score = Number(review.review_score ?? reviewScoreFromRating(review.rating));
+              const score = resolvedReviewScore(review);
               return (
                 <div key={review.id} className="eom-review-timeline-item">
                   <div className="eom-review-node">{index + 1}</div>
