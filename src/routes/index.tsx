@@ -9,6 +9,8 @@ export const Route = createFileRoute("/")({
 function Index() {
   const { loading, user, isAdmin, isApproved, profile } = useAuth();
 
+  if (isPasswordRecoveryHash()) return <Navigate to="/reset-password" />;
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -43,4 +45,10 @@ function Index() {
     return <Navigate to="/account-locked" />;
   if (!isApproved) return <Navigate to="/pending" />;
   return <Navigate to={isAdmin ? "/admin" : "/dashboard"} />;
+}
+
+function isPasswordRecoveryHash() {
+  if (typeof window === "undefined") return false;
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  return hashParams.get("type") === "recovery" && Boolean(hashParams.get("access_token"));
 }
