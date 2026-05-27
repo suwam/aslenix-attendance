@@ -6,6 +6,14 @@ import { PageHeader, StatCard } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { LiveClock } from "@/components/LiveClock";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getVerifiedAttendanceLocation } from "@/lib/attendance-location";
 import {
   Clock,
@@ -20,6 +28,7 @@ import {
   AlertCircle,
   Crown,
   Sparkles,
+  MessageSquare,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfMonth } from "date-fns";
@@ -42,6 +51,8 @@ function EmployeeDashboard() {
   const [recent, setRecent] = useState<any[]>([]);
   const [deadlineTasks, setDeadlineTasks] = useState<any[]>([]);
   const [monthAward, setMonthAward] = useState<any>(null);
+  const [latestImprovement, setLatestImprovement] = useState<any>(null);
+  const [improvementOpen, setImprovementOpen] = useState(false);
   const [nowTick, setNowTick] = useState(Date.now());
   const [busy, setBusy] = useState(false);
 
@@ -57,7 +68,7 @@ function EmployeeDashboard() {
       .maybeSingle();
     setToday(t);
     const monthStart = startOfMonth(new Date()).toISOString().slice(0, 10);
-    const [{ data: m }, awardResult] = await Promise.all([
+    const [{ data: m }, awardResult, improvementResult] = await Promise.all([
       supabase.from("attendance").select("*").eq("user_id", user.id).gte("date", monthStart),
       (supabase as any)
         .from("employee_month_awards")
@@ -65,8 +76,21 @@ function EmployeeDashboard() {
         .eq("employee_id", user.id)
         .eq("month_start", monthStart)
         .maybeSingle(),
+      (supabase as any)
+        .from("weekly_feedback")
+        .select("id,week_start,rating,improvements,created_at")
+        .eq("employee_id", user.id)
+        .not("improvements", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
     setMonthAward(awardResult.error ? null : awardResult.data);
+    const improvement = improvementResult.error ? null : improvementResult.data;
+    setLatestImprovement(improvement);
+    if (improvement?.id && !isImprovementDismissed(user.id, improvement.id)) {
+      setImprovementOpen(true);
+    }
     setMonthStats({
       present:
         m?.filter((x) => x.status === "present" || x.status === "late" || x.status === "wfh")
@@ -232,8 +256,50 @@ function EmployeeDashboard() {
 
   const status = !today ? "Not checked in" : today.check_out_time ? "Day completed" : "Working";
 
+  const dismissImprovement = () => {
+    if (user && latestImprovement?.id) {
+      markImprovementDismissed(user.id, latestImprovement.id);
+    }
+    setImprovementOpen(false);
+  };
+
   return (
     <>
+      <Dialog
+        open={improvementOpen}
+        onOpenChange={(open) => {
+          if (!open) dismissImprovement();
+          else setImprovementOpen(true);
+        }}
+      >
+        <DialogContent className="overflow-hidden rounded-2xl border-white/10 bg-background/95 sm:max-w-xl">
+          <DialogHeader>
+            <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-white shadow-[0_0_28px_rgba(125,92,255,.35)]">
+              <MessageSquare size={22} />
+            </div>
+            <DialogTitle>Weekly improvement note</DialogTitle>
+            <DialogDescription>
+              {latestImprovement?.week_start
+                ? `Your HR review for the week of ${format(new Date(latestImprovement.week_start), "MMM d, yyyy")}`
+                : "Your latest HR weekly review"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Improvement section
+            </div>
+            <p className="whitespace-pre-wrap text-sm leading-6 text-white/90">
+              {latestImprovement?.improvements}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button onClick={dismissImprovement} className="neon-button rounded-xl">
+              Got it
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <PageHeader
         title={`Hello, ${profile?.full_name?.split(" ")[0]}`}
         subtitle="Here's your day at a glance"
@@ -542,6 +608,20 @@ function isBeforeOfficeEnd(now: Date, officeEndTime?: string | null) {
   const boundary = new Date(now);
   boundary.setHours(hour || 18, minute || 0, 0, 0);
   return now < boundary;
+}
+
+function improvementDismissalKey(userId: string, reviewId: string) {
+  return `weekly-improvement-dismissed:${userId}:${reviewId}`;
+}
+
+function isImprovementDismissed(userId: string, reviewId: string) {
+  if (typeof window === "undefined") return true;
+  return window.localStorage.getItem(improvementDismissalKey(userId, reviewId)) === "1";
+}
+
+function markImprovementDismissed(userId: string, reviewId: string) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(improvementDismissalKey(userId, reviewId), "1");
 }
 
 function getTaskCountdown(deadline: string | null, nowMs: number) {
