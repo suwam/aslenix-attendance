@@ -6,7 +6,18 @@ ALTER TABLE public.weekly_feedback
   ADD COLUMN IF NOT EXISTS admin_notes text;
 
 UPDATE public.weekly_feedback
-SET week_number = LEAST(4, GREATEST(1, CEIL(EXTRACT(DAY FROM week_start)::numeric / 7)::integer))
+SET week_number = LEAST(
+  4,
+  GREATEST(
+    1,
+    2 + ROUND(
+      (
+        (date_trunc('week', week_start - INTERVAL '2 days') + INTERVAL '2 days')::date
+        - (date_trunc('week', CURRENT_DATE - INTERVAL '2 days') + INTERVAL '2 days')::date
+      )::numeric / 7
+    )::integer
+  )
+)
 WHERE week_number IS NULL;
 
 UPDATE public.weekly_feedback

@@ -91,6 +91,8 @@ type EmployeeWeek = {
 };
 
 const ratingOptions: Rating[] = ["Excellent", "Good", "Average", "Poor"];
+const CURRENT_REVIEW_WEEK_NUMBER = 2;
+const REVIEW_WEEK_START_DAY = 3;
 
 function WeeklyFeedbackPage() {
   const { user } = useAuth();
@@ -847,20 +849,25 @@ function average(values: number[]) {
 }
 
 function getReviewWeekNumber(date: Date) {
-  return Math.min(4, Math.max(1, Math.ceil(date.getDate() / 7)));
+  const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: REVIEW_WEEK_START_DAY }).getTime();
+  const reviewWeekStart = startOfWeek(date, { weekStartsOn: REVIEW_WEEK_START_DAY }).getTime();
+  const weekOffset = Math.round((reviewWeekStart - currentWeekStart) / 604800000);
+  return Math.min(4, Math.max(1, CURRENT_REVIEW_WEEK_NUMBER + weekOffset));
 }
 
 function getReviewWeeks(date: Date) {
-  const year = date.getFullYear();
-  const month = date.getMonth();
+  const currentWeekStart = startOfWeek(date, { weekStartsOn: REVIEW_WEEK_START_DAY });
   return Array.from({ length: 4 }).map((_, index) => {
     const weekNumber = index + 1;
-    const startDay = index * 7 + 1;
-    const endDay = index === 3 ? new Date(year, month + 1, 0).getDate() : startDay + 6;
+    const offsetFromCurrentWeek = weekNumber - CURRENT_REVIEW_WEEK_NUMBER;
+    const startDate = new Date(currentWeekStart);
+    startDate.setDate(currentWeekStart.getDate() + offsetFromCurrentWeek * 7);
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + 6);
     return {
       weekNumber,
-      startDate: toDateKey(new Date(year, month, startDay)),
-      endDate: toDateKey(new Date(year, month, endDay)),
+      startDate: toDateKey(startDate),
+      endDate: toDateKey(endDate),
     };
   });
 }
@@ -870,7 +877,7 @@ function toDateKey(date: Date) {
 }
 
 function getFeedbackWeekNumber(review: Pick<WeeklyFeedbackRow, "week_number" | "week_start">) {
-  return review.week_number || getReviewWeekNumber(new Date(`${review.week_start}T00:00:00`));
+  return getReviewWeekNumber(new Date(`${review.week_start}T00:00:00`));
 }
 
 function isSameReviewCycle(reviewDate: string, weekStart?: string) {
