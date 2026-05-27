@@ -272,7 +272,7 @@ function EmployeeDashboard() {
           else setImprovementOpen(true);
         }}
       >
-        <DialogContent className="overflow-hidden rounded-2xl border-white/10 bg-background/95 sm:max-w-xl">
+        <DialogContent className="grid max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-2xl border-white/10 bg-background/95 sm:max-w-xl">
           <DialogHeader>
             <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-white shadow-[0_0_28px_rgba(125,92,255,.35)]">
               <MessageSquare size={22} />
@@ -284,7 +284,7 @@ function EmployeeDashboard() {
                 : "Your latest HR weekly review"}
             </DialogDescription>
           </DialogHeader>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+          <div className="min-h-0 overflow-y-auto rounded-2xl border border-white/10 bg-white/[0.04] p-4">
             <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Improvement section
             </div>
