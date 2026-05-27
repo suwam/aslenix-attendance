@@ -5,15 +5,17 @@ import {
   BarChart3,
   CalendarDays,
   CheckCircle2,
+  Clock3,
   Crown,
-  Flame,
+  Edit3,
+  History,
   Loader2,
+  LockKeyhole,
   MessageSquare,
   Save,
   Search,
   ShieldAlert,
   Sparkles,
-  Target,
   TrendingUp,
   UserCheck,
   Zap,
@@ -47,6 +49,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { productivityScore } from "@/lib/tasks-utils";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
+import { reviewScoreFromRating } from "@/lib/employee-scoring";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/admin/weekly-feedback")({
@@ -54,6 +57,23 @@ export const Route = createFileRoute("/_app/admin/weekly-feedback")({
 });
 
 type Rating = "Excellent" | "Good" | "Average" | "Poor";
+type WeekStatus = "completed" | "pending" | "missed" | "locked";
+
+type WeeklyFeedbackRow = {
+  id: string;
+  employee_id: string;
+  admin_id?: string;
+  week_start: string;
+  week_number?: number | null;
+  rating: Rating;
+  strengths: string | null;
+  improvements: string | null;
+  notes?: string | null;
+  admin_notes?: string | null;
+  score: number;
+  review_score?: number | null;
+  created_at: string;
+};
 
 type EmployeeWeek = {
   userId: string;
@@ -67,7 +87,7 @@ type EmployeeWeek = {
   streak: number;
   rank: number;
   trend: number;
-  history: any[];
+  history: WeeklyFeedbackRow[];
 };
 
 const ratingOptions: Rating[] = ["Excellent", "Good", "Average", "Poor"];
@@ -85,14 +105,19 @@ function WeeklyFeedbackPage() {
   const [improvements, setImprovements] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const currentWeekNumber = getReviewWeekNumber(new Date());
+  const [selectedWeekNumber, setSelectedWeekNumber] = useState(currentWeekNumber);
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
 
   const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString().slice(0, 10);
+  const reviewWeeks = useMemo(() => getReviewWeeks(new Date()), []);
 
   const load = async () => {
     setLoading(true);
     const weekStartDate = new Date(`${weekStart}T00:00:00`);
     const weekStartIso = weekStartDate.toISOString();
     const today = new Date().toISOString().slice(0, 10);
+    const reviewCycleStart = reviewWeeks[0]?.startDate || weekStart;
     const [{ data: profiles }, { data: tasks }, assigneeResult, { data: attendance }, feedbackResult] =
       await Promise.all([
         supabase
@@ -110,7 +135,7 @@ function WeeklyFeedbackPage() {
         (supabase as any)
           .from("weekly_feedback")
           .select("*")
-          .gte("week_start", subDays(weekStartDate, 35).toISOString().slice(0, 10))
+          .gte("week_start", subDays(new Date(`${reviewCycleStart}T00:00:00`), 7).toISOString().slice(0, 10))
           .order("week_start", { ascending: false }),
       ]);
     const assignees =
@@ -155,7 +180,7 @@ function WeeklyFeedbackPage() {
           hours,
           targetHours: 40,
         });
-        const history = feedback.filter((item: any) => item.employee_id === profile.user_id);
+        const history = feedback.filter((item: WeeklyFeedbackRow) => item.employee_id === profile.user_id);
         const previous = history.find((item: any) => item.week_start !== weekStart);
         return {
           userId: profile.user_id,
@@ -186,6 +211,18 @@ function WeeklyFeedbackPage() {
   }, []);
 
   const selected = rows.find((row) => row.userId === selectedId) || rows[0];
+  const selectedHistory = selected?.history || [];
+  const selectedWeek = reviewWeeks.find((week) => week.weekNumber === selectedWeekNumber) || reviewWeeks[0];
+  const selectedWeekReview = selectedHistory.find((item) =>
+    getFeedbackWeekNumber(item) === selectedWeekNumber && isSameReviewCycle(item.week_start, selectedWeek?.startDate),
+  );
+  const completedWeeks = reviewWeeks.filter((week) =>
+    selectedHistory.some((item) => getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate)),
+  ).length;
+  const selectedWeekStatus = getWeekStatus(selectedWeekNumber, currentWeekNumber, Boolean(selectedWeekReview));
+  const selectedWeekLocked = selectedWeekStatus === "locked";
+  const canEditSelectedReview = Boolean(selectedWeekReview && editingReviewId === selectedWeekReview.id);
+  const formLocked = selectedWeekLocked || (Boolean(selectedWeekReview) && !canEditSelectedReview);
   const departments = useMemo(
     () => ["All departments", ...Array.from(new Set(rows.map((row) => row.department)))],
     [rows],
@@ -211,27 +248,97 @@ function WeeklyFeedbackPage() {
     score: Math.max(0, Math.min(100, (selected?.score || 0) - (4 - index) * 6 + index * 2)),
     attendance: Math.max(0, Math.min(100, (selected?.attendancePct || 0) - (4 - index) * 5)),
   }));
-  const reviewedThisWeek = feedbackRows.filter((row) => row.week_start === weekStart).length;
+  const reviewedThisWeek = feedbackRows.filter((row) => getFeedbackWeekNumber(row) === currentWeekNumber).length;
+  const totalReviews = feedbackRows.length;
+  const avgHrRating = average(
+    feedbackRows.map((row) => Number(row.review_score ?? reviewScoreFromRating(row.rating || "Average"))),
+  );
+  const lastReviewed = feedbackRows[0]?.created_at ? format(new Date(feedbackRows[0].created_at), "MMM d") : "None";
+
+  useEffect(() => {
+    setEditingReviewId(null);
+    if (selectedWeekReview) {
+      setRating(selectedWeekReview.rating);
+      setStrengths(selectedWeekReview.strengths || "");
+      setImprovements(selectedWeekReview.improvements || "");
+      setNotes(selectedWeekReview.admin_notes || selectedWeekReview.notes || "");
+      return;
+    }
+    setRating("Excellent");
+    setStrengths("");
+    setImprovements("");
+    setNotes("");
+  }, [
+    selectedId,
+    selectedWeekNumber,
+    selectedWeekReview?.id,
+    selectedWeekReview?.rating,
+    selectedWeekReview?.strengths,
+    selectedWeekReview?.improvements,
+    selectedWeekReview?.admin_notes,
+    selectedWeekReview?.notes,
+  ]);
 
   const saveFeedback = async () => {
-    if (!user || !selected) return;
+    if (!user || !selected || !selectedWeek) return;
+    if (selectedWeekLocked) {
+      toast.error(`Week ${selectedWeekNumber} is locked until that week starts`);
+      return;
+    }
     setSaving(true);
-    const { error } = await (supabase as any).from("weekly_feedback").upsert(
-      {
-        employee_id: selected.userId,
-        admin_id: user.id,
-        week_start: weekStart,
-        rating,
-        strengths: strengths || null,
-        improvements: improvements || null,
-        notes: notes || null,
-        score: selected.score,
-      },
-      { onConflict: "employee_id,week_start" },
-    );
+    const reviewPayload = {
+      employee_id: selected.userId,
+      admin_id: user.id,
+      week_start: selectedWeek.startDate,
+      week_number: selectedWeekNumber,
+      rating,
+      review_score: reviewScoreFromRating(rating),
+      strengths: strengths || null,
+      improvements: improvements || null,
+      admin_notes: notes || null,
+      notes: notes || null,
+      score: selected.score,
+    };
+
+    if (selectedWeekReview && editingReviewId !== selectedWeekReview.id) {
+      setSaving(false);
+      toast.error(`Week ${selectedWeekNumber} review already submitted`);
+      return;
+    }
+
+    const existingResult = await (supabase as any)
+      .from("weekly_feedback")
+      .select("id")
+      .eq("employee_id", selected.userId)
+      .eq("week_start", selectedWeek.startDate)
+      .maybeSingle();
+
+    if (!editingReviewId && existingResult.data) {
+      setSaving(false);
+      toast.error(`Week ${selectedWeekNumber} review already submitted`);
+      return;
+    }
+
+    const result = editingReviewId
+      ? await (supabase as any)
+          .from("weekly_feedback")
+          .update(reviewPayload)
+          .eq("id", editingReviewId)
+      : await (supabase as any).from("weekly_feedback").insert(reviewPayload);
+    const { review_score: _reviewScore, week_number: _weekNumber, admin_notes: _adminNotes, ...legacyReviewPayload } = reviewPayload;
+    const fallbackResult =
+      result.error && isMissingWeeklyFeedbackColumnError(result.error)
+        ? editingReviewId
+          ? await (supabase as any)
+              .from("weekly_feedback")
+              .update(legacyReviewPayload)
+              .eq("id", editingReviewId)
+          : await (supabase as any).from("weekly_feedback").insert(legacyReviewPayload)
+        : result;
     setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success("Weekly feedback saved");
+    if (fallbackResult.error) return toast.error(fallbackResult.error.message);
+    toast.success(editingReviewId ? "Weekly review updated" : "Weekly feedback saved");
+    setEditingReviewId(null);
     setStrengths("");
     setImprovements("");
     setNotes("");
@@ -257,8 +364,9 @@ function WeeklyFeedbackPage() {
         <section className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <WeeklyStat label="Employees" value={rows.length} icon={UserCheck} />
           <WeeklyStat label="Reviewed this week" value={reviewedThisWeek} icon={MessageSquare} />
-          <WeeklyStat label="Top score" value={rows[0]?.score || 0} icon={Crown} />
-          <WeeklyStat label="Avg attendance" value={`${average(rows.map((row) => row.attendancePct))}%`} icon={CalendarDays} />
+          <WeeklyStat label="Total reviews" value={totalReviews} icon={History} />
+          <WeeklyStat label="Avg HR rating" value={avgHrRating || 0} icon={Crown} />
+          <WeeklyStat label="Last reviewed" value={lastReviewed} icon={CalendarDays} />
         </section>
 
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.05fr_.95fr]">
@@ -314,11 +422,54 @@ function WeeklyFeedbackPage() {
               <MiniMetric label="Attendance" value={`${selected?.attendancePct || 0}%`} icon={CalendarDays} />
             </div>
 
+            <div className="mb-5 space-y-4">
+              <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground">Weekly review cycle</div>
+                  <div className="mt-1 text-xl font-bold">{completedWeeks}/4 Weekly Reviews Completed</div>
+                </div>
+                <StatusBadge status={selectedWeekStatus} />
+              </div>
+              <div className="weekly-week-selector">
+                {reviewWeeks.map((week) => {
+                  const review = selectedHistory.find((item) =>
+                    getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate),
+                  );
+                  const status = getWeekStatus(week.weekNumber, currentWeekNumber, Boolean(review));
+                  return (
+                    <button
+                      key={week.weekNumber}
+                      type="button"
+                      onClick={() => setSelectedWeekNumber(week.weekNumber)}
+                      className={`weekly-week-tab ${selectedWeekNumber === week.weekNumber ? "selected" : ""} ${
+                        week.weekNumber === currentWeekNumber ? "current" : ""
+                      } ${status}`}
+                    >
+                      <span>Week {week.weekNumber}</span>
+                      <WeekStatusIcon status={status} />
+                    </button>
+                  );
+                })}
+              </div>
+              {selectedWeekReview && !canEditSelectedReview && (
+                <ReviewDetails
+                  review={selectedWeekReview}
+                  weekNumber={selectedWeekNumber}
+                  onEdit={() => setEditingReviewId(selectedWeekReview.id)}
+                />
+              )}
+              {selectedWeekLocked && (
+                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-sm text-muted-foreground">
+                  Week {selectedWeekNumber} is a future week and is locked for reviews.
+                </div>
+              )}
+            </div>
+
             <div className="space-y-4">
               <div>
                 <Label>Weekly rating</Label>
                 <Select value={rating} onValueChange={(value) => setRating(value as Rating)}>
-                  <SelectTrigger className="mt-1">
+                  <SelectTrigger className="mt-1" disabled={formLocked}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -335,6 +486,7 @@ function WeeklyFeedbackPage() {
                 <Textarea
                   value={strengths}
                   onChange={(event) => setStrengths(event.target.value)}
+                  disabled={formLocked}
                   rows={3}
                   placeholder="What went especially well this week?"
                   className="mt-1"
@@ -345,6 +497,7 @@ function WeeklyFeedbackPage() {
                 <Textarea
                   value={improvements}
                   onChange={(event) => setImprovements(event.target.value)}
+                  disabled={formLocked}
                   rows={3}
                   placeholder="What should improve next week?"
                   className="mt-1"
@@ -355,15 +508,30 @@ function WeeklyFeedbackPage() {
                 <Textarea
                   value={notes}
                   onChange={(event) => setNotes(event.target.value)}
+                  disabled={formLocked}
                   rows={3}
                   placeholder="Private review notes..."
                   className="mt-1"
                 />
               </div>
-              <Button onClick={saveFeedback} disabled={saving} className="neon-button w-full rounded-xl">
-                <Save size={14} className="mr-1.5" />
-                {saving ? "Saving..." : "Submit weekly feedback"}
+              <Button onClick={saveFeedback} disabled={saving || formLocked} className="neon-button w-full rounded-xl">
+                {canEditSelectedReview ? <Edit3 size={14} className="mr-1.5" /> : <Save size={14} className="mr-1.5" />}
+                {saving ? "Saving..." : canEditSelectedReview ? "Update review" : `Submit Week ${selectedWeekNumber} feedback`}
               </Button>
+              {selectedWeekReview && !canEditSelectedReview && (
+                <p className="text-center text-sm text-muted-foreground">
+                  Week {selectedWeekNumber} review already submitted
+                </p>
+              )}
+            </div>
+
+            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {reviewWeeks.map((week) => {
+                const review = selectedHistory.find((item) =>
+                  getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate),
+                );
+                return <CompactReviewCard key={week.weekNumber} weekNumber={week.weekNumber} review={review} />;
+              })}
             </div>
           </GlassCard>
         </section>
@@ -427,32 +595,34 @@ function WeeklyFeedbackPage() {
           <GlassCard className="weekly-feedback-panel">
             <h3 className="mb-4 flex items-center gap-2 font-semibold">
               <MessageSquare size={16} className="text-primary" />
-              Feedback history timeline
+              Review history timeline
             </h3>
             <div className="space-y-3">
-              {(selected?.history || []).length ? (
-                selected!.history.slice(0, 6).map((item: any) => (
-                  <div key={item.id} className="weekly-history-item">
+              {reviewWeeks.map((week) => {
+                const review = selectedHistory.find((item) =>
+                  getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate),
+                );
+                const status = getWeekStatus(week.weekNumber, currentWeekNumber, Boolean(review));
+                return (
+                  <div key={week.weekNumber} className={`weekly-history-item ${status}`}>
                     <div className="weekly-history-dot" />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-semibold">{item.rating}</span>
+                        <span className="font-semibold">Week {week.weekNumber}</span>
                         <span className="text-xs text-muted-foreground">
-                          {format(new Date(item.week_start), "MMM d, yyyy")}
+                          {review?.rating || labelForWeekStatus(status)}
                         </span>
                       </div>
                       <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
-                        {item.strengths || item.improvements || item.notes || "No notes added."}
+                        {review
+                          ? review.strengths || review.improvements || review.admin_notes || review.notes || "No notes added."
+                          : `${labelForWeekStatus(status)} review`}
                       </p>
                     </div>
-                    <div className="text-lg font-bold gradient-text">{item.score}</div>
+                    <StatusBadge status={status} />
                   </div>
-                ))
-              ) : (
-                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5 text-sm text-muted-foreground">
-                  No feedback history yet for this employee.
-                </div>
-              )}
+                );
+              })}
             </div>
           </GlassCard>
         </section>
@@ -554,6 +724,88 @@ function ProgressMetric({ label, value, detail }: { label: string; value: number
   );
 }
 
+function ReviewDetails({
+  review,
+  weekNumber,
+  onEdit,
+}: {
+  review: WeeklyFeedbackRow;
+  weekNumber: number;
+  onEdit: () => void;
+}) {
+  return (
+    <div className="weekly-review-details">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">Existing review details</div>
+          <div className="mt-1 text-lg font-bold">Week {weekNumber} review already submitted</div>
+        </div>
+        <Button type="button" size="sm" variant="secondary" onClick={onEdit} className="rounded-xl">
+          <Edit3 size={14} className="mr-1.5" />
+          Edit Review
+        </Button>
+      </div>
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <ReviewDetail label="Rating" value={review.rating} />
+        <ReviewDetail label="Score" value={review.review_score ?? reviewScoreFromRating(review.rating)} />
+        <ReviewDetail label="Submission date" value={format(new Date(review.created_at), "MMM d, yyyy")} />
+        <ReviewDetail label="Strengths" value={review.strengths || "No strengths added."} />
+        <ReviewDetail label="Improvements" value={review.improvements || "No improvements added."} />
+        <ReviewDetail label="Notes" value={review.admin_notes || review.notes || "No notes added."} />
+      </div>
+    </div>
+  );
+}
+
+function ReviewDetail({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="mt-1 text-sm font-semibold text-white/90">{value}</div>
+    </div>
+  );
+}
+
+function CompactReviewCard({
+  weekNumber,
+  review,
+}: {
+  weekNumber: number;
+  review?: WeeklyFeedbackRow;
+}) {
+  return (
+    <div className={`weekly-review-card ${review ? "completed" : "pending"}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">Week {weekNumber}</div>
+          <div className="mt-1 font-bold">{review?.rating || "Pending"}</div>
+        </div>
+        <div className="rounded-xl bg-white/[0.06] px-2 py-1 text-sm font-bold tabular-nums">
+          {review ? review.review_score ?? reviewScoreFromRating(review.rating) : "--"}
+        </div>
+      </div>
+      <div className="mt-3 text-xs text-muted-foreground">
+        {review ? format(new Date(review.created_at), "MMM d, yyyy") : "No review yet"}
+      </div>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: WeekStatus }) {
+  return (
+    <span className={`weekly-status-badge ${status}`}>
+      <WeekStatusIcon status={status} />
+      {status === "completed" ? "Completed" : status === "locked" ? "Locked" : status === "missed" ? "Missed" : "Pending"}
+    </span>
+  );
+}
+
+function WeekStatusIcon({ status }: { status: WeekStatus }) {
+  if (status === "completed") return <CheckCircle2 size={14} />;
+  if (status === "locked") return <LockKeyhole size={14} />;
+  return <Clock3 size={14} />;
+}
+
 function LeaderboardRow({ employee }: { employee: EmployeeWeek }) {
   return (
     <div className="weekly-leader-row">
@@ -592,6 +844,60 @@ function Avatar({ employee, size = "md" }: { employee: EmployeeWeek; size?: "md"
 
 function average(values: number[]) {
   return Math.round(values.reduce((sum, value) => sum + value, 0) / Math.max(1, values.length));
+}
+
+function getReviewWeekNumber(date: Date) {
+  return Math.min(4, Math.max(1, Math.ceil(date.getDate() / 7)));
+}
+
+function getReviewWeeks(date: Date) {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  return Array.from({ length: 4 }).map((_, index) => {
+    const weekNumber = index + 1;
+    const startDay = index * 7 + 1;
+    const endDay = index === 3 ? new Date(year, month + 1, 0).getDate() : startDay + 6;
+    return {
+      weekNumber,
+      startDate: toDateKey(new Date(year, month, startDay)),
+      endDate: toDateKey(new Date(year, month, endDay)),
+    };
+  });
+}
+
+function toDateKey(date: Date) {
+  return format(date, "yyyy-MM-dd");
+}
+
+function getFeedbackWeekNumber(review: Pick<WeeklyFeedbackRow, "week_number" | "week_start">) {
+  return review.week_number || getReviewWeekNumber(new Date(`${review.week_start}T00:00:00`));
+}
+
+function isSameReviewCycle(reviewDate: string, weekStart?: string) {
+  if (!weekStart) return false;
+  return reviewDate.slice(0, 7) === weekStart.slice(0, 7);
+}
+
+function getWeekStatus(weekNumber: number, currentWeekNumber: number, completed: boolean): WeekStatus {
+  if (completed) return "completed";
+  if (weekNumber > currentWeekNumber) return "locked";
+  if (weekNumber < currentWeekNumber) return "missed";
+  return "pending";
+}
+
+function labelForWeekStatus(status: WeekStatus) {
+  if (status === "completed") return "Completed";
+  if (status === "locked") return "Future week";
+  if (status === "missed") return "Missed";
+  return "Pending";
+}
+
+function isMissingWeeklyFeedbackColumnError(error: { message?: string; details?: string; code?: string }) {
+  const text = `${error.message || ""} ${error.details || ""}`;
+  return (
+    (text.includes("review_score") || text.includes("week_number") || text.includes("admin_notes")) &&
+    (text.includes("schema cache") || error.code === "PGRST204")
+  );
 }
 
 const tooltipStyle = {

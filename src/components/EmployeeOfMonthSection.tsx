@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Award,
   BadgeCheck,
@@ -9,6 +9,7 @@ import {
   Gem,
   Loader2,
   Medal,
+  ShieldCheck,
   Sparkles,
   Trophy,
   Undo2,
@@ -17,19 +18,35 @@ import { format, startOfMonth } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/GlassCard";
-import { productivityScore } from "@/lib/tasks-utils";
+import { calculateTaskProgressMetrics } from "@/lib/employee-scoring";
+import { eomEligibilityLabel, isEomEligible } from "@/lib/eom-eligibility";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
 
 type EmployeeRank = {
   userId: string;
   name: string;
   department: string;
+  position: string;
+  isEomEligible: boolean;
   avatarUrl: string | null;
+  taskProgress: number;
+  productivityContribution: number;
+  activeTasks: number;
+  completionTrend: number;
   completedTasks: number;
   totalTasks: number;
   attendancePct: number;
   score: number;
   badges: string[];
+};
+
+type EomProfile = {
+  user_id: string;
+  full_name: string;
+  department: string | null;
+  position: string | null;
+  avatar_url: string | null;
+  is_eom_eligible?: boolean | null;
 };
 
 export function EmployeeOfMonthSection() {
@@ -50,7 +67,7 @@ export function EmployeeOfMonthSection() {
         await Promise.all([
           supabase
             .from("profiles")
-            .select("user_id, full_name, department, avatar_url")
+            .select("user_id, full_name, department, position, avatar_url, is_eom_eligible")
             .eq("approval_status", "approved")
             .eq("is_suspended", false),
           supabase.from("tasks").select("*"),
@@ -67,7 +84,8 @@ export function EmployeeOfMonthSection() {
           : assigneeResult.data || [];
       const elapsedDays = Math.max(1, new Date().getDate());
 
-      const ranked = (profiles || [])
+      const ranked = ((profiles || []) as EomProfile[])
+        .filter(isEomEligible)
         .map((profile) => {
           const assignedTasks = (tasks || []).filter(
             (task: any) =>
@@ -76,9 +94,10 @@ export function EmployeeOfMonthSection() {
                 (assignee) => assignee.task_id === task.id && assignee.user_id === profile.user_id,
               ),
           );
+          const taskMetrics = calculateTaskProgressMetrics(assignedTasks);
           const completedThisMonth = assignedTasks.filter(
             (task: any) =>
-              task.status === "completed" &&
+              (task.status === "completed" || Number(task.progress || 0) >= 100) &&
               (!task.completed_at || new Date(task.completed_at).getTime() >= new Date(monthStartIso).getTime()),
           ).length;
           const attendedDays = new Set(
@@ -90,20 +109,11 @@ export function EmployeeOfMonthSection() {
               )
               .map((row) => row.date),
           ).size;
-          const hours = (attendance || [])
-            .filter((row) => row.user_id === profile.user_id)
-            .reduce((sum, row) => sum + Number(row.work_hours || 0), 0);
           const attendancePct = Math.min(100, Math.round((attendedDays / elapsedDays) * 100));
-          const score = productivityScore({
-            completed: completedThisMonth,
-            total: Math.max(assignedTasks.length, completedThisMonth),
-            onTimeRate: 1,
-            hours,
-            targetHours: 160,
-          });
+          const score = Math.round(taskMetrics.productivityContribution);
           const badges = [
-            completedThisMonth >= 1 ? "Starter" : null,
-            completedThisMonth >= 5 ? "Task Sprinter" : null,
+            taskMetrics.averageProgress >= 10 ? "Progress Starter" : null,
+            taskMetrics.averageProgress >= 50 ? "Momentum Builder" : null,
             attendancePct >= 90 ? "Attendance Pro" : null,
             score >= 80 ? "High Focus" : null,
             score >= 95 ? "Elite" : null,
@@ -113,9 +123,15 @@ export function EmployeeOfMonthSection() {
             userId: profile.user_id,
             name: profile.full_name,
             department: profile.department || "Unassigned",
+            position: profile.position || "Employee",
+            isEomEligible: true,
             avatarUrl: profile.avatar_url,
+            taskProgress: taskMetrics.averageProgress,
+            productivityContribution: taskMetrics.productivityContribution,
+            activeTasks: taskMetrics.activeTasks,
+            completionTrend: taskMetrics.completionTrend,
             completedTasks: completedThisMonth,
-            totalTasks: assignedTasks.length,
+            totalTasks: taskMetrics.totalTasks,
             attendancePct,
             score,
             badges,
@@ -124,7 +140,7 @@ export function EmployeeOfMonthSection() {
         .sort(
           (a, b) =>
             b.score - a.score ||
-            b.completedTasks - a.completedTasks ||
+            b.taskProgress - a.taskProgress ||
             b.attendancePct - a.attendancePct,
         )
         .slice(0, 6);
@@ -135,11 +151,6 @@ export function EmployeeOfMonthSection() {
   }, [visible]);
 
   const winner = rows[0];
-  const averageScore = useMemo(
-    () => Math.round(rows.reduce((sum, row) => sum + row.score, 0) / Math.max(1, rows.length)),
-    [rows],
-  );
-
   if (!visible) {
     return (
       <div className="mb-6 flex justify-end">
@@ -190,11 +201,11 @@ export function EmployeeOfMonthSection() {
         </GlassCard>
       ) : !winner ? (
         <GlassCard className="py-12 text-center text-muted-foreground">
-          No approved employees found.
+          No EOM-eligible employees found.
         </GlassCard>
       ) : (
         <div className="grid grid-cols-1 gap-5 xl:grid-cols-[1.05fr_1.35fr]">
-          <WinnerCard winner={winner} averageScore={averageScore} />
+          <WinnerCard winner={winner} />
           <Leaderboard rows={rows} />
         </div>
       )}
@@ -202,7 +213,7 @@ export function EmployeeOfMonthSection() {
   );
 }
 
-function WinnerCard({ winner, averageScore }: { winner: EmployeeRank; averageScore: number }) {
+function WinnerCard({ winner }: { winner: EmployeeRank }) {
   return (
     <article className="eom-winner glass">
       <div className="eom-confetti" />
@@ -215,7 +226,10 @@ function WinnerCard({ winner, averageScore }: { winner: EmployeeRank; averageSco
               Top employee
             </div>
             <h3 className="text-2xl font-bold">{winner.name}</h3>
-            <p className="text-sm text-white/65">{winner.department}</p>
+            <p className="text-sm text-white/65">{winner.department} · {winner.position}</p>
+            <div className="mt-2">
+              <EligibilityBadge eligible={winner.isEomEligible} />
+            </div>
           </div>
         </div>
         <div className="eom-crown">
@@ -225,14 +239,15 @@ function WinnerCard({ winner, averageScore }: { winner: EmployeeRank; averageSco
 
       <div className="relative z-10 mt-8 grid grid-cols-3 gap-3">
         <WinnerMetric label="Score" value={winner.score} icon={ZapIcon} />
-        <WinnerMetric label="Tasks" value={winner.completedTasks} icon={CheckCircle2} />
+        <WinnerMetric label="Task progress" value={`${winner.taskProgress}%`} icon={CheckCircle2} />
         <WinnerMetric label="Attendance" value={`${winner.attendancePct}%`} icon={BadgeCheck} />
       </div>
 
       <div className="relative z-10 mt-7 space-y-4">
-        <AnalyticsBar label="Productivity score" value={winner.score} />
+        <AnalyticsBar label="Task progression" value={winner.taskProgress} />
+        <AnalyticsBar label="Productivity" value={winner.productivityContribution} />
+        <AnalyticsBar label="Completion trend" value={winner.completionTrend} />
         <AnalyticsBar label="Attendance" value={winner.attendancePct} />
-        <AnalyticsBar label="Team avg score" value={averageScore} />
       </div>
 
       <div className="relative z-10 mt-6 flex flex-wrap gap-2">
@@ -271,11 +286,13 @@ function Leaderboard({ rows }: { rows: EmployeeRank[] }) {
                     {badge}
                   </span>
                 ))}
+                <EligibilityBadge eligible={row.isEomEligible} />
               </div>
-              <div className="mt-1 text-xs text-muted-foreground">{row.department}</div>
-              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-                <MiniBar label="Score" value={row.score} />
-                <MiniBar label="Tasks" value={Math.min(100, row.completedTasks * 10)} detail={`${row.completedTasks}`} />
+              <div className="mt-1 text-xs text-muted-foreground">{row.department} · {row.position}</div>
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-4">
+                <MiniBar label="Task progress" value={row.taskProgress} detail={`${row.taskProgress}%`} />
+                <MiniBar label="Productivity" value={row.productivityContribution} detail={`${row.productivityContribution}%`} />
+                <MiniBar label="Active tasks" value={Math.min(100, row.activeTasks * 10)} detail={`${row.activeTasks}`} />
                 <MiniBar label="Attendance" value={row.attendancePct} detail={`${row.attendancePct}%`} />
               </div>
             </div>
@@ -333,6 +350,15 @@ function MiniBar({ label, value, detail }: { label: string; value: number; detai
         <div className="eom-progress h-full rounded-full" style={{ width: `${Math.min(100, value)}%` }} />
       </div>
     </div>
+  );
+}
+
+function EligibilityBadge({ eligible }: { eligible: boolean }) {
+  return (
+    <span className={`eom-eligibility-badge ${eligible ? "eligible" : "excluded"}`}>
+      <ShieldCheck size={11} />
+      {eomEligibilityLabel({ is_eom_eligible: eligible })}
+    </span>
   );
 }
 

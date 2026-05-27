@@ -20,6 +20,7 @@ export interface Profile {
   joining_date: string | null;
   employee_code: string | null;
   approval_status: ApprovalStatus;
+  is_eom_eligible: boolean;
   is_suspended: boolean;
 }
 

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Award,
   BadgeCheck,
@@ -9,14 +10,20 @@ import {
   Crown,
   Flame,
   Gem,
+  History,
   Loader2,
   Lock,
   Medal,
+  MessageSquare,
+  Minus,
   Send,
+  ShieldOff,
   ShieldCheck,
   Sparkles,
   Star,
   Target,
+  TrendingDown,
+  TrendingUp,
   Trophy,
   Zap,
 } from "lucide-react";
@@ -49,7 +56,15 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { productivityScore } from "@/lib/tasks-utils";
+import {
+  calculateFinalEmployeeScore,
+  calculateOverduePenalty,
+  calculateReviewAverage,
+  calculateTaskProgressMetrics,
+  ratingLabelFromAverage,
+  reviewScoreFromRating,
+} from "@/lib/employee-scoring";
+import { eomEligibilityLabel, isEomEligible } from "@/lib/eom-eligibility";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
 import { toast } from "sonner";
 
@@ -61,23 +76,85 @@ type EmployeeRank = {
   userId: string;
   name: string;
   department: string;
+  position: string;
+  isEomEligible: boolean;
   avatarUrl: string | null;
+  taskProgress: number;
+  totalTaskProgress: number;
+  productivityContribution: number;
+  activeTasks: number;
+  completionTrend: number;
+  dailyImprovement: number;
   completedTasks: number;
   totalTasks: number;
   overdueTasks: number;
+  overduePenalty: number;
   attendancePct: number;
   streak: number;
   score: number;
+  achievementBonus: number;
+  reviewAverage: number;
+  reviewCount: number;
+  reviewTrend: "up" | "down" | "steady" | "new";
+  latestReview: WeeklyReview | null;
+  reviews: WeeklyReview[];
   level: string;
   badges: string[];
 };
 
+type EomProfile = {
+  user_id: string;
+  full_name: string;
+  department: string | null;
+  position: string | null;
+  avatar_url: string | null;
+  is_eom_eligible?: boolean | null;
+};
+
+type ExcludedEmployee = {
+  userId: string;
+  name: string;
+  department: string;
+  position: string;
+  avatarUrl: string | null;
+  isEomEligible: false;
+};
+
+type WeeklyReview = {
+  id: string;
+  employee_id: string;
+  week_start: string;
+  rating: string;
+  review_score?: number | null;
+  strengths: string | null;
+  improvements: string | null;
+  notes: string | null;
+  created_at: string;
+};
+
 const chartColors = ["#21d4fd", "#8b5cf6", "#ff2d6f", "#f6c453", "#22c55e"];
+
+async function fetchWeeklyReviews() {
+  const result = await (supabase as any)
+    .from("weekly_feedback")
+    .select("id,employee_id,week_start,rating,review_score,strengths,improvements,notes,created_at")
+    .order("week_start", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  if (!result.error || !isMissingReviewScoreError(result.error)) return result;
+
+  return (supabase as any)
+    .from("weekly_feedback")
+    .select("id,employee_id,week_start,rating,strengths,improvements,notes,created_at")
+    .order("week_start", { ascending: false })
+    .order("created_at", { ascending: false });
+}
 
 function EmployeeOfMonthPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<EmployeeRank[]>([]);
+  const [excludedRows, setExcludedRows] = useState<ExcludedEmployee[]>([]);
   const [weekly, setWeekly] = useState<any[]>([]);
   const [rating, setRating] = useState("excellent");
   const [feedback, setFeedback] = useState("");
@@ -88,17 +165,22 @@ function EmployeeOfMonthPage() {
 
   const monthStart = startOfMonth(new Date()).toISOString().slice(0, 10);
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const monthStartDate = startOfMonth(new Date());
+  const loadEomData = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
+      if (!silent) setLoading(true);
       const monthStartIso = `${monthStart}T00:00:00.000Z`;
       const today = new Date().toISOString().slice(0, 10);
-      const [{ data: profiles }, { data: tasks }, assigneeResult, { data: attendance }] =
+      const [
+        { data: profiles },
+        { data: tasks },
+        assigneeResult,
+        { data: attendance },
+        feedbackResult,
+        progressResult,
+      ] =
         await Promise.all([
           supabase
             .from("profiles")
-            .select("user_id, full_name, department, avatar_url")
+            .select("user_id, full_name, department, position, avatar_url, is_eom_eligible")
             .eq("approval_status", "approved")
             .eq("is_suspended", false),
           supabase.from("tasks").select("*"),
@@ -108,14 +190,24 @@ function EmployeeOfMonthPage() {
             .select("user_id,date,status,work_hours")
             .gte("date", monthStart)
             .lte("date", today),
+          fetchWeeklyReviews(),
+          (supabase as any)
+            .from("task_progress_updates")
+            .select("task_id,old_progress,new_progress,created_at")
+            .gte("created_at", monthStartIso),
         ]);
       const assignees =
         assigneeResult.error && isMissingSupabaseTableError(assigneeResult.error, "task_assignees")
           ? []
           : assigneeResult.data || [];
       const elapsedDays = Math.max(1, new Date().getDate());
+      const feedbackRows = (feedbackResult.error ? [] : feedbackResult.data || []) as WeeklyReview[];
+      const progressRows = progressResult.error ? [] : progressResult.data || [];
+      const profileRows = ((profiles || []) as EomProfile[]);
+      const eligibleProfiles = profileRows.filter(isEomEligible);
+      const excludedProfiles = profileRows.filter((profile) => !isEomEligible(profile));
 
-      const ranked = (profiles || [])
+      const ranked = eligibleProfiles
         .map((profile) => {
           const assignedTasks = (tasks || []).filter(
             (task: any) =>
@@ -124,9 +216,10 @@ function EmployeeOfMonthPage() {
                 (assignee) => assignee.task_id === task.id && assignee.user_id === profile.user_id,
               ),
           );
+          const taskMetrics = calculateTaskProgressMetrics(assignedTasks);
           const completedTasks = assignedTasks.filter(
             (task: any) =>
-              task.status === "completed" &&
+              (task.status === "completed" || Number(task.progress || 0) >= 100) &&
               (!task.completed_at ||
                 new Date(task.completed_at).getTime() >= new Date(monthStartIso).getTime()),
           ).length;
@@ -144,37 +237,83 @@ function EmployeeOfMonthPage() {
               .filter((row) => ["present", "late", "wfh"].includes(row.status || ""))
               .map((row) => row.date),
           ).size;
-          const hours = employeeAttendance.reduce((sum, row) => sum + Number(row.work_hours || 0), 0);
           const attendancePct = Math.min(100, Math.round((attendedDays / elapsedDays) * 100));
-          const score = productivityScore({
-            completed: completedTasks,
-            total: Math.max(assignedTasks.length, completedTasks),
-            onTimeRate: assignedTasks.length ? Math.max(0, 1 - overdueTasks / assignedTasks.length) : 1,
-            hours,
-            targetHours: 160,
-          });
+          const assignedTaskIds = new Set(assignedTasks.map((task: any) => task.id));
+          const progressGain = progressRows
+            .filter((row: any) => assignedTaskIds.has(row.task_id))
+            .reduce(
+              (sum: number, row: any) =>
+                sum + Math.max(0, Number(row.new_progress || 0) - Number(row.old_progress || 0)),
+              0,
+            );
+          const dailyImprovement = taskMetrics.totalTasks
+            ? Math.min(100, Number((progressGain / taskMetrics.totalTasks / elapsedDays).toFixed(1)))
+            : 0;
           const streak = countRecentStreak(new Set(employeeAttendance.map((row) => row.date)), 30);
-          const level = score >= 95 ? "Legendary" : score >= 80 ? "Elite" : score >= 60 ? "Rising" : "Building";
           const badges = [
-            completedTasks >= 1 ? "Starter" : null,
-            completedTasks >= 5 ? "Task Sprinter" : null,
+            taskMetrics.averageProgress >= 10 ? "Progress Starter" : null,
+            taskMetrics.averageProgress >= 50 ? "Momentum Builder" : null,
             attendancePct >= 90 ? "Attendance Pro" : null,
             overdueTasks === 0 && assignedTasks.length > 0 ? "No Overdue" : null,
             streak >= 7 ? "7 Day Streak" : null,
-            score >= 95 ? "Diamond Focus" : null,
+            taskMetrics.averageProgress >= 95 ? "Diamond Focus" : null,
           ].filter(Boolean) as string[];
+          const reviews = feedbackRows.filter((item) => item.employee_id === profile.user_id);
+          const reviewAverage = calculateReviewAverage(reviews);
+          const latestReview = reviews[0] || null;
+          const latestReviewScore = latestReview
+            ? Number(latestReview.review_score ?? reviewScoreFromRating(latestReview.rating))
+            : 0;
+          const previousReviewScore = reviews[1]
+            ? Number(reviews[1].review_score ?? reviewScoreFromRating(reviews[1].rating))
+            : null;
+          const reviewTrend =
+            previousReviewScore === null
+              ? latestReview
+                ? "new"
+                : "steady"
+              : latestReviewScore > previousReviewScore
+                ? "up"
+                : latestReviewScore < previousReviewScore
+                  ? "down"
+                  : "steady";
+          const achievementBonus = Math.min(100, Math.round((badges.length / 6) * 100));
+          const overduePenalty = calculateOverduePenalty(overdueTasks);
+          const score = calculateFinalEmployeeScore({
+            taskProgressContribution: taskMetrics.productivityContribution,
+            attendance: attendancePct,
+            averageReviewScore: reviewAverage,
+            achievementBonus,
+            overduePenalty,
+          });
+          const level = score >= 95 ? "Legendary" : score >= 80 ? "Elite" : score >= 60 ? "Rising" : "Building";
 
           return {
             userId: profile.user_id,
             name: profile.full_name,
             department: profile.department || "Unassigned",
+            position: profile.position || "Employee",
+            isEomEligible: true,
             avatarUrl: profile.avatar_url,
+            taskProgress: taskMetrics.averageProgress,
+            totalTaskProgress: taskMetrics.totalTaskProgress,
+            productivityContribution: taskMetrics.productivityContribution,
+            activeTasks: taskMetrics.activeTasks,
+            completionTrend: taskMetrics.completionTrend,
+            dailyImprovement,
             completedTasks,
-            totalTasks: assignedTasks.length,
+            totalTasks: taskMetrics.totalTasks,
             overdueTasks,
+            overduePenalty,
             attendancePct,
             streak,
             score,
+            achievementBonus,
+            reviewAverage,
+            reviewCount: reviews.length,
+            reviewTrend,
+            latestReview,
+            reviews,
             level,
             badges,
           };
@@ -182,7 +321,7 @@ function EmployeeOfMonthPage() {
         .sort(
           (a, b) =>
             b.score - a.score ||
-            b.completedTasks - a.completedTasks ||
+            b.taskProgress - a.taskProgress ||
             b.attendancePct - a.attendancePct,
         )
         .slice(0, 8);
@@ -193,12 +332,24 @@ function EmployeeOfMonthPage() {
           week: `W${index + 1}`,
           productivity: Math.max(8, Math.min(100, base - (3 - index) * 7 + index * 3)),
           attendance: Math.max(8, Math.min(100, (ranked[0]?.attendancePct || 0) - (3 - index) * 4)),
-          tasks: Math.max(0, Math.round((ranked[0]?.completedTasks || 0) * ((index + 1) / 4))),
+          taskProgress: Math.max(0, Math.round((ranked[0]?.taskProgress || 0) * ((index + 1) / 4))),
         };
       });
 
       setRows(ranked);
-      setSelectedEmployeeId((current) => current || ranked[0]?.userId || "");
+      setExcludedRows(
+        excludedProfiles.map((profile) => ({
+          userId: profile.user_id,
+          name: profile.full_name,
+          department: profile.department || "Unassigned",
+          position: profile.position || "Employee",
+          avatarUrl: profile.avatar_url,
+          isEomEligible: false,
+        })),
+      );
+      setSelectedEmployeeId((current) =>
+        ranked.some((row) => row.userId === current) ? current : ranked[0]?.userId || "",
+      );
       setWeekly(weeklyRows);
 
       const awardResult = await (supabase as any)
@@ -210,14 +361,36 @@ function EmployeeOfMonthPage() {
         .maybeSingle();
       setOfficialAward(awardResult.error ? null : awardResult.data);
       setLoading(false);
-    })();
-  }, []);
+  }, [monthStart]);
+
+  const refreshEomData = useCallback(() => {
+    void loadEomData({ silent: true });
+  }, [loadEomData]);
+
+  useEffect(() => {
+    loadEomData();
+
+    const channel = supabase
+      .channel("eom-live-rankings")
+      .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, refreshEomData)
+      .on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, refreshEomData)
+      .on("postgres_changes", { event: "*", schema: "public", table: "task_assignees" }, refreshEomData)
+      .on("postgres_changes", { event: "*", schema: "public", table: "attendance" }, refreshEomData)
+      .on("postgres_changes", { event: "*", schema: "public", table: "weekly_feedback" }, refreshEomData)
+      .on("postgres_changes", { event: "*", schema: "public", table: "task_progress_updates" }, refreshEomData)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadEomData, refreshEomData]);
 
   const winner = rows[0];
   const selectedEmployee = rows.find((row) => row.userId === selectedEmployeeId) || winner;
   const totals = useMemo(
     () => ({
-      tasks: rows.reduce((sum, row) => sum + row.completedTasks, 0),
+      taskProgress: Math.round(rows.reduce((sum, row) => sum + row.taskProgress, 0) / Math.max(1, rows.length)),
+      activeTasks: rows.reduce((sum, row) => sum + row.activeTasks, 0),
       attendance: Math.round(rows.reduce((sum, row) => sum + row.attendancePct, 0) / Math.max(1, rows.length)),
       streak: Math.max(0, ...rows.map((row) => row.streak)),
       overdue: rows.reduce((sum, row) => sum + row.overdueTasks, 0),
@@ -279,20 +452,22 @@ function EmployeeOfMonthPage() {
 
       {!winner ? (
         <GlassCard className="py-16 text-center text-muted-foreground">
-          No approved employees found.
+          No EOM-eligible employees found.
         </GlassCard>
       ) : (
         <div className="eom-page space-y-6">
           <section className="grid grid-cols-1 gap-4 md:grid-cols-5">
-            <StatTile label="Tasks completed" value={totals.tasks} icon={CheckCircle2} />
+            <StatTile label="Task progress" value={`${totals.taskProgress}%`} icon={CheckCircle2} />
+            <StatTile label="Active tasks" value={totals.activeTasks} icon={Target} />
             <StatTile label="Attendance" value={`${totals.attendance}%`} icon={BadgeCheck} />
-            <StatTile label="Active streak" value={`${totals.streak}d`} icon={Flame} />
-            <StatTile label="Overdue tasks" value={totals.overdue} icon={Target} />
+            <StatTile label="HR reviews" value={rows.reduce((sum, row) => sum + row.reviewCount, 0)} icon={MessageSquare} />
             <StatTile label="Avg score" value={totals.score} icon={Zap} />
           </section>
 
-          <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_1fr]">
-            <HeroWinner winner={winner} />
+          <EligibilitySummary eligibleCount={rows.length} excludedRows={excludedRows} />
+
+          <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.15fr_.85fr]">
+            <TopContenders rows={rows} />
             <Leaderboard rows={rows} />
           </section>
 
@@ -315,6 +490,8 @@ function EmployeeOfMonthPage() {
             />
           </section>
 
+          <HrReviewsSection rows={rows} selectedEmployee={selectedEmployee} />
+
           <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_.8fr]">
             <BadgeSection winner={winner} />
             <PreviousWinners rows={rows} />
@@ -325,50 +502,165 @@ function EmployeeOfMonthPage() {
   );
 }
 
-function HeroWinner({ winner }: { winner: EmployeeRank }) {
+function TopContenders({ rows }: { rows: EmployeeRank[] }) {
+  const contenders = rows.slice(0, 3);
+  const leader = contenders[0];
+  const leaderGap = contenders[0] && contenders[1] ? contenders[0].score - contenders[1].score : null;
+  const isTightRace = leaderGap !== null && leaderGap <= 5;
+
   return (
-    <article className="eom-winner eom-page-hero glass">
+    <article className="eom-contenders eom-page-hero glass">
       <div className="eom-confetti" />
-      <div className="relative z-10 flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
-        <div className="flex items-center gap-5">
-          <Avatar employee={winner} size="hero" />
-          <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-amber-200/20 bg-amber-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-amber-200">
-              <Crown size={14} />
-              Employee of the Month
-            </div>
-            <h2 className="text-3xl font-bold md:text-4xl">{winner.name}</h2>
-            <p className="mt-1 text-sm text-white/65">{winner.department}</p>
+      <div className="relative z-10 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-amber-200/20 bg-amber-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-amber-200">
+            <Trophy size={14} />
+            Top 3 Contenders
           </div>
+          <h2 className="text-3xl font-bold md:text-4xl">Employee of the Month race</h2>
+          <p className="mt-1 text-sm text-white/65">
+            Live ranking from task progression, attendance, HR reviews, bonuses, and overdue penalties.
+          </p>
         </div>
-        <div className="eom-crown h-16 w-16">
-          <Crown size={31} />
+        <div className="flex flex-wrap items-center gap-2">
+          {isTightRace && (
+            <span className="eom-tight-race">
+              <Flame size={13} />
+              Tight Race · {leaderGap} point gap
+            </span>
+          )}
+          {leader && (
+            <span className="eom-review-pill">
+              <Crown size={13} />
+              Leader: {leader.name}
+            </span>
+          )}
         </div>
       </div>
 
-      <div className="relative z-10 mt-8 grid grid-cols-2 gap-3 md:grid-cols-4">
-        <HeroMetric label="Score" value={winner.score} icon={Zap} />
-        <HeroMetric label="Tasks" value={winner.completedTasks} icon={CheckCircle2} />
-        <HeroMetric label="Attendance" value={`${winner.attendancePct}%`} icon={BadgeCheck} />
-        <HeroMetric label="Level" value={winner.level} icon={Sparkles} />
+      <div className="relative z-10 mt-6 eom-contender-grid">
+        {contenders[0] && (
+          <ContenderCard employee={contenders[0]} rank={1} label="Top Performer" featured />
+        )}
+        <div className="eom-contender-stack">
+          {contenders[1] && <ContenderCard employee={contenders[1]} rank={2} label="Rising Star" />}
+          {contenders[2] && <ContenderCard employee={contenders[2]} rank={3} label="Consistent Contributor" />}
+        </div>
       </div>
 
-      <div className="relative z-10 mt-7 grid grid-cols-1 gap-4 md:grid-cols-3">
-        <AnalyticsBar label="Productivity score" value={winner.score} />
-        <AnalyticsBar label="Task completion" value={Math.min(100, winner.completedTasks * 10)} />
-        <AnalyticsBar label="Attendance" value={winner.attendancePct} />
-      </div>
-
-      <div className="relative z-10 mt-7 flex flex-wrap gap-2">
-        {(winner.badges.length ? winner.badges : ["Rising Talent"]).map((badge) => (
-          <span key={badge} className="eom-badge">
-            <Gem size={12} />
-            {badge}
-          </span>
-        ))}
+      <div className="relative z-10 mt-5 rounded-2xl border border-white/10 bg-black/20 p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="text-sm font-semibold text-white">Score comparison</div>
+          <div className="text-xs text-muted-foreground">Auto-sorted by final score</div>
+        </div>
+        <div className="space-y-3">
+          {contenders.map((employee, index) => (
+            <MiniBar
+              key={employee.userId}
+              label={`#${index + 1} ${employee.name}`}
+              value={employee.score}
+              detail={`${employee.score}/100`}
+            />
+          ))}
+        </div>
       </div>
     </article>
   );
+}
+
+function ContenderCard({
+  employee,
+  rank,
+  label,
+  featured = false,
+}: {
+  employee: EmployeeRank;
+  rank: 1 | 2 | 3;
+  label: string;
+  featured?: boolean;
+}) {
+  const rankTone = rank === 1 ? "gold" : rank === 2 ? "silver" : "bronze";
+
+  return (
+    <div className={`eom-contender-card ${rankTone} ${featured ? "featured" : ""}`}>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 items-center gap-4">
+          <Avatar employee={employee} size={featured ? "hero" : "md"} />
+          <div>
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <span className={`eom-rank-medal ${rankTone}`}>
+                {rank === 1 ? <Crown size={13} /> : <Medal size={13} />}
+                Rank {rank}
+              </span>
+              <span className="eom-badge">{label}</span>
+            </div>
+            <h3 className={featured ? "text-2xl font-bold md:text-3xl" : "text-lg font-bold"}>
+              {employee.name}
+            </h3>
+            <p className="mt-1 text-sm text-white/65">{employee.department} · {employee.position}</p>
+            <div className="mt-3">
+              <EligibilityBadge eligible={employee.isEomEligible} />
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 sm:flex-col sm:items-end">
+          {rank === 1 && (
+            <div className="eom-crown eom-contender-crown">
+              <Crown size={28} />
+            </div>
+          )}
+          <div className="text-left sm:text-right">
+            <div className="text-4xl font-black tabular-nums gradient-text">{employee.score}</div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Final score</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-3">
+        <ContenderMetric label="Task progress" value={`${employee.taskProgress}%`} icon={CheckCircle2} />
+        <ContenderMetric label="Attendance" value={`${employee.attendancePct}%`} icon={BadgeCheck} />
+        <ContenderMetric label="Active tasks" value={employee.activeTasks} icon={Target} />
+        <ContenderMetric label="HR review" value={`${employee.reviewAverage}/10`} icon={MessageSquare} />
+        <ContenderMetric label="Daily improvement" value={`${employee.dailyImprovement}%`} icon={TrendingUp} />
+        <ContenderMetric
+          label="Weekly trend"
+          value={<span className="inline-flex items-center gap-1"><TrendIcon trend={employee.reviewTrend} />{contenderTrendLabel(employee.reviewTrend)}</span>}
+          icon={BarChart3}
+        />
+      </div>
+
+      <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
+        <AnalyticsBar label="Task progression" value={employee.taskProgress} />
+        <AnalyticsBar label="Productivity" value={employee.productivityContribution} />
+        <AnalyticsBar label="Attendance" value={employee.attendancePct} />
+        <AnalyticsBar label="HR review score" value={employee.reviewAverage * 10} />
+      </div>
+    </div>
+  );
+}
+
+function ContenderMetric({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: string | number | ReactNode;
+  icon: typeof Trophy;
+}) {
+  return (
+    <div className="eom-contender-metric">
+      <Icon size={15} className="text-amber-200" />
+      <div className="mt-2 text-lg font-bold tabular-nums text-white">{value}</div>
+      <div className="text-[10px] uppercase tracking-wider text-white/55">{label}</div>
+    </div>
+  );
+}
+
+function contenderTrendLabel(trend: EmployeeRank["reviewTrend"]) {
+  if (trend === "up") return "Improving";
+  if (trend === "down") return "Dropping";
+  return "Stable";
 }
 
 function Leaderboard({ rows }: { rows: EmployeeRank[] }) {
@@ -393,12 +685,35 @@ function Leaderboard({ rows }: { rows: EmployeeRank[] }) {
                 <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] text-white/70">
                   {row.level}
                 </span>
+                <EligibilityBadge eligible={row.isEomEligible} />
               </div>
-              <div className="mt-1 text-xs text-muted-foreground">{row.department}</div>
-              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-                <MiniBar label="Tasks" value={Math.min(100, row.completedTasks * 10)} detail={`${row.completedTasks}`} />
+              <div className="mt-1 text-xs text-muted-foreground">{row.department} · {row.position}</div>
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-5">
+                <MiniBar label="Task progress" value={row.taskProgress} detail={`${row.taskProgress}%`} />
+                <MiniBar label="Productivity" value={row.productivityContribution} detail={`${row.productivityContribution}%`} />
+                <MiniBar label="Active tasks" value={Math.min(100, row.activeTasks * 10)} detail={`${row.activeTasks}`} />
                 <MiniBar label="Attendance" value={row.attendancePct} detail={`${row.attendancePct}%`} />
-                <MiniBar label="Score" value={row.score} />
+                <MiniBar label="HR avg" value={row.reviewAverage * 10} detail={row.reviewAverage ? `${row.reviewAverage}/10` : "0"} />
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                <span className="eom-review-pill">
+                  {ratingLabelFromAverage(row.reviewAverage)} · {row.reviewCount} reviews
+                </span>
+                <span className="eom-review-pill">
+                  Trend {row.completionTrend}% · +{row.dailyImprovement}%/day
+                </span>
+                {row.overduePenalty > 0 && (
+                  <span className="eom-review-pill">
+                    -{row.overduePenalty} overdue penalty
+                  </span>
+                )}
+                <span className="eom-review-pill">
+                  Latest {row.latestReview ? format(new Date(row.latestReview.week_start), "MMM d") : "None"}
+                </span>
+                <span className="eom-review-pill">
+                  <TrendIcon trend={row.reviewTrend} />
+                  {trendLabel(row.reviewTrend)}
+                </span>
               </div>
             </div>
             <div className="text-right">
@@ -412,11 +727,49 @@ function Leaderboard({ rows }: { rows: EmployeeRank[] }) {
   );
 }
 
+function EligibilitySummary({
+  eligibleCount,
+  excludedRows,
+}: {
+  eligibleCount: number;
+  excludedRows: ExcludedEmployee[];
+}) {
+  return (
+    <GlassCard className="eom-eligibility-panel">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h3 className="flex items-center gap-2 font-semibold">
+            <ShieldCheck size={16} className="text-success" />
+            EOM eligibility
+          </h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Competition scoring only includes employees marked eligible.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:min-w-72">
+          <ReviewSummaryTile label="EOM Eligible" value={eligibleCount} />
+          <ReviewSummaryTile label="Excluded from EOM" value={excludedRows.length} />
+        </div>
+      </div>
+      {excludedRows.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {excludedRows.map((employee) => (
+            <span key={employee.userId} className="eom-excluded-pill">
+              <ShieldOff size={12} />
+              {employee.name} · {employee.department || employee.position}
+            </span>
+          ))}
+        </div>
+      )}
+    </GlassCard>
+  );
+}
+
 function AnalyticsPanel({ weekly, rows }: { weekly: any[]; rows: EmployeeRank[] }) {
   const winner = rows[0];
   const pieData = [
-    { name: "Completed", value: winner?.completedTasks || 0 },
-    { name: "Remaining", value: Math.max(0, (winner?.totalTasks || 0) - (winner?.completedTasks || 0)) },
+    { name: "Progress", value: winner?.taskProgress || 0 },
+    { name: "Remaining", value: Math.max(0, 100 - (winner?.taskProgress || 0)) },
   ];
 
   return (
@@ -455,7 +808,7 @@ function AnalyticsPanel({ weekly, rows }: { weekly: any[]; rows: EmployeeRank[] 
             <YAxis stroke="oklch(0.7 0.03 250)" fontSize={12} />
             <Tooltip contentStyle={tooltipStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipItemStyle} />
             <Bar dataKey="attendance" fill="#21d4fd" radius={[8, 8, 0, 0]} />
-            <Bar dataKey="tasks" fill="#f6c453" radius={[8, 8, 0, 0]} />
+            <Bar dataKey="taskProgress" fill="#f6c453" radius={[8, 8, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </GlassCard>
@@ -481,7 +834,7 @@ function AnalyticsPanel({ weekly, rows }: { weekly: any[]; rows: EmployeeRank[] 
               <div key={row.userId} className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
                 <div className="text-sm font-semibold">{row.name}</div>
                 <div className="mt-1 text-xs text-muted-foreground">{row.department}</div>
-                <AnalyticsBar label="Score" value={row.score} />
+                <AnalyticsBar label="Task progress" value={row.taskProgress} />
               </div>
             ))}
           </div>
@@ -592,11 +945,143 @@ function FeedbackPanel({
   );
 }
 
+function HrReviewsSection({
+  rows,
+  selectedEmployee,
+}: {
+  rows: EmployeeRank[];
+  selectedEmployee?: EmployeeRank;
+}) {
+  const reviewRows = rows.flatMap((row) =>
+    row.reviews.map((review, index) => ({
+      ...review,
+      employeeName: row.name,
+      department: row.department,
+      weekLabel: `Week ${row.reviews.length - index}`,
+      scoreValue: Number(review.review_score ?? reviewScoreFromRating(review.rating)),
+    })),
+  );
+  const selectedReviews = selectedEmployee?.reviews || [];
+
+  return (
+    <section className="grid grid-cols-1 gap-6 xl:grid-cols-[.9fr_1.1fr]">
+      <GlassCard className="eom-hr-panel">
+        <h3 className="mb-4 flex items-center gap-2 font-semibold">
+          <MessageSquare size={16} className="text-primary" />
+          HR Weekly Reviews
+        </h3>
+        <div className="grid grid-cols-2 gap-3">
+          <ReviewSummaryTile label="Average HR Rating" value={selectedEmployee ? ratingLabelFromAverage(selectedEmployee.reviewAverage) : "No reviews"} />
+          <ReviewSummaryTile label="Total Reviews" value={selectedEmployee?.reviewCount || 0} />
+          <ReviewSummaryTile
+            label="Latest Review"
+            value={selectedEmployee?.latestReview ? selectedEmployee.latestReview.rating : "None"}
+          />
+          <ReviewSummaryTile
+            label="Review Trend"
+            value={<span className="inline-flex items-center gap-1"><TrendIcon trend={selectedEmployee?.reviewTrend || "steady"} />{trendLabel(selectedEmployee?.reviewTrend || "steady")}</span>}
+          />
+        </div>
+        <div className="mt-5 space-y-3">
+          {selectedReviews.length ? (
+            selectedReviews.map((review, index) => {
+              const score = Number(review.review_score ?? reviewScoreFromRating(review.rating));
+              return (
+                <div key={review.id} className="eom-review-timeline-item">
+                  <div className="eom-review-node">{index + 1}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold">Week {selectedReviews.length - index}</span>
+                      <span className="text-sm text-white/75">{review.rating}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(review.week_start), "MMM d, yyyy")}
+                      </span>
+                    </div>
+                    <MiniBar label="Review score" value={score * 10} detail={`${score}/10`} />
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5 text-sm text-muted-foreground">
+              No HR weekly reviews have been submitted for this employee yet.
+            </div>
+          )}
+        </div>
+      </GlassCard>
+
+      <GlassCard className="eom-hr-panel">
+        <h3 className="mb-4 flex items-center gap-2 font-semibold">
+          <History size={16} className="text-primary" />
+          Review history
+        </h3>
+        <div className="space-y-3">
+          {reviewRows.length ? (
+            reviewRows.map((review) => (
+              <article key={review.id} className="eom-review-card">
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold">{review.employeeName}</span>
+                      <span className="eom-review-rating">{review.rating}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(review.week_start), "MMM d, yyyy")}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">{review.department}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xl font-bold gradient-text">{review.scoreValue}/10</div>
+                    <div className="text-[10px] uppercase text-muted-foreground">HR score</div>
+                  </div>
+                </div>
+                <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
+                  <ReviewText label="Strengths" value={review.strengths} />
+                  <ReviewText label="Improvements" value={review.improvements} />
+                  <ReviewText label="Admin notes" value={review.notes} />
+                </div>
+              </article>
+            ))
+          ) : (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5 text-sm text-muted-foreground">
+              HR weekly review history will appear here after submissions.
+            </div>
+          )}
+        </div>
+      </GlassCard>
+    </section>
+  );
+}
+
+function ReviewSummaryTile({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number | ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="mt-2 text-lg font-bold text-white">{value}</div>
+    </div>
+  );
+}
+
+function ReviewText({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <p className="mt-2 text-sm text-white/75">{value || "No notes added."}</p>
+    </div>
+  );
+}
+
 function BadgeSection({ winner }: { winner: EmployeeRank }) {
   const badgeRows = [
     { title: "Productivity Hero", icon: Trophy, progress: winner.score, unlocked: winner.score >= 80 },
     { title: "Elite Performer", icon: Crown, progress: winner.score, unlocked: winner.score >= 95 },
-    { title: "Task Champion", icon: Award, progress: Math.min(100, winner.completedTasks * 10), unlocked: winner.completedTasks >= 10 },
+    { title: "Progress Champion", icon: Award, progress: winner.taskProgress, unlocked: winner.taskProgress >= 80 },
     { title: "Attendance Pro", icon: ShieldCheck, progress: winner.attendancePct, unlocked: winner.attendancePct >= 90 },
     { title: "Streak Master", icon: Flame, progress: Math.min(100, (winner.streak / 30) * 100), unlocked: winner.streak >= 30 },
     { title: "Diamond Legend", icon: Gem, progress: Math.min(100, winner.score), unlocked: winner.score >= 98 },
@@ -677,16 +1162,6 @@ function StatTile({ label, value, icon: Icon }: { label: string; value: string |
   );
 }
 
-function HeroMetric({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof Trophy }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-      <Icon size={17} className="mb-2 text-amber-200" />
-      <div className="text-xl font-bold tabular-nums">{value}</div>
-      <div className="text-[10px] uppercase tracking-wider text-white/55">{label}</div>
-    </div>
-  );
-}
-
 function AnalyticsBar({ label, value }: { label: string; value: number }) {
   return (
     <div className="mt-3">
@@ -715,6 +1190,15 @@ function MiniBar({ label, value, detail }: { label: string; value: number; detai
   );
 }
 
+function EligibilityBadge({ eligible }: { eligible: boolean }) {
+  return (
+    <span className={`eom-eligibility-badge ${eligible ? "eligible" : "excluded"}`}>
+      {eligible ? <ShieldCheck size={11} /> : <ShieldOff size={11} />}
+      {eomEligibilityLabel({ is_eom_eligible: eligible })}
+    </span>
+  );
+}
+
 function Avatar({ employee, size = "md" }: { employee: EmployeeRank; size?: "md" | "hero" }) {
   const initials = employee.name
     .split(" ")
@@ -735,6 +1219,24 @@ function Avatar({ employee, size = "md" }: { employee: EmployeeRank; size?: "md"
       {initials}
     </div>
   );
+}
+
+function TrendIcon({ trend }: { trend: EmployeeRank["reviewTrend"] }) {
+  if (trend === "up") return <TrendingUp size={12} className="text-success" />;
+  if (trend === "down") return <TrendingDown size={12} className="text-primary" />;
+  return <Minus size={12} className="text-muted-foreground" />;
+}
+
+function trendLabel(trend: EmployeeRank["reviewTrend"]) {
+  if (trend === "up") return "Improving";
+  if (trend === "down") return "Needs focus";
+  if (trend === "new") return "New";
+  return "Steady";
+}
+
+function isMissingReviewScoreError(error: { message?: string; details?: string; code?: string }) {
+  const text = `${error.message || ""} ${error.details || ""}`;
+  return text.includes("review_score") && (text.includes("schema cache") || error.code === "PGRST204");
 }
 
 function countRecentStreak(activityDates: Set<string>, maxDays: number) {
