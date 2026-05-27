@@ -19,7 +19,7 @@ function Page() {
     e.preventDefault();
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: getPasswordResetRedirectUrl(),
     });
     setLoading(false);
     if (error) return toast.error(error.message);
@@ -52,4 +52,14 @@ function Page() {
       )}
     </AuthShell>
   );
+}
+
+function getPasswordResetRedirectUrl() {
+  const configuredUrl = import.meta.env.VITE_APP_URL || import.meta.env.VITE_SITE_URL;
+  const origin = configuredUrl || window.location.origin;
+  const devOrigin =
+    origin === "http://localhost:3000" || origin === "http://127.0.0.1:3000"
+      ? "http://localhost:5173"
+      : origin;
+  return `${devOrigin.replace(/\/$/, "")}/reset-password`;
 }
