@@ -223,7 +223,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
                   onClick={() => selectDay(day)}
                   title={holiday?.title}
                   className={cn(
-                    "group relative flex aspect-square min-h-11 flex-col items-center justify-center rounded-lg border text-xs backdrop-blur-xl transition-all duration-300 ease-out sm:min-h-14",
+                    "group relative flex aspect-square min-h-11 flex-col items-center justify-center rounded-lg border pb-2 text-xs backdrop-blur-xl transition-all duration-300 ease-out sm:min-h-14 sm:pb-2.5",
                     "border-white/10 bg-card/45 shadow-[0_0_18px_-16px_var(--accent)] hover:-translate-y-1 hover:scale-[1.02] hover:border-primary/35 hover:bg-white/[0.075] hover:shadow-[0_0_30px_-10px_var(--primary),0_0_22px_-14px_var(--accent)]",
                     !day && "invisible",
                     isAdmin && day && "cursor-pointer",
@@ -245,7 +245,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
                       {(holiday || isWeeklyOff) && (
                         <span
                           className={cn(
-                            "absolute bottom-1.5 h-1.5 w-1.5 rounded-full",
+                            "absolute bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full sm:bottom-1.5",
                             holiday && isSaturday
                               ? "bg-primary shadow-[0_0_10px_var(--primary)]"
                               : holiday
