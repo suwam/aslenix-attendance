@@ -7,19 +7,22 @@ import { GlassCard } from "@/components/GlassCard";
 import { AttendanceLocationLinks } from "@/components/AttendanceLocationLinks";
 import { Input } from "@/components/ui/input";
 import { formatWorkHours } from "@/lib/work-hours";
-import { Loader2 } from "lucide-react";
+import { CalendarDays, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { isWeeklyOffDate, WEEKLY_OFF_LABEL } from "@/lib/weekly-off";
 
 export const Route = createFileRoute("/_app/my-attendance")({ component: MyAttendance });
 
 function MyAttendance() {
   const { user } = useAuth();
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const isWeeklyOff = isWeeklyOffDate(date);
 
   useEffect(() => {
     if (!user) return;
+    setLoading(true);
     supabase
       .from("attendance")
       .select("*")
@@ -42,6 +45,16 @@ function MyAttendance() {
         {loading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="animate-spin text-primary" />
+          </div>
+        ) : rows.length === 0 && isWeeklyOff ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 text-accent">
+              <CalendarDays size={22} />
+            </div>
+            <div className="text-lg font-semibold text-accent">{WEEKLY_OFF_LABEL}</div>
+            <div className="mt-1 text-sm text-muted-foreground">
+              Saturday is weekly off. No attendance record is required.
+            </div>
           </div>
         ) : rows.length === 0 ? (
           <div className="text-center py-16 text-muted-foreground">No records yet.</div>

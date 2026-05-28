@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GlassCard } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
+import { WEEKLY_OFF_DAY } from "@/lib/weekly-off";
 
 const MONTHS = [
   "Baisakh",
@@ -46,8 +47,6 @@ const CALENDAR_DATA = {
 const DEFAULT_HOLIDAYS = [];
 
 const HOLIDAY_KEY = "aslenix-nepali-calendar-admin-holidays";
-const WEEKLY_OFF_KEY = "aslenix-nepali-calendar-weekly-off-saturday";
-
 export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
   const todayAd = useMemo(() => startOfDay(new Date()), []);
   const todayBs = useMemo(() => adToBs(todayAd), [todayAd]);
@@ -56,7 +55,6 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
 
   const [visible, setVisible] = useState({ year: initialYear, month: initialMonth });
   const [holidays, setHolidays] = useLocalStorage(HOLIDAY_KEY, DEFAULT_HOLIDAYS);
-  const [weeklyOff, setWeeklyOff] = useLocalStorage(WEEKLY_OFF_KEY, [6]);
   const [form, setForm] = useState({ bsDate: formatBsDate(initialYear, initialMonth, 1), title: "" });
   const [editingId, setEditingId] = useState(null);
 
@@ -82,7 +80,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
     .slice(0, 3);
   const visibleDays = days.filter(Boolean);
   const holidayCount = visibleDays.filter((day) => holidaysByDate[day.bsDate]).length;
-  const weeklyOffCount = visibleDays.filter((day) => weeklyOff.includes(day.weekday)).length;
+  const weeklyOffCount = visibleDays.filter((day) => day.weekday === WEEKLY_OFF_DAY).length;
   const monthRange = visibleDays.length
     ? `${format(visibleDays[0].adDate, "MMM d")} - ${format(visibleDays[visibleDays.length - 1].adDate, "MMM d, yyyy")}`
     : "";
@@ -127,12 +125,6 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
       setEditingId(null);
       setForm((current) => ({ ...current, title: "" }));
     }
-  };
-
-  const toggleWeeklyOff = (dayIndex) => {
-    setWeeklyOff((items) =>
-      items.includes(dayIndex) ? items.filter((item) => item !== dayIndex) : [...items, dayIndex].sort(),
-    );
   };
 
   return (
@@ -212,8 +204,8 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
             {days.map((day, index) => {
               const holiday = day ? holidaysByDate[day.bsDate] : null;
               const isToday = day?.bsDate === todayKey;
-              const isWeeklyOff = day ? weeklyOff.includes(day.weekday) : false;
-              const isSaturday = day?.weekday === 6;
+              const isWeeklyOff = day?.weekday === WEEKLY_OFF_DAY;
+              const isSaturday = isWeeklyOff;
 
               return (
                 <button
@@ -228,15 +220,22 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
                     !day && "invisible",
                     isAdmin && day && "cursor-pointer",
                     isToday &&
-                      "border-primary/80 bg-primary/20 text-white shadow-[0_0_36px_-8px_var(--primary),0_0_26px_-14px_var(--accent)] ring-1 ring-primary/35 animate-pulse-glow",
+                      "border-white/30 bg-gradient-to-br from-pink-500/35 via-blue-500/30 to-purple-500/35 text-white shadow-[0_0_36px_-8px_rgba(236,72,153,0.55),0_0_30px_-10px_rgba(59,130,246,0.5),0_0_28px_-12px_rgba(168,85,247,0.5)] ring-1 ring-pink-300/35 animate-pulse-glow",
                     holiday && "border-warning/35 bg-warning/10 text-warning shadow-[0_0_22px_-16px_var(--warning)]",
-                    holiday && isSaturday && "border-primary/55 bg-primary/12",
-                    isWeeklyOff && !holiday && "text-primary",
+                    isWeeklyOff &&
+                      "border-primary/45 bg-primary/10 text-primary shadow-[0_0_24px_-14px_var(--primary)]",
+                    holiday && isSaturday && "border-warning/45 bg-warning/10",
                   )}
                 >
                   {day && (
                     <>
-                      <span className={cn("text-sm font-black leading-none tabular-nums sm:text-base", isSaturday && "text-primary")}>
+                      <span
+                        className={cn(
+                          "text-sm font-black leading-none tabular-nums sm:text-base",
+                          isSaturday && "text-primary",
+                          isToday && "text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.45)]",
+                        )}
+                      >
                         {day.date}
                       </span>
                       <span className="mt-1 text-[9px] font-medium leading-none text-muted-foreground">
@@ -247,10 +246,10 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
                           className={cn(
                             "absolute bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full sm:bottom-1.5",
                             holiday && isSaturday
-                              ? "bg-primary shadow-[0_0_10px_var(--primary)]"
+                              ? "bg-warning shadow-[0_0_10px_var(--warning)]"
                               : holiday
                                 ? "bg-warning shadow-[0_0_10px_var(--warning)]"
-                                : "bg-primary",
+                                : "bg-primary shadow-[0_0_10px_var(--primary)]",
                           )}
                         />
                       )}
@@ -265,7 +264,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
         <div className="mt-3 grid gap-2 sm:grid-cols-3">
           <LegendItem icon={Flame} label="Today" className="text-primary" />
           <LegendItem icon={Sparkles} label="Holiday" className="text-warning" />
-          <LegendItem icon={Circle} label="Weekly off" className="text-accent" />
+          <LegendItem icon={Circle} label="Weekly off" className="text-primary" />
         </div>
 
         <div className="mt-4 rounded-xl border border-white/10 bg-card/45 p-3 shadow-[0_0_26px_-18px_var(--accent)] backdrop-blur-xl transition-all duration-300 ease-out hover:border-accent/25 hover:shadow-[0_0_30px_-12px_var(--accent)]">
@@ -365,22 +364,8 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
 
             <div>
               <Label className="text-[11px]">Weekly off</Label>
-              <div className="mt-2 grid grid-cols-4 gap-1.5 sm:grid-cols-7 lg:grid-cols-4 xl:grid-cols-7">
-                {WEEKDAYS.map((day, index) => (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => toggleWeeklyOff(index)}
-                    className={cn(
-                      "rounded-lg border px-2 py-1.5 text-[10px] font-semibold backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.02]",
-                      weeklyOff.includes(index)
-                        ? "border-primary/50 bg-primary/15 text-white shadow-[0_0_26px_-14px_var(--primary)]"
-                        : "border-white/10 bg-card/45 text-muted-foreground shadow-[0_0_18px_-16px_var(--accent)] hover:border-accent/30 hover:shadow-[0_0_26px_-14px_var(--accent)]",
-                    )}
-                  >
-                    {day}
-                  </button>
-                ))}
+              <div className="mt-2 rounded-lg border border-primary/35 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary shadow-[0_0_22px_-14px_var(--primary)]">
+                Saturday for all employees
               </div>
             </div>
           </div>

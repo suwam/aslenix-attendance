@@ -15,14 +15,16 @@ import {
 import { Download, Printer, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { formatWorkHours } from "@/lib/work-hours";
+import { isWeeklyOffDate } from "@/lib/weekly-off";
 
 export const Route = createFileRoute("/_app/admin/reports")({ component: ReportsPage });
 
 function ReportsPage() {
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [statusFilter, setStatusFilter] = useState("all");
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const isWeeklyOff = isWeeklyOffDate(date);
 
   const run = async () => {
     setLoading(true);
@@ -44,7 +46,8 @@ function ReportsPage() {
       statusFilter === "all"
         ? merged
         : merged.filter((row) => {
-            if (statusFilter === "absent") return !row.attendance;
+            if (statusFilter === "weekly_off") return isWeeklyOff && !row.attendance;
+            if (statusFilter === "absent") return !isWeeklyOff && !row.attendance;
             if (statusFilter === "late") return row.attendance?.is_late;
             if (statusFilter === "early_checkout") return row.attendance?.is_early_checkout;
             return row.attendance?.status === statusFilter;
@@ -80,7 +83,7 @@ function ReportsPage() {
         attendance?.check_in_time ? format(new Date(attendance.check_in_time), "HH:mm") : "",
         attendance?.check_out_time ? format(new Date(attendance.check_out_time), "HH:mm") : "",
         attendance?.work_hours ? formatWorkHours(attendance.work_hours) : "",
-        attendance ? attendanceLabel(attendance) : "Absent",
+        attendance ? attendanceLabel(attendance) : isWeeklyOff ? "Weekly off" : "Absent",
         attendance?.is_late ? "Yes" : "No",
         attendance?.is_early_checkout ? "Yes" : "No",
       ]
@@ -132,6 +135,7 @@ function ReportsPage() {
                 <SelectItem value="present">Present</SelectItem>
                 <SelectItem value="late">Late</SelectItem>
                 <SelectItem value="early_checkout">Early checkout</SelectItem>
+                <SelectItem value="weekly_off">Weekly off</SelectItem>
                 <SelectItem value="absent">Absent</SelectItem>
                 <SelectItem value="leave">Leave</SelectItem>
                 <SelectItem value="wfh">WFH</SelectItem>
@@ -194,7 +198,9 @@ function ReportsPage() {
                         <span className="capitalize text-xs">
                           {attendance
                             ? attendanceLabel(attendance)
-                            : "Absent"}
+                            : isWeeklyOff
+                              ? "Weekly off"
+                              : "Absent"}
                         </span>
                       </td>
                     </tr>

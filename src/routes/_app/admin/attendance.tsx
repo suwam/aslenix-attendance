@@ -8,14 +8,16 @@ import { Input } from "@/components/ui/input";
 import { formatWorkHours } from "@/lib/work-hours";
 import { Loader2, Search } from "lucide-react";
 import { format } from "date-fns";
+import { isWeeklyOffDate } from "@/lib/weekly-off";
 
 export const Route = createFileRoute("/_app/admin/attendance")({ component: AttendancePage });
 
 function AttendancePage() {
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const isWeeklyOff = isWeeklyOffDate(date);
 
   useEffect(() => {
     (async () => {
@@ -136,6 +138,7 @@ function AttendancePage() {
                         status={r.attendance?.status}
                         late={r.attendance?.is_late}
                         earlyCheckout={r.attendance?.is_early_checkout}
+                        weeklyOff={isWeeklyOff}
                       />
                     </td>
                   </tr>
@@ -153,11 +156,21 @@ function StatusPill({
   status,
   late,
   earlyCheckout,
+  weeklyOff,
 }: {
   status?: string;
   late?: boolean;
   earlyCheckout?: boolean;
+  weeklyOff?: boolean;
 }) {
+  if (!status && weeklyOff) {
+    return (
+      <span className="px-2 py-1 rounded-full text-[10px] font-medium uppercase bg-accent/15 text-accent">
+        Weekly off
+      </span>
+    );
+  }
+
   if (!status)
     return (
       <span className="px-2 py-1 rounded-full text-[10px] font-medium uppercase bg-destructive/15 text-destructive">

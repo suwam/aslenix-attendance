@@ -8,9 +8,10 @@ import { LiveClock } from "@/components/LiveClock";
 import { Button } from "@/components/ui/button";
 import { getVerifiedAttendanceLocation } from "@/lib/attendance-location";
 import { formatWorkHours } from "@/lib/work-hours";
-import { LogIn, LogOut, Loader2 } from "lucide-react";
+import { CalendarDays, LogIn, LogOut, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { isWeeklyOffDate, WEEKLY_OFF_LABEL } from "@/lib/weekly-off";
 
 export const Route = createFileRoute("/_app/check-in")({ component: CheckInPage });
 
@@ -19,7 +20,8 @@ function CheckInPage() {
   const [today, setToday] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
-  const todayDate = new Date().toISOString().slice(0, 10);
+  const todayDate = format(new Date(), "yyyy-MM-dd");
+  const isWeeklyOff = isWeeklyOffDate(todayDate);
 
   const load = async () => {
     if (!user) return;
@@ -39,6 +41,7 @@ function CheckInPage() {
 
   const checkIn = async () => {
     if (!user) return;
+    if (isWeeklyOff) return toast.info("Saturday is a weekly off. Attendance is not required.");
     setBusy(true);
     let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
     try {
@@ -116,6 +119,16 @@ function CheckInPage() {
           <LiveClock className="mb-6" />
           {loading ? (
             <Loader2 className="animate-spin mx-auto text-primary" />
+          ) : isWeeklyOff ? (
+            <div className="mx-auto max-w-sm space-y-3">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-accent/30 bg-accent/10 text-accent">
+                <CalendarDays size={22} />
+              </div>
+              <div className="text-2xl font-bold text-accent">{WEEKLY_OFF_LABEL}</div>
+              <div className="text-sm text-muted-foreground">
+                Saturday is weekly off for everyone. No attendance is required today.
+              </div>
+            </div>
           ) : !today ? (
             <Button
               onClick={checkIn}

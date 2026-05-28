@@ -34,6 +34,7 @@ import { toast } from "sonner";
 import { format, startOfMonth } from "date-fns";
 import { productivityScore } from "@/lib/tasks-utils";
 import { formatWorkHours } from "@/lib/work-hours";
+import { isWeeklyOffDate, WEEKLY_OFF_LABEL } from "@/lib/weekly-off";
 
 export const Route = createFileRoute("/_app/dashboard")({ component: EmployeeDashboard });
 
@@ -56,7 +57,8 @@ function EmployeeDashboard() {
   const [nowTick, setNowTick] = useState(Date.now());
   const [busy, setBusy] = useState(false);
 
-  const todayDate = new Date().toISOString().slice(0, 10);
+  const todayDate = format(new Date(), "yyyy-MM-dd");
+  const isWeeklyOff = isWeeklyOffDate(todayDate);
 
   const load = async () => {
     if (!user) return;
@@ -183,6 +185,7 @@ function EmployeeDashboard() {
 
   const checkIn = async () => {
     if (!user) return;
+    if (isWeeklyOff) return toast.info("Saturday is a weekly off. Attendance is not required.");
     setBusy(true);
     let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
     try {
@@ -254,7 +257,13 @@ function EmployeeDashboard() {
     load();
   };
 
-  const status = !today ? "Not checked in" : today.check_out_time ? "Day completed" : "Working";
+  const status = isWeeklyOff
+    ? WEEKLY_OFF_LABEL
+    : !today
+      ? "Not checked in"
+      : today.check_out_time
+        ? "Day completed"
+        : "Working";
 
   const dismissImprovement = () => {
     if (user && latestImprovement?.id) {
@@ -344,6 +353,8 @@ function EmployeeDashboard() {
                   background:
                     status === "Working"
                       ? "var(--gradient-brand)"
+                      : status === WEEKLY_OFF_LABEL
+                        ? "color-mix(in oklab, var(--accent) 22%, transparent)"
                       : status === "Day completed"
                         ? "color-mix(in oklab, var(--success) 25%, transparent)"
                         : "color-mix(in oklab, var(--muted) 50%, transparent)",
@@ -352,7 +363,11 @@ function EmployeeDashboard() {
               >
                 {status}
               </div>
-              {!today ? (
+              {isWeeklyOff ? (
+                <div className="max-w-56 text-right text-xs leading-5 text-muted-foreground">
+                  Saturday is weekly off for everyone. No attendance is required today.
+                </div>
+              ) : !today ? (
                 <Button
                   onClick={checkIn}
                   disabled={busy}

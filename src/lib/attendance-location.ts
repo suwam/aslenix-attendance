@@ -19,11 +19,14 @@ export async function getVerifiedAttendanceLocation(): Promise<AttendanceLocatio
     throw new Error("Location is not supported by this browser.");
   }
 
-  const { data: settings, error } = await supabase
+  const settingsPromise = supabase
     .from("settings")
     .select("office_latitude,office_longitude,attendance_radius_meters")
     .limit(1)
     .maybeSingle();
+  const positionPromise = getCurrentPosition();
+
+  const { data: settings, error } = await settingsPromise;
 
   if (error) {
     if (error.message.includes("office_latitude")) {
@@ -42,7 +45,7 @@ export async function getVerifiedAttendanceLocation(): Promise<AttendanceLocatio
     throw new Error("Office location is not configured yet.");
   }
 
-  const position = await getCurrentPosition();
+  const position = await positionPromise;
   const latitude = position.coords.latitude;
   const longitude = position.coords.longitude;
   const accuracy = Number.isFinite(position.coords.accuracy) ? position.coords.accuracy : null;
@@ -61,8 +64,8 @@ function getCurrentPosition(): Promise<GeolocationPosition> {
   return new Promise((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(resolve, (error) => reject(locationError(error)), {
       enableHighAccuracy: true,
-      maximumAge: 0,
-      timeout: 15000,
+      maximumAge: 30000,
+      timeout: 10000,
     });
   });
 }
