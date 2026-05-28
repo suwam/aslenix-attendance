@@ -27,6 +27,7 @@ import { Route as AppMyAttendanceRouteImport } from './routes/_app/my-attendance
 import { Route as AppMeetingsRouteImport } from './routes/_app/meetings'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppCheckInRouteImport } from './routes/_app/check-in'
+import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
 import { Route as AppAchievementsRouteImport } from './routes/_app/achievements'
 import { Route as AppAdminIndexRouteImport } from './routes/_app/admin/index'
 import { Route as AppAdminWeeklyFeedbackRouteImport } from './routes/_app/admin/weekly-feedback'
@@ -134,6 +135,11 @@ const AppCheckInRoute = AppCheckInRouteImport.update({
   path: '/check-in',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCalendarRoute = AppCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAchievementsRoute = AppAchievementsRouteImport.update({
   id: '/achievements',
   path: '/achievements',
@@ -229,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/achievements': typeof AppAchievementsRoute
+  '/calendar': typeof AppCalendarRoute
   '/check-in': typeof AppCheckInRoute
   '/dashboard': typeof AppDashboardRoute
   '/meetings': typeof AppMeetingsRoute
@@ -265,6 +272,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/achievements': typeof AppAchievementsRoute
+  '/calendar': typeof AppCalendarRoute
   '/check-in': typeof AppCheckInRoute
   '/dashboard': typeof AppDashboardRoute
   '/meetings': typeof AppMeetingsRoute
@@ -303,6 +311,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/_app/achievements': typeof AppAchievementsRoute
+  '/_app/calendar': typeof AppCalendarRoute
   '/_app/check-in': typeof AppCheckInRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/meetings': typeof AppMeetingsRoute
@@ -341,6 +350,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/achievements'
+    | '/calendar'
     | '/check-in'
     | '/dashboard'
     | '/meetings'
@@ -377,6 +387,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/achievements'
+    | '/calendar'
     | '/check-in'
     | '/dashboard'
     | '/meetings'
@@ -414,6 +425,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/_app/achievements'
+    | '/_app/calendar'
     | '/_app/check-in'
     | '/_app/dashboard'
     | '/_app/meetings'
@@ -582,6 +594,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCheckInRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/calendar': {
+      id: '/_app/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof AppCalendarRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/achievements': {
       id: '/_app/achievements'
       path: '/achievements'
@@ -706,6 +725,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAchievementsRoute: typeof AppAchievementsRoute
+  AppCalendarRoute: typeof AppCalendarRoute
   AppCheckInRoute: typeof AppCheckInRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppMeetingsRoute: typeof AppMeetingsRoute
@@ -735,6 +755,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAchievementsRoute: AppAchievementsRoute,
+  AppCalendarRoute: AppCalendarRoute,
   AppCheckInRoute: AppCheckInRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppMeetingsRoute: AppMeetingsRoute,

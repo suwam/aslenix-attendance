@@ -5,6 +5,7 @@ import {
   UserCheck,
   Users,
   Calendar,
+  CalendarDays,
   FileBarChart2,
   BellDot,
   Settings,
@@ -32,6 +33,7 @@ type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
 
 const adminNav: NavItem[] = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/admin/productivity", label: "AI Productivity", icon: BrainCircuit },
   { to: "/admin/employee-of-month", label: "Employee of Month", icon: Crown },
   { to: "/admin/weekly-feedback", label: "Weekly Feedback", icon: MessageSquare },
@@ -51,6 +53,7 @@ const adminNav: NavItem[] = [
 
 const empNav: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/achievements", label: "Achievements", icon: Trophy },
   { to: "/tasks", label: "My Tasks", icon: ClipboardList },
   { to: "/meetings", label: "Meetings", icon: CalendarClock },

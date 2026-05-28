@@ -1,0 +1,538 @@
+import { useEffect, useMemo, useState } from "react";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Circle,
+  Clock3,
+  Edit3,
+  Flame,
+  Plus,
+  Save,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
+import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { GlassCard } from "@/components/GlassCard";
+import { cn } from "@/lib/utils";
+
+const MONTHS = [
+  "Baisakh",
+  "Jestha",
+  "Asar",
+  "Sawan",
+  "Bhadra",
+  "Ashoj",
+  "Kartik",
+  "Mangsir",
+  "Poush",
+  "Magh",
+  "Falgun",
+  "Chaitra",
+];
+
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const CALENDAR_DATA = {
+  2083: {
+    anchorAd: "2026-04-14",
+    monthDays: [31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
+  },
+};
+
+const DEFAULT_HOLIDAYS = [];
+
+const HOLIDAY_KEY = "aslenix-nepali-calendar-admin-holidays";
+const WEEKLY_OFF_KEY = "aslenix-nepali-calendar-weekly-off-saturday";
+
+export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
+  const todayAd = useMemo(() => startOfDay(new Date()), []);
+  const todayBs = useMemo(() => adToBs(todayAd), [todayAd]);
+  const initialYear = todayBs?.year ?? 2083;
+  const initialMonth = todayBs?.month ?? 0;
+
+  const [visible, setVisible] = useState({ year: initialYear, month: initialMonth });
+  const [holidays, setHolidays] = useLocalStorage(HOLIDAY_KEY, DEFAULT_HOLIDAYS);
+  const [weeklyOff, setWeeklyOff] = useLocalStorage(WEEKLY_OFF_KEY, [6]);
+  const [form, setForm] = useState({ bsDate: formatBsDate(initialYear, initialMonth, 1), title: "" });
+  const [editingId, setEditingId] = useState(null);
+
+  useEffect(() => {
+    onHolidaysChange?.(holidays);
+  }, [holidays, onHolidaysChange]);
+
+  const days = useMemo(() => buildMonth(visible.year, visible.month), [visible]);
+  const holidaysByDate = useMemo(() => {
+    return holidays.reduce((map, holiday) => {
+      map[holiday.bsDate] = holiday;
+      return map;
+    }, {});
+  }, [holidays]);
+
+  const todayKey = todayBs ? formatBsDate(todayBs.year, todayBs.month, todayBs.date) : "";
+  const selectedMonthName = MONTHS[visible.month] ?? "Nepali Month";
+  const canGoPrev = Boolean(getMonthMeta(visible.year, visible.month - 1));
+  const canGoNext = Boolean(getMonthMeta(visible.year, visible.month + 1));
+  const monthHolidays = days
+    .filter((day) => day && holidaysByDate[day.bsDate])
+    .map((day) => holidaysByDate[day.bsDate])
+    .slice(0, 3);
+  const visibleDays = days.filter(Boolean);
+  const holidayCount = visibleDays.filter((day) => holidaysByDate[day.bsDate]).length;
+  const weeklyOffCount = visibleDays.filter((day) => weeklyOff.includes(day.weekday)).length;
+  const monthRange = visibleDays.length
+    ? `${format(visibleDays[0].adDate, "MMM d")} - ${format(visibleDays[visibleDays.length - 1].adDate, "MMM d, yyyy")}`
+    : "";
+
+  const goMonth = (delta) => {
+    const next = getMonthMeta(visible.year, visible.month + delta);
+    if (next) setVisible({ year: next.year, month: next.month });
+  };
+
+  const selectDay = (day) => {
+    if (!day || !isAdmin) return;
+    setForm({ bsDate: day.bsDate, title: holidaysByDate[day.bsDate]?.title ?? "" });
+    setEditingId(holidaysByDate[day.bsDate]?.id ?? null);
+  };
+
+  const saveHoliday = () => {
+    const title = form.title.trim();
+    if (!title || !isValidBsDate(form.bsDate)) return;
+
+    if (editingId) {
+      setHolidays((items) =>
+        items.map((item) => (item.id === editingId ? { ...item, bsDate: form.bsDate, title } : item)),
+      );
+    } else {
+      setHolidays((items) => [
+        ...items.filter((item) => item.bsDate !== form.bsDate),
+        { id: crypto.randomUUID(), bsDate: form.bsDate, title },
+      ]);
+    }
+    setForm({ bsDate: form.bsDate, title: "" });
+    setEditingId(null);
+  };
+
+  const editHoliday = (holiday) => {
+    setForm({ bsDate: holiday.bsDate, title: holiday.title });
+    setEditingId(holiday.id);
+  };
+
+  const deleteHoliday = (id) => {
+    setHolidays((items) => items.filter((item) => item.id !== id));
+    if (editingId === id) {
+      setEditingId(null);
+      setForm((current) => ({ ...current, title: "" }));
+    }
+  };
+
+  const toggleWeeklyOff = (dayIndex) => {
+    setWeeklyOff((items) =>
+      items.includes(dayIndex) ? items.filter((item) => item !== dayIndex) : [...items, dayIndex].sort(),
+    );
+  };
+
+  return (
+    <GlassCard
+      className="min-w-0 overflow-hidden border border-white/10 bg-card/65 p-3 shadow-[var(--shadow-glass),0_0_36px_-24px_var(--primary),0_0_42px_-28px_var(--accent)] backdrop-blur-xl sm:p-5"
+      glow="blue"
+    >
+      <div className="relative z-10">
+        <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0 flex-1">
+            <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-accent">
+              <CalendarDays size={14} />
+              Nepali Calendar
+            </div>
+            <h3 className="truncate text-2xl font-black leading-tight sm:text-3xl">
+              {selectedMonthName} {visible.year} BS
+            </h3>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              {todayBs
+                ? `${todayBs.formatted} BS | ${format(todayAd, "MMM d, yyyy")} AD`
+                : format(todayAd, "MMM d, yyyy")}
+            </p>
+            {monthRange && <p className="mt-1 text-xs text-muted-foreground">{monthRange} AD</p>}
+          </div>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 rounded-xl border-white/10 bg-card/50 shadow-[0_0_22px_-16px_var(--accent)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:border-accent/40 hover:shadow-[0_0_28px_-10px_var(--accent)]"
+              disabled={!canGoPrev}
+              onClick={() => goMonth(-1)}
+              aria-label="Previous Nepali month"
+            >
+              <ChevronLeft size={15} />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 rounded-xl border-white/10 bg-card/50 shadow-[0_0_22px_-16px_var(--primary)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary/40 hover:shadow-[0_0_28px_-10px_var(--primary)]"
+              onClick={() => setVisible({ year: initialYear, month: initialMonth })}
+              aria-label="Go to current Nepali month"
+            >
+              <Clock3 size={15} />
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-9 w-9 rounded-xl border-white/10 bg-card/50 shadow-[0_0_22px_-16px_var(--accent)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:border-accent/40 hover:shadow-[0_0_28px_-10px_var(--accent)]"
+              disabled={!canGoNext}
+              onClick={() => goMonth(1)}
+              aria-label="Next Nepali month"
+            >
+              <ChevronRight size={15} />
+            </Button>
+          </div>
+        </div>
+
+        <div className="mb-4 grid grid-cols-3 gap-2">
+          <CalendarStat label="Days" value={visibleDays.length} tone="blue" />
+          <CalendarStat label="Holidays" value={holidayCount} tone="amber" />
+          <CalendarStat label="Weekly Off" value={weeklyOffCount} tone="red" />
+        </div>
+
+        <div className="rounded-xl border border-white/10 bg-card/45 p-2 shadow-[0_0_30px_-22px_var(--primary),0_0_34px_-26px_var(--accent),inset_0_1px_0_oklch(1_0_0_/_0.08)] backdrop-blur-xl">
+          <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {WEEKDAYS.map((day, index) => (
+              <div key={day} className={cn("py-2", index === 6 && "text-primary")}>
+                {day}
+              </div>
+            ))}
+          </div>
+
+          <div className="grid min-w-0 grid-cols-7 gap-1">
+            {days.map((day, index) => {
+              const holiday = day ? holidaysByDate[day.bsDate] : null;
+              const isToday = day?.bsDate === todayKey;
+              const isWeeklyOff = day ? weeklyOff.includes(day.weekday) : false;
+              const isSaturday = day?.weekday === 6;
+
+              return (
+                <button
+                  key={day?.bsDate ?? `empty-${index}`}
+                  type="button"
+                  disabled={!day}
+                  onClick={() => selectDay(day)}
+                  title={holiday?.title}
+                  className={cn(
+                    "group relative flex aspect-square min-h-11 flex-col items-center justify-center rounded-lg border text-xs backdrop-blur-xl transition-all duration-300 ease-out sm:min-h-14",
+                    "border-white/10 bg-card/45 shadow-[0_0_18px_-16px_var(--accent)] hover:-translate-y-1 hover:scale-[1.02] hover:border-primary/35 hover:bg-white/[0.075] hover:shadow-[0_0_30px_-10px_var(--primary),0_0_22px_-14px_var(--accent)]",
+                    !day && "invisible",
+                    isAdmin && day && "cursor-pointer",
+                    isToday &&
+                      "border-primary/80 bg-primary/20 text-white shadow-[0_0_36px_-8px_var(--primary),0_0_26px_-14px_var(--accent)] ring-1 ring-primary/35 animate-pulse-glow",
+                    holiday && "border-warning/35 bg-warning/10 text-warning shadow-[0_0_22px_-16px_var(--warning)]",
+                    holiday && isSaturday && "border-primary/55 bg-primary/12",
+                    isWeeklyOff && !holiday && "text-primary",
+                  )}
+                >
+                  {day && (
+                    <>
+                      <span className={cn("text-sm font-black leading-none tabular-nums sm:text-base", isSaturday && "text-primary")}>
+                        {day.date}
+                      </span>
+                      <span className="mt-1 text-[9px] font-medium leading-none text-muted-foreground">
+                        {format(day.adDate, "d")}
+                      </span>
+                      {(holiday || isWeeklyOff) && (
+                        <span
+                          className={cn(
+                            "absolute bottom-1.5 h-1.5 w-1.5 rounded-full",
+                            holiday && isSaturday
+                              ? "bg-primary shadow-[0_0_10px_var(--primary)]"
+                              : holiday
+                                ? "bg-warning shadow-[0_0_10px_var(--warning)]"
+                                : "bg-primary",
+                          )}
+                        />
+                      )}
+                    </>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          <LegendItem icon={Flame} label="Today" className="text-primary" />
+          <LegendItem icon={Sparkles} label="Holiday" className="text-warning" />
+          <LegendItem icon={Circle} label="Weekly off" className="text-accent" />
+        </div>
+
+        <div className="mt-4 rounded-xl border border-white/10 bg-card/45 p-3 shadow-[0_0_26px_-18px_var(--accent)] backdrop-blur-xl transition-all duration-300 ease-out hover:border-accent/25 hover:shadow-[0_0_30px_-12px_var(--accent)]">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                Today
+              </div>
+              <div className="mt-1 truncate text-sm font-semibold">{todayBs?.formatted ?? "BS unavailable"}</div>
+            </div>
+            <div className="shrink-0 text-right text-xs text-muted-foreground">
+              <div>{format(todayAd, "EEEE")}</div>
+              <div>{format(todayAd, "MMM d, yyyy")} AD</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-3 space-y-2">
+          <div className="flex items-center gap-2 text-xs font-semibold">
+            <Sparkles size={13} className="text-amber-300" />
+            Holiday indicators
+          </div>
+          {monthHolidays.length > 0 ? (
+            monthHolidays.map((holiday) => (
+              <div
+                key={holiday.id}
+                className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-card/45 px-3 py-2 text-xs shadow-[0_0_22px_-18px_var(--primary)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:border-warning/25 hover:bg-warning/10 hover:shadow-[0_0_28px_-14px_var(--primary)]"
+              >
+                <div className="min-w-0">
+                  <div className="truncate font-medium">{holiday.title}</div>
+                  <div className="text-muted-foreground">{holiday.bsDate} BS</div>
+                </div>
+                {isAdmin && (
+                  <div className="flex shrink-0 gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 rounded-lg"
+                      onClick={() => editHoliday(holiday)}
+                      aria-label={`Edit ${holiday.title}`}
+                    >
+                      <Edit3 size={12} />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 rounded-lg text-destructive"
+                      onClick={() => deleteHoliday(holiday.id)}
+                      aria-label={`Delete ${holiday.title}`}
+                    >
+                      <Trash2 size={12} />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ))
+          ) : (
+            <div className="rounded-xl border border-dashed border-white/10 bg-card/45 px-3 py-4 text-center text-xs text-muted-foreground shadow-[0_0_22px_-18px_var(--primary)] backdrop-blur-xl">
+              No holidays marked this month.
+            </div>
+          )}
+        </div>
+
+        {isAdmin && (
+          <div className="mt-4 space-y-4 rounded-xl border border-accent/20 bg-card/45 p-3 shadow-[0_0_30px_-20px_var(--accent)] backdrop-blur-xl">
+            <div className="flex items-center gap-2 text-xs font-semibold text-white">
+              <Plus size={13} className="text-accent" />
+              Admin calendar controls
+            </div>
+
+            <div className="grid gap-2">
+              <div>
+                <Label className="text-[11px]">BS date</Label>
+                <Input
+                  value={form.bsDate}
+                  onChange={(event) => setForm((current) => ({ ...current, bsDate: event.target.value }))}
+                  placeholder="2083-01-01"
+                  className="h-9 rounded-xl"
+                />
+              </div>
+              <div>
+                <Label className="text-[11px]">Holiday name</Label>
+                <Input
+                  value={form.title}
+                  onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
+                  placeholder="Festival or company holiday"
+                  className="h-9 rounded-xl"
+                />
+              </div>
+              <Button type="button" className="neon-button h-9 rounded-xl" onClick={saveHoliday}>
+                <Save size={13} className="mr-2" />
+                {editingId ? "Update holiday" : "Add holiday"}
+              </Button>
+            </div>
+
+            <div>
+              <Label className="text-[11px]">Weekly off</Label>
+              <div className="mt-2 grid grid-cols-4 gap-1.5 sm:grid-cols-7 lg:grid-cols-4 xl:grid-cols-7">
+                {WEEKDAYS.map((day, index) => (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => toggleWeeklyOff(index)}
+                    className={cn(
+                      "rounded-lg border px-2 py-1.5 text-[10px] font-semibold backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.02]",
+                      weeklyOff.includes(index)
+                        ? "border-primary/50 bg-primary/15 text-white shadow-[0_0_26px_-14px_var(--primary)]"
+                        : "border-white/10 bg-card/45 text-muted-foreground shadow-[0_0_18px_-16px_var(--accent)] hover:border-accent/30 hover:shadow-[0_0_26px_-14px_var(--accent)]",
+                    )}
+                  >
+                    {day}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </GlassCard>
+  );
+}
+
+function CalendarStat({ label, value, tone }) {
+  const toneClass = {
+    blue: "border-accent/20 bg-accent/10 text-accent",
+    amber: "border-warning/20 bg-warning/10 text-warning",
+    red: "border-primary/20 bg-primary/10 text-primary",
+  }[tone];
+
+  return (
+    <div className={cn("rounded-xl border px-3 py-2 shadow-[0_0_22px_-18px_var(--primary)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-[0_0_26px_-14px_var(--accent)]", toneClass)}>
+      <div className="text-[10px] font-bold uppercase tracking-[0.12em] opacity-80">{label}</div>
+      <div className="mt-1 text-xl font-black leading-none tabular-nums">{value}</div>
+    </div>
+  );
+}
+
+function LegendItem({ icon: Icon, label, className }) {
+  return (
+    <div className="flex min-h-9 items-center gap-2 rounded-lg border border-white/10 bg-card/45 px-3 py-2 text-xs text-muted-foreground shadow-[0_0_20px_-16px_var(--accent)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-white/15 hover:shadow-[0_0_26px_-14px_var(--primary)]">
+      <Icon size={12} className={className} />
+      <span className="truncate">{label}</span>
+    </div>
+  );
+}
+
+function useLocalStorage(key, initialValue) {
+  const [value, setValue] = useState(() => {
+    if (typeof window === "undefined") return initialValue;
+    try {
+      const stored = window.localStorage.getItem(key);
+      return stored ? JSON.parse(stored) : initialValue;
+    } catch {
+      return initialValue;
+    }
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(key, JSON.stringify(value));
+  }, [key, value]);
+
+  return [value, setValue];
+}
+
+function buildMonth(year, month) {
+  const meta = getMonthMeta(year, month);
+  if (!meta) return [];
+
+  const firstAd = bsToAd(meta.year, meta.month, 1);
+  const leading = firstAd.getDay();
+  const totalDays = CALENDAR_DATA[meta.year].monthDays[meta.month];
+  const days = Array.from({ length: leading }, () => null);
+
+  for (let date = 1; date <= totalDays; date += 1) {
+    const adDate = bsToAd(meta.year, meta.month, date);
+    days.push({
+      year: meta.year,
+      month: meta.month,
+      date,
+      adDate,
+      weekday: adDate.getDay(),
+      bsDate: formatBsDate(meta.year, meta.month, date),
+    });
+  }
+
+  while (days.length % 7 !== 0) days.push(null);
+  return days;
+}
+
+function getMonthMeta(year, month) {
+  let nextYear = year;
+  let nextMonth = month;
+  if (nextMonth < 0) {
+    nextYear -= 1;
+    nextMonth = 11;
+  }
+  if (nextMonth > 11) {
+    nextYear += 1;
+    nextMonth = 0;
+  }
+  if (!CALENDAR_DATA[nextYear]) return null;
+  return { year: nextYear, month: nextMonth };
+}
+
+function adToBs(adDate) {
+  for (const [yearKey, data] of Object.entries(CALENDAR_DATA)) {
+    const year = Number(yearKey);
+    const anchor = parseAdDate(data.anchorAd);
+    const daysFromAnchor = differenceInDays(adDate, anchor);
+    const yearLength = data.monthDays.reduce((sum, days) => sum + days, 0);
+
+    if (daysFromAnchor < 0 || daysFromAnchor >= yearLength) continue;
+
+    let remaining = daysFromAnchor;
+    for (let month = 0; month < data.monthDays.length; month += 1) {
+      const monthLength = data.monthDays[month];
+      if (remaining < monthLength) {
+        const date = remaining + 1;
+        return {
+          year,
+          month,
+          date,
+          formatted: `${MONTHS[month]} ${date}, ${year}`,
+        };
+      }
+      remaining -= monthLength;
+    }
+  }
+
+  return null;
+}
+
+function bsToAd(year, month, date) {
+  const data = CALENDAR_DATA[year];
+  const daysBeforeMonth = data.monthDays.slice(0, month).reduce((sum, days) => sum + days, 0);
+  const result = parseAdDate(data.anchorAd);
+  result.setDate(result.getDate() + daysBeforeMonth + date - 1);
+  return result;
+}
+
+function parseAdDate(value) {
+  const [year, month, date] = value.split("-").map(Number);
+  return new Date(year, month - 1, date);
+}
+
+function differenceInDays(laterDate, earlierDate) {
+  const msPerDay = 24 * 60 * 60 * 1000;
+  return Math.floor((startOfDay(laterDate).getTime() - startOfDay(earlierDate).getTime()) / msPerDay);
+}
+
+function startOfDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function formatBsDate(year, month, date) {
+  return `${year}-${String(month + 1).padStart(2, "0")}-${String(date).padStart(2, "0")}`;
+}
+
+function isValidBsDate(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]) - 1;
+  const date = Number(match[3]);
+  const data = CALENDAR_DATA[year];
+  return Boolean(data && month >= 0 && month < 12 && date >= 1 && date <= data.monthDays[month]);
+}
