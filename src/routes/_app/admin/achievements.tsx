@@ -359,7 +359,10 @@ function AdminAchievementsPage() {
       );
 
     if (error) {
-      toast.error("Unable to persist approval. Please try again.");
+      console.error("employee_achievements upsert error", error);
+      toast.error(
+        `Unable to persist approval: ${error.message || error.details || "check console"}`,
+      );
       return;
     }
 
@@ -386,7 +389,10 @@ function AdminAchievementsPage() {
     );
 
     if (error) {
-      toast.error("Unable to persist badge assignment. Please try again.");
+      console.error("employee_achievements manual assign error", error);
+      toast.error(
+        `Unable to persist badge assignment: ${error.message || error.details || "check console"}`,
+      );
       return;
     }
 
@@ -413,7 +419,8 @@ function AdminAchievementsPage() {
       .eq("badge", target.badge);
 
     if (error) {
-      toast.error("Unable to remove the badge. Please try again.");
+      console.error("employee_achievements delete error", error);
+      toast.error(`Unable to remove the badge: ${error.message || error.details || "check console"}`);
       return;
     }
 
