@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { PageHeader, StatCard } from "@/components/PageHeader";
+import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { LiveClock } from "@/components/LiveClock";
 import { Button } from "@/components/ui/button";
@@ -16,9 +16,11 @@ import {
 } from "@/components/ui/dialog";
 import { getVerifiedAttendanceLocation } from "@/lib/attendance-location";
 import {
+  ArrowUpRight,
   Clock,
   CheckCircle2,
   Calendar,
+  CalendarClock,
   TrendingUp,
   LogIn,
   LogOut,
@@ -29,6 +31,7 @@ import {
   Crown,
   Sparkles,
   MessageSquare,
+  ShieldCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfMonth } from "date-fns";
@@ -270,6 +273,7 @@ function EmployeeDashboard() {
       : today.check_out_time
         ? "Day completed"
         : "Working";
+  const firstName = profile?.full_name?.split(" ")[0] || "there";
 
   const dismissImprovement = () => {
     if (user && latestImprovement?.id) {
@@ -316,30 +320,40 @@ function EmployeeDashboard() {
       </Dialog>
 
       <PageHeader
-        title={`Hello, ${profile?.full_name?.split(" ")[0]}`}
-        subtitle="Here's your day at a glance"
+        title={`Hello, ${firstName}`}
+        subtitle="Your attendance, delivery focus, and productivity snapshot"
+        actions={
+          <>
+            <div className="rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5 text-xs font-medium text-muted-foreground">
+              {format(new Date(), "EEE, MMM d")}
+            </div>
+            <div className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
+              {status}
+            </div>
+          </>
+        }
       />
 
       {monthAward && (
-        <GlassCard className="mb-6 overflow-hidden border-amber-200/20" glow="blue">
+        <GlassCard className="mb-6 overflow-hidden border-amber-200/20 bg-white/[0.035]">
           <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
-              <div className="eom-crown">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-200/20 bg-amber-300/10 text-amber-200">
                 <Crown size={28} />
               </div>
               <div>
-                <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-amber-200">
+                <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-200">
                   <Sparkles size={14} />
                   Employee of the Month
                 </div>
-                <h2 className="text-2xl font-bold">Congratulations, {profile?.full_name?.split(" ")[0]}!</h2>
+                <h2 className="text-2xl font-bold">Congratulations, {firstName}!</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {monthAward.public_message ||
                     `You earned the official ASLENIX monthly badge with a ${monthAward.score}/100 score.`}
                 </p>
               </div>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-right">
+            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-right">
               <div className="text-3xl font-bold gradient-text tabular-nums">{monthAward.score}</div>
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Award score</div>
             </div>
@@ -347,39 +361,50 @@ function EmployeeDashboard() {
         </GlassCard>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <GlassCard className="lg:col-span-2 relative overflow-hidden" glow="red">
-          <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
-            <LiveClock className="flex-1" />
-            <div className="flex flex-col items-end gap-3">
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">Status</div>
-              <div
-                className="px-4 py-2 rounded-xl text-sm font-semibold"
-                style={{
-                  background:
-                    status === "Working"
-                      ? "var(--gradient-brand)"
-                      : status === WEEKLY_OFF_LABEL
-                        ? "color-mix(in oklab, var(--accent) 22%, transparent)"
-                      : status === "Day completed"
-                        ? "color-mix(in oklab, var(--success) 25%, transparent)"
-                        : "color-mix(in oklab, var(--muted) 50%, transparent)",
-                  color: status === "Working" ? "white" : undefined,
-                }}
-              >
-                {status}
+      <div className="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_420px]">
+        <GlassCard className="relative overflow-hidden border-white/10 bg-white/[0.025] p-0">
+          <div className="relative z-10 grid gap-6 p-6 lg:grid-cols-[minmax(0,1fr)_250px] lg:p-7">
+            <div>
+              <div className="mb-5 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <ShieldCheck size={15} className="text-primary" />
+                Daily operations
+              </div>
+              <LiveClock className="mb-7" />
+              <div className="grid grid-cols-1 gap-3 border-t border-white/10 pt-5 sm:grid-cols-3">
+                <TodayMetric
+                  label="Check-in"
+                  value={today?.check_in_time ? format(new Date(today.check_in_time), "HH:mm") : "—"}
+                />
+                <TodayMetric
+                  label="Check-out"
+                  value={today?.check_out_time ? format(new Date(today.check_out_time), "HH:mm") : "—"}
+                />
+                <TodayMetric
+                  label="Hours"
+                  value={today?.work_hours ? formatWorkHours(today.work_hours) : "—"}
+                />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground">Status</div>
+                  <div className="mt-2 text-2xl font-bold text-white">{status}</div>
+                </div>
+                <StatusDot status={status} />
               </div>
               {isWeeklyOff ? (
-                <div className="max-w-56 text-right text-xs leading-5 text-muted-foreground">
+                <div className="rounded-xl border border-accent/20 bg-accent/10 p-3 text-sm leading-6 text-accent">
                   Saturday is weekly off for everyone. No attendance is required today.
                 </div>
               ) : !today ? (
                 <Button
                   onClick={checkIn}
                   disabled={busy}
-                  className="neon-button rounded-xl h-11 px-6"
+                  className="neon-button h-12 w-full rounded-xl text-base"
                 >
-                  <LogIn size={16} className="mr-2" />
+                  <LogIn size={17} className="mr-2" />
                   Check in
                 </Button>
               ) : !today.check_out_time ? (
@@ -387,94 +412,50 @@ function EmployeeDashboard() {
                   onClick={checkOut}
                   disabled={busy}
                   variant="outline"
-                  className="rounded-xl h-11 px-6"
+                  className="h-12 w-full rounded-xl text-base"
                 >
-                  <LogOut size={16} className="mr-2" />
+                  <LogOut size={17} className="mr-2" />
                   Check out
                 </Button>
               ) : (
-                <div className="text-xs text-muted-foreground">
+                <div className="rounded-xl border border-success/20 bg-success/10 p-3 text-sm font-medium text-success">
                   Worked {formatWorkHours(today.work_hours)} today
                 </div>
               )}
             </div>
           </div>
-          {today && (
-            <div className="mt-5 pt-5 border-t border-border grid grid-cols-3 gap-4 text-sm">
-              <div>
-                <div className="text-xs text-muted-foreground">Check-in</div>
-                <div className="font-medium tabular-nums">
-                  {format(new Date(today.check_in_time), "HH:mm")}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground">Check-out</div>
-                <div className="font-medium tabular-nums">
-                  {today.check_out_time ? format(new Date(today.check_out_time), "HH:mm") : "—"}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground">Hours</div>
-                <div className="font-medium tabular-nums">
-                  {today.work_hours ? formatWorkHours(today.work_hours) : "—"}
-                </div>
-              </div>
-            </div>
-          )}
         </GlassCard>
 
-        <GlassCard>
-          <h3 className="font-semibold mb-3">Quick actions</h3>
-          <div className="space-y-2">
-            <Link to="/tasks">
-              <Button variant="outline" className="w-full justify-start rounded-xl">
-                <ListTodo size={14} className="mr-2" />
-                My tasks
-              </Button>
-            </Link>
-            <Link to="/standup">
-              <Button variant="outline" className="w-full justify-start rounded-xl">
-                <Activity size={14} className="mr-2" />
-                Daily standup
-              </Button>
-            </Link>
-            <Link to="/my-leaves">
-              <Button variant="outline" className="w-full justify-start rounded-xl">
-                <Calendar size={14} className="mr-2" />
-                Request leave
-              </Button>
-            </Link>
-            <Link to="/profile">
-              <Button variant="outline" className="w-full justify-start rounded-xl">
-                <CheckCircle2 size={14} className="mr-2" />
-                Update profile
-              </Button>
-            </Link>
+        <GlassCard className="bg-white/[0.025]">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-semibold">Quick actions</h3>
+              <p className="text-xs text-muted-foreground">Common employee workflows</p>
+            </div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.04] text-primary">
+              <ArrowUpRight size={18} />
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <QuickActionLink to="/tasks" icon={ListTodo} label="My tasks" />
+            <QuickActionLink to="/standup" icon={Activity} label="Daily standup" />
+            <QuickActionLink to="/my-leaves" icon={Calendar} label="Request leave" />
+            <QuickActionLink to="/profile" icon={CheckCircle2} label="Update profile" />
           </div>
         </GlassCard>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          label="Present this month"
-          value={monthStats.present}
-          icon={CheckCircle2}
-          accent="green"
-        />
-        <StatCard label="Late arrivals" value={monthStats.late} icon={Clock} accent="amber" />
-        <StatCard label="Leave days" value={monthStats.leave} icon={Calendar} accent="blue" />
-        <StatCard
-          label="Hours worked"
-          value={formatWorkHours(monthStats.hours)}
-          icon={TrendingUp}
-          accent="red"
-        />
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <ExecutiveMetric label="Present this month" value={monthStats.present} icon={CheckCircle2} tone="green" />
+        <ExecutiveMetric label="Late arrivals" value={monthStats.late} icon={Clock} tone="amber" />
+        <ExecutiveMetric label="Leave days" value={monthStats.leave} icon={CalendarClock} tone="blue" />
+        <ExecutiveMetric label="Hours worked" value={formatWorkHours(monthStats.hours)} icon={TrendingUp} tone="red" />
       </div>
 
-      <GlassCard className="mb-6" glow="red">
-        <div className="flex items-center justify-between gap-3 mb-4">
+      <GlassCard className="mb-6 border-white/10 bg-white/[0.025]">
+        <div className="mb-5 flex items-center justify-between gap-3">
           <div>
-            <h3 className="font-semibold flex items-center gap-2">
+            <h3 className="flex items-center gap-2 text-lg font-semibold">
               <Clock size={16} className="text-primary" />
               Task deadlines
             </h3>
@@ -482,12 +463,12 @@ function EmployeeDashboard() {
               Countdown for active tasks assigned to you
             </p>
           </div>
-          <Link to="/tasks" className="text-xs text-primary hover:underline">
+          <Link to="/tasks" className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/15">
             Open tasks
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {deadlineTasks.map((task) => {
             const countdown = getTaskCountdown(task.deadline, nowTick);
             const isOverdue = countdown.state === "overdue";
@@ -497,17 +478,17 @@ function EmployeeDashboard() {
               <Link
                 key={task.id}
                 to="/tasks"
-                className="rounded-xl border border-border bg-muted/20 p-3 transition hover:border-primary/40 hover:bg-muted/30"
+                className="group rounded-2xl border border-white/10 bg-black/20 p-4 transition hover:border-primary/30 hover:bg-white/[0.045]"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">{task.title}</div>
+                    <div className="truncate text-sm font-semibold text-white">{task.title}</div>
                     <div className="mt-1 text-xs text-muted-foreground">
                       {task.deadline ? format(new Date(task.deadline), "MMM d, h:mm a") : "No deadline"}
                     </div>
                   </div>
                   <span
-                    className={`shrink-0 rounded-lg px-2 py-1 text-xs font-semibold tabular-nums ${
+                    className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums ${
                       isOverdue
                         ? "bg-destructive/15 text-destructive"
                         : isDueSoon
@@ -523,7 +504,7 @@ function EmployeeDashboard() {
                     <span className="capitalize">{task.status.replaceAll("_", " ")}</span>
                     <span>{task.progress}%</span>
                   </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-muted/50">
+                  <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
                     <div
                       className="h-full rounded-full transition-all"
                       style={{ width: `${task.progress}%`, background: "var(--gradient-brand)" }}
@@ -534,7 +515,7 @@ function EmployeeDashboard() {
             );
           })}
           {deadlineTasks.length === 0 && (
-            <div className="md:col-span-2 xl:col-span-3 rounded-xl border border-border bg-muted/20 p-6 text-center text-sm text-muted-foreground">
+            <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 p-6 text-center text-sm text-muted-foreground md:col-span-2 xl:col-span-3">
               <AlertCircle size={18} className="mx-auto mb-2 text-primary" />
               No active task deadlines right now.
             </div>
@@ -542,10 +523,10 @@ function EmployeeDashboard() {
         </div>
       </GlassCard>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <GlassCard glow="blue">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <GlassCard className="border-white/10 bg-white/[0.025]">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold flex items-center gap-2">
+            <h3 className="flex items-center gap-2 font-semibold">
               <Zap size={16} className="text-primary" /> Productivity score
             </h3>
             <span
@@ -559,53 +540,42 @@ function EmployeeDashboard() {
               {taskStats.score}
             </span>
           </div>
-          <div className="h-2 rounded-full bg-muted/40 overflow-hidden mb-4">
+          <div className="mb-4 h-2 overflow-hidden rounded-full bg-white/10">
             <div
               className="h-full rounded-full transition-all"
               style={{ width: `${taskStats.score}%`, background: "var(--gradient-brand)" }}
             />
           </div>
           <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <div className="text-xs text-muted-foreground">Total</div>
-              <div className="font-bold text-lg tabular-nums">{taskStats.total}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Completed</div>
-              <div className="font-bold text-lg tabular-nums">{taskStats.completed}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Active</div>
-              <div className="font-bold text-lg tabular-nums">{taskStats.active}</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground">Overdue</div>
-              <div className="font-bold text-lg tabular-nums text-destructive">
-                {taskStats.overdue}
-              </div>
-            </div>
+            <ScoreTile label="Total" value={taskStats.total} />
+            <ScoreTile label="Completed" value={taskStats.completed} />
+            <ScoreTile label="Active" value={taskStats.active} />
+            <ScoreTile label="Overdue" value={taskStats.overdue} danger />
           </div>
         </GlassCard>
 
-        <GlassCard className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold">Recent activity</h3>
-            <Link to="/tasks" className="text-xs text-primary hover:underline">
-              View all →
+        <GlassCard className="border-white/10 bg-white/[0.025] lg:col-span-2">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold">Recent activity</h3>
+              <p className="text-xs text-muted-foreground">Latest task and standup updates</p>
+            </div>
+            <Link to="/tasks" className="rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-white/[0.06]">
+              View all
             </Link>
           </div>
-          <ul className="divide-y divide-border">
+          <ul className="divide-y divide-white/10">
             {recent.map((r, i) => (
-              <li key={i} className="py-2.5 flex items-start gap-3">
+              <li key={i} className="flex items-start gap-3 py-3">
                 <div
-                  className="h-7 w-7 rounded-lg flex items-center justify-center shrink-0"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
                   style={{ background: "var(--gradient-brand-soft)" }}
                 >
                   <Activity size={12} className="text-primary" />
                 </div>
-                <div className="flex-1 min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="text-xs text-muted-foreground">{r.kind}</div>
-                  <div className="text-sm truncate">{r.text}</div>
+                  <div className="truncate text-sm font-medium text-white">{r.text}</div>
                 </div>
                 <div className="text-xs text-muted-foreground whitespace-nowrap">
                   {format(new Date(r.when), "MMM d HH:mm")}
@@ -621,6 +591,107 @@ function EmployeeDashboard() {
         </GlassCard>
       </div>
     </>
+  );
+}
+
+function TodayMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+      <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="mt-2 text-xl font-bold tabular-nums text-white">{value}</div>
+    </div>
+  );
+}
+
+function StatusDot({ status }: { status: string }) {
+  const tone =
+    status === "Working"
+      ? "bg-success shadow-[0_0_24px_rgba(34,197,94,.35)]"
+      : status === "Day completed"
+        ? "bg-primary shadow-[0_0_24px_rgba(255,45,111,.3)]"
+        : "bg-muted-foreground";
+
+  return (
+    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]">
+      <span className={`h-3 w-3 rounded-full ${tone}`} />
+    </div>
+  );
+}
+
+function QuickActionLink({
+  to,
+  icon: Icon,
+  label,
+}: {
+  to: "/tasks" | "/standup" | "/my-leaves" | "/profile";
+  icon: typeof ListTodo;
+  label: string;
+}) {
+  return (
+    <Link
+      to={to}
+      className="group flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm font-semibold text-white transition hover:border-primary/30 hover:bg-white/[0.05]"
+    >
+      <span className="flex min-w-0 items-center gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] text-muted-foreground transition group-hover:text-primary">
+          <Icon size={16} />
+        </span>
+        <span className="truncate">{label}</span>
+      </span>
+      <ArrowUpRight size={15} className="shrink-0 text-muted-foreground transition group-hover:text-primary" />
+    </Link>
+  );
+}
+
+function ExecutiveMetric({
+  label,
+  value,
+  icon: Icon,
+  tone,
+}: {
+  label: string;
+  value: string | number;
+  icon: typeof Clock;
+  tone: "green" | "amber" | "blue" | "red";
+}) {
+  const colors = {
+    green: "text-success bg-success/10 border-success/20",
+    amber: "text-warning bg-warning/10 border-warning/20",
+    blue: "text-blue-300 bg-blue-500/10 border-blue-400/20",
+    red: "text-primary bg-primary/10 border-primary/20",
+  };
+
+  return (
+    <GlassCard className="border-white/10 bg-white/[0.025]">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
+          <div className="mt-3 truncate text-3xl font-bold tabular-nums text-white">{value}</div>
+        </div>
+        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${colors[tone]}`}>
+          <Icon size={19} />
+        </div>
+      </div>
+    </GlassCard>
+  );
+}
+
+function ScoreTile({
+  label,
+  value,
+  danger = false,
+}: {
+  label: string;
+  value: number;
+  danger?: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className={`mt-1 text-lg font-bold tabular-nums ${danger ? "text-destructive" : "text-white"}`}>
+        {value}
+      </div>
+    </div>
   );
 }
 
