@@ -20,6 +20,13 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { productivityScore } from "@/lib/tasks-utils";
@@ -43,6 +50,15 @@ type BadgeDefinition = {
 type PersistedAchievement = {
   badge: string;
   status: "Approved" | "Pending" | "Manual";
+};
+
+type CelebrationBadge = {
+  key: string;
+  title: string;
+  subtitle: string;
+  status: PersistedAchievement["status"];
+  tier?: BadgeTier;
+  icon: typeof Trophy;
 };
 
 const approvedBadgeAliases: Record<string, string> = {
@@ -94,6 +110,8 @@ const tierMeta: Record<
 function AchievementsPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [celebrationBadge, setCelebrationBadge] = useState<CelebrationBadge | null>(null);
+  const [seenVersion, setSeenVersion] = useState(0);
   const [stats, setStats] = useState({
     completedTasks: 0,
     totalTasks: 0,
@@ -344,7 +362,66 @@ function AchievementsPage() {
 
   const unlocked = badges.filter((badge) => badge.value >= badge.target);
   const totalUnlocked = unlocked.length + approvedOfficialBadges.length;
-  const activePopupBadge = unlocked[unlocked.length - 1];
+  const featuredBadges = [
+    ...badges.filter((badge) => badge.approved || badge.value >= badge.target).map((badge) => ({
+      key: badge.id,
+      title: badge.title,
+      subtitle: badge.approved ? "Approved by admin" : "Unlocked from progress",
+      status: badge.approved ? "Approved" : "Manual",
+      tier: badge.tier,
+      icon: badge.icon,
+    })),
+    ...approvedOfficialBadges.map((achievement) => ({
+      key: `official-${achievement.badge}`,
+      title: achievement.badge,
+      subtitle: "Official achievement approved by admin",
+      status: achievement.status,
+      icon: BadgeCheck,
+    })),
+  ].slice(0, 4);
+
+  useEffect(() => {
+    if (loading || !user || approvedAchievements.length === 0) return;
+
+    const celebrationBadges = approvedAchievements
+      .map<CelebrationBadge>((achievement) => {
+        const mappedId = approvedBadgeAliases[achievement.badge];
+        const mappedBadge = mappedId ? badges.find((badge) => badge.id === mappedId) : null;
+
+        return {
+          key: `${user.id}:${achievement.badge}:${achievement.status}`,
+          title: mappedBadge?.title || achievement.badge,
+          subtitle:
+            achievement.status === "Manual"
+              ? "An admin assigned this official badge to you."
+              : "An admin approved this achievement for you.",
+          status: achievement.status,
+          tier: mappedBadge?.tier,
+          icon: mappedBadge?.icon || BadgeCheck,
+        };
+      });
+    const storageKey = `aslenix-seen-achievements:${user.id}`;
+    const seen = readSeenBadgeKeys(storageKey);
+    const nextBadge = celebrationBadges.find((badge) => !seen.has(badge.key));
+
+    if (nextBadge) {
+      setCelebrationBadge(nextBadge);
+    }
+  }, [approvedAchievements, badges, loading, seenVersion, user]);
+
+  const closeCelebration = () => {
+    if (!user || !celebrationBadge) {
+      setCelebrationBadge(null);
+      return;
+    }
+
+    const storageKey = `aslenix-seen-achievements:${user.id}`;
+    const seen = readSeenBadgeKeys(storageKey);
+    seen.add(celebrationBadge.key);
+    localStorage.setItem(storageKey, JSON.stringify(Array.from(seen)));
+    setCelebrationBadge(null);
+    setSeenVersion((current) => current + 1);
+  };
 
   if (loading) {
     return (
@@ -361,9 +438,72 @@ function AchievementsPage() {
         subtitle="Productivity badges, streaks, and performance milestones"
       />
 
-      {activePopupBadge && <UnlockPulse badge={activePopupBadge} />}
+      <AchievementCelebration badge={celebrationBadge} onOpenChange={(open) => !open && closeCelebration()} />
 
       <div className="achievement-shell space-y-6">
+        <section className="glass achievement-tier overflow-hidden">
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
+            <div>
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-white shadow-[0_0_34px_rgba(125,92,255,.36)]">
+                  <Sparkles size={22} />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Achievement Vault</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Your approved badges, live progress, and current milestones.
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <VaultStat label="Earned" value={totalUnlocked} />
+                <VaultStat label="Official" value={approvedAchievements.length} />
+                <VaultStat label="In progress" value={badges.length - unlocked.length} />
+                <VaultStat label="Best tier" value={bestTierLabel(unlocked)} />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-semibold text-white">Recent rewards</div>
+                  <div className="text-xs text-muted-foreground">Latest badges on your profile</div>
+                </div>
+                <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-muted-foreground">
+                  {featuredBadges.length}
+                </div>
+              </div>
+              <div className="space-y-2">
+                {featuredBadges.length > 0 ? (
+                  featuredBadges.map((badge) => {
+                    const Icon = badge.icon;
+                    const meta = badge.tier ? tierMeta[badge.tier] : null;
+                    return (
+                      <div key={badge.key} className="flex items-center gap-3 rounded-xl bg-white/[0.035] p-3">
+                        <div
+                          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${
+                            meta?.gradient || "from-cyan-400 via-violet-500 to-pink-500"
+                          } text-white`}
+                        >
+                          <Icon size={17} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-semibold text-white">{badge.title}</div>
+                          <div className="truncate text-xs text-muted-foreground">{badge.subtitle}</div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="rounded-xl border border-dashed border-white/10 p-4 text-sm text-muted-foreground">
+                    Approved rewards will appear here.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className="grid grid-cols-1 gap-4 md:grid-cols-4">
           <MetricCard label="Unlocked" value={`${totalUnlocked}/12`} icon={Trophy} />
           <MetricCard label="Completed tasks" value={stats.completedTasks} icon={CheckCircle2} />
@@ -373,13 +513,18 @@ function AchievementsPage() {
 
         {approvedOfficialBadges.length > 0 && (
           <section className="glass achievement-tier">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 shadow-[0_0_34px_rgba(78,220,255,.3)]">
-                <BadgeCheck size={21} className="text-white" />
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 shadow-[0_0_34px_rgba(78,220,255,.3)]">
+                  <BadgeCheck size={21} className="text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">Official Badges</h2>
+                  <p className="text-sm text-muted-foreground">Approved by admin</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl font-bold">Official Badges</h2>
-                <p className="text-sm text-muted-foreground">Approved by admin</p>
+              <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-muted-foreground">
+                {approvedOfficialBadges.length} official
               </div>
             </div>
 
@@ -425,6 +570,73 @@ function AchievementsPage() {
         })}
       </div>
     </>
+  );
+}
+
+function VaultStat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+      <div className="text-2xl font-bold text-white">{value}</div>
+      <div className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+function AchievementCelebration({
+  badge,
+  onOpenChange,
+}: {
+  badge: CelebrationBadge | null;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const Icon = badge?.icon || BadgeCheck;
+  const meta = badge?.tier ? tierMeta[badge.tier] : null;
+
+  return (
+    <Dialog open={Boolean(badge)} onOpenChange={onOpenChange}>
+      <DialogContent className="overflow-hidden border-white/10 bg-background/95 p-0 sm:max-w-md">
+        {badge && (
+          <div className="relative">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(33,212,253,.24),transparent_34%),radial-gradient(circle_at_20%_35%,rgba(255,45,111,.2),transparent_26%),radial-gradient(circle_at_80%_45%,rgba(139,92,246,.22),transparent_30%)]" />
+            <div className="pointer-events-none absolute inset-x-8 top-5 flex justify-between opacity-70">
+              {["h-2 w-2", "h-1.5 w-1.5", "h-2.5 w-2.5", "h-1 w-1"].map((size, index) => (
+                <span
+                  key={index}
+                  className={`${size} rounded-full bg-white shadow-[0_0_20px_rgba(255,255,255,.7)]`}
+                />
+              ))}
+            </div>
+            <div className="relative px-6 pb-6 pt-8 text-center">
+              <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-3xl border border-white/20 bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-white shadow-[0_0_55px_rgba(125,92,255,.45)]">
+                <div
+                  className={`flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${
+                    meta?.gradient || "from-cyan-400 via-violet-500 to-pink-500"
+                  } shadow-[inset_0_1px_0_rgba(255,255,255,.28)]`}
+                >
+                  <Icon size={32} />
+                </div>
+              </div>
+              <DialogHeader className="items-center text-center">
+                <div className="mb-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  Badge unlocked
+                </div>
+                <DialogTitle className="text-2xl font-bold text-white">{badge.title}</DialogTitle>
+                <DialogDescription className="max-w-xs text-muted-foreground">
+                  {badge.subtitle}
+                </DialogDescription>
+              </DialogHeader>
+              <button
+                type="button"
+                onClick={() => onOpenChange(false)}
+                className="neon-button mt-6 w-full rounded-xl px-4 py-2.5 text-sm font-semibold"
+              >
+                Awesome
+              </button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -534,25 +746,6 @@ function MetricCard({
   );
 }
 
-function UnlockPulse({ badge }: { badge: BadgeDefinition }) {
-  const Icon = badge.icon;
-  const meta = tierMeta[badge.tier];
-
-  return (
-    <div className="pointer-events-none fixed right-5 top-20 z-50 hidden animate-achievement-pop md:block">
-      <div className="glass-strong flex items-center gap-3 rounded-2xl border-primary/30 px-4 py-3 shadow-[0_0_42px_rgba(255,45,111,.28)]">
-        <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${meta.gradient}`}>
-          <Icon size={21} className="text-white" />
-        </div>
-        <div>
-          <div className="text-xs uppercase tracking-wider text-primary">Achievement unlocked</div>
-          <div className="text-sm font-semibold text-white">{badge.title}</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function countStreak(activityDates: Set<string>, maxDays: number) {
   let streak = 0;
   const day = new Date();
@@ -563,4 +756,22 @@ function countStreak(activityDates: Set<string>, maxDays: number) {
     day.setDate(day.getDate() - 1);
   }
   return streak;
+}
+
+function readSeenBadgeKeys(storageKey: string) {
+  try {
+    const raw = localStorage.getItem(storageKey);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(parsed) ? parsed.filter((item) => typeof item === "string") : []);
+  } catch {
+    return new Set<string>();
+  }
+}
+
+function bestTierLabel(unlocked: BadgeDefinition[]) {
+  if (unlocked.some((badge) => badge.tier === "diamond")) return "Diamond";
+  if (unlocked.some((badge) => badge.tier === "gold")) return "Gold";
+  if (unlocked.some((badge) => badge.tier === "silver")) return "Silver";
+  if (unlocked.some((badge) => badge.tier === "bronze")) return "Bronze";
+  return "None";
 }
