@@ -34,7 +34,18 @@ function LeavesPage() {
       return;
     }
 
-    let filtered = leaves ?? [];
+    const normalizedLeaves = (leaves ?? []).map((l) => {
+      const lowerStatus = String(l.status || "").toLowerCase();
+      return {
+        ...l,
+        status:
+          lowerStatus === "approved" || lowerStatus === "rejected" || lowerStatus === "pending" || lowerStatus === "cancelled"
+            ? lowerStatus
+            : "pending",
+      };
+    });
+
+    let filtered = normalizedLeaves;
     if (tab !== "all") filtered = filtered.filter((l) => l.status === tab);
 
     const ids = [...new Set(filtered.map((l) => l.user_id))];
@@ -45,24 +56,15 @@ function LeavesPage() {
     const map = new Map((profs ?? []).map((p) => [p.user_id, p]));
 
     setRows(
-      filtered.map((l) => {
-        const lowerStatus = String(l.status || "").toLowerCase();
-        const normalizedStatus =
-          lowerStatus === "approved" || lowerStatus === "rejected" || lowerStatus === "pending" || lowerStatus === "cancelled"
-            ? lowerStatus
-            : "pending";
-
-        return {
-          ...l,
-          profile: map.get(l.user_id),
-          status: normalizedStatus,
-          duration:
-            Math.max(
-              1,
-              differenceInDays(new Date(l.end_date), new Date(l.start_date)) + 1,
-            ),
-        };
-      }),
+      filtered.map((l) => ({
+        ...l,
+        profile: map.get(l.user_id),
+        duration:
+          Math.max(
+            1,
+            differenceInDays(new Date(l.end_date), new Date(l.start_date)) + 1,
+          ),
+      })),
     );
     setLoading(false);
   };
