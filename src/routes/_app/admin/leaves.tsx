@@ -15,7 +15,8 @@ export const Route = createFileRoute("/_app/admin/leaves")({ component: LeavesPa
 function LeavesPage() {
   const { user } = useAuth();
   const [tab, setTab] = useState<"pending" | "approved" | "rejected" | "all">("pending");
-  const [rows, setRows] = useState<any[]>([]);
+  const [allRows, setAllRows] = useState<any[]>([]);
+  const [filteredRows, setFilteredRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [comments, setComments] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
@@ -55,7 +56,8 @@ function LeavesPage() {
       .in("user_id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
     const map = new Map((profs ?? []).map((p) => [p.user_id, p]));
 
-    setRows(
+    setAllRows(normalizedLeaves);
+    setFilteredRows(
       filtered.map((l) => ({
         ...l,
         profile: map.get(l.user_id),
@@ -74,7 +76,7 @@ function LeavesPage() {
 
   const decide = async (id: string, status: "approved" | "rejected") => {
     setBusy(id);
-    const row = rows.find((r) => r.id === id);
+    const row = allRows.find((r) => r.id === id);
     const { error } = await supabase
       .from("leave_requests")
       .update({ status, admin_comment: comments[id] || null, reviewed_by: user?.id })
@@ -102,12 +104,12 @@ function LeavesPage() {
 
   const summary = useMemo(
     () => ({
-      pending: rows.filter((row) => row.status === "pending").length,
-      approved: rows.filter((row) => row.status === "approved").length,
-      rejected: rows.filter((row) => row.status === "rejected").length,
-      all: rows.length,
+      pending: allRows.filter((row) => row.status === "pending").length,
+      approved: allRows.filter((row) => row.status === "approved").length,
+      rejected: allRows.filter((row) => row.status === "rejected").length,
+      all: allRows.length,
     }),
-    [rows],
+    [allRows],
   );
 
   const statusPill = (status: string) => {
@@ -144,13 +146,13 @@ function LeavesPage() {
         <div className="flex justify-center py-20">
           <Loader2 className="animate-spin text-primary" />
         </div>
-      ) : rows.length === 0 ? (
+      ) : filteredRows.length === 0 ? (
         <GlassCard className="text-center py-16 text-muted-foreground">
           No leave requests.
         </GlassCard>
       ) : (
         <div className="space-y-4">
-          {rows.map((r) => (
+          {filteredRows.map((r) => (
             <GlassCard key={r.id} className="p-6">
               <div className="grid gap-4 lg:grid-cols-[1.35fr_0.85fr]">
                 <div className="min-w-0 space-y-4">
