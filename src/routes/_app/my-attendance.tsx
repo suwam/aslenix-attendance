@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/PageHeader";
@@ -19,6 +19,41 @@ function MyAttendance() {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const isWeeklyOff = isWeeklyOffDate(date);
+
+  const attendance = useMemo(() => rows[0] ?? null, [rows]);
+  const summary = useMemo(() => {
+    if (isWeeklyOff && !attendance) {
+      return {
+        status: "Weekly off",
+        variant: "accent",
+        checkIn: "—",
+        checkOut: "—",
+        hours: "—",
+      };
+    }
+
+    if (!attendance) {
+      return {
+        status: "Absent",
+        variant: "destructive",
+        checkIn: "—",
+        checkOut: "—",
+        hours: "—",
+      };
+    }
+
+    return {
+      status: attendance.is_early_checkout
+        ? "Early checkout"
+        : attendance.is_late
+          ? "Late"
+          : attendance.status?.replace("_", " ") || "Present",
+      variant: attendance.is_late || attendance.is_early_checkout ? "warning" : "success",
+      checkIn: attendance.check_in_time ? format(new Date(attendance.check_in_time), "HH:mm") : "—",
+      checkOut: attendance.check_out_time ? format(new Date(attendance.check_out_time), "HH:mm") : "—",
+      hours: attendance.work_hours ? formatWorkHours(attendance.work_hours) : "—",
+    };
+  }, [attendance, isWeeklyOff]);
 
   useEffect(() => {
     if (!user) return;
@@ -41,6 +76,28 @@ function MyAttendance() {
       <div className="mb-5 max-w-48">
         <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
       </div>
+
+      <div className="grid gap-3 mb-5 sm:grid-cols-2 xl:grid-cols-4">
+        <GlassCard className="p-4">
+          <div className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Status</div>
+          <div className="mt-3">
+            <StatusPill status={summary.status} variant={summary.variant} />
+          </div>
+        </GlassCard>
+        <GlassCard className="p-4">
+          <div className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Check-in</div>
+          <div className="mt-3 text-lg font-semibold">{summary.checkIn}</div>
+        </GlassCard>
+        <GlassCard className="p-4">
+          <div className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Check-out</div>
+          <div className="mt-3 text-lg font-semibold">{summary.checkOut}</div>
+        </GlassCard>
+        <GlassCard className="p-4">
+          <div className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Hours</div>
+          <div className="mt-3 text-lg font-semibold">{summary.hours}</div>
+        </GlassCard>
+      </div>
+
       <GlassCard className="p-0 overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-16">
@@ -95,21 +152,10 @@ function MyAttendance() {
                       {r.work_hours ? formatWorkHours(r.work_hours) : "—"}
                     </td>
                     <td className="p-4">
-                      <span
-                        className={`px-2 py-1 rounded-full text-[10px] font-medium uppercase ${
-                          r.is_early_checkout
-                            ? "bg-warning/15 text-warning"
-                            : r.is_late
-                              ? "bg-warning/15 text-warning"
-                              : "bg-success/15 text-success"
-                        }`}
-                      >
-                        {r.is_early_checkout
-                          ? "Early checkout"
-                          : r.is_late
-                            ? "Late"
-                            : r.status.replace("_", " ")}
-                      </span>
+                      <StatusPill
+                        status={r.is_early_checkout ? "Early checkout" : r.is_late ? "Late" : r.status?.replace("_", " ")}
+                        variant={r.is_late || r.is_early_checkout ? "warning" : r.status ? "success" : "destructive"}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -119,5 +165,28 @@ function MyAttendance() {
         )}
       </GlassCard>
     </>
+  );
+}
+
+function StatusPill({
+  status,
+  variant,
+}: {
+  status: string;
+  variant: "success" | "warning" | "destructive" | "accent";
+}) {
+  const classes =
+    variant === "success"
+      ? "bg-success/15 text-success"
+      : variant === "warning"
+        ? "bg-warning/15 text-warning"
+        : variant === "destructive"
+          ? "bg-destructive/15 text-destructive"
+          : "bg-accent/15 text-accent";
+
+  return (
+    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${classes}`}>
+      {status}
+    </span>
   );
 }

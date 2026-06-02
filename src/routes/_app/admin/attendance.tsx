@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { AttendanceLocationLinks } from "@/components/AttendanceLocationLinks";
 import { Input } from "@/components/ui/input";
 import { formatWorkHours } from "@/lib/work-hours";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, CalendarDays, CheckCircle2, AlertTriangle, Laptop } from "lucide-react";
 import { format } from "date-fns";
 import { isWeeklyOffDate } from "@/lib/weekly-off";
 
@@ -18,6 +18,15 @@ function AttendancePage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const isWeeklyOff = isWeeklyOffDate(date);
+
+  const stats = useMemo(() => {
+    const total = rows.length;
+    const present = rows.filter((r) => r.attendance && ["present", "wfh", "late"].includes(r.attendance.status)).length;
+    const late = rows.filter((r) => r.attendance?.is_late).length;
+    const absent = rows.filter((r) => !r.attendance).length;
+    const wfh = rows.filter((r) => r.attendance?.status === "wfh").length;
+    return { total, present, late, absent, wfh };
+  }, [rows]);
 
   useEffect(() => {
     (async () => {
@@ -41,24 +50,45 @@ function AttendancePage() {
     <>
       <PageHeader title="Attendance" subtitle="Daily attendance overview" />
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-5">
-        <Input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="sm:w-48"
-        />
-        <div className="relative flex-1 max-w-md">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-          />
+      <div className="flex flex-col gap-3 mb-5 xl:flex-row xl:items-end xl:justify-between">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 flex-1">
+          <GlassCard className="p-4">
+            <div className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Total employees</div>
+            <div className="mt-3 text-3xl font-semibold">{stats.total}</div>
+          </GlassCard>
+          <GlassCard className="p-4">
+            <div className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Present</div>
+            <div className="mt-3 text-3xl font-semibold text-success">{stats.present}</div>
+          </GlassCard>
+          <GlassCard className="p-4">
+            <div className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Late</div>
+            <div className="mt-3 text-3xl font-semibold text-warning">{stats.late}</div>
+          </GlassCard>
+          <GlassCard className="p-4">
+            <div className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Absent</div>
+            <div className="mt-3 text-3xl font-semibold text-destructive">{stats.absent}</div>
+          </GlassCard>
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search employee…"
-            className="pl-9"
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="sm:w-48"
           />
+          <div className="relative flex-1 max-w-md">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search employee…"
+              className="pl-9"
+            />
+          </div>
         </div>
       </div>
 
