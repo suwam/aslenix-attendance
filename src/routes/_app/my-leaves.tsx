@@ -15,7 +15,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, X, Loader2 } from "lucide-react";
+import {
+  CalendarClock,
+  CalendarDays,
+  CheckCircle2,
+  Clock,
+  FileText,
+  Loader2,
+  Plus,
+  Send,
+  ShieldAlert,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -79,6 +91,13 @@ function MyLeaves() {
     load();
   };
 
+  const pendingCount = rows.filter((row) => row.status === "pending").length;
+  const approvedCount = rows.filter((row) => row.status === "approved").length;
+  const totalRequestedDays = rows.reduce(
+    (sum, row) => sum + getLeaveDays(row.start_date, row.end_date),
+    0,
+  );
+
   return (
     <>
       <PageHeader
@@ -101,58 +120,106 @@ function MyLeaves() {
         }
       />
 
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <LeaveMetric label="Pending requests" value={pendingCount} icon={Clock} tone="amber" />
+        <LeaveMetric label="Approved" value={approvedCount} icon={CheckCircle2} tone="green" />
+        <LeaveMetric label="Requested days" value={totalRequestedDays} icon={CalendarDays} tone="blue" />
+      </div>
+
       {open && (
-        <GlassCard className="mb-5">
-          <form onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label>Type</Label>
-              <Select
-                value={form.leave_type}
-                onValueChange={(v) => setForm({ ...form, leave_type: v })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TYPES.map((t) => (
-                    <SelectItem key={t.v} value={t.v}>
-                      {t.l}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <GlassCard className="mb-6 overflow-hidden border-white/10 bg-white/[0.025] p-0">
+          <div className="border-b border-white/10 bg-white/[0.025] px-6 py-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
+                  <FileText size={15} />
+                  New leave request
+                </div>
+                <h2 className="text-xl font-bold text-white">Time-off request form</h2>
+              </div>
+              <div className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-xs text-muted-foreground">
+                HR approval required
+              </div>
             </div>
-            <div className="hidden sm:block" />
-            <div>
-              <Label>Start date</Label>
-              <Input
-                type="date"
-                required
-                value={form.start_date}
-                onChange={(e) => setForm({ ...form, start_date: e.target.value })}
-              />
+          </div>
+
+          <form onSubmit={submit} className="grid grid-cols-1 gap-5 p-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <CalendarClock size={22} />
+              </div>
+              <div className="text-lg font-semibold text-white">Request details</div>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Select your leave type and dates. Add a concise reason so HR can review quickly.
+              </p>
+              {form.start_date && form.end_date && (
+                <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.035] p-3">
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground">Duration</div>
+                  <div className="mt-1 text-2xl font-bold text-white">
+                    {getLeaveDays(form.start_date, form.end_date)} days
+                  </div>
+                </div>
+              )}
             </div>
-            <div>
-              <Label>End date</Label>
-              <Input
-                type="date"
-                required
-                value={form.end_date}
-                onChange={(e) => setForm({ ...form, end_date: e.target.value })}
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <Label>Reason</Label>
-              <Textarea
-                rows={3}
-                value={form.reason}
-                onChange={(e) => setForm({ ...form, reason: e.target.value })}
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <Button type="submit" disabled={busy} className="neon-button rounded-xl">
-                {busy ? "Submitting…" : "Submit request"}
-              </Button>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <Label className="mb-2 block text-sm font-semibold text-white">Type</Label>
+                <Select
+                  value={form.leave_type}
+                  onValueChange={(v) => setForm({ ...form, leave_type: v })}
+                >
+                  <SelectTrigger className="rounded-xl border-white/10 bg-black/20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TYPES.map((t) => (
+                      <SelectItem key={t.v} value={t.v}>
+                        {t.l}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="mb-2 block text-sm font-semibold text-white">Start date</Label>
+                <Input
+                  type="date"
+                  required
+                  value={form.start_date}
+                  onChange={(e) => setForm({ ...form, start_date: e.target.value })}
+                  className="rounded-xl border-white/10 bg-black/20"
+                />
+              </div>
+              <div>
+                <Label className="mb-2 block text-sm font-semibold text-white">End date</Label>
+                <Input
+                  type="date"
+                  required
+                  value={form.end_date}
+                  onChange={(e) => setForm({ ...form, end_date: e.target.value })}
+                  className="rounded-xl border-white/10 bg-black/20"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Label className="mb-2 block text-sm font-semibold text-white">Reason</Label>
+                <Textarea
+                  rows={4}
+                  value={form.reason}
+                  onChange={(e) => setForm({ ...form, reason: e.target.value })}
+                  placeholder="Add context for this request..."
+                  className="rounded-2xl border-white/10 bg-black/20"
+                />
+              </div>
+              <div className="sm:col-span-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-xs text-muted-foreground">
+                  Your request will appear as pending until an admin reviews it.
+                </div>
+                <Button type="submit" disabled={busy} className="neon-button h-11 rounded-xl px-6">
+                  {busy ? <Loader2 size={15} className="mr-2 animate-spin" /> : <Send size={15} className="mr-2" />}
+                  {busy ? "Submitting..." : "Submit request"}
+                </Button>
+              </div>
             </div>
           </form>
         </GlassCard>
@@ -163,39 +230,49 @@ function MyLeaves() {
           <Loader2 className="animate-spin text-primary" />
         </div>
       ) : rows.length === 0 ? (
-        <GlassCard className="text-center py-16 text-muted-foreground">
+        <GlassCard className="border-white/10 bg-white/[0.025] py-16 text-center text-muted-foreground">
+          <Sparkles size={24} className="mx-auto mb-3 text-primary" />
           No leave requests yet.
         </GlassCard>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           {rows.map((r) => (
-            <GlassCard key={r.id}>
-              <div className="flex items-start justify-between gap-4 flex-wrap">
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span
-                      className="px-2.5 py-1 rounded-full text-[11px] font-medium capitalize"
-                      style={{ background: "var(--gradient-brand-soft)", color: "var(--primary)" }}
-                    >
-                      {r.leave_type.replace("_", " ")}
-                    </span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-medium uppercase ${r.status === "approved" ? "bg-success/15 text-success" : r.status === "rejected" ? "bg-destructive/15 text-destructive" : r.status === "cancelled" ? "bg-muted text-muted-foreground" : "bg-warning/15 text-warning"}`}
-                    >
-                      {r.status}
-                    </span>
+            <GlassCard key={r.id} className="border-white/10 bg-white/[0.025]">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold capitalize text-primary">
+                        {typeLabel(r.leave_type)}
+                      </span>
+                      <LeaveStatusPill status={r.status} />
+                    </div>
+                    <div className="mt-3 text-lg font-semibold text-white">
+                      {format(new Date(r.start_date), "MMM d, yyyy")} to{" "}
+                      {format(new Date(r.end_date), "MMM d, yyyy")}
+                    </div>
+                    <div className="mt-1 text-sm text-muted-foreground">
+                      {getLeaveDays(r.start_date, r.end_date)} requested days
+                    </div>
                   </div>
-                  <div className="mt-2 text-sm">
-                    {format(new Date(r.start_date), "MMM d, yyyy")} →{" "}
-                    {format(new Date(r.end_date), "MMM d, yyyy")}
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] text-primary">
+                    <CalendarDays size={19} />
                   </div>
-                  {r.reason && <div className="text-xs text-muted-foreground mt-1">{r.reason}</div>}
-                  {r.admin_comment && (
-                    <div className="text-xs italic mt-1">Admin: {r.admin_comment}</div>
-                  )}
                 </div>
+
+                {r.reason && (
+                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm leading-6 text-muted-foreground">
+                    {r.reason}
+                  </div>
+                )}
+                {r.admin_comment && (
+                  <div className="rounded-2xl border border-blue-400/20 bg-blue-500/10 p-4 text-sm italic text-blue-100">
+                    Admin: {r.admin_comment}
+                  </div>
+                )}
                 {r.status === "pending" && (
-                  <Button size="sm" variant="ghost" onClick={() => cancel(r.id)}>
+                  <Button size="sm" variant="outline" className="w-fit rounded-xl" onClick={() => cancel(r.id)}>
+                    <X size={14} className="mr-1.5" />
                     Cancel
                   </Button>
                 )}
@@ -206,4 +283,75 @@ function MyLeaves() {
       )}
     </>
   );
+}
+
+function LeaveMetric({
+  label,
+  value,
+  icon: Icon,
+  tone,
+}: {
+  label: string;
+  value: number;
+  icon: typeof Clock;
+  tone: "amber" | "green" | "blue";
+}) {
+  const colors = {
+    amber: "border-warning/20 bg-warning/10 text-warning",
+    green: "border-success/20 bg-success/10 text-success",
+    blue: "border-blue-400/20 bg-blue-500/10 text-blue-300",
+  };
+
+  return (
+    <GlassCard className="border-white/10 bg-white/[0.025]">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
+          <div className="mt-3 text-3xl font-bold tabular-nums text-white">{value}</div>
+        </div>
+        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${colors[tone]}`}>
+          <Icon size={19} />
+        </div>
+      </div>
+    </GlassCard>
+  );
+}
+
+function LeaveStatusPill({ status }: { status: string }) {
+  const className =
+    status === "approved"
+      ? "border-success/20 bg-success/10 text-success"
+      : status === "rejected"
+        ? "border-destructive/20 bg-destructive/10 text-destructive"
+        : status === "cancelled"
+          ? "border-white/10 bg-white/[0.04] text-muted-foreground"
+          : "border-warning/20 bg-warning/10 text-warning";
+
+  const Icon =
+    status === "approved"
+      ? CheckCircle2
+      : status === "rejected"
+        ? ShieldAlert
+        : status === "cancelled"
+          ? X
+          : Clock;
+
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-wider ${className}`}>
+      <Icon size={12} />
+      {status}
+    </span>
+  );
+}
+
+function getLeaveDays(startDate?: string | null, endDate?: string | null) {
+  if (!startDate || !endDate) return 0;
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0;
+  return Math.max(1, Math.floor((end.getTime() - start.getTime()) / 86400000) + 1);
+}
+
+function typeLabel(value: string) {
+  return TYPES.find((type) => type.v === value)?.l || value.replace("_", " ");
 }
