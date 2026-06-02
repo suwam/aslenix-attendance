@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Award,
+  BadgeCheck,
   CalendarCheck2,
   CheckCircle2,
   Crown,
@@ -36,6 +37,20 @@ type BadgeDefinition = {
   target: number;
   value: number;
   icon: typeof Trophy;
+  approved?: boolean;
+};
+
+type PersistedAchievement = {
+  badge: string;
+  status: "Approved" | "Pending" | "Manual";
+};
+
+const approvedBadgeAliases: Record<string, string> = {
+  "Productivity Hero": "hero",
+  "30-Day Streak": "thirty-day",
+  "Fast Worker": "twenty-five",
+  "No Overdue Tasks": "no-overdue",
+  "Elite Performer": "elite",
 };
 
 const tierMeta: Record<
@@ -89,6 +104,7 @@ function AchievementsPage() {
     consistency30: 0,
     loggedToday: false,
   });
+  const [approvedAchievements, setApprovedAchievements] = useState<PersistedAchievement[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -133,7 +149,7 @@ function AchievementsPage() {
 
       const since = new Date();
       since.setDate(since.getDate() - 34);
-      const [{ data: attendance }, { data: standups }] = await Promise.all([
+      const [{ data: attendance }, { data: standups }, achievementResult] = await Promise.all([
         supabase
           .from("attendance")
           .select("date, work_hours")
@@ -146,7 +162,16 @@ function AchievementsPage() {
           .eq("user_id", user.id)
           .gte("date", since.toISOString().slice(0, 10))
           .order("date", { ascending: false }),
+        supabase
+          .from("employee_achievements")
+          .select("badge,status")
+          .eq("user_id", user.id)
+          .in("status", ["Approved", "Manual"]),
       ]);
+      if (achievementResult.error) {
+        console.warn("Unable to load approved achievements", achievementResult.error);
+      }
+      setApprovedAchievements((achievementResult.data || []) as PersistedAchievement[]);
       const activityDates = new Set([
         ...(attendance || []).map((row) => row.date),
         ...(standups || []).map((row) => row.date),
@@ -180,8 +205,26 @@ function AchievementsPage() {
     })();
   }, [user]);
 
-  const badges = useMemo<BadgeDefinition[]>(
-    () => [
+  const approvedBadgeIds = useMemo(
+    () =>
+      new Set(
+        approvedAchievements
+          .map((achievement) => approvedBadgeAliases[achievement.badge])
+          .filter(Boolean),
+      ),
+    [approvedAchievements],
+  );
+
+  const approvedOfficialBadges = useMemo(
+    () =>
+      approvedAchievements.filter(
+        (achievement) => !approvedBadgeAliases[achievement.badge],
+      ),
+    [approvedAchievements],
+  );
+
+  const badges = useMemo<BadgeDefinition[]>(() => {
+    const definitions: BadgeDefinition[] = [
       {
         id: "starter",
         tier: "bronze",
@@ -290,11 +333,17 @@ function AchievementsPage() {
         value: stats.consistency30,
         icon: Sparkles,
       },
-    ],
-    [stats],
-  );
+    ];
+
+    return definitions.map((badge) =>
+      approvedBadgeIds.has(badge.id)
+        ? { ...badge, value: badge.target, approved: true }
+        : badge,
+    );
+  }, [approvedBadgeIds, stats]);
 
   const unlocked = badges.filter((badge) => badge.value >= badge.target);
+  const totalUnlocked = unlocked.length + approvedOfficialBadges.length;
   const activePopupBadge = unlocked[unlocked.length - 1];
 
   if (loading) {
@@ -316,11 +365,31 @@ function AchievementsPage() {
 
       <div className="achievement-shell space-y-6">
         <section className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <MetricCard label="Unlocked" value={`${unlocked.length}/12`} icon={Trophy} />
+          <MetricCard label="Unlocked" value={`${totalUnlocked}/12`} icon={Trophy} />
           <MetricCard label="Completed tasks" value={stats.completedTasks} icon={CheckCircle2} />
           <MetricCard label="Productivity score" value={stats.score} icon={Zap} />
           <MetricCard label="Current streak" value={`${stats.loginStreak}d`} icon={Flame} />
         </section>
+
+        {approvedOfficialBadges.length > 0 && (
+          <section className="glass achievement-tier">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 shadow-[0_0_34px_rgba(78,220,255,.3)]">
+                <BadgeCheck size={21} className="text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">Official Badges</h2>
+                <p className="text-sm text-muted-foreground">Approved by admin</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {approvedOfficialBadges.map((achievement) => (
+                <OfficialBadgeCard key={achievement.badge} badge={achievement.badge} />
+              ))}
+            </div>
+          </section>
+        )}
 
         {(["bronze", "silver", "gold", "diamond"] as BadgeTier[]).map((tier) => {
           const meta = tierMeta[tier];
@@ -356,6 +425,38 @@ function AchievementsPage() {
         })}
       </div>
     </>
+  );
+}
+
+function OfficialBadgeCard({ badge }: { badge: string }) {
+  return (
+    <article className="achievement-card achievement-diamond achievement-unlocked group">
+      <div className="relative z-10 flex items-start justify-between gap-3">
+        <div className="achievement-icon bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 shadow-[0_0_34px_rgba(78,220,255,.3)]">
+          <BadgeCheck size={24} />
+        </div>
+        <div className="rounded-full border border-white/10 bg-black/25 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-white/70">
+          Approved
+        </div>
+      </div>
+
+      <div className="relative z-10 mt-5">
+        <h3 className="text-lg font-bold text-white">{badge}</h3>
+        <p className="mt-1 min-h-10 text-sm text-muted-foreground">
+          Official achievement approved by admin
+        </p>
+      </div>
+
+      <div className="relative z-10 mt-5">
+        <div className="mb-2 flex items-center justify-between text-xs">
+          <span className="text-muted-foreground">Progress</span>
+          <span className="font-semibold text-white">1/1</span>
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-white/10">
+          <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-500" />
+        </div>
+      </div>
+    </article>
   );
 }
 
