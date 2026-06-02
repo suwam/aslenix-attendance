@@ -197,6 +197,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      employee_achievements: {
+        Row: {
+          badge: string;
+          badge_type: string;
+          created_at: string;
+          id: string;
+          status: "Approved" | "Pending" | "Manual";
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          badge: string;
+          badge_type: string;
+          created_at?: string;
+          id?: string;
+          status?: "Approved" | "Pending" | "Manual";
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          badge?: string;
+          badge_type?: string;
+          created_at?: string;
+          id?: string;
+          status?: "Approved" | "Pending" | "Manual";
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           address: string | null;

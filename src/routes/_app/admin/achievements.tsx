@@ -55,6 +55,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { productivityScore } from "@/lib/tasks-utils";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
+import type { Database } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/admin/achievements")({
@@ -107,7 +108,7 @@ function AdminAchievementsPage() {
       const monthStartDate = monthStart.toISOString().slice(0, 10);
       const monthStartIso = `${monthStartDate}T00:00:00.000Z`;
       const today = new Date().toISOString().slice(0, 10);
-      const [{ data: profiles }, { data: tasks }, assigneeResult, { data: attendance }] =
+      const [{ data: profiles }, { data: tasks }, assigneeResult, { data: attendance }, { data: persisted }] =
         await Promise.all([
           supabase
             .from("profiles")
@@ -121,6 +122,7 @@ function AdminAchievementsPage() {
             .select("user_id,date,status,work_hours")
             .gte("date", monthStartDate)
             .lte("date", today),
+          supabase.from("employee_achievements").select("*"),
         ]);
 
       const assignees =
@@ -214,8 +216,50 @@ function AdminAchievementsPage() {
         }));
       });
 
+      const persistedRows = persisted || [];
+      const persistedMap = new Map(
+        persistedRows.map((item) => [`${item.user_id}-${item.badge}`, item]),
+      );
+
+      const mergedRows = generated.map((row) => {
+        const override = persistedMap.get(`${row.userId}-${row.badge}`);
+        if (!override) return row;
+
+        return {
+          ...row,
+          badge: override.badge,
+          badgeType: override.badge_type as EmployeeAchievement["badgeType"],
+          status: override.status as EmployeeAchievement["status"],
+          date: override.created_at,
+        };
+      });
+
+      const extraRows = persistedRows
+        .filter((item) =>
+          !generated.some((row) => row.userId === item.user_id && row.badge === item.badge),
+        )
+        .map((item) => {
+          const profile = (profiles || []).find((profile) => profile.user_id === item.user_id);
+          return {
+            userId: item.user_id,
+            name: profile?.full_name || "Unknown",
+            department: profile?.department || "Unassigned",
+            avatarUrl: profile?.avatar_url || null,
+            badge: item.badge,
+            badgeType: item.badge_type as EmployeeAchievement["badgeType"],
+            score: 0,
+            completedTasks: 0,
+            attendancePct: 0,
+            date: item.created_at,
+            status: item.status as EmployeeAchievement["status"],
+            streak: 0,
+            overdueTasks: 0,
+            history: [],
+          };
+        });
+
       setRows(
-        generated.sort(
+        [...mergedRows, ...extraRows].sort(
           (a, b) => b.score - a.score || b.completedTasks - a.completedTasks || b.attendancePct - a.attendancePct,
         ),
       );
@@ -294,10 +338,28 @@ function AdminAchievementsPage() {
     }
   };
 
-  const handleApprove = (row?: EmployeeAchievement | null) => {
+  const handleApprove = async (row?: EmployeeAchievement | null) => {
     const target = row || selected;
     if (!target) {
       toast.error("Select an achievement to approve");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("employee_achievements")
+      .upsert(
+        {
+          user_id: target.userId,
+          badge: target.badge,
+          badge_type: target.badgeType,
+          status: "Approved",
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: ["user_id", "badge"] },
+      );
+
+    if (error) {
+      toast.error("Unable to persist approval. Please try again.");
       return;
     }
 
@@ -305,21 +367,53 @@ function AdminAchievementsPage() {
     toast.success(`Achievement approved: ${target.name}`);
   };
 
-  const handleManualAssign = () => {
+  const handleManualAssign = async () => {
     if (!selected) {
       toast.error("Select an employee to assign a badge");
       return;
     }
 
     const badgeType = badgeTypeByName[manualBadge] ?? "quality";
-    updateRow(selected, { badge: manualBadge, badgeType, status: "Manual" });
+    const { error } = await supabase.from("employee_achievements").upsert(
+      {
+        user_id: selected.userId,
+        badge: manualBadge,
+        badge_type: badgeType,
+        status: "Manual",
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: ["user_id", "badge"] },
+    );
+
+    if (error) {
+      toast.error("Unable to persist badge assignment. Please try again.");
+      return;
+    }
+
+    updateRow(selected, {
+      badge: manualBadge,
+      badgeType,
+      status: "Manual",
+      date: new Date().toISOString(),
+    });
     toast.success(`Assigned ${manualBadge} to ${selected.name}`);
   };
 
-  const handleRemove = (row?: EmployeeAchievement | null) => {
+  const handleRemove = async (row?: EmployeeAchievement | null) => {
     const target = row || selected;
     if (!target) {
       toast.error("Select an achievement to remove");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("employee_achievements")
+      .delete()
+      .eq("user_id", target.userId)
+      .eq("badge", target.badge);
+
+    if (error) {
+      toast.error("Unable to remove the badge. Please try again.");
       return;
     }
 
