@@ -5,6 +5,12 @@ import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,6 +19,7 @@ import {
   CalendarClock,
   CheckCircle2,
   Clock,
+  Edit3,
   ExternalLink,
   Inbox,
   Link as LinkIcon,
@@ -20,13 +27,30 @@ import {
   MapPin,
   NotebookText,
   Plus,
+  Send,
   Users,
   Video,
 } from "lucide-react";
-import { format, isFuture, isPast, isToday } from "date-fns";
+import { addDays, format, isFuture, isPast, isToday } from "date-fns";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/admin/meetings")({ component: AdminMeetingsPage });
+
+type MeetingForm = {
+  title: string;
+  agenda: string;
+  meeting_time: string;
+  location: string;
+  meeting_link: string;
+};
+
+const emptyMeetingForm: MeetingForm = {
+  title: "",
+  agenda: "",
+  meeting_time: "",
+  location: "",
+  meeting_link: "",
+};
 
 function AdminMeetingsPage() {
   const { user } = useAuth();
@@ -34,13 +58,10 @@ function AdminMeetingsPage() {
   const [employeeCount, setEmployeeCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    title: "",
-    agenda: "",
-    meeting_time: "",
-    location: "",
-    meeting_link: "",
-  });
+  const [editingMeeting, setEditingMeeting] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState<MeetingForm>(emptyMeetingForm);
+  const [updating, setUpdating] = useState(false);
+  const [form, setForm] = useState<MeetingForm>(emptyMeetingForm);
 
   const load = async () => {
     setLoading(true);
@@ -63,6 +84,35 @@ function AdminMeetingsPage() {
 
   const update = (key: keyof typeof form, value: string) =>
     setForm((current) => ({ ...current, [key]: value }));
+  const updateEdit = (key: keyof MeetingForm, value: string) =>
+    setEditForm((current) => ({ ...current, [key]: value }));
+
+  const notifyEmployees = async (title: string, message: string) => {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id")
+      .eq("approval_status", "approved")
+      .eq("is_suspended", false);
+    const { data: existingNotifications } = await supabase
+      .from("notifications")
+      .select("user_id")
+      .eq("type", "meeting")
+      .eq("title", title)
+      .eq("message", message);
+    const notifiedUserIds = new Set((existingNotifications ?? []).map((row) => row.user_id));
+    const notifications = (profiles ?? [])
+      .filter((profile) => !notifiedUserIds.has(profile.user_id))
+      .map((profile) => ({
+        user_id: profile.user_id,
+        title,
+        message,
+        type: "meeting",
+      }));
+
+    if (notifications.length > 0) {
+      await supabase.from("notifications").insert(notifications);
+    }
+  };
 
   const createMeeting = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,40 +136,82 @@ function AdminMeetingsPage() {
     }).select("*").maybeSingle();
 
     if (!error && meeting) {
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id")
-        .eq("approval_status", "approved")
-        .eq("is_suspended", false);
-
       const meetingWhen = format(meetingTime, "MMM d, yyyy HH:mm");
       const notificationTitle = "New meeting scheduled";
       const notificationMessage = `${title} on ${meetingWhen}${location ? ` at ${location}` : ""}.`;
-      const { data: existingNotifications } = await supabase
-        .from("notifications")
-        .select("user_id")
-        .eq("type", "meeting")
-        .eq("title", notificationTitle)
-        .eq("message", notificationMessage);
-      const notifiedUserIds = new Set((existingNotifications ?? []).map((row) => row.user_id));
-      const notifications = (profiles ?? [])
-        .filter((profile) => !notifiedUserIds.has(profile.user_id))
-        .map((profile) => ({
-          user_id: profile.user_id,
-          title: notificationTitle,
-          message: notificationMessage,
-          type: "meeting",
-        }));
-
-      if (notifications.length > 0) {
-        await supabase.from("notifications").insert(notifications);
-      }
+      await notifyEmployees(notificationTitle, notificationMessage);
     }
 
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Meeting created and employees notified");
-    setForm({ title: "", agenda: "", meeting_time: "", location: "", meeting_link: "" });
+    setForm(emptyMeetingForm);
+    load();
+  };
+
+  const openEditMeeting = (meeting: any) => {
+    setEditingMeeting(meeting);
+    setEditForm({
+      title: meeting.title || "",
+      agenda: meeting.agenda || "",
+      meeting_time: toLocalDateTimeInput(meeting.meeting_time),
+      location: meeting.location || "",
+      meeting_link: meeting.meeting_link || "",
+    });
+  };
+
+  const saveMeetingChanges = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMeeting) return;
+    if (!editForm.title.trim()) return toast.error("Meeting title required");
+    if (!editForm.meeting_time) return toast.error("Meeting time required");
+
+    setUpdating(true);
+    const meetingTime = new Date(editForm.meeting_time);
+    const payload = {
+      title: editForm.title.trim(),
+      agenda: editForm.agenda.trim() || null,
+      meeting_time: meetingTime.toISOString(),
+      location: editForm.location.trim() || null,
+      meeting_link: editForm.meeting_link.trim() || null,
+    };
+    const oldTime = new Date(editingMeeting.meeting_time).getTime();
+    const newTime = meetingTime.getTime();
+    const { data, error } = await supabase
+      .from("meetings")
+      .update(payload)
+      .eq("id", editingMeeting.id)
+      .select("*")
+      .maybeSingle();
+
+    if (!error && data) {
+      const status = newTime > oldTime ? "Meeting postponed" : "Meeting updated";
+      const message = `${payload.title} is now on ${format(meetingTime, "MMM d, yyyy HH:mm")}${
+        payload.location ? ` at ${payload.location}` : ""
+      }.`;
+      await notifyEmployees(status, message);
+    }
+
+    setUpdating(false);
+    if (error) return toast.error(error.message);
+    toast.success(newTime > oldTime ? "Meeting postponed and employees notified" : "Meeting updated and employees notified");
+    setEditingMeeting(null);
+    load();
+  };
+
+  const postponeMeeting = async (meeting: any, days: number) => {
+    const nextTime = addDays(new Date(meeting.meeting_time), days);
+    const { error } = await supabase
+      .from("meetings")
+      .update({ meeting_time: nextTime.toISOString() })
+      .eq("id", meeting.id);
+
+    if (error) return toast.error(error.message);
+    await notifyEmployees(
+      "Meeting postponed",
+      `${meeting.title} is now on ${format(nextTime, "MMM d, yyyy HH:mm")}${meeting.location ? ` at ${meeting.location}` : ""}.`,
+    );
+    toast.success(`Postponed ${days === 1 ? "to tomorrow" : `by ${days} days`}`);
     load();
   };
 
@@ -228,15 +320,85 @@ function AdminMeetingsPage() {
               No meetings scheduled.
             </GlassCard>
           ) : (
-            meetings.map((meeting) => <MeetingCard key={meeting.id} meeting={meeting} />)
+            meetings.map((meeting) => (
+              <MeetingCard
+                key={meeting.id}
+                meeting={meeting}
+                onEdit={() => openEditMeeting(meeting)}
+                onPostpone={(days) => postponeMeeting(meeting, days)}
+              />
+            ))
           )}
         </div>
       </div>
+
+      <Dialog open={Boolean(editingMeeting)} onOpenChange={(open) => !open && setEditingMeeting(null)}>
+        <DialogContent className="glass max-w-2xl border-border">
+          <DialogHeader>
+            <DialogTitle>Edit meeting schedule</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={saveMeetingChanges} className="space-y-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+                  <Video size={14} className="text-primary" />
+                  Title
+                </Label>
+                <Input value={editForm.title} onChange={(e) => updateEdit("title", e.target.value)} />
+              </div>
+              <div>
+                <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+                  <CalendarClock size={14} className="text-primary" />
+                  Meeting time
+                </Label>
+                <Input
+                  type="datetime-local"
+                  value={editForm.meeting_time}
+                  onChange={(e) => updateEdit("meeting_time", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+                  <MapPin size={14} className="text-primary" />
+                  Location
+                </Label>
+                <Input value={editForm.location} onChange={(e) => updateEdit("location", e.target.value)} />
+              </div>
+              <div className="md:col-span-2">
+                <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+                  <LinkIcon size={14} className="text-primary" />
+                  Meeting link
+                </Label>
+                <Input value={editForm.meeting_link} onChange={(e) => updateEdit("meeting_link", e.target.value)} />
+              </div>
+              <div className="md:col-span-2">
+                <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+                  <NotebookText size={14} className="text-primary" />
+                  Agenda
+                </Label>
+                <Textarea value={editForm.agenda} onChange={(e) => updateEdit("agenda", e.target.value)} rows={4} />
+              </div>
+            </div>
+            <Button disabled={updating} className="neon-button h-11 w-full rounded-xl">
+              {updating ? <Loader2 size={16} className="mr-2 animate-spin" /> : <Send size={16} className="mr-2" />}
+              Save changes and notify employees
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
 
-function MeetingCard({ meeting }: { meeting: any }) {
+function MeetingCard({
+  meeting,
+  onEdit,
+  onPostpone,
+}: {
+  meeting: any;
+  onEdit: () => void;
+  onPostpone: (days: number) => void;
+}) {
   const past = isPast(new Date(meeting.meeting_time));
   return (
     <GlassCard className={`flex flex-col gap-4 border-white/10 bg-white/[0.025] sm:flex-row sm:items-start ${past ? "opacity-75" : ""}`}>
@@ -277,6 +439,24 @@ function MeetingCard({ meeting }: { meeting: any }) {
             </a>
           </Button>
         )}
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button type="button" variant="outline" className="h-10 rounded-xl" onClick={onEdit}>
+            <Edit3 size={14} className="mr-2" />
+            Edit date
+          </Button>
+          {!past && (
+            <>
+              <Button type="button" variant="outline" className="h-10 rounded-xl" onClick={() => onPostpone(1)}>
+                <CalendarClock size={14} className="mr-2" />
+                Tomorrow
+              </Button>
+              <Button type="button" variant="outline" className="h-10 rounded-xl" onClick={() => onPostpone(7)}>
+                <CalendarClock size={14} className="mr-2" />
+                +7 days
+              </Button>
+            </>
+          )}
+        </div>
       </div>
     </GlassCard>
   );
@@ -313,4 +493,11 @@ function MeetingMetric({
       </div>
     </GlassCard>
   );
+}
+
+function toLocalDateTimeInput(value: string) {
+  const date = new Date(value);
+  const offset = date.getTimezoneOffset();
+  const local = new Date(date.getTime() - offset * 60000);
+  return local.toISOString().slice(0, 16);
 }

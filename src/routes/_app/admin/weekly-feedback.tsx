@@ -39,6 +39,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -110,6 +116,7 @@ function WeeklyFeedbackPage() {
   const currentWeekNumber = getReviewWeekNumber(new Date());
   const [selectedWeekNumber, setSelectedWeekNumber] = useState(currentWeekNumber);
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
 
   const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString().slice(0, 10);
   const reviewWeeks = useMemo(() => getReviewWeeks(new Date()), []);
@@ -363,7 +370,7 @@ function WeeklyFeedbackPage() {
       />
 
       <div className="weekly-feedback space-y-6">
-        <section className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
           <WeeklyStat label="Employees" value={rows.length} icon={UserCheck} />
           <WeeklyStat label="Reviewed this week" value={reviewedThisWeek} icon={MessageSquare} />
           <WeeklyStat label="Total reviews" value={totalReviews} icon={History} />
@@ -371,9 +378,9 @@ function WeeklyFeedbackPage() {
           <WeeklyStat label="Last reviewed" value={lastReviewed} icon={CalendarDays} />
         </section>
 
-        <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.05fr_.95fr]">
+        <section>
           <GlassCard className="weekly-feedback-panel">
-            <div className="mb-4 flex flex-col gap-3 md:flex-row">
+            <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center">
               <div className="relative flex-1">
                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -395,145 +402,22 @@ function WeeklyFeedbackPage() {
                   ))}
                 </SelectContent>
               </Select>
+              <div className="weekly-feedback-queue-count">
+                {filtered.length} employees
+              </div>
             </div>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="weekly-employee-grid">
               {filtered.map((employee) => (
                 <EmployeeCard
                   key={employee.userId}
                   employee={employee}
                   active={selected?.userId === employee.userId}
-                  onClick={() => setSelectedId(employee.userId)}
+                  onClick={() => {
+                    setSelectedId(employee.userId);
+                    setFeedbackDialogOpen(true);
+                  }}
                 />
               ))}
-            </div>
-          </GlassCard>
-
-          <GlassCard className="weekly-feedback-panel">
-            <div className="mb-5 flex items-center gap-4">
-              {selected && <Avatar employee={selected} size="lg" />}
-              <div className="min-w-0">
-                <h3 className="text-2xl font-bold">{selected?.name}</h3>
-                <p className="text-sm text-muted-foreground">{selected?.department}</p>
-              </div>
-            </div>
-
-            <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-              <MiniMetric label="Score" value={selected?.score || 0} icon={Zap} />
-              <MiniMetric label="Tasks" value={selected?.completedTasks || 0} icon={CheckCircle2} />
-              <MiniMetric label="Overdue" value={selected?.overdueTasks || 0} icon={ShieldAlert} />
-              <MiniMetric label="Attendance" value={`${selected?.attendancePct || 0}%`} icon={CalendarDays} />
-            </div>
-
-            <div className="mb-5 space-y-4">
-              <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-                <div>
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground">Weekly review cycle</div>
-                  <div className="mt-1 text-xl font-bold">{completedWeeks}/4 Weekly Reviews Completed</div>
-                </div>
-                <StatusBadge status={selectedWeekStatus} />
-              </div>
-              <div className="weekly-week-selector">
-                {reviewWeeks.map((week) => {
-                  const review = selectedHistory.find((item) =>
-                    getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate),
-                  );
-                  const status = getWeekStatus(week.weekNumber, currentWeekNumber, Boolean(review));
-                  return (
-                    <button
-                      key={week.weekNumber}
-                      type="button"
-                      onClick={() => setSelectedWeekNumber(week.weekNumber)}
-                      className={`weekly-week-tab ${selectedWeekNumber === week.weekNumber ? "selected" : ""} ${
-                        week.weekNumber === currentWeekNumber ? "current" : ""
-                      } ${status}`}
-                    >
-                      <span>Week {week.weekNumber}</span>
-                      <WeekStatusIcon status={status} />
-                    </button>
-                  );
-                })}
-              </div>
-              {selectedWeekReview && !canEditSelectedReview && (
-                <ReviewDetails
-                  review={selectedWeekReview}
-                  weekNumber={selectedWeekNumber}
-                  onEdit={() => setEditingReviewId(selectedWeekReview.id)}
-                />
-              )}
-              {selectedWeekLocked && (
-                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-sm text-muted-foreground">
-                  Week {selectedWeekNumber} is a future week and is locked for reviews.
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <Label>Weekly rating</Label>
-                <Select value={rating} onValueChange={(value) => setRating(value as Rating)}>
-                  <SelectTrigger className="mt-1" disabled={formLocked}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ratingOptions.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Strengths</Label>
-                <Textarea
-                  value={strengths}
-                  onChange={(event) => setStrengths(event.target.value)}
-                  disabled={formLocked}
-                  rows={3}
-                  placeholder="What went especially well this week?"
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label>Improvement section</Label>
-                <Textarea
-                  value={improvements}
-                  onChange={(event) => setImprovements(event.target.value)}
-                  disabled={formLocked}
-                  rows={3}
-                  placeholder="What should improve next week?"
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label>Admin notes</Label>
-                <Textarea
-                  value={notes}
-                  onChange={(event) => setNotes(event.target.value)}
-                  disabled={formLocked}
-                  rows={3}
-                  placeholder="Private review notes..."
-                  className="mt-1"
-                />
-              </div>
-              <Button onClick={saveFeedback} disabled={saving || formLocked} className="neon-button w-full rounded-xl">
-                {canEditSelectedReview ? <Edit3 size={14} className="mr-1.5" /> : <Save size={14} className="mr-1.5" />}
-                {saving ? "Saving..." : canEditSelectedReview ? "Update review" : `Submit Week ${selectedWeekNumber} feedback`}
-              </Button>
-              {selectedWeekReview && !canEditSelectedReview && (
-                <p className="text-center text-sm text-muted-foreground">
-                  Week {selectedWeekNumber} review already submitted
-                </p>
-              )}
-            </div>
-
-            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {reviewWeeks.map((week) => {
-                const review = selectedHistory.find((item) =>
-                  getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate),
-                );
-                return <CompactReviewCard key={week.weekNumber} weekNumber={week.weekNumber} review={review} />;
-              })}
             </div>
           </GlassCard>
         </section>
@@ -651,6 +535,159 @@ function WeeklyFeedbackPage() {
           </div>
         </GlassCard>
       </div>
+
+      <Dialog open={feedbackDialogOpen && Boolean(selected)} onOpenChange={setFeedbackDialogOpen}>
+        <DialogContent className="weekly-feedback-dialog glass max-h-[92vh] max-w-6xl overflow-hidden border-border p-0">
+          {selected && (
+            <>
+              <DialogHeader className="weekly-feedback-dialog-header">
+                <div className="flex min-w-0 items-center gap-4">
+                  <Avatar employee={selected} size="lg" />
+                  <div className="min-w-0">
+                    <DialogTitle className="truncate text-2xl">{selected.name}</DialogTitle>
+                    <p className="mt-1 text-sm text-muted-foreground">{selected.department}</p>
+                  </div>
+                </div>
+                <StatusBadge status={selectedWeekStatus} />
+              </DialogHeader>
+
+              <div className="weekly-feedback-dialog-body">
+                <section className="weekly-feedback-dialog-main">
+                  <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                    <MiniMetric label="Score" value={selected.score} icon={Zap} />
+                    <MiniMetric label="Tasks" value={selected.completedTasks} icon={CheckCircle2} />
+                    <MiniMetric label="Overdue" value={selected.overdueTasks} icon={ShieldAlert} />
+                    <MiniMetric label="Attendance" value={`${selected.attendancePct}%`} icon={CalendarDays} />
+                  </div>
+
+                  <div className="weekly-feedback-form-card">
+                    <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                      <div>
+                        <div className="text-xs uppercase tracking-wider text-muted-foreground">Weekly review cycle</div>
+                        <div className="mt-1 text-xl font-bold">{completedWeeks}/4 Weekly Reviews Completed</div>
+                      </div>
+                      <StatusBadge status={selectedWeekStatus} />
+                    </div>
+
+                    <div className="weekly-week-selector">
+                      {reviewWeeks.map((week) => {
+                        const review = selectedHistory.find((item) =>
+                          getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate),
+                        );
+                        const status = getWeekStatus(week.weekNumber, currentWeekNumber, Boolean(review));
+                        return (
+                          <button
+                            key={week.weekNumber}
+                            type="button"
+                            onClick={() => setSelectedWeekNumber(week.weekNumber)}
+                            className={`weekly-week-tab ${selectedWeekNumber === week.weekNumber ? "selected" : ""} ${
+                              week.weekNumber === currentWeekNumber ? "current" : ""
+                            } ${status}`}
+                          >
+                            <span>Week {week.weekNumber}</span>
+                            <WeekStatusIcon status={status} />
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="mt-5 space-y-4">
+                      {selectedWeekReview && !canEditSelectedReview && (
+                        <ReviewDetails
+                          review={selectedWeekReview}
+                          weekNumber={selectedWeekNumber}
+                          onEdit={() => setEditingReviewId(selectedWeekReview.id)}
+                        />
+                      )}
+                      {selectedWeekLocked && (
+                        <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-sm text-muted-foreground">
+                          Week {selectedWeekNumber} is a future week and is locked for reviews.
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                        <div>
+                          <Label>Weekly rating</Label>
+                          <Select value={rating} onValueChange={(value) => setRating(value as Rating)}>
+                            <SelectTrigger className="mt-1" disabled={formLocked}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {ratingOptions.map((option) => (
+                                <SelectItem key={option} value={option}>
+                                  {option}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>Admin notes</Label>
+                          <Textarea
+                            value={notes}
+                            onChange={(event) => setNotes(event.target.value)}
+                            disabled={formLocked}
+                            rows={3}
+                            placeholder="Private review notes..."
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label>Strengths</Label>
+                          <Textarea
+                            value={strengths}
+                            onChange={(event) => setStrengths(event.target.value)}
+                            disabled={formLocked}
+                            rows={4}
+                            placeholder="What went especially well this week?"
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label>Improvement section</Label>
+                          <Textarea
+                            value={improvements}
+                            onChange={(event) => setImprovements(event.target.value)}
+                            disabled={formLocked}
+                            rows={4}
+                            placeholder="What should improve next week?"
+                            className="mt-1"
+                          />
+                        </div>
+                      </div>
+
+                      <Button onClick={saveFeedback} disabled={saving || formLocked} className="neon-button w-full rounded-xl">
+                        {canEditSelectedReview ? <Edit3 size={14} className="mr-1.5" /> : <Save size={14} className="mr-1.5" />}
+                        {saving ? "Saving..." : canEditSelectedReview ? "Update review" : `Submit Week ${selectedWeekNumber} feedback`}
+                      </Button>
+                      {selectedWeekReview && !canEditSelectedReview && (
+                        <p className="text-center text-sm text-muted-foreground">
+                          Week {selectedWeekNumber} review already submitted
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </section>
+
+                <aside className="weekly-feedback-dialog-side">
+                  <h3 className="mb-3 flex items-center gap-2 font-semibold">
+                    <History size={16} className="text-primary" />
+                    Review weeks
+                  </h3>
+                  <div className="space-y-3">
+                    {reviewWeeks.map((week) => {
+                      const review = selectedHistory.find((item) =>
+                        getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate),
+                      );
+                      return <CompactReviewCard key={week.weekNumber} weekNumber={week.weekNumber} review={review} />;
+                    })}
+                  </div>
+                </aside>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

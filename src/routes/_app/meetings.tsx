@@ -6,12 +6,13 @@ import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
 import {
   CalendarClock,
+  CalendarDays,
   Clock,
   ExternalLink,
-  Inbox,
   Loader2,
   MapPin,
   NotebookText,
+  Sparkles,
   Video,
 } from "lucide-react";
 import { differenceInMinutes, format, isToday } from "date-fns";
@@ -44,11 +45,6 @@ function MeetingsPage() {
         <div className="flex justify-center py-20">
           <Loader2 className="animate-spin text-primary" />
         </div>
-      ) : meetings.length === 0 ? (
-        <GlassCard className="border-white/10 bg-white/[0.025] py-16 text-center text-muted-foreground">
-          <Inbox size={28} className="mx-auto mb-3 text-primary" />
-          No upcoming meetings.
-        </GlassCard>
       ) : (
         <div className="grid gap-5">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -61,7 +57,9 @@ function MeetingsPage() {
             />
           </div>
 
-          {nextMeeting && (
+          {meetings.length === 0 ? (
+            <MeetingEmptyState />
+          ) : nextMeeting && (
             <GlassCard className="overflow-hidden border-primary/20 bg-white/[0.03]">
               <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
@@ -89,14 +87,76 @@ function MeetingsPage() {
             </GlassCard>
           )}
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            {meetings.map((meeting) => (
-              <EmployeeMeetingCard key={meeting.id} meeting={meeting} />
-            ))}
-          </div>
+          {meetings.length > 0 && (
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {meetings.map((meeting) => (
+                <EmployeeMeetingCard key={meeting.id} meeting={meeting} />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </>
+  );
+}
+
+function MeetingEmptyState() {
+  return (
+    <GlassCard className="overflow-hidden border-white/10 bg-white/[0.025]">
+      <div className="relative grid min-h-[260px] gap-6 p-2 md:grid-cols-[1fr_320px] md:items-center">
+        <div className="min-w-0">
+          <div className="mb-4 flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
+            <Sparkles size={12} />
+            Schedule clear
+          </div>
+          <h2 className="text-3xl font-bold text-white">No upcoming meetings right now</h2>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+            When admin schedules or postpones a meeting, it will appear here with the updated date, link, location, and agenda.
+          </p>
+          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <EmptyHint icon={CalendarClock} label="Next sync" value="Waiting" />
+            <EmptyHint icon={Video} label="Meeting link" value="Not posted" />
+            <EmptyHint icon={NotebookText} label="Agenda" value="Clear" />
+          </div>
+        </div>
+        <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">Today</div>
+              <div className="mt-1 text-xl font-bold text-white">{format(new Date(), "MMM d")}</div>
+            </div>
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
+              <CalendarDays size={20} />
+            </div>
+          </div>
+          <div className="space-y-3">
+            {["Focus work", "Task updates", "Standup notes"].map((item) => (
+              <div key={item} className="rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-sm text-muted-foreground">
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </GlassCard>
+  );
+}
+
+function EmptyHint({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof CalendarClock;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+      <Icon size={16} className="mb-3 text-primary" />
+      <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="mt-1 font-semibold text-white">{value}</div>
+    </div>
   );
 }
 
