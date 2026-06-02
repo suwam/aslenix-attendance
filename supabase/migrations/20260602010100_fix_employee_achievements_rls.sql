@@ -1,15 +1,9 @@
--- Add persisted employee achievements for admin approvals and manual assignments
-CREATE TABLE IF NOT EXISTS public.employee_achievements (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  badge TEXT NOT NULL,
-  badge_type TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'Pending',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE(user_id, badge)
-);
+-- Fix employee_achievements RLS policies so admins can manage approvals and employees can still view their own achievements.
 ALTER TABLE public.employee_achievements ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "admins manage employee achievements" ON public.employee_achievements;
+DROP POLICY IF EXISTS "employees view own employee achievements" ON public.employee_achievements;
+DROP POLICY IF EXISTS "employees manage own employee achievements" ON public.employee_achievements;
 
 CREATE POLICY "employees view own employee achievements" ON public.employee_achievements
   FOR SELECT

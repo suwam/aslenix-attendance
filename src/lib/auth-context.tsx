@@ -46,12 +46,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const loadProfile = useCallback(async (uid: string) => {
-    const [p, r] = await Promise.all([
-      supabase.from("profiles").select("*").eq("user_id", uid).maybeSingle(),
-      supabase.from("user_roles").select("role").eq("user_id", uid),
-    ]);
-    setProfile((p.data as Profile) ?? null);
-    setRoles(((r.data ?? []) as { role: AppRole }[]).map((x) => x.role));
+    setLoading(true);
+    try {
+      const [p, r] = await Promise.all([
+        supabase.from("profiles").select("*").eq("user_id", uid).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", uid),
+      ]);
+      if (p.error) console.error("Failed to load profile", p.error);
+      if (r.error) console.error("Failed to load user roles", r.error);
+      setProfile((p.data as Profile) ?? null);
+      setRoles(((r.data ?? []) as { role: AppRole }[]).map((x) => x.role));
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const refresh = useCallback(async () => {

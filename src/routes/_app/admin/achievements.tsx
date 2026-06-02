@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   Award,
@@ -57,6 +57,7 @@ import { productivityScore } from "@/lib/tasks-utils";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
 import type { Database } from "@/integrations/supabase/types";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/_app/admin/achievements")({
   component: AdminAchievementsPage,
@@ -90,8 +91,25 @@ const badgeOptions = [
 ];
 
 function AdminAchievementsPage() {
+  const { loading: authLoading, isAdmin } = useAuth();
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<EmployeeAchievement[]>([]);
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-[55vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" />;
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" />;
+  }
   const [search, setSearch] = useState("");
   const [badgeFilter, setBadgeFilter] = useState("All badges");
   const [departmentFilter, setDepartmentFilter] = useState("All departments");
@@ -108,7 +126,7 @@ function AdminAchievementsPage() {
       const monthStartDate = monthStart.toISOString().slice(0, 10);
       const monthStartIso = `${monthStartDate}T00:00:00.000Z`;
       const today = new Date().toISOString().slice(0, 10);
-      const [{ data: profiles }, { data: tasks }, assigneeResult, { data: attendance }, { data: persisted }] =
+      const [{ data: profiles }, { data: tasks }, assigneeResult, { data: attendance }, persistedResult] =
         await Promise.all([
           supabase
             .from("profiles")
@@ -124,6 +142,10 @@ function AdminAchievementsPage() {
             .lte("date", today),
           supabase.from("employee_achievements").select("*"),
         ]);
+      const persistedRows = persistedResult.error ? [] : persistedResult.data || [];
+      if (persistedResult.error) {
+        console.warn("Unable to load persisted employee achievements", persistedResult.error);
+      }
 
       const assignees =
         assigneeResult.error && isMissingSupabaseTableError(assigneeResult.error, "task_assignees")
@@ -216,7 +238,6 @@ function AdminAchievementsPage() {
         }));
       });
 
-      const persistedRows = persisted || [];
       const persistedMap = new Map(
         persistedRows.map((item) => [`${item.user_id}-${item.badge}`, item]),
       );
@@ -229,7 +250,7 @@ function AdminAchievementsPage() {
           ...row,
           badge: override.badge,
           badgeType: override.badge_type as EmployeeAchievement["badgeType"],
-          status: override.status as EmployeeAchievement["status"],
+          status: normalizeStatus(override.status),
           date: override.created_at,
         };
       });
@@ -251,7 +272,7 @@ function AdminAchievementsPage() {
             completedTasks: 0,
             attendancePct: 0,
             date: item.created_at,
-            status: item.status as EmployeeAchievement["status"],
+            status: normalizeStatus(item.status),
             streak: 0,
             overdueTasks: 0,
             history: [],
@@ -322,6 +343,9 @@ function AdminAchievementsPage() {
     "Elite Performer": "productivity",
   };
 
+  const normalizeStatus = (status: string | null | undefined): EmployeeAchievement["status"] =>
+    status === "Approved" || status === "Manual" ? status : "Pending";
+
   const updateRow = (
     target: EmployeeAchievement,
     updates: Partial<EmployeeAchievement>,
@@ -355,13 +379,15 @@ function AdminAchievementsPage() {
           status: "Approved",
           updated_at: new Date().toISOString(),
         },
-        { onConflict: ["user_id", "badge"] },
+        { onConflict: "user_id,badge" },
       );
 
     if (error) {
       console.error("employee_achievements upsert error", error);
       toast.error(
-        `Unable to persist approval: ${error.message || error.details || "check console"}`,
+        error.message?.includes("row-level security")
+          ? "Unable to persist approval: admin permissions are required. Check user role or RLS policies."
+          : `Unable to persist approval: ${error.message || error.details || "check console"}`,
       );
       return;
     }
@@ -385,13 +411,15 @@ function AdminAchievementsPage() {
         status: "Manual",
         updated_at: new Date().toISOString(),
       },
-      { onConflict: ["user_id", "badge"] },
+      { onConflict: "user_id,badge" },
     );
 
     if (error) {
       console.error("employee_achievements manual assign error", error);
       toast.error(
-        `Unable to persist badge assignment: ${error.message || error.details || "check console"}`,
+        error.message?.includes("row-level security")
+          ? "Unable to persist badge assignment: admin permissions are required. Check user role or RLS policies."
+          : `Unable to persist badge assignment: ${error.message || error.details || "check console"}`,
       );
       return;
     }
