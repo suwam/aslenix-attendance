@@ -34,6 +34,7 @@ function SettingsPage() {
         office_start_time: s.office_start_time,
         office_end_time: s.office_end_time,
         late_after_time: s.late_after_time,
+        auto_checkout_time: s.auto_checkout_time,
         office_latitude: parseOptionalNumber(s.office_latitude),
         office_longitude: parseOptionalNumber(s.office_longitude),
         attendance_radius_meters: Number(s.attendance_radius_meters) || 20,
@@ -95,6 +96,17 @@ function SettingsPage() {
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Check-ins after this time are flagged as late.
+              </p>
+            </div>
+            <div className="col-span-2">
+              <Label>Auto checkout at</Label>
+              <Input
+                type="time"
+                value={s.auto_checkout_time?.slice(0, 5)}
+                onChange={(e) => setS({ ...s, auto_checkout_time: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Automatically checkout employees who forgot to checkout at this time.
               </p>
             </div>
           </div>

@@ -205,20 +205,24 @@ function EmployeeDashboard() {
     const lateBoundary = new Date();
     lateBoundary.setHours(lh, lm, 0, 0);
     const isLate = now > lateBoundary;
-    const { error } = await supabase.from("attendance").insert({
-      user_id: user.id,
-      date: todayDate,
-      check_in_time: now.toISOString(),
-      check_in_latitude: location.latitude,
-      check_in_longitude: location.longitude,
-      check_in_accuracy_meters: location.accuracy,
-      status: isLate ? "late" : "present",
-      is_late: isLate,
-    });
+    const { data: insertedToday, error } = await supabase
+      .from("attendance")
+      .insert({
+        user_id: user.id,
+        date: todayDate,
+        check_in_time: now.toISOString(),
+        check_in_latitude: location.latitude,
+        check_in_longitude: location.longitude,
+        check_in_accuracy_meters: location.accuracy,
+        status: isLate ? "late" : "present",
+        is_late: isLate,
+      })
+      .select()
+      .maybeSingle();
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error || !insertedToday) return toast.error(error?.message ?? "Unable to check in");
+    setToday(insertedToday);
     toast.success(isLate ? "Checked in (late)" : "Checked in");
-    load();
   };
 
   const checkOut = async () => {
@@ -240,7 +244,7 @@ function EmployeeDashboard() {
     const isEarlyCheckout = isBeforeOfficeEnd(now, settings?.office_end_time);
     const inT = new Date(today.check_in_time);
     const hours = Math.round(((now.getTime() - inT.getTime()) / 3600000) * 100) / 100;
-    const { error } = await supabase
+    const { data: updatedToday, error } = await supabase
       .from("attendance")
       .update({
         check_out_time: now.toISOString(),
@@ -250,11 +254,13 @@ function EmployeeDashboard() {
         is_early_checkout: isEarlyCheckout,
         work_hours: hours,
       })
-      .eq("id", today.id);
+      .eq("id", today.id)
+      .select()
+      .maybeSingle();
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error || !updatedToday) return toast.error(error?.message ?? "Unable to check out");
+    setToday(updatedToday);
     toast.success(`Checked out — ${formatWorkHours(hours)} worked`);
-    load();
   };
 
   const status = isWeeklyOff

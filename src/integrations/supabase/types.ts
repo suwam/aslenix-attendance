@@ -275,6 +275,7 @@ export type Database = {
       settings: {
         Row: {
           attendance_radius_meters: number;
+          auto_checkout_time: string;
           company_logo: string | null;
           company_name: string;
           id: string;
@@ -287,6 +288,7 @@ export type Database = {
         };
         Insert: {
           attendance_radius_meters?: number;
+          auto_checkout_time?: string;
           company_logo?: string | null;
           company_name?: string;
           id?: string;
@@ -299,6 +301,7 @@ export type Database = {
         };
         Update: {
           attendance_radius_meters?: number;
+          auto_checkout_time?: string;
           company_logo?: string | null;
           company_name?: string;
           id?: string;

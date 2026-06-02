@@ -8,6 +8,7 @@
     "build": "node ./scripts/vite-with-local-wrangler-config.mjs build",
     "build:dev": "node ./scripts/vite-with-local-wrangler-config.mjs build --mode development",
     "preview": "node ./scripts/vite-with-local-wrangler-config.mjs preview",
+    "auto-checkout": "node scripts/auto-checkout.mjs",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
