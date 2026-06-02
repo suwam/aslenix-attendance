@@ -678,13 +678,13 @@ function Leaderboard({ rows }: { rows: EmployeeRank[] }) {
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold">{row.name}</span>
-                <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] text-white/70">
+                <span className="rounded-full bg-white/6 px-2 py-0.5 text-[10px] text-white/70">
                   {row.level}
                 </span>
                 <EligibilityBadge eligible={row.isEomEligible} />
               </div>
               <div className="mt-1 text-xs text-muted-foreground">{row.department} · {row.position}</div>
-              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-5">
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <MiniBar label="Task progress" value={row.taskProgress} detail={`${row.taskProgress}%`} />
                 <MiniBar label="Productivity" value={row.productivityContribution} detail={`${row.productivityContribution}%`} />
                 <MiniBar label="Active tasks" value={Math.min(100, row.activeTasks * 10)} detail={`${row.activeTasks}`} />
@@ -1147,7 +1147,7 @@ function PreviousWinners({ rows }: { rows: EmployeeRank[] }) {
 function StatTile({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof Trophy }) {
   return (
     <GlassCard className="eom-stat-tile">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-white shadow-[0_0_24px_rgba(125,92,255,.35)]">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-cyan-400 via-violet-500 to-pink-500 text-white shadow-[0_0_24px_rgba(125,92,255,.35)]">
         <Icon size={18} />
       </div>
       <div>
@@ -1211,7 +1211,7 @@ function Avatar({ employee, size = "md" }: { employee: EmployeeRank; size?: "md"
       className={`${className} shrink-0 rounded-3xl object-cover ring-2 ring-amber-200/50`}
     />
   ) : (
-    <div className={`${className} flex shrink-0 items-center justify-center rounded-3xl bg-gradient-to-br from-pink-500 via-violet-500 to-cyan-400 font-bold text-white shadow-[0_0_30px_rgba(125,92,255,.4)]`}>
+    <div className={`${className} flex shrink-0 items-center justify-center rounded-3xl bg-linear-to-br from-pink-500 via-violet-500 to-cyan-400 font-bold text-white shadow-[0_0_30px_rgba(125,92,255,.4)]`}>
       {initials}
     </div>
   );

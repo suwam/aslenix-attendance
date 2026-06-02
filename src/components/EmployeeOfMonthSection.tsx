@@ -282,14 +282,14 @@ function Leaderboard({ rows }: { rows: EmployeeRank[] }) {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold">{row.name}</span>
                 {row.badges.slice(0, 2).map((badge) => (
-                  <span key={badge} className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] text-white/70">
+                  <span key={badge} className="rounded-full bg-white/6 px-2 py-0.5 text-[10px] text-white/70">
                     {badge}
                   </span>
                 ))}
                 <EligibilityBadge eligible={row.isEomEligible} />
               </div>
               <div className="mt-1 text-xs text-muted-foreground">{row.department} · {row.position}</div>
-              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-4">
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <MiniBar label="Task progress" value={row.taskProgress} detail={`${row.taskProgress}%`} />
                 <MiniBar label="Productivity" value={row.productivityContribution} detail={`${row.productivityContribution}%`} />
                 <MiniBar label="Active tasks" value={Math.min(100, row.activeTasks * 10)} detail={`${row.activeTasks}`} />
@@ -378,7 +378,7 @@ function Avatar({ employee, size = "md" }: { employee: EmployeeRank; size?: "md"
       className={`${className} rounded-2xl object-cover ring-2 ring-amber-200/50`}
     />
   ) : (
-    <div className={`${className} flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-violet-500 to-cyan-400 font-bold text-white shadow-[0_0_26px_rgba(125,92,255,.35)]`}>
+    <div className={`${className} flex shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-pink-500 via-violet-500 to-cyan-400 font-bold text-white shadow-[0_0_26px_rgba(125,92,255,.35)]`}>
       {initials}
     </div>
   );

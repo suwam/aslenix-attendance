@@ -269,7 +269,78 @@ function AdminAchievementsPage() {
     tasks: row.completedTasks,
   }));
 
-  const actionToast = (action: string, row?: EmployeeAchievement | null) => {
+  const badgeTypeByName: Record<string, EmployeeAchievement['badgeType']> = {
+    "Productivity Hero": "productivity",
+    "30-Day Streak": "streak",
+    "Fast Worker": "tasks",
+    "Attendance Pro": "attendance",
+    "No Overdue Tasks": "quality",
+    "Elite Performer": "productivity",
+  };
+
+  const updateRow = (
+    target: EmployeeAchievement,
+    updates: Partial<EmployeeAchievement>,
+  ) => {
+    setRows((prev) =>
+      prev.map((item) =>
+        item.userId === target.userId && item.badge === target.badge
+          ? { ...item, ...updates }
+          : item,
+      ),
+    );
+    if (selected && selected.userId === target.userId && selected.badge === target.badge) {
+      setSelected({ ...target, ...updates });
+    }
+  };
+
+  const handleApprove = (row?: EmployeeAchievement | null) => {
+    const target = row || selected;
+    if (!target) {
+      toast.error("Select an achievement to approve");
+      return;
+    }
+
+    updateRow(target, { status: "Approved" });
+    toast.success(`Achievement approved: ${target.name}`);
+  };
+
+  const handleManualAssign = () => {
+    if (!selected) {
+      toast.error("Select an employee to assign a badge");
+      return;
+    }
+
+    const badgeType = badgeTypeByName[manualBadge] ?? "quality";
+    updateRow(selected, { badge: manualBadge, badgeType, status: "Manual" });
+    toast.success(`Assigned ${manualBadge} to ${selected.name}`);
+  };
+
+  const handleRemove = (row?: EmployeeAchievement | null) => {
+    const target = row || selected;
+    if (!target) {
+      toast.error("Select an achievement to remove");
+      return;
+    }
+
+    setRows((prev) => prev.filter((item) => !(item.userId === target.userId && item.badge === target.badge)));
+    if (selected && selected.userId === target.userId && selected.badge === target.badge) {
+      setSelected(null);
+    }
+    toast.success(`Badge removed: ${target.name}`);
+  };
+
+  const handleAction = (action: string, row?: EmployeeAchievement | null) => {
+    if (action === "Achievement approved") {
+      handleApprove(row);
+      return;
+    }
+
+    if (action === "Badge removed") {
+      handleRemove(row);
+      return;
+    }
+
     toast.success(`${action}${row ? `: ${row.name}` : ""}`);
   };
 
@@ -367,17 +438,17 @@ function AdminAchievementsPage() {
                     <SelectItem value="under75">Under 75</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="outline" className="rounded-xl" onClick={() => actionToast("Manual badge assigned")}>
+                <Button variant="outline" className="rounded-xl" onClick={handleManualAssign}>
                   <PlusCircle size={14} className="mr-1.5" />
                   Assign badge
                 </Button>
-                <Button variant="outline" className="rounded-xl" onClick={() => actionToast("Selected achievement approved")}>
+                <Button variant="outline" className="rounded-xl" onClick={() => handleApprove()}>
                   <BadgeCheck size={14} className="mr-1.5" />
                   Approve
                 </Button>
               </div>
 
-              <AchievementTable rows={filtered} onSelect={setSelected} onAction={actionToast} />
+              <AchievementTable rows={filtered} onSelect={setSelected} onAction={handleAction} />
             </GlassCard>
 
             <div className="space-y-4">
@@ -430,16 +501,16 @@ function AdminAchievementsPage() {
                   placeholder="Performance review notes or admin feedback..."
                 />
                 <div className="grid grid-cols-2 gap-2">
-                  <Button className="neon-button rounded-xl" onClick={() => actionToast(`Assigned ${manualBadge}`)}>
+                  <Button className="neon-button rounded-xl" onClick={handleManualAssign}>
                     <PlusCircle size={14} className="mr-1.5" />
                     Assign
                   </Button>
-                  <Button variant="outline" className="rounded-xl" onClick={() => actionToast("Badge removed")}>
+                  <Button variant="outline" className="rounded-xl" onClick={() => handleRemove()}>
                     <MinusCircle size={14} className="mr-1.5" />
                     Remove
                   </Button>
                 </div>
-                <Button variant="outline" className="w-full rounded-xl" onClick={() => actionToast("Feedback saved")}>
+                <Button variant="outline" className="w-full rounded-xl" onClick={() => toast.success("Feedback saved") }>
                   <MessageSquare size={14} className="mr-1.5" />
                   Feedback
                 </Button>

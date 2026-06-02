@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/PageHeader";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Check, X } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { differenceInDays, format, formatDistanceToNowStrict } from "date-fns";
 
 export const Route = createFileRoute("/_app/admin/leaves")({ component: LeavesPage });
 
@@ -22,25 +22,48 @@ function LeavesPage() {
 
   const load = async () => {
     setLoading(true);
-    let q = supabase
-      .from("leave_requests")
-      .select("*, profiles!inner(full_name, email, avatar_url, department)")
-      .order("created_at", { ascending: false });
-    if (tab !== "all") q = q.eq("status", tab);
-    // Note: profiles!inner won't work without FK. Fallback to manual join.
-    const { data: leaves } = await supabase
+    const { data: leaves, error } = await supabase
       .from("leave_requests")
       .select("*")
       .order("created_at", { ascending: false });
+
+    if (error) {
+      toast.error(error.message);
+      setRows([]);
+      setLoading(false);
+      return;
+    }
+
     let filtered = leaves ?? [];
     if (tab !== "all") filtered = filtered.filter((l) => l.status === tab);
+
     const ids = [...new Set(filtered.map((l) => l.user_id))];
     const { data: profs } = await supabase
       .from("profiles")
       .select("user_id, full_name, email, avatar_url, department")
       .in("user_id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
     const map = new Map((profs ?? []).map((p) => [p.user_id, p]));
-    setRows(filtered.map((l) => ({ ...l, profile: map.get(l.user_id) })));
+
+    setRows(
+      filtered.map((l) => {
+        const lowerStatus = String(l.status || "").toLowerCase();
+        const normalizedStatus =
+          lowerStatus === "approved" || lowerStatus === "rejected" || lowerStatus === "pending" || lowerStatus === "cancelled"
+            ? lowerStatus
+            : "pending";
+
+        return {
+          ...l,
+          profile: map.get(l.user_id),
+          status: normalizedStatus,
+          duration:
+            Math.max(
+              1,
+              differenceInDays(new Date(l.end_date), new Date(l.start_date)) + 1,
+            ),
+        };
+      }),
+    );
     setLoading(false);
   };
   useEffect(() => {
@@ -75,23 +98,42 @@ function LeavesPage() {
     { k: "all", label: "All" },
   ];
 
+  const summary = useMemo(
+    () => ({
+      pending: rows.filter((row) => row.status === "pending").length,
+      approved: rows.filter((row) => row.status === "approved").length,
+      rejected: rows.filter((row) => row.status === "rejected").length,
+      all: rows.length,
+    }),
+    [rows],
+  );
+
+  const statusPill = (status: string) => {
+    if (status === "approved") return "bg-success/15 text-success";
+    if (status === "rejected") return "bg-destructive/15 text-destructive";
+    return "bg-warning/15 text-warning";
+  };
+
+  const formatLeaveType = (type: string) => type.replace(/_/g, " ");
+
+  const requestedAgo = (date: string) =>
+    formatDistanceToNowStrict(new Date(date), { addSuffix: true });
+
   return (
     <>
       <PageHeader title="Leave Requests" subtitle="Review and approve employee time-off requests" />
 
-      <div className="flex gap-2 mb-5 flex-wrap">
+      <div className="grid gap-3 mb-5 md:grid-cols-4">
         {TABS.map((t) => (
           <button
             key={t.k}
             onClick={() => setTab(t.k)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${tab === t.k ? "text-white" : "glass text-muted-foreground hover:text-foreground"}`}
-            style={
-              tab === t.k
-                ? { background: "var(--gradient-brand)", boxShadow: "var(--shadow-neon-red)" }
-                : undefined
-            }
+            className={`group rounded-3xl border border-white/10 p-4 text-left transition-all ${
+              tab === t.k ? "bg-white/5 shadow-[0_16px_40px_-24px_rgba(255,255,255,0.6)]" : "bg-transparent hover:border-white/20"
+            }`}
           >
-            {t.label}
+            <div className="text-sm font-semibold text-white">{t.label}</div>
+            <div className="mt-1 text-xs text-muted-foreground">{summary[t.k]} requests</div>
           </button>
         ))}
       </div>
@@ -107,91 +149,139 @@ function LeavesPage() {
       ) : (
         <div className="space-y-4">
           {rows.map((r) => (
-            <GlassCard key={r.id}>
-              <div className="flex flex-col lg:flex-row lg:items-start gap-4">
-                <div className="flex items-start gap-3 flex-1">
-                  {r.profile?.avatar_url ? (
-                    <img
-                      src={r.profile.avatar_url}
-                      className="h-11 w-11 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div
-                      className="h-11 w-11 rounded-full flex items-center justify-center text-white font-semibold"
-                      style={{ background: "var(--gradient-brand)" }}
-                    >
-                      {r.profile?.full_name
-                        ?.split(" ")
-                        .map((s: string) => s[0])
-                        .slice(0, 2)
-                        .join("")
-                        .toUpperCase() || "?"}
+            <GlassCard key={r.id} className="p-6">
+              <div className="grid gap-4 lg:grid-cols-[1.35fr_0.85fr]">
+                <div className="min-w-0 space-y-4">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-3 min-w-0">
+                      {r.profile?.avatar_url ? (
+                        <img
+                          src={r.profile.avatar_url}
+                          className="h-14 w-14 rounded-2xl object-cover"
+                          alt={r.profile?.full_name || "Avatar"}
+                        />
+                      ) : (
+                        <div
+                          className="h-14 w-14 rounded-2xl flex items-center justify-center text-lg font-semibold text-white"
+                          style={{ background: "var(--gradient-brand)" }}
+                        >
+                          {r.profile?.full_name
+                            ?.split(" ")
+                            .map((s: string) => s[0])
+                            .slice(0, 2)
+                            .join("")
+                            .toUpperCase() || "?"}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <div className="text-lg font-semibold truncate">{r.profile?.full_name || "Unknown"}</div>
+                        <div className="text-sm text-muted-foreground truncate">
+                          {r.profile?.department || "No department"} · {r.profile?.email || "No email"}
+                        </div>
+                      </div>
                     </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold">{r.profile?.full_name || "Unknown"}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {r.profile?.department} · {r.profile?.email}
-                    </div>
-                    <div className="mt-2 flex items-center gap-2 flex-wrap">
-                      <span
-                        className="px-2.5 py-1 rounded-full text-[11px] font-medium capitalize"
-                        style={{
-                          background: "var(--gradient-brand-soft)",
-                          color: "var(--primary)",
-                        }}
-                      >
-                        {r.leave_type.replace("_", " ")}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(r.start_date), "MMM d")} →{" "}
-                        {format(new Date(r.end_date), "MMM d, yyyy")}
-                      </span>
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium uppercase ${r.status === "approved" ? "bg-success/15 text-success" : r.status === "rejected" ? "bg-destructive/15 text-destructive" : "bg-warning/15 text-warning"}`}
-                      >
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase ${statusPill(r.status)}`}>
                         {r.status}
                       </span>
+                      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase text-muted-foreground">
+                        {format(new Date(r.created_at), "MMM d, yyyy")}
+                      </span>
                     </div>
-                    {r.reason && (
-                      <div className="mt-2 text-sm text-muted-foreground">{r.reason}</div>
-                    )}
-                    {r.admin_comment && (
-                      <div className="mt-2 text-xs italic">Admin: {r.admin_comment}</div>
-                    )}
                   </div>
+
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-3xl bg-white/5 p-4">
+                      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Leave type</div>
+                      <div className="mt-2 text-sm font-semibold">{formatLeaveType(r.leave_type)}</div>
+                    </div>
+                    <div className="rounded-3xl bg-white/5 p-4">
+                      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Dates</div>
+                      <div className="mt-2 text-sm font-semibold">
+                        {format(new Date(r.start_date), "MMM d")} → {format(new Date(r.end_date), "MMM d, yyyy")}
+                      </div>
+                    </div>
+                    <div className="rounded-3xl bg-white/5 p-4">
+                      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Duration</div>
+                      <div className="mt-2 text-sm font-semibold">{r.duration} day{r.duration === 1 ? "" : "s"}</div>
+                    </div>
+                  </div>
+
+                  {r.reason && (
+                    <div className="rounded-3xl bg-white/5 p-4 text-sm leading-6 text-muted-foreground">
+                      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Reason</div>
+                      <p className="mt-2 text-base text-white">{r.reason}</p>
+                    </div>
+                  )}
                 </div>
-                {r.status === "pending" && (
-                  <div className="flex flex-col gap-2 lg:w-72">
-                    <Textarea
-                      placeholder="Add a comment (optional)"
-                      value={comments[r.id] || ""}
-                      onChange={(e) => setComments((c) => ({ ...c, [r.id]: e.target.value }))}
-                      rows={2}
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        disabled={busy === r.id}
-                        onClick={() => decide(r.id, "approved")}
-                        className="neon-button rounded-lg flex-1"
-                      >
-                        <Check size={14} className="mr-1" />
-                        Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={busy === r.id}
-                        onClick={() => decide(r.id, "rejected")}
-                        className="flex-1"
-                      >
-                        <X size={14} className="mr-1" />
-                        Reject
-                      </Button>
+
+                <div className="space-y-4">
+                  <div className="rounded-3xl bg-white/5 p-5">
+                    <div className="text-sm font-semibold text-white">Request details</div>
+                    <div className="mt-4 space-y-3 text-sm text-muted-foreground">
+                      <div className="flex items-center justify-between gap-3">
+                        <span>Submitted</span>
+                        <span className="font-semibold text-white">{requestedAgo(r.created_at)}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span>Requested by</span>
+                        <span className="font-semibold text-white">{r.profile?.full_name || "Employee"}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span>Approval</span>
+                        <span className="font-semibold text-white">{r.status === "pending" ? "Waiting" : "Completed"}</span>
+                      </div>
                     </div>
                   </div>
-                )}
+
+                  {r.status === "pending" ? (
+                    <div className="rounded-3xl bg-white/5 p-5">
+                      <div className="mb-3 text-sm font-semibold text-white">Review controls</div>
+                      <Textarea
+                        placeholder="Add a comment (optional)"
+                        value={comments[r.id] || ""}
+                        onChange={(e) => setComments((c) => ({ ...c, [r.id]: e.target.value }))}
+                        rows={3}
+                      />
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <Button
+                          size="sm"
+                          disabled={busy === r.id}
+                          onClick={() => decide(r.id, "approved")}
+                          className="neon-button rounded-xl"
+                        >
+                          <Check size={14} className="mr-1" />
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={busy === r.id}
+                          onClick={() => decide(r.id, "rejected")}
+                          className="rounded-xl"
+                        >
+                          <X size={14} className="mr-1" />
+                          Reject
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-3xl bg-white/5 p-5">
+                      <div className="mb-3 text-sm font-semibold text-white">Review summary</div>
+                      <div className="space-y-3 text-sm text-muted-foreground">
+                        <div>
+                          <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Comment</div>
+                          <p className="mt-2 text-white">{r.admin_comment || "No admin note provided."}</p>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <span>Date updated</span>
+                          <span className="font-semibold text-white">{format(new Date(r.updated_at || r.created_at), "MMM d, yyyy")}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </GlassCard>
           ))}
