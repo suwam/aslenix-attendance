@@ -94,22 +94,6 @@ function AdminAchievementsPage() {
   const { loading: authLoading, isAdmin } = useAuth();
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<EmployeeAchievement[]>([]);
-
-  if (authLoading) {
-    return (
-      <div className="flex min-h-[55vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return <Navigate to="/dashboard" />;
-  }
-
-  if (!isAdmin) {
-    return <Navigate to="/dashboard" />;
-  }
   const [search, setSearch] = useState("");
   const [badgeFilter, setBadgeFilter] = useState("All badges");
   const [departmentFilter, setDepartmentFilter] = useState("All departments");
@@ -120,6 +104,11 @@ function AdminAchievementsPage() {
   const [feedback, setFeedback] = useState("");
 
   useEffect(() => {
+    if (authLoading || !isAdmin) {
+      if (!authLoading) setLoading(false);
+      return;
+    }
+
     (async () => {
       setLoading(true);
       const monthStart = startOfMonth(new Date(`${monthFilter}-01T00:00:00`));
@@ -286,7 +275,7 @@ function AdminAchievementsPage() {
       );
       setLoading(false);
     })();
-  }, [monthFilter]);
+  }, [authLoading, isAdmin, monthFilter]);
 
   const departments = useMemo(
     () => ["All departments", ...Array.from(new Set(rows.map((row) => row.department)))],
@@ -333,6 +322,10 @@ function AdminAchievementsPage() {
     attendance: row.attendancePct,
     tasks: row.completedTasks,
   }));
+  const approvedCount = rows.filter((row) => row.status === "Approved").length;
+  const pendingCount = rows.filter((row) => row.status === "Pending").length;
+  const manualCount = rows.filter((row) => row.status === "Manual").length;
+  const selectedKey = selected ? `${selected.userId}-${selected.badge}` : "";
 
   const badgeTypeByName: Record<string, EmployeeAchievement['badgeType']> = {
     "Productivity Hero": "productivity",
@@ -473,6 +466,18 @@ function AdminAchievementsPage() {
     toast.success(`${action}${row ? `: ${row.name}` : ""}`);
   };
 
+  if (authLoading) {
+    return (
+      <div className="flex min-h-[55vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" />;
+  }
+
   return (
     <>
       <PageHeader
@@ -510,8 +515,8 @@ function AdminAchievementsPage() {
           </section>
 
           <section className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
-            <GlassCard className="admin-achievement-panel">
-              <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-5">
+            <GlassCard className="admin-achievement-panel admin-achievement-table-panel">
+              <div className="admin-achievement-toolbar">
                 <div className="relative md:col-span-2">
                   <Search
                     size={16}
@@ -555,7 +560,7 @@ function AdminAchievementsPage() {
                 />
               </div>
 
-              <div className="mb-4 flex flex-wrap gap-2">
+              <div className="admin-achievement-commandbar">
                 <Select value={scoreFilter} onValueChange={setScoreFilter}>
                   <SelectTrigger className="w-48">
                     <SelectValue />
@@ -567,17 +572,28 @@ function AdminAchievementsPage() {
                     <SelectItem value="under75">Under 75</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="outline" className="rounded-xl" onClick={handleManualAssign}>
+                <div className="admin-achievement-counts">
+                  <span>{filtered.length} shown</span>
+                  <span>{approvedCount} approved</span>
+                  <span>{pendingCount} pending</span>
+                  <span>{manualCount} manual</span>
+                </div>
+                <Button variant="outline" className="rounded-xl" onClick={handleManualAssign} disabled={!selected}>
                   <PlusCircle size={14} className="mr-1.5" />
                   Assign badge
                 </Button>
-                <Button variant="outline" className="rounded-xl" onClick={() => handleApprove()}>
+                <Button variant="outline" className="rounded-xl" onClick={() => handleApprove()} disabled={!selected}>
                   <BadgeCheck size={14} className="mr-1.5" />
                   Approve
                 </Button>
               </div>
 
-              <AchievementTable rows={filtered} onSelect={setSelected} onAction={handleAction} />
+              <AchievementTable
+                rows={filtered}
+                selectedKey={selectedKey}
+                onSelect={setSelected}
+                onAction={handleAction}
+              />
             </GlassCard>
 
             <div className="space-y-4">
@@ -656,17 +672,19 @@ function AdminAchievementsPage() {
 
 function AchievementTable({
   rows,
+  selectedKey,
   onSelect,
   onAction,
 }: {
   rows: EmployeeAchievement[];
+  selectedKey: string;
   onSelect: (row: EmployeeAchievement) => void;
   onAction: (action: string, row?: EmployeeAchievement | null) => void;
 }) {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-white/10">
-      <table className="w-full min-w-[980px] text-sm">
-        <thead className="bg-white/[0.035] text-left text-xs uppercase tracking-wider text-muted-foreground">
+    <div className="admin-achievement-table-wrap">
+      <table className="admin-achievement-table">
+        <thead>
           <tr>
             <th className="p-4">Employee</th>
             <th className="p-4">Department</th>
@@ -680,19 +698,32 @@ function AchievementTable({
           </tr>
         </thead>
         <tbody className="divide-y divide-border/50">
-          {rows.map((row, index) => (
-            <tr key={`${row.userId}-${row.badge}-${index}`} className="transition hover:bg-white/[0.035]">
+          {rows.map((row, index) => {
+            const rowKey = `${row.userId}-${row.badge}`;
+            const isSelected = selectedKey === rowKey;
+
+            return (
+            <tr
+              key={`${rowKey}-${index}`}
+              className={isSelected ? "is-selected" : ""}
+              onClick={() => onSelect(row)}
+            >
               <td className="p-4">
                 <div className="flex items-center gap-3">
                   <Avatar row={row} />
-                  <div className="font-semibold">{row.name}</div>
+                  <div className="min-w-0">
+                    <div className="truncate font-semibold">{row.name}</div>
+                    <div className="text-xs text-muted-foreground">{row.history.length || 1} badge signals</div>
+                  </div>
                 </div>
               </td>
               <td className="p-4 text-muted-foreground">{row.department}</td>
               <td className="p-4">
                 <BadgePill badge={row.badge} type={row.badgeType} />
               </td>
-              <td className="p-4 font-semibold tabular-nums">{row.score}</td>
+              <td className="p-4">
+                <ScoreMeter value={row.score} />
+              </td>
               <td className="p-4 tabular-nums">{row.completedTasks}</td>
               <td className="p-4 tabular-nums">{row.attendancePct}%</td>
               <td className="p-4 text-muted-foreground">{format(new Date(row.date), "MMM d")}</td>
@@ -704,22 +735,37 @@ function AchievementTable({
               <td className="p-4">
                 <div className="flex gap-1.5">
                   <button
-                    onClick={() => onSelect(row)}
-                    className="rounded-lg p-2 text-muted-foreground transition hover:bg-primary/15 hover:text-primary"
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onSelect(row);
+                    }}
+                    className="admin-achievement-action primary"
+                    aria-label={`View ${row.name}`}
                     title="View details"
                   >
                     <Eye size={14} />
                   </button>
                   <button
-                    onClick={() => onAction("Achievement approved", row)}
-                    className="rounded-lg p-2 text-muted-foreground transition hover:bg-success/15 hover:text-success"
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onAction("Achievement approved", row);
+                    }}
+                    className="admin-achievement-action success"
+                    aria-label={`Approve ${row.badge} for ${row.name}`}
                     title="Approve"
                   >
                     <BadgeCheck size={14} />
                   </button>
                   <button
-                    onClick={() => onAction("Badge removed", row)}
-                    className="rounded-lg p-2 text-muted-foreground transition hover:bg-destructive/15 hover:text-destructive"
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onAction("Badge removed", row);
+                    }}
+                    className="admin-achievement-action danger"
+                    aria-label={`Remove ${row.badge} from ${row.name}`}
                     title="Remove"
                   >
                     <MinusCircle size={14} />
@@ -727,16 +773,31 @@ function AchievementTable({
                 </div>
               </td>
             </tr>
-          ))}
+            );
+          })}
           {rows.length === 0 && (
             <tr>
               <td colSpan={9} className="p-10 text-center text-muted-foreground">
-                No achievements match the selected filters.
+                <div className="admin-achievement-empty">
+                  <Award size={22} />
+                  <span>No achievements match the selected filters.</span>
+                </div>
               </td>
             </tr>
           )}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function ScoreMeter({ value }: { value: number }) {
+  return (
+    <div className="admin-achievement-score">
+      <span>{value}</span>
+      <div className="admin-achievement-score-track" aria-hidden="true">
+        <div style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
+      </div>
     </div>
   );
 }

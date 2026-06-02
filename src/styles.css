@@ -798,6 +798,132 @@
     border-radius: 20px;
     transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease;
   }
+  .admin-achievement-table-panel {
+    padding: 20px;
+  }
+  .admin-achievement-toolbar {
+    display: grid;
+    grid-template-columns: minmax(220px, 1.6fr) repeat(3, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .admin-achievement-commandbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .admin-achievement-counts {
+    display: flex;
+    min-width: min(100%, 360px);
+    flex: 1;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .admin-achievement-counts span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 34px;
+    border-radius: 999px;
+    border: 1px solid oklch(1 0 0 / 0.09);
+    background: oklch(1 0 0 / 0.035);
+    padding: 6px 10px;
+    color: oklch(1 0 0 / 0.72);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .admin-achievement-table-wrap {
+    overflow-x: auto;
+    border-radius: 18px;
+    border: 1px solid oklch(1 0 0 / 0.1);
+    background: linear-gradient(180deg, oklch(1 0 0 / 0.035), transparent 180px);
+  }
+  .admin-achievement-table {
+    width: 100%;
+    min-width: 1040px;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 14px;
+  }
+  .admin-achievement-table thead {
+    background: oklch(1 0 0 / 0.045);
+    color: oklch(0.73 0.03 250);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-align: left;
+    text-transform: uppercase;
+  }
+  .admin-achievement-table tbody tr {
+    cursor: pointer;
+    transition: background .18s ease, box-shadow .18s ease;
+  }
+  .admin-achievement-table tbody tr:hover,
+  .admin-achievement-table tbody tr.is-selected {
+    background: oklch(1 0 0 / 0.045);
+  }
+  .admin-achievement-table tbody tr.is-selected {
+    box-shadow: inset 3px 0 0 oklch(0.74 0.23 205);
+  }
+  .admin-achievement-score {
+    display: grid;
+    min-width: 82px;
+    gap: 6px;
+    font-weight: 800;
+    tab-size: 4;
+  }
+  .admin-achievement-score span {
+    line-height: 1;
+  }
+  .admin-achievement-score-track {
+    height: 5px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: oklch(1 0 0 / 0.08);
+  }
+  .admin-achievement-score-track div {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #21d4fd, #8b5cf6, #ff2d6f);
+    box-shadow: 0 0 18px oklch(0.68 0.25 300 / 0.42);
+  }
+  .admin-achievement-action {
+    display: inline-flex;
+    height: 32px;
+    width: 32px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    color: oklch(1 0 0 / 0.56);
+    transition: background .18s ease, color .18s ease, transform .18s ease;
+  }
+  .admin-achievement-action:hover {
+    transform: translateY(-1px);
+  }
+  .admin-achievement-action.primary:hover {
+    background: oklch(0.74 0.23 205 / 0.14);
+    color: oklch(0.82 0.18 205);
+  }
+  .admin-achievement-action.success:hover {
+    background: oklch(0.72 0.18 155 / 0.14);
+    color: var(--success);
+  }
+  .admin-achievement-action.danger:hover {
+    background: oklch(0.65 0.27 22 / 0.14);
+    color: var(--destructive);
+  }
+  .admin-achievement-empty {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 999px;
+    border: 1px solid oklch(1 0 0 / 0.1);
+    background: oklch(1 0 0 / 0.035);
+    padding: 11px 14px;
+  }
   .admin-achievement-badge {
     display: inline-flex;
     align-items: center;
@@ -863,6 +989,19 @@
     color: white;
     background: linear-gradient(135deg, #f6c453, #ff4ecd);
     box-shadow: 0 0 24px oklch(0.86 0.17 85 / 0.34);
+  }
+
+  @media (max-width: 900px) {
+    .admin-achievement-toolbar {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .admin-achievement-commandbar > [data-slot="select-trigger"],
+    .admin-achievement-commandbar button {
+      width: 100%;
+    }
+    .admin-achievement-counts {
+      min-width: 100%;
+    }
   }
 
   .weekly-feedback {
