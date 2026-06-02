@@ -23,6 +23,11 @@ function ApprovalsPage() {
 
   const load = async () => {
     setLoading(true);
+    await supabase
+      .from("profiles")
+      .update({ joining_date: "2026-05-01" })
+      .eq("approval_status", "approved")
+      .is("joining_date", null);
     let q = supabase.from("profiles").select("*").order("created_at", { ascending: false });
     if (filter !== "all") q = q.eq("approval_status", filter);
     const { data } = await q;
@@ -35,11 +40,14 @@ function ApprovalsPage() {
 
   const updateStatus = async (id: string, status: string, suspended = false) => {
     setBusy(id);
+    const u = users.find((x) => x.id === id);
     const updates: any = { approval_status: status, is_suspended: suspended };
+    if (status === "approved" && !u?.joining_date) {
+      updates.joining_date = format(new Date(), "yyyy-MM-dd");
+    }
     const { error } = await supabase.from("profiles").update(updates).eq("id", id);
     setBusy(null);
     if (error) return toast.error(error.message);
-    const u = users.find((x) => x.id === id);
     if (u) {
       await supabase.from("notifications").insert({
         user_id: u.user_id,
@@ -161,7 +169,10 @@ function ApprovalsPage() {
                   <StatusBadge status={u.approval_status} suspended={u.is_suspended} />
                 </div>
                 <div className="mt-3 text-xs text-muted-foreground">
-                  Joined {format(new Date(u.created_at), "MMM d, yyyy")}
+                  Joining date{" "}
+                  {u.joining_date
+                    ? format(new Date(u.joining_date), "MMM d, yyyy")
+                    : "not set"}
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {u.approval_status !== "approved" && (

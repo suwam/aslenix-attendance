@@ -17,6 +17,8 @@ import {
 import { getVerifiedAttendanceLocation } from "@/lib/attendance-location";
 import {
   ArrowUpRight,
+  BellDot,
+  CheckCheck,
   Clock,
   CheckCircle2,
   Calendar,
@@ -41,6 +43,15 @@ import { isWeeklyOffDate, WEEKLY_OFF_LABEL } from "@/lib/weekly-off";
 
 export const Route = createFileRoute("/_app/dashboard")({ component: EmployeeDashboard });
 
+type NotificationRow = {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+};
+
 function EmployeeDashboard() {
   const { user, profile } = useAuth();
   const [today, setToday] = useState<any>(null);
@@ -57,6 +68,7 @@ function EmployeeDashboard() {
   const [monthAward, setMonthAward] = useState<any>(null);
   const [latestImprovement, setLatestImprovement] = useState<any>(null);
   const [improvementOpen, setImprovementOpen] = useState(false);
+  const [notificationPopup, setNotificationPopup] = useState<NotificationRow | null>(null);
   const [nowTick, setNowTick] = useState(Date.now());
   const [busy, setBusy] = useState(false);
 
@@ -182,6 +194,45 @@ function EmployeeDashboard() {
   }, [user]);
 
   useEffect(() => {
+    if (!user) return;
+
+    const loadUnreadNotification = async () => {
+      const { data } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("is_read", false)
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      const next = ((data ?? []) as NotificationRow[]).find(
+        (notification) => !hasSeenNotification(notification.id),
+      );
+      if (next) showNotificationOnce(next);
+    };
+
+    loadUnreadNotification();
+
+    const channel = supabase
+      .channel(`dashboard-notifications-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => showNotificationOnce(payload.new as NotificationRow),
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  useEffect(() => {
     const interval = window.setInterval(() => setNowTick(Date.now()), 60000);
     return () => window.clearInterval(interval);
   }, []);
@@ -282,8 +333,33 @@ function EmployeeDashboard() {
     setImprovementOpen(false);
   };
 
+  const showNotificationOnce = (notification: NotificationRow) => {
+    if (notification.is_read || hasSeenNotification(notification.id)) return;
+    markNotificationSeen(notification.id);
+    setNotificationPopup(notification);
+  };
+
+  const closeNotificationPopup = () => {
+    setNotificationPopup(null);
+  };
+
+  const markNotificationRead = async () => {
+    if (!notificationPopup) return;
+    const notification = notificationPopup;
+    markNotificationSeen(notification.id);
+    setNotificationPopup(null);
+    await supabase.from("notifications").update({ is_read: true }).eq("id", notification.id);
+  };
+
   return (
     <>
+      <NotificationPopup
+        notification={notificationPopup}
+        blocked={improvementOpen}
+        onClose={closeNotificationPopup}
+        onRead={markNotificationRead}
+      />
+
       <Dialog
         open={improvementOpen}
         onOpenChange={(open) => {
@@ -594,6 +670,58 @@ function EmployeeDashboard() {
   );
 }
 
+function NotificationPopup({
+  notification,
+  blocked,
+  onClose,
+  onRead,
+}: {
+  notification: NotificationRow | null;
+  blocked: boolean;
+  onClose: () => void;
+  onRead: () => void;
+}) {
+  return (
+    <Dialog open={Boolean(notification) && !blocked} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border-white/10 bg-background/95 p-0 sm:max-w-md">
+        {notification && (
+          <div className="p-5 sm:p-6">
+            <div className="mb-5 flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 text-primary shadow-[0_0_28px_rgba(255,45,111,.2)]">
+                <BellDot size={22} />
+              </div>
+              <DialogHeader className="min-w-0 flex-1 text-left">
+                <div className="mb-2 flex w-fit items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  <BellDot size={12} />
+                  New notification
+                </div>
+                <DialogTitle className="text-xl font-bold leading-tight text-white sm:text-2xl">
+                  {notification.title}
+                </DialogTitle>
+                <DialogDescription className="mt-2 max-h-40 overflow-y-auto text-sm leading-6 text-muted-foreground">
+                  {notification.message}
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3 text-xs text-muted-foreground">
+              {format(new Date(notification.created_at), "MMM d, yyyy HH:mm")}
+            </div>
+            <DialogFooter className="mt-5 flex-col gap-2 sm:flex-row">
+              <Button variant="outline" className="h-11 rounded-xl" onClick={onClose}>
+                Later
+              </Button>
+              <Button className="neon-button h-11 rounded-xl" onClick={onRead}>
+                <CheckCheck size={14} className="mr-1.5" />
+                Mark as read
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function TodayMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
@@ -714,6 +842,20 @@ function isImprovementDismissed(userId: string, reviewId: string) {
 function markImprovementDismissed(userId: string, reviewId: string) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(improvementDismissalKey(userId, reviewId), "1");
+}
+
+function notificationSeenKey(id: string) {
+  return `notification-popup-seen:${id}`;
+}
+
+function hasSeenNotification(id: string) {
+  if (typeof window === "undefined") return true;
+  return window.localStorage.getItem(notificationSeenKey(id)) === "1";
+}
+
+function markNotificationSeen(id: string) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(notificationSeenKey(id), "1");
 }
 
 function getTaskCountdown(deadline: string | null, nowMs: number) {

@@ -16,7 +16,6 @@ import {
   Menu,
   X,
   Bell,
-  Search,
   QrCode,
   CalendarClock,
   Crown,
@@ -209,9 +208,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           >
             <Menu size={20} />
           </button>
-          <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
-            <Search size={16} />
-            <span className="hidden md:inline">Quick search…</span>
+          <div className="min-w-0">
+            <div className="attendance-wordmark text-lg font-black uppercase leading-none sm:text-2xl">
+              Attendance
+            </div>
           </div>
           <div className="flex-1" />
           <Link

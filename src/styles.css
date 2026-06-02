@@ -194,6 +194,25 @@
   .neon-button:hover { transform: translateY(-1px); filter: brightness(1.08); box-shadow: 0 12px 32px -8px oklch(0.65 0.27 22 / 0.7), 0 6px 16px -4px oklch(0.6 0.25 260 / 0.6); }
   .neon-button:active { transform: translateY(0); }
 
+  .attendance-wordmark {
+    display: inline-block;
+    max-width: min(44vw, 420px);
+    overflow: hidden;
+    color: white;
+    font-family: var(--font-display);
+    letter-spacing: 0.22em;
+    padding-right: 0.14em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-shadow:
+      0 1px 0 oklch(0.82 0.12 250),
+      0 2px 0 oklch(0.55 0.18 260),
+      0 3px 0 oklch(0.35 0.12 270),
+      0 8px 18px oklch(0 0 0 / 0.55),
+      0 0 28px oklch(0.65 0.27 22 / 0.32),
+      0 0 34px oklch(0.6 0.25 260 / 0.28);
+  }
+
   .recharts-tooltip-wrapper,
   .recharts-default-tooltip,
   .recharts-tooltip-label,
