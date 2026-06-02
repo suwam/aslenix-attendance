@@ -14,6 +14,7 @@ export const Route = createFileRoute("/_app/admin/settings")({ component: Settin
 function SettingsPage() {
   const [s, setS] = useState<any>(null);
   const [saving, setSaving] = useState(false);
+  const [supportsAutoCheckout, setSupportsAutoCheckout] = useState(true);
 
   useEffect(() => {
     supabase
@@ -21,24 +22,32 @@ function SettingsPage() {
       .select("*")
       .limit(1)
       .maybeSingle()
-      .then(({ data }) => setS(data));
+      .then(({ data }) => {
+        setSupportsAutoCheckout(Boolean(data && "auto_checkout_time" in data));
+        setS({ auto_checkout_time: "19:00", ...data });
+      });
   }, []);
 
   const save = async () => {
     if (!s) return;
     setSaving(true);
+    const updates: Record<string, unknown> = {
+      company_name: s.company_name,
+      office_start_time: s.office_start_time,
+      office_end_time: s.office_end_time,
+      late_after_time: s.late_after_time,
+      office_latitude: parseOptionalNumber(s.office_latitude),
+      office_longitude: parseOptionalNumber(s.office_longitude),
+      attendance_radius_meters: Number(s.attendance_radius_meters) || 20,
+    };
+
+    if (supportsAutoCheckout) {
+      updates.auto_checkout_time = s.auto_checkout_time;
+    }
+
     const { error } = await supabase
       .from("settings")
-      .update({
-        company_name: s.company_name,
-        office_start_time: s.office_start_time,
-        office_end_time: s.office_end_time,
-        late_after_time: s.late_after_time,
-        auto_checkout_time: s.auto_checkout_time,
-        office_latitude: parseOptionalNumber(s.office_latitude),
-        office_longitude: parseOptionalNumber(s.office_longitude),
-        attendance_radius_meters: Number(s.attendance_radius_meters) || 20,
-      })
+      .update(updates)
       .eq("id", s.id);
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -104,9 +113,12 @@ function SettingsPage() {
                 type="time"
                 value={s.auto_checkout_time?.slice(0, 5)}
                 onChange={(e) => setS({ ...s, auto_checkout_time: e.target.value })}
+                disabled={!supportsAutoCheckout}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Automatically checkout employees who forgot to checkout at this time.
+                {supportsAutoCheckout
+                  ? "Automatically checkout employees who forgot to checkout at this time."
+                  : "Auto checkout needs the pending database migration before it can be saved."}
               </p>
             </div>
           </div>
