@@ -10,3 +10,12 @@ CREATE TABLE IF NOT EXISTS public.employee_achievements (
   UNIQUE(user_id, badge)
 );
 ALTER TABLE public.employee_achievements ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "admins manage employee achievements" ON public.employee_achievements
+  FOR ALL
+  USING (public.is_admin(auth.uid()))
+  WITH CHECK (public.is_admin(auth.uid()));
+
+CREATE POLICY "employees view own employee achievements" ON public.employee_achievements
+  FOR SELECT
+  USING (auth.uid() = user_id);
