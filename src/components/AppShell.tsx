@@ -38,6 +38,7 @@ const adminNav: NavItem[] = [
   { to: "/admin/weekly-feedback", label: "Weekly Feedback", icon: MessageSquare },
   { to: "/admin/achievements", label: "Achievements", icon: Trophy },
   { to: "/admin/approvals", label: "User Approvals", icon: UserCheck },
+  { to: "/admin/attendance-corrections", label: "Attendance Corrections", icon: CalendarClock },
   { to: "/admin/employees", label: "Employees", icon: Users },
   { to: "/admin/qr-ids", label: "Digital QR IDs", icon: QrCode },
   { to: "/admin/tasks", label: "Tasks", icon: ClipboardList },
