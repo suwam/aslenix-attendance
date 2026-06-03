@@ -1184,10 +1184,9 @@
   .weekly-feedback-dialog {
     border-radius: 22px;
     background:
-      radial-gradient(circle at 12% 0%, oklch(0.74 0.23 205 / 0.16), transparent 28%),
-      radial-gradient(circle at 88% 12%, oklch(0.65 0.27 22 / 0.13), transparent 30%),
-      oklch(0.14 0.022 265 / 0.96);
-    box-shadow: var(--shadow-glass), 0 30px 90px -40px oklch(0 0 0 / 0.95);
+      linear-gradient(135deg, oklch(0.13 0.024 235 / 0.96), oklch(0.11 0.018 265 / 0.98) 52%, oklch(0.16 0.03 335 / 0.96)),
+      oklch(0.12 0.02 260 / 0.98);
+    box-shadow: 0 32px 90px -42px oklch(0 0 0 / 0.95);
     display: flex;
     flex-direction: column;
     height: min(92vh, 900px);
@@ -1199,8 +1198,15 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    border-bottom: 1px solid oklch(1 0 0 / 0.08);
-    padding: 20px 22px;
+    border-bottom: 1px solid oklch(1 0 0 / 0.07);
+    background: oklch(0.08 0.015 260 / 0.44);
+    padding: 22px 24px;
+  }
+  .weekly-feedback-profile {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 16px;
   }
   .weekly-feedback-dialog-body {
     display: grid;
@@ -1208,12 +1214,12 @@
     height: auto;
     max-height: none;
     grid-template-columns: minmax(0, 1fr) 300px;
-    gap: 18px;
+    gap: 20px;
     min-height: 0;
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: 20px 22px 22px;
+    padding: 22px 24px 24px;
   }
   .weekly-feedback-dialog-main {
     display: grid;
@@ -1224,22 +1230,29 @@
   .weekly-feedback-form-card,
   .weekly-feedback-dialog-side {
     border-radius: 18px;
-    border: 1px solid oklch(1 0 0 / 0.09);
-    background: oklch(1 0 0 / 0.035);
-    padding: 16px;
+    border: 1px solid oklch(1 0 0 / 0.075);
+    background: oklch(0.15 0.018 260 / 0.66);
+    box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.035);
+    padding: 18px;
   }
   .weekly-feedback-submit-bar {
     position: sticky;
     bottom: -1px;
     z-index: 5;
-    margin: 6px -16px -16px;
-    padding: 14px 16px 16px;
+    margin: 8px -18px -18px;
+    padding: 16px 18px 18px;
     border-top: 1px solid oklch(1 0 0 / 0.08);
     border-radius: 0 0 18px 18px;
     background:
-      linear-gradient(180deg, oklch(0.14 0.022 265 / 0), oklch(0.14 0.022 265 / 0.96) 22%),
-      oklch(0.14 0.022 265 / 0.96);
-    backdrop-filter: blur(16px);
+      linear-gradient(180deg, oklch(0.13 0.018 260 / 0), oklch(0.12 0.018 260 / 0.98) 26%),
+      oklch(0.12 0.018 260 / 0.98);
+    backdrop-filter: blur(18px);
+  }
+  .weekly-feedback-submit-bar .neon-button {
+    min-height: 48px;
+    border-radius: 14px;
+    font-weight: 850;
+    box-shadow: 0 14px 36px -24px oklch(0.58 0.24 255 / 0.9);
   }
   .weekly-feedback-dialog-side {
     position: sticky;
@@ -1333,13 +1346,13 @@
   }
   .weekly-week-tab {
     display: flex;
-    min-height: 54px;
+    min-height: 58px;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    border-radius: 16px;
-    border: 1px solid oklch(1 0 0 / 0.08);
-    background: oklch(1 0 0 / 0.035);
+    border-radius: 14px;
+    border: 1px solid oklch(1 0 0 / 0.075);
+    background: oklch(1 0 0 / 0.028);
     padding: 10px 12px;
     color: oklch(1 0 0 / 0.86);
     font-size: 13px;
@@ -1347,13 +1360,13 @@
   }
   .weekly-week-tab:hover,
   .weekly-week-tab.selected {
-    transform: translateY(-2px);
-    border-color: oklch(0.65 0.27 22 / 0.36);
-    background: linear-gradient(135deg, oklch(0.65 0.27 22 / 0.14), oklch(0.6 0.25 260 / 0.12));
+    transform: translateY(-1px);
+    border-color: oklch(0.7 0.16 165 / 0.34);
+    background: linear-gradient(135deg, oklch(0.7 0.16 165 / 0.1), oklch(0.55 0.16 245 / 0.08));
   }
   .weekly-week-tab.current {
-    border-color: oklch(0.72 0.18 155 / 0.4);
-    box-shadow: 0 0 34px -18px oklch(0.72 0.18 155 / 0.85), inset 0 1px 0 oklch(1 0 0 / 0.1);
+    border-color: oklch(0.7 0.16 165 / 0.36);
+    box-shadow: 0 14px 34px -30px oklch(0.7 0.16 165 / 0.85), inset 0 1px 0 oklch(1 0 0 / 0.08);
     animation: weekly-active-glow 2.6s ease-in-out infinite;
   }
   .weekly-week-tab.completed svg {
@@ -1405,9 +1418,9 @@
   }
   .weekly-review-card {
     border-radius: 16px;
-    border: 1px solid oklch(1 0 0 / 0.08);
-    background: oklch(1 0 0 / 0.035);
-    padding: 13px;
+    border: 1px solid oklch(1 0 0 / 0.075);
+    background: oklch(1 0 0 / 0.032);
+    padding: 14px;
   }
   .weekly-review-card.completed {
     border-color: oklch(0.72 0.18 155 / 0.18);
@@ -1448,11 +1461,76 @@
     .weekly-employee-grid {
       grid-template-columns: minmax(0, 1fr);
     }
+    .weekly-feedback-dialog {
+      width: calc(100vw - 18px) !important;
+      max-width: calc(100vw - 18px) !important;
+      height: calc(100dvh - 24px);
+      max-height: calc(100dvh - 24px) !important;
+      border-radius: 18px;
+    }
+    .weekly-feedback-profile {
+      gap: 12px;
+      width: 100%;
+    }
+    .weekly-feedback-profile img,
+    .weekly-feedback-profile > div:first-child {
+      width: 54px !important;
+      height: 54px !important;
+      border-radius: 16px;
+      font-size: 15px;
+    }
+    .weekly-feedback-profile [data-slot="dialog-title"] {
+      font-size: 20px;
+      line-height: 1.18;
+      white-space: normal;
+    }
     .weekly-feedback-dialog-body {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
       padding: 16px;
     }
+    .weekly-feedback-dialog-main {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
     .weekly-feedback-dialog-header {
+      gap: 12px;
       padding: 16px;
+    }
+    .weekly-feedback-metrics {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 10px;
+    }
+    .weekly-feedback-metrics > div {
+      min-height: 94px;
+      border-radius: 16px;
+      padding: 12px;
+    }
+    .weekly-feedback-form-card,
+    .weekly-feedback-dialog-side {
+      border-radius: 16px;
+      padding: 14px;
+    }
+    .weekly-feedback-dialog-side {
+      order: 2;
+    }
+    .weekly-week-selector {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .weekly-week-tab {
+      min-height: 52px;
+      padding: 10px;
+      font-size: 12px;
+    }
+    .weekly-feedback-submit-bar {
+      margin: 8px -14px -14px;
+      padding: 14px;
+    }
+    .weekly-feedback-submit-bar .neon-button {
+      min-height: 46px;
+      font-size: 14px;
     }
   }
 

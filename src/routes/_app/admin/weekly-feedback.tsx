@@ -541,11 +541,13 @@ function WeeklyFeedbackPage() {
           {selected && (
             <>
               <DialogHeader className="weekly-feedback-dialog-header">
-                <div className="flex min-w-0 items-center gap-4">
+                <div className="weekly-feedback-profile">
                   <Avatar employee={selected} size="lg" />
                   <div className="min-w-0">
-                    <DialogTitle className="truncate text-2xl">{selected.name}</DialogTitle>
-                    <p className="mt-1 text-sm text-muted-foreground">{selected.department}</p>
+                    <DialogTitle className="truncate text-2xl">Weekly Performance Review</DialogTitle>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {selected.name} · {selected.department}
+                    </p>
                   </div>
                 </div>
                 <StatusBadge status={selectedWeekStatus} />
@@ -553,7 +555,7 @@ function WeeklyFeedbackPage() {
 
               <div className="weekly-feedback-dialog-body">
                 <section className="weekly-feedback-dialog-main">
-                  <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                  <div className="weekly-feedback-metrics grid grid-cols-2 gap-3 md:grid-cols-4">
                     <MiniMetric label="Score" value={selected.score} icon={Zap} />
                     <MiniMetric label="Tasks" value={selected.completedTasks} icon={CheckCircle2} />
                     <MiniMetric label="Overdue" value={selected.overdueTasks} icon={ShieldAlert} />
@@ -563,7 +565,7 @@ function WeeklyFeedbackPage() {
                   <div className="weekly-feedback-form-card">
                     <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                       <div>
-                        <div className="text-xs uppercase tracking-wider text-muted-foreground">Weekly review cycle</div>
+                        <div className="text-xs uppercase tracking-wider text-muted-foreground">Review cycle progress</div>
                         <div className="mt-1 text-xl font-bold">{completedWeeks}/4 Weekly Reviews Completed</div>
                       </div>
                       <StatusBadge status={selectedWeekStatus} />
