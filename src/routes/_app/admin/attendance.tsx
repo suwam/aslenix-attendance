@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { formatWorkHours } from "@/lib/work-hours";
-import { Loader2, Search, Edit3, History, ShieldCheck } from "lucide-react";
+import { CalendarClock, Loader2, Search, Edit3, History, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
 import { isWeeklyOffDate } from "@/lib/weekly-off";
 import { toast } from "sonner";
@@ -62,6 +62,20 @@ type AuditLog = {
   created_at: string;
 };
 
+type CorrectionRequest = {
+  id: string;
+  attendance_id: string;
+  employee_name: string;
+  requested_check_in_time: string | null;
+  requested_check_out_time: string | null;
+  requested_status: (typeof ATTENDANCE_STATUSES)[number] | null;
+  requested_work_location: string | null;
+  reason: string;
+  status: string;
+  created_at: string;
+  attendance_date: string | null;
+};
+
 type EditForm = {
   checkIn: string;
   checkOut: string;
@@ -82,6 +96,7 @@ function AttendancePage() {
   const [historyRow, setHistoryRow] = useState<EmployeeRow | null>(null);
   const [history, setHistory] = useState<AuditLog[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [correctionRequests, setCorrectionRequests] = useState<CorrectionRequest[]>([]);
   const [form, setForm] = useState<EditForm>({
     checkIn: "",
     checkOut: "",
@@ -93,13 +108,20 @@ function AttendancePage() {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: att }, { data: profs }] = await Promise.all([
+    const [{ data: att }, { data: profs }, correctionsResult] = await Promise.all([
       supabase.from("attendance").select("*").eq("date", date),
       supabase.from("profiles").select("*").eq("approval_status", "approved"),
+      supabase.rpc("get_admin_attendance_correction_requests"),
     ]);
+    if (correctionsResult.error) toast.error(`Unable to load correction requests: ${correctionsResult.error.message}`);
     const map = new Map(((att ?? []) as AttendanceRecord[]).map((a) => [a.user_id, a]));
     const merged = ((profs ?? []) as EmployeeRow[]).map((p) => ({ ...p, attendance: map.get(p.user_id) }));
     setRows(merged);
+    setCorrectionRequests(
+      ((correctionsResult.data ?? []) as CorrectionRequest[]).filter(
+        (request) => request.status === "pending" && request.attendance_date === date,
+      ),
+    );
     setLoading(false);
   };
 
@@ -120,16 +142,22 @@ function AttendancePage() {
     (r) => !search || r.full_name?.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const startEdit = (row: EmployeeRow) => {
+  const startEdit = (row: EmployeeRow, request?: CorrectionRequest) => {
     if (!row.attendance) return toast.error("No attendance record exists for this date");
     setEditing(row);
     setForm({
-      checkIn: toDateTimeInput(row.attendance.check_in_time),
-      checkOut: toDateTimeInput(row.attendance.check_out_time),
-      status: row.attendance.status || "present",
-      workLocation: row.attendance.work_location || "Office",
-      reason: "",
+      checkIn: toDateTimeInput(request?.requested_check_in_time ?? row.attendance.check_in_time),
+      checkOut: toDateTimeInput(request?.requested_check_out_time ?? row.attendance.check_out_time),
+      status: request?.requested_status || row.attendance.status || "present",
+      workLocation: request?.requested_work_location || row.attendance.work_location || "Office",
+      reason: request ? `Employee correction request: ${request.reason}` : "",
     });
+  };
+
+  const startEditFromRequest = (request: CorrectionRequest) => {
+    const row = rows.find((item) => item.attendance?.id === request.attendance_id);
+    if (!row) return toast.error("Attendance record for this request is not visible on the selected date");
+    startEdit(row, request);
   };
 
   const loadHistory = async (row: EmployeeRow) => {
@@ -191,6 +219,47 @@ function AttendancePage() {
           </div>
         </div>
       </div>
+
+      {correctionRequests.length > 0 && (
+        <GlassCard className="mb-5">
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-lg font-semibold text-white">
+                <CalendarClock size={19} className="text-primary" />
+                Pending correction requests
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Open a request to edit attendance with the employee reason already attached to the audit log.
+              </div>
+            </div>
+            <Pill className="bg-warning/15 text-warning" label={`${correctionRequests.length} pending`} />
+          </div>
+          <div className="grid gap-3 lg:grid-cols-2">
+            {correctionRequests.map((request) => (
+              <div key={request.id} className="rounded-xl border border-white/10 bg-white/[0.035] p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="font-semibold text-white">{request.employee_name}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      Requested {format(new Date(request.created_at), "HH:mm")} · {request.reason}
+                    </div>
+                  </div>
+                  <Button size="sm" onClick={() => startEditFromRequest(request)} className="neon-button rounded-lg">
+                    <Edit3 size={14} className="mr-1" />
+                    Review edit
+                  </Button>
+                </div>
+                <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+                  <DiffRow label="Requested check-in" value={formatTime(request.requested_check_in_time)} />
+                  <DiffRow label="Requested check-out" value={formatTime(request.requested_check_out_time)} />
+                  <DiffRow label="Requested status" value={request.requested_status?.replace("_", " ") || "No change"} />
+                  <DiffRow label="Requested location" value={request.requested_work_location || "No change"} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </GlassCard>
+      )}
 
       <GlassCard className="overflow-hidden p-0">
         {loading ? (
