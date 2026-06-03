@@ -1096,6 +1096,9 @@
       radial-gradient(circle at 88% 12%, oklch(0.65 0.27 22 / 0.13), transparent 30%),
       oklch(0.14 0.022 265 / 0.96);
     box-shadow: var(--shadow-glass), 0 30px 90px -40px oklch(0 0 0 / 0.95);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
   }
   .weekly-feedback-dialog-header {
     display: flex;
@@ -1110,12 +1113,16 @@
     max-height: calc(92vh - 106px);
     grid-template-columns: minmax(0, 1fr) 300px;
     gap: 18px;
-    overflow: auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 20px 22px 22px;
   }
   .weekly-feedback-dialog-main {
     display: grid;
     gap: 16px;
+    min-height: 0;
     min-width: 0;
   }
   .weekly-feedback-form-card,
@@ -1129,6 +1136,8 @@
     position: sticky;
     top: 0;
     align-self: start;
+    max-height: calc(92vh - 146px);
+    overflow-y: auto;
   }
   .weekly-progress {
     background: linear-gradient(90deg, #21d4fd, #8b5cf6 45%, #ff2d6f);
@@ -1292,6 +1301,8 @@
     }
     .weekly-feedback-dialog-side {
       position: static;
+      max-height: none;
+      overflow: visible;
     }
   }
 

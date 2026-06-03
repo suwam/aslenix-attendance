@@ -97,8 +97,8 @@ type EmployeeWeek = {
 };
 
 const ratingOptions: Rating[] = ["Excellent", "Good", "Average", "Poor"];
-const CURRENT_REVIEW_WEEK_NUMBER = 2;
 const REVIEW_WEEK_START_DAY = 3;
+const REVIEW_CYCLE_WEEK_ONE_START = "2026-05-20";
 
 function WeeklyFeedbackPage() {
   const { user } = useAuth();
@@ -886,17 +886,20 @@ function average(values: number[]) {
 }
 
 function getReviewWeekNumber(date: Date) {
-  const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: REVIEW_WEEK_START_DAY }).getTime();
+  const cycleWeekOneStart = startOfWeek(new Date(`${REVIEW_CYCLE_WEEK_ONE_START}T00:00:00`), {
+    weekStartsOn: REVIEW_WEEK_START_DAY,
+  }).getTime();
   const reviewWeekStart = startOfWeek(date, { weekStartsOn: REVIEW_WEEK_START_DAY }).getTime();
-  const weekOffset = Math.round((reviewWeekStart - currentWeekStart) / 604800000);
-  return Math.min(4, Math.max(1, CURRENT_REVIEW_WEEK_NUMBER + weekOffset));
+  const weekOffset = Math.floor((reviewWeekStart - cycleWeekOneStart) / 604800000);
+  return Math.min(4, Math.max(1, weekOffset + 1));
 }
 
 function getReviewWeeks(date: Date) {
+  const currentWeekNumber = getReviewWeekNumber(date);
   const currentWeekStart = startOfWeek(date, { weekStartsOn: REVIEW_WEEK_START_DAY });
   return Array.from({ length: 4 }).map((_, index) => {
     const weekNumber = index + 1;
-    const offsetFromCurrentWeek = weekNumber - CURRENT_REVIEW_WEEK_NUMBER;
+    const offsetFromCurrentWeek = weekNumber - currentWeekNumber;
     const startDate = new Date(currentWeekStart);
     startDate.setDate(currentWeekStart.getDate() + offsetFromCurrentWeek * 7);
     const endDate = new Date(startDate);
