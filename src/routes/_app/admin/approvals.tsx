@@ -33,15 +33,39 @@ function ApprovalsPage() {
       .is("joining_date", null);
     let q = supabase.from("profiles").select("*").order("created_at", { ascending: false });
     if (filter !== "all") q = q.eq("approval_status", filter);
-    const [{ data }, { data: correctionData }] = await Promise.all([
+    const [{ data, error: usersError }, correctionResult] = await Promise.all([
       q,
       supabase
         .from("attendance_correction_requests")
-        .select("*, attendance(date, check_in_time, check_out_time, status, work_location)")
+        .select("*")
         .order("created_at", { ascending: false }),
     ]);
+    if (usersError) toast.error(usersError.message);
+    if (correctionResult.error) toast.error(`Unable to load correction requests: ${correctionResult.error.message}`);
+
+    const correctionRows = correctionResult.data ?? [];
+    const attendanceIds = [...new Set(correctionRows.map((request) => request.attendance_id).filter(Boolean))];
+    let attendanceById = new Map<string, any>();
+    if (attendanceIds.length > 0) {
+      const { data: attendanceData, error: attendanceError } = await supabase
+        .from("attendance")
+        .select("id,date,check_in_time,check_out_time,status,work_location")
+        .in("id", attendanceIds);
+      if (attendanceError) toast.error(`Unable to load attendance details: ${attendanceError.message}`);
+      attendanceById = new Map((attendanceData ?? []).map((row) => [row.id, row]));
+    }
+
     setUsers(data ?? []);
-    setCorrections(correctionData ?? []);
+    setCorrections(
+      correctionRows.map((request) => ({
+        ...request,
+        attendance: attendanceById.get(request.attendance_id) ?? null,
+      })).sort((a, b) => {
+        if (a.status === "pending" && b.status !== "pending") return -1;
+        if (a.status !== "pending" && b.status === "pending") return 1;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }),
+    );
     setLoading(false);
   };
   useEffect(() => {
@@ -105,6 +129,7 @@ function ApprovalsPage() {
       u.full_name?.toLowerCase().includes(search.toLowerCase()) ||
       u.email?.toLowerCase().includes(search.toLowerCase()),
   );
+  const pendingCorrections = corrections.filter((request) => request.status === "pending");
 
   const FILTERS: Array<{ k: typeof filter; label: string }> = [
     { k: "pending", label: "Pending" },
@@ -132,8 +157,16 @@ function ApprovalsPage() {
               Approved requests automatically update attendance and preserve audit history.
             </div>
           </div>
-          <RequestBadge status={`${corrections.filter((r) => r.status === "pending").length} pending`} />
+          <div className="flex flex-wrap items-center gap-2">
+            <RequestBadge status={`${pendingCorrections.length} pending`} />
+            <RequestBadge status={`${corrections.length} total`} />
+          </div>
         </div>
+        {pendingCorrections.length > 0 && (
+          <div className="mb-4 rounded-xl border border-warning/20 bg-warning/10 p-3 text-sm text-warning">
+            {pendingCorrections.length} attendance correction request{pendingCorrections.length === 1 ? "" : "s"} waiting for review.
+          </div>
+        )}
         {corrections.length === 0 ? (
           <div className="rounded-xl border border-white/10 bg-white/[0.035] p-6 text-center text-muted-foreground">
             No attendance correction requests.
