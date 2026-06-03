@@ -1537,31 +1537,58 @@
     filter: saturate(.7);
   }
 
-  @media (max-width: 960px) {
+  @media (max-width: 1024px), (pointer: coarse) {
+    .weekly-feedback-dialog {
+      width: min(720px, calc(100vw - 18px)) !important;
+      max-width: calc(100vw - 18px) !important;
+      height: calc(100dvh - 24px);
+      max-height: calc(100dvh - 24px) !important;
+      border-radius: 18px;
+    }
     .weekly-feedback-dialog-header {
       align-items: flex-start;
       flex-direction: column;
     }
     .weekly-feedback-dialog-body {
+      display: flex;
+      flex-direction: column;
       grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
+    }
+    .weekly-feedback-dialog-main,
+    .weekly-feedback-dialog-side {
+      position: relative !important;
+      inset: auto !important;
+      transform: none !important;
+      width: 100%;
+      min-width: 0;
+      max-height: none;
+      overflow: visible !important;
+      z-index: auto;
+    }
+    .weekly-feedback-dialog-main {
+      display: flex;
+      flex-direction: column;
+      order: 1;
     }
     .weekly-feedback-dialog-side {
-      position: static;
-      max-height: none;
-      overflow: visible;
+      order: 2;
+      align-self: stretch;
+      margin-top: 0;
+      margin-bottom: 72px;
+    }
+    .weekly-feedback-metrics {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+    .weekly-feedback-form-card {
+      position: relative;
+      z-index: 1;
     }
   }
 
   @media (max-width: 640px) {
     .weekly-employee-grid {
       grid-template-columns: minmax(0, 1fr);
-    }
-    .weekly-feedback-dialog {
-      width: calc(100vw - 18px) !important;
-      max-width: calc(100vw - 18px) !important;
-      height: calc(100dvh - 24px);
-      max-height: calc(100dvh - 24px) !important;
-      border-radius: 18px;
     }
     .weekly-feedback-profile {
       gap: 12px;
@@ -1580,15 +1607,8 @@
       white-space: normal;
     }
     .weekly-feedback-dialog-body {
-      display: flex;
-      flex-direction: column;
       gap: 14px;
       padding: 16px;
-    }
-    .weekly-feedback-dialog-main {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
     }
     .weekly-feedback-dialog-header {
       gap: 12px;
@@ -1622,6 +1642,7 @@
     .weekly-feedback-submit-bar {
       margin: 8px -14px -14px;
       padding: 14px;
+      z-index: 10;
     }
     .weekly-feedback-submit-bar .neon-button {
       min-height: 46px;
