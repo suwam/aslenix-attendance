@@ -193,13 +193,24 @@ function MyAttendance() {
           <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" disabled={!attendance} onClick={loadHistory}>
-            <History size={14} className="mr-1" />
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!attendance}
+            onClick={loadHistory}
+            className="h-9 rounded-lg px-3 text-xs"
+          >
+            <History size={13} className="mr-1.5" />
             History
           </Button>
-          <Button disabled={!attendance} onClick={openRequest} className="neon-button rounded-xl">
-            <Edit3 size={14} className="mr-1" />
-            Request Correction
+          <Button
+            size="sm"
+            disabled={!attendance}
+            onClick={openRequest}
+            className="neon-button h-9 rounded-lg px-3 text-xs"
+          >
+            <Edit3 size={13} className="mr-1.5" />
+            Correction
           </Button>
         </div>
       </div>
@@ -253,7 +264,6 @@ function MyAttendance() {
                   <th className="p-4">Location</th>
                   <th className="p-4">Hours</th>
                   <th className="p-4">Status</th>
-                  <th className="p-4">Audit</th>
                 </tr>
               </thead>
               <tbody>
@@ -282,7 +292,6 @@ function MyAttendance() {
                     <td className="p-4">
                       <StatusPill {...getAttendanceStatusDisplay(r)} />
                     </td>
-                    <td className="p-4">{r.is_edited ? <EditedBadge /> : "—"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -423,14 +432,6 @@ function StatusPill({
   return (
     <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${classes}`}>
       {status}
-    </span>
-  );
-}
-
-function EditedBadge() {
-  return (
-    <span className="rounded-full border border-primary/25 bg-primary/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
-      Edited
     </span>
   );
 }
