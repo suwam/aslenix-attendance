@@ -708,17 +708,18 @@ function EmployeeCard({
       onClick={onClick}
       className={`weekly-employee-card text-left ${active ? "active" : ""}`}
     >
-      <div className="flex items-start gap-3">
+      <div className="weekly-employee-card-glow" />
+      <div className="weekly-employee-card-top">
         <Avatar employee={employee} />
-        <div className="min-w-0 flex-1">
-          <div className="truncate font-semibold">{employee.name}</div>
-          <div className="text-xs text-muted-foreground">{employee.department}</div>
+        <div className="weekly-employee-identity">
+          <div className="weekly-employee-name">{employee.name}</div>
+          <div className="weekly-employee-department">{employee.department}</div>
         </div>
-        <div className="rounded-xl bg-white/[0.06] px-2 py-1 text-xs font-bold tabular-nums">
+        <div className={`weekly-employee-rank ${employee.rank <= 3 ? "top" : ""}`}>
           #{employee.rank}
         </div>
       </div>
-      <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
+      <div className="weekly-employee-metrics">
         <ProgressMetric label="Score" value={employee.score} />
         <ProgressMetric label="Tasks" value={Math.min(100, employee.completedTasks * 12)} detail={`${employee.completedTasks}`} />
         <ProgressMetric label="Attend" value={employee.attendancePct} detail={`${employee.attendancePct}%`} />
@@ -753,13 +754,13 @@ function MiniMetric({ label, value, icon: Icon }: { label: string; value: string
 
 function ProgressMetric({ label, value, detail }: { label: string; value: number; detail?: string }) {
   return (
-    <div>
-      <div className="mb-1 flex justify-between text-[10px] uppercase tracking-wider text-muted-foreground">
+    <div className="weekly-progress-metric">
+      <div className="weekly-progress-label">
         <span>{label}</span>
         <span>{detail ?? `${value}%`}</span>
       </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-        <div className="weekly-progress h-full rounded-full" style={{ width: `${Math.min(100, value)}%` }} />
+      <div className="weekly-progress-track">
+        <div className="weekly-progress" style={{ width: `${Math.min(100, value)}%` }} />
       </div>
     </div>
   );
