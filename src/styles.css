@@ -1098,9 +1098,11 @@
     box-shadow: var(--shadow-glass), 0 30px 90px -40px oklch(0 0 0 / 0.95);
     display: flex;
     flex-direction: column;
+    height: min(92vh, 900px);
     min-height: 0;
   }
   .weekly-feedback-dialog-header {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1110,7 +1112,9 @@
   }
   .weekly-feedback-dialog-body {
     display: grid;
-    max-height: calc(92vh - 106px);
+    flex: 1 1 auto;
+    height: auto;
+    max-height: none;
     grid-template-columns: minmax(0, 1fr) 300px;
     gap: 18px;
     min-height: 0;
@@ -1132,11 +1136,24 @@
     background: oklch(1 0 0 / 0.035);
     padding: 16px;
   }
+  .weekly-feedback-submit-bar {
+    position: sticky;
+    bottom: -1px;
+    z-index: 5;
+    margin: 6px -16px -16px;
+    padding: 14px 16px 16px;
+    border-top: 1px solid oklch(1 0 0 / 0.08);
+    border-radius: 0 0 18px 18px;
+    background:
+      linear-gradient(180deg, oklch(0.14 0.022 265 / 0), oklch(0.14 0.022 265 / 0.96) 22%),
+      oklch(0.14 0.022 265 / 0.96);
+    backdrop-filter: blur(16px);
+  }
   .weekly-feedback-dialog-side {
     position: sticky;
     top: 0;
     align-self: start;
-    max-height: calc(92vh - 146px);
+    max-height: calc(min(92vh, 900px) - 146px);
     overflow-y: auto;
   }
   .weekly-progress {

@@ -656,15 +656,17 @@ function WeeklyFeedbackPage() {
                         </div>
                       </div>
 
-                      <Button onClick={saveFeedback} disabled={saving || formLocked} className="neon-button w-full rounded-xl">
-                        {canEditSelectedReview ? <Edit3 size={14} className="mr-1.5" /> : <Save size={14} className="mr-1.5" />}
-                        {saving ? "Saving..." : canEditSelectedReview ? "Update review" : `Submit Week ${selectedWeekNumber} feedback`}
-                      </Button>
-                      {selectedWeekReview && !canEditSelectedReview && (
-                        <p className="text-center text-sm text-muted-foreground">
-                          Week {selectedWeekNumber} review already submitted
-                        </p>
-                      )}
+                      <div className="weekly-feedback-submit-bar">
+                        <Button onClick={saveFeedback} disabled={saving || formLocked} className="neon-button w-full rounded-xl">
+                          {canEditSelectedReview ? <Edit3 size={14} className="mr-1.5" /> : <Save size={14} className="mr-1.5" />}
+                          {saving ? "Saving..." : canEditSelectedReview ? "Update review" : `Submit Week ${selectedWeekNumber} feedback`}
+                        </Button>
+                        {selectedWeekReview && !canEditSelectedReview && (
+                          <p className="text-center text-sm text-muted-foreground">
+                            Week {selectedWeekNumber} review already submitted
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </section>
