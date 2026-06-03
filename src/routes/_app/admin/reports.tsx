@@ -13,21 +13,29 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Download, Printer, Loader2 } from "lucide-react";
-import { format } from "date-fns";
+import { addDays, format, startOfWeek } from "date-fns";
 import { formatWorkHours } from "@/lib/work-hours";
 import { isWeeklyOffDate } from "@/lib/weekly-off";
 
 export const Route = createFileRoute("/_app/admin/reports")({ component: ReportsPage });
 
 function ReportsPage() {
+  const [period, setPeriod] = useState<"daily" | "weekly">("daily");
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [statusFilter, setStatusFilter] = useState("all");
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const isWeeklyOff = isWeeklyOffDate(date);
+  const weekStart = format(startOfWeek(new Date(date), { weekStartsOn: 1 }), "yyyy-MM-dd");
+  const weekEnd = format(addDays(new Date(weekStart), 6), "yyyy-MM-dd");
 
   const run = async () => {
     setLoading(true);
+    if (period === "weekly") {
+      await runWeeklyReport();
+      setLoading(false);
+      return;
+    }
     const [{ data: attendance }, { data: profiles }] = await Promise.all([
       supabase.from("attendance").select("*").eq("date", date).order("date", { ascending: false }),
       supabase
@@ -56,11 +64,68 @@ function ReportsPage() {
     setLoading(false);
   };
 
+  const runWeeklyReport = async () => {
+    const [{ data: attendance }, { data: profiles }] = await Promise.all([
+      supabase
+        .from("attendance")
+        .select("*")
+        .gte("date", weekStart)
+        .lte("date", weekEnd)
+        .order("date", { ascending: true }),
+      supabase
+        .from("profiles")
+        .select("user_id, full_name, email, department")
+        .eq("approval_status", "approved")
+        .order("full_name"),
+    ]);
+
+    const attendanceByUser = new Map<string, any[]>();
+    (attendance ?? []).forEach((row) => {
+      attendanceByUser.set(row.user_id, [...(attendanceByUser.get(row.user_id) ?? []), row]);
+    });
+
+    const merged = (profiles ?? []).map((profile) => {
+      const records = attendanceByUser.get(profile.user_id) ?? [];
+      const workDays = weekDates(weekStart).filter((day) => !isWeeklyOffDate(day)).length;
+      return {
+        ...profile,
+        records,
+        presentDays: records.filter((record) => ["present", "late", "wfh"].includes(record.status)).length,
+        lateDays: records.filter((record) => record.is_late).length,
+        earlyCheckoutDays: records.filter((record) => record.is_early_checkout).length,
+        leaveDays: records.filter((record) => record.status === "leave").length,
+        wfhDays: records.filter((record) => record.status === "wfh").length,
+        editedDays: records.filter((record) => record.is_edited).length,
+        absentDays: Math.max(workDays - records.length, 0),
+        totalHours: records.reduce((total, record) => total + Number(record.work_hours || 0), 0),
+      };
+    });
+
+    setRows(
+      statusFilter === "all"
+        ? merged
+        : merged.filter((row) => {
+            if (statusFilter === "absent") return row.absentDays > 0;
+            if (statusFilter === "late") return row.lateDays > 0;
+            if (statusFilter === "early_checkout") return row.earlyCheckoutDays > 0;
+            if (statusFilter === "leave") return row.leaveDays > 0;
+            if (statusFilter === "wfh") return row.wfhDays > 0;
+            if (statusFilter === "present") return row.presentDays > 0;
+            if (statusFilter === "weekly_off") return false;
+            return false;
+          }),
+    );
+  };
+
   useEffect(() => {
     run();
   }, []);
 
   const exportCSV = () => {
+    if (period === "weekly") {
+      exportWeeklyCSV();
+      return;
+    }
     const header = [
       "Date",
       "Employee",
@@ -98,7 +163,51 @@ function ReportsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `aslenix-attendance-${date}.csv`;
+    a.download = `aslenix-attendance-daily-${date}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportWeeklyCSV = () => {
+    const header = [
+      "Week start",
+      "Week end",
+      "Employee",
+      "Email",
+      "Department",
+      "Present days",
+      "Absent days",
+      "Late days",
+      "Early checkout days",
+      "Leave days",
+      "WFH days",
+      "Edited days",
+      "Total hours",
+    ];
+    const lines = rows.map((row) =>
+      [
+        weekStart,
+        weekEnd,
+        row.full_name || "",
+        row.email || "",
+        row.department || "",
+        row.presentDays,
+        row.absentDays,
+        row.lateDays,
+        row.earlyCheckoutDays,
+        row.leaveDays,
+        row.wfhDays,
+        row.editedDays,
+        formatWorkHours(row.totalHours),
+      ]
+        .map((x) => `"${String(x).replace(/"/g, '""')}"`)
+        .join(","),
+    );
+    const blob = new Blob([[header.join(","), ...lines].join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `aslenix-attendance-weekly-${weekStart}-to-${weekEnd}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -107,7 +216,7 @@ function ReportsPage() {
     <>
       <PageHeader
         title="Reports"
-        subtitle="Generate, filter and export attendance reports for a selected day"
+        subtitle="Generate, filter and export daily or weekly attendance reports"
         actions={
           <>
             <Button variant="outline" onClick={() => window.print()}>
@@ -123,10 +232,27 @@ function ReportsPage() {
       />
 
       <GlassCard className="mb-5">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
           <div>
-            <label className="text-xs text-muted-foreground">Date</label>
+            <label className="text-xs text-muted-foreground">Report type</label>
+            <Select value={period} onValueChange={(value) => setPeriod(value as "daily" | "weekly")}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="daily">Daily report</SelectItem>
+                <SelectItem value="weekly">Weekly report</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">{period === "weekly" ? "Week date" : "Date"}</label>
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            {period === "weekly" && (
+              <div className="mt-1 text-xs text-muted-foreground">
+                {format(new Date(weekStart), "MMM d")} - {format(new Date(weekEnd), "MMM d, yyyy")}
+              </div>
+            )}
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Status</label>
@@ -160,7 +286,9 @@ function ReportsPage() {
             <Loader2 className="animate-spin text-primary" />
           </div>
         ) : rows.length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground">No records for this day.</div>
+          <div className="text-center py-16 text-muted-foreground">No records for this {period === "weekly" ? "week" : "day"}.</div>
+        ) : period === "weekly" ? (
+          <WeeklyReportTable rows={rows} weekStart={weekStart} weekEnd={weekEnd} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -235,4 +363,59 @@ function attendanceLabel(attendance: any) {
   if (attendance.is_early_checkout) return "Early checkout";
   if (attendance.is_late) return "Late";
   return attendance.status.replace("_", " ");
+}
+
+function WeeklyReportTable({ rows, weekStart, weekEnd }: { rows: any[]; weekStart: string; weekEnd: string }) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground border-b border-border">
+            <th className="p-3">Week</th>
+            <th className="p-3">Employee</th>
+            <th className="p-3">Department</th>
+            <th className="p-3">Present</th>
+            <th className="p-3">Absent</th>
+            <th className="p-3">Late</th>
+            <th className="p-3">Early checkout</th>
+            <th className="p-3">Leave</th>
+            <th className="p-3">WFH</th>
+            <th className="p-3">Hours</th>
+            <th className="p-3">Audit</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.user_id} className="border-b border-border/40 hover:bg-muted/20">
+              <td className="p-3">
+                {format(new Date(weekStart), "MMM d")} - {format(new Date(weekEnd), "MMM d")}
+              </td>
+              <td className="p-3 font-medium">{row.full_name || "—"}</td>
+              <td className="p-3 text-muted-foreground">{row.department || "—"}</td>
+              <td className="p-3 tabular-nums">{row.presentDays}</td>
+              <td className="p-3 tabular-nums">{row.absentDays}</td>
+              <td className="p-3 tabular-nums">{row.lateDays}</td>
+              <td className="p-3 tabular-nums">{row.earlyCheckoutDays}</td>
+              <td className="p-3 tabular-nums">{row.leaveDays}</td>
+              <td className="p-3 tabular-nums">{row.wfhDays}</td>
+              <td className="p-3 tabular-nums">{formatWorkHours(row.totalHours)}</td>
+              <td className="p-3">
+                {row.editedDays > 0 ? (
+                  <span className="rounded-full border border-primary/25 bg-primary/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                    {row.editedDays} edited
+                  </span>
+                ) : (
+                  "—"
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function weekDates(weekStart: string) {
+  return Array.from({ length: 7 }, (_, index) => format(addDays(new Date(weekStart), index), "yyyy-MM-dd"));
 }
