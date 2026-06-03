@@ -93,13 +93,11 @@ function MyAttendance() {
       };
     }
 
+    const display = getAttendanceStatusDisplay(attendance);
+
     return {
-      status: attendance.is_early_checkout
-        ? "Early checkout"
-        : attendance.is_late
-          ? "Late"
-          : attendance.status?.replace("_", " ") || "Present",
-      variant: attendance.is_late || attendance.is_early_checkout ? "warning" : "success",
+      status: display.status,
+      variant: display.variant,
       checkIn: attendance.check_in_time ? format(new Date(attendance.check_in_time), "HH:mm") : "—",
       checkOut: attendance.check_out_time ? format(new Date(attendance.check_out_time), "HH:mm") : "—",
       hours: attendance.work_hours ? formatWorkHours(attendance.work_hours) : "—",
@@ -282,10 +280,7 @@ function MyAttendance() {
                       {r.work_hours ? formatWorkHours(r.work_hours) : "—"}
                     </td>
                     <td className="p-4">
-                      <StatusPill
-                        status={r.is_early_checkout ? "Early checkout" : r.is_late ? "Late" : r.status?.replace("_", " ")}
-                        variant={r.is_late || r.is_early_checkout ? "warning" : r.status ? "success" : "destructive"}
-                      />
+                      <StatusPill {...getAttendanceStatusDisplay(r)} />
                     </td>
                     <td className="p-4">{r.is_edited ? <EditedBadge /> : "—"}</td>
                   </tr>
@@ -440,6 +435,19 @@ function EditedBadge() {
   );
 }
 
+function getAttendanceStatusDisplay(attendance: any): {
+  status: string;
+  variant: "success" | "warning" | "destructive" | "accent";
+} {
+  const correctedStatus = attendance?.status?.replace("_", " ") || "Present";
+  const hasWarningStatus = attendance?.status !== "present" && (attendance?.is_late || attendance?.is_early_checkout);
+
+  return {
+    status: hasWarningStatus ? (attendance?.is_early_checkout ? "Early checkout" : "Late") : correctedStatus,
+    variant: hasWarningStatus ? "warning" : attendance?.status ? "success" : "destructive",
+  };
+}
+
 function RequestBadge({ status }: { status: string }) {
   const classes =
     status === "approved"
@@ -447,7 +455,11 @@ function RequestBadge({ status }: { status: string }) {
       : status === "rejected"
         ? "bg-destructive/15 text-destructive"
         : "bg-warning/15 text-warning";
-  return <span className={`w-fit rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${classes}`}>{status}</span>;
+  return (
+    <span className={`w-fit rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${classes}`}>
+      {formatRequestStatus(status)}
+    </span>
+  );
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -466,6 +478,11 @@ function toDateTimeInput(value?: string | null) {
 
 function fromDateTimeInput(value: string) {
   return value ? new Date(value).toISOString() : null;
+}
+
+function formatRequestStatus(status: string) {
+  if (status === "approved") return "Completed";
+  return status;
 }
 
 function getSuggestedCorrectionType(attendance: any): CorrectionType {

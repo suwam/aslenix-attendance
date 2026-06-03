@@ -786,6 +786,31 @@ export type Database = {
         Args: { _check_in: string | null; _check_out: string | null };
         Returns: number;
       };
+      get_admin_attendance_correction_requests: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          admin_comment: string | null;
+          attendance_check_in_time: string | null;
+          attendance_check_out_time: string | null;
+          attendance_date: string | null;
+          attendance_id: string;
+          attendance_status: Database["public"]["Enums"]["attendance_status"] | null;
+          attendance_work_location: string | null;
+          created_at: string;
+          employee_name: string;
+          id: string;
+          reason: string;
+          requested_check_in_time: string | null;
+          requested_check_out_time: string | null;
+          requested_status: Database["public"]["Enums"]["attendance_status"] | null;
+          requested_work_location: string | null;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          status: string;
+          updated_at: string;
+          user_id: string;
+        }[];
+      };
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"];

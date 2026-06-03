@@ -35,36 +35,27 @@ function ApprovalsPage() {
     if (filter !== "all") q = q.eq("approval_status", filter);
     const [{ data, error: usersError }, correctionResult] = await Promise.all([
       q,
-      supabase
-        .from("attendance_correction_requests")
-        .select("*")
-        .order("created_at", { ascending: false }),
+      supabase.rpc("get_admin_attendance_correction_requests"),
     ]);
     if (usersError) toast.error(usersError.message);
     if (correctionResult.error) toast.error(`Unable to load correction requests: ${correctionResult.error.message}`);
 
     const correctionRows = correctionResult.data ?? [];
-    const attendanceIds = [...new Set(correctionRows.map((request) => request.attendance_id).filter(Boolean))];
-    let attendanceById = new Map<string, any>();
-    if (attendanceIds.length > 0) {
-      const { data: attendanceData, error: attendanceError } = await supabase
-        .from("attendance")
-        .select("id,date,check_in_time,check_out_time,status,work_location")
-        .in("id", attendanceIds);
-      if (attendanceError) toast.error(`Unable to load attendance details: ${attendanceError.message}`);
-      attendanceById = new Map((attendanceData ?? []).map((row) => [row.id, row]));
-    }
-
     setUsers(data ?? []);
     setCorrections(
       correctionRows.map((request) => ({
         ...request,
-        attendance: attendanceById.get(request.attendance_id) ?? null,
-      })).sort((a, b) => {
-        if (a.status === "pending" && b.status !== "pending") return -1;
-        if (a.status !== "pending" && b.status === "pending") return 1;
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      }),
+        attendance: request.attendance_date
+          ? {
+              id: request.attendance_id,
+              date: request.attendance_date,
+              check_in_time: request.attendance_check_in_time,
+              check_out_time: request.attendance_check_out_time,
+              status: request.attendance_status,
+              work_location: request.attendance_work_location,
+            }
+          : null,
+      })),
     );
     setLoading(false);
   };
@@ -378,11 +369,19 @@ function RequestBadge({ status }: { status: string }) {
     : status.includes("rejected")
       ? "bg-destructive/15 text-destructive"
       : "bg-warning/15 text-warning";
-  return <span className={`w-fit rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${classes}`}>{status}</span>;
+  return (
+    <span className={`w-fit rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${classes}`}>
+      {formatCorrectionStatus(status)}
+    </span>
+  );
 }
 
 function formatMaybeTime(value?: string | null) {
   return value ? format(new Date(value), "HH:mm") : "No change";
+}
+
+function formatCorrectionStatus(status: string) {
+  return status.replaceAll("approved", "completed");
 }
 
 function StatusBadge({ status, suspended }: { status: string; suspended: boolean }) {
