@@ -11,45 +11,35 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { formatWorkHours } from "@/lib/work-hours";
-import { CalendarDays, Edit3, History, Loader2 } from "lucide-react";
+import { CalendarDays, Edit3, History, Info, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { isWeeklyOffDate, WEEKLY_OFF_LABEL } from "@/lib/weekly-off";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/my-attendance")({ component: MyAttendance });
 
-type CorrectionType = "late_checkin" | "early_checkout" | "time_fix" | "status_location";
+type CorrectionType =
+  | "wrong_time"
+  | "late_checkin"
+  | "early_checkout"
+  | "status_correction"
+  | "location_correction"
+  | "missed_checkin"
+  | "missed_checkout";
 
-const CORRECTION_TYPES: Array<{
-  value: CorrectionType;
-  label: string;
-  message: string;
-}> = [
-  {
-    value: "late_checkin",
-    label: "Late check-in override",
-    message:
-      "Late check-in override request: I was marked late by a few minutes. Please review and mark this attendance as present if acceptable.",
-  },
-  {
-    value: "early_checkout",
-    label: "Early checkout override",
-    message:
-      "Early checkout correction request: I was marked as early checkout by mistake. Please review my checkout time and correct the status if acceptable.",
-  },
-  {
-    value: "time_fix",
-    label: "Wrong time",
-    message:
-      "Attendance time correction request: My check-in or checkout time is incorrect. Please review the corrected time.",
-  },
-  {
-    value: "status_location",
-    label: "Status or location",
-    message:
-      "Attendance status/location correction request: Please review the corrected status or work location.",
-  },
+const CORRECTION_TYPES: Array<{ value: CorrectionType; label: string }> = [
+  { value: "wrong_time", label: "Wrong Time" },
+  { value: "late_checkin", label: "Late Check-in" },
+  { value: "early_checkout", label: "Early Check-out" },
+  { value: "status_correction", label: "Status Correction" },
+  { value: "location_correction", label: "Location Correction" },
+  { value: "missed_checkin", label: "Missed Check-in" },
+  { value: "missed_checkout", label: "Missed Check-out" },
 ];
+
+const ATTENDANCE_STATUSES = ["present", "late", "absent", "leave", "half_day", "wfh"] as const;
+const WORK_LOCATIONS = ["Office", "WFH", "Remote", "Client Site", "Field Work"] as const;
+const MAX_REASON_LENGTH = 500;
 
 function MyAttendance() {
   const { user, profile } = useAuth();
@@ -61,8 +51,9 @@ function MyAttendance() {
   const [saving, setSaving] = useState(false);
   const [requests, setRequests] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [form, setForm] = useState({
-    correctionType: "time_fix" as CorrectionType,
+    correctionType: "wrong_time" as CorrectionType,
     checkIn: "",
     checkOut: "",
     status: "present",
@@ -126,12 +117,13 @@ function MyAttendance() {
     const correctionType = getSuggestedCorrectionType(attendance);
     setForm({
       correctionType,
-      checkIn: toDateTimeInput(attendance.check_in_time),
-      checkOut: toDateTimeInput(attendance.check_out_time),
+      checkIn: "",
+      checkOut: "",
       status: getSuggestedStatus(attendance, correctionType),
       workLocation: attendance.work_location || "Office",
-      reason: getCorrectionMessage(correctionType),
+      reason: "",
     });
+    setErrors({});
     setRequestOpen(true);
   };
 
@@ -140,26 +132,25 @@ function MyAttendance() {
       ...current,
       correctionType,
       status: attendance ? getSuggestedStatus(attendance, correctionType) : current.status,
-      reason:
-        !current.reason.trim() || isPresetCorrectionMessage(current.reason)
-          ? getCorrectionMessage(correctionType)
-          : current.reason,
     }));
+    setErrors((current) => ({ ...current, correctionType: "", correctionField: "" }));
   };
 
   const submitRequest = async () => {
     if (!user || !profile || !attendance) return;
-    if (!form.reason.trim()) return toast.error("Reason for correction is required");
+    const nextErrors = validateCorrectionForm(form);
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
     setSaving(true);
     const { error } = await supabase.from("attendance_correction_requests").insert({
       attendance_id: attendance.id,
       user_id: user.id,
       employee_name: profile.full_name,
-      requested_check_in_time: fromDateTimeInput(form.checkIn),
-      requested_check_out_time: fromDateTimeInput(form.checkOut),
-      requested_status: form.status as any,
-      requested_work_location: form.workLocation,
-      reason: form.reason.trim(),
+      requested_check_in_time: shouldSubmitCheckIn(form.correctionType) ? fromDateTimeInput(form.checkIn) : null,
+      requested_check_out_time: shouldSubmitCheckOut(form.correctionType) ? fromDateTimeInput(form.checkOut) : null,
+      requested_status: form.correctionType === "status_correction" ? (form.status as any) : null,
+      requested_work_location: form.correctionType === "location_correction" ? form.workLocation : null,
+      reason: `${getCorrectionTypeLabel(form.correctionType)}: ${form.reason.trim()}`,
     });
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -318,65 +309,157 @@ function MyAttendance() {
       )}
 
       <Dialog open={requestOpen} onOpenChange={setRequestOpen}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto border-white/10 bg-background/95 sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Request Attendance Correction</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {CORRECTION_TYPES.map((type) => (
-              <button
-                key={type.value}
-                type="button"
-                onClick={() => selectCorrectionType(type.value)}
-                className={`rounded-xl border px-3 py-2 text-left text-sm font-semibold transition ${
-                  form.correctionType === type.value
-                    ? "border-primary/40 bg-primary/15 text-white shadow-[0_0_24px_rgba(255,45,111,.18)]"
-                    : "border-white/10 bg-white/[0.035] text-muted-foreground hover:text-white"
-                }`}
-              >
-                {type.label}
-              </button>
-            ))}
+        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto border-white/10 bg-background/95 p-0 sm:max-w-2xl">
+          <div className="border-b border-white/10 px-6 py-5">
+            <DialogHeader>
+              <DialogTitle>Request Attendance Correction</DialogTitle>
+              <div className="text-sm text-muted-foreground">
+                Submit a focused correction request for HR/Admin review.
+              </div>
+            </DialogHeader>
           </div>
-          <div className="rounded-xl border border-white/10 bg-white/[0.035] p-3 text-sm text-muted-foreground">
-            <span className="font-semibold text-white">{getCorrectionTypeLabel(form.correctionType)}:</span>{" "}
-            {getCorrectionHint(form.correctionType, attendance)}
+
+          <div className="space-y-6 px-6 py-6">
+            <CorrectionSection>
+              <Field label="Reason Type *" error={errors.correctionType}>
+                <Select value={form.correctionType} onValueChange={(value) => selectCorrectionType(value as CorrectionType)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CORRECTION_TYPES.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            </CorrectionSection>
+
+            <CorrectionSection>
+              <div className="mb-3 text-sm font-semibold text-white">Current Attendance Record</div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <ReadOnlyValue label="Check-in" value={formatTimeDisplay(attendance?.check_in_time)} />
+                <ReadOnlyValue label="Check-out" value={formatTimeDisplay(attendance?.check_out_time)} />
+                <ReadOnlyValue label="Status" value={attendance ? getAttendanceStatusDisplay(attendance).status : "—"} />
+                <ReadOnlyValue label="Location" value={attendance?.work_location || "Office"} />
+              </div>
+            </CorrectionSection>
+
+            <CorrectionSection>
+              <div className="mb-4">
+                <div className="text-sm font-semibold text-white">Requested Correction</div>
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Only the fields required for {getCorrectionTypeLabel(form.correctionType)} are shown.
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {shouldShowCheckIn(form.correctionType) && (
+                  <Field label="New Check-in Time" error={errors.correctionField}>
+                    <Input
+                      type="datetime-local"
+                      value={form.checkIn}
+                      onChange={(e) => {
+                        setForm({ ...form, checkIn: e.target.value });
+                        setErrors((current) => ({ ...current, correctionField: "" }));
+                      }}
+                    />
+                  </Field>
+                )}
+                {shouldShowCheckOut(form.correctionType) && (
+                  <Field label="New Check-out Time" error={errors.correctionField}>
+                    <Input
+                      type="datetime-local"
+                      value={form.checkOut}
+                      onChange={(e) => {
+                        setForm({ ...form, checkOut: e.target.value });
+                        setErrors((current) => ({ ...current, correctionField: "" }));
+                      }}
+                    />
+                  </Field>
+                )}
+                {form.correctionType === "status_correction" && (
+                  <Field label="New Status" error={errors.correctionField}>
+                    <Select
+                      value={form.status}
+                      onValueChange={(status) => {
+                        setForm({ ...form, status });
+                        setErrors((current) => ({ ...current, correctionField: "" }));
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ATTENDANCE_STATUSES.map((status) => (
+                          <SelectItem key={status} value={status}>
+                            {status.replace("_", " ")}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                )}
+                {form.correctionType === "location_correction" && (
+                  <Field label="New Work Location" error={errors.correctionField}>
+                    <Select
+                      value={form.workLocation}
+                      onValueChange={(workLocation) => {
+                        setForm({ ...form, workLocation });
+                        setErrors((current) => ({ ...current, correctionField: "" }));
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {WORK_LOCATIONS.map((location) => (
+                          <SelectItem key={location} value={location}>
+                            {location}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                )}
+              </div>
+            </CorrectionSection>
+
+            <CorrectionSection>
+              <div className="mb-3">
+                <div className="text-sm font-semibold text-white">Correction Details</div>
+              </div>
+              <Field label="Reason *" error={errors.reason}>
+                <Textarea
+                  value={form.reason}
+                  maxLength={MAX_REASON_LENGTH}
+                  onChange={(e) => {
+                    setForm({ ...form, reason: e.target.value });
+                    setErrors((current) => ({ ...current, reason: "" }));
+                  }}
+                  placeholder="Please explain why this attendance correction is required."
+                  className="min-h-28 resize-y"
+                />
+              </Field>
+              <div className="mt-2 text-right text-xs text-muted-foreground">
+                {form.reason.length}/{MAX_REASON_LENGTH}
+              </div>
+            </CorrectionSection>
+
+            <div className="flex gap-3 rounded-xl border border-accent/20 bg-accent/10 p-3 text-sm text-muted-foreground">
+              <Info size={16} className="mt-0.5 shrink-0 text-accent" />
+              <span>This request will be reviewed by HR/Admin before attendance records are updated.</span>
+            </div>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Correct check-in">
-              <Input type="datetime-local" value={form.checkIn} onChange={(e) => setForm({ ...form, checkIn: e.target.value })} />
-            </Field>
-            <Field label="Correct check-out">
-              <Input type="datetime-local" value={form.checkOut} onChange={(e) => setForm({ ...form, checkOut: e.target.value })} />
-            </Field>
-            <Field label="Correct status">
-              <Select value={form.status} onValueChange={(status) => setForm({ ...form, status })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {["present", "late", "absent", "leave", "half_day", "wfh"].map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status.replace("_", " ")}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label="Work location">
-              <Input value={form.workLocation} onChange={(e) => setForm({ ...form, workLocation: e.target.value })} />
-            </Field>
-          </div>
-          <Field label="Reason">
-            <Textarea value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} placeholder="Example: I accidentally checked out at 10:19 AM and need HR review." className="min-h-28" />
-          </Field>
-          <DialogFooter>
+
+          <DialogFooter className="flex-row items-center justify-between border-t border-white/10 bg-black/20 px-6 py-4 sm:justify-between">
             <Button variant="outline" onClick={() => setRequestOpen(false)}>
               Cancel
             </Button>
             <Button onClick={submitRequest} disabled={saving} className="neon-button rounded-xl">
               {saving && <Loader2 size={14} className="mr-2 animate-spin" />}
-              Submit request
+              Submit Correction Request
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -463,12 +546,30 @@ function RequestBadge({ status }: { status: string }) {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children, error }: { label: string; children: React.ReactNode; error?: string }) {
   return (
     <label className="block">
       <span className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
       {children}
+      {error && <span className="mt-1.5 block text-xs text-destructive">{error}</span>}
     </label>
+  );
+}
+
+function CorrectionSection({ children }: { children: React.ReactNode }) {
+  return (
+    <section className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 shadow-[inset_0_1px_0_oklch(1_0_0/.06)]">
+      {children}
+    </section>
+  );
+}
+
+function ReadOnlyValue({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-black/20 px-3 py-2">
+      <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+      <div className="mt-1 text-sm font-semibold text-white">{value}</div>
+    </div>
   );
 }
 
@@ -481,6 +582,10 @@ function fromDateTimeInput(value: string) {
   return value ? new Date(value).toISOString() : null;
 }
 
+function formatTimeDisplay(value?: string | null) {
+  return value ? format(new Date(value), "hh:mm a") : "—";
+}
+
 function formatRequestStatus(status: string) {
   if (status === "approved") return "Completed";
   return status;
@@ -489,7 +594,7 @@ function formatRequestStatus(status: string) {
 function getSuggestedCorrectionType(attendance: any): CorrectionType {
   if (attendance?.is_late) return "late_checkin";
   if (attendance?.is_early_checkout) return "early_checkout";
-  return "time_fix";
+  return "wrong_time";
 }
 
 function getSuggestedStatus(attendance: any, correctionType: CorrectionType) {
@@ -497,29 +602,50 @@ function getSuggestedStatus(attendance: any, correctionType: CorrectionType) {
   return attendance?.status || "present";
 }
 
-function getCorrectionMessage(correctionType: CorrectionType) {
-  return CORRECTION_TYPES.find((type) => type.value === correctionType)?.message || "";
-}
-
-function isPresetCorrectionMessage(message: string) {
-  return CORRECTION_TYPES.some((type) => type.message === message.trim());
-}
-
 function getCorrectionTypeLabel(correctionType: CorrectionType) {
   return CORRECTION_TYPES.find((type) => type.value === correctionType)?.label || "Correction";
 }
 
-function getCorrectionHint(correctionType: CorrectionType, attendance: any) {
-  if (correctionType === "late_checkin") {
-    return attendance?.check_in_time
-      ? `Current check-in is ${format(new Date(attendance.check_in_time), "HH:mm")}. The request will ask admin to override the late mark.`
-      : "The request will ask admin to override the late mark.";
+function shouldShowCheckIn(correctionType: CorrectionType) {
+  return correctionType === "wrong_time" || correctionType === "late_checkin" || correctionType === "missed_checkin";
+}
+
+function shouldShowCheckOut(correctionType: CorrectionType) {
+  return correctionType === "wrong_time" || correctionType === "early_checkout" || correctionType === "missed_checkout";
+}
+
+function shouldSubmitCheckIn(correctionType: CorrectionType) {
+  return shouldShowCheckIn(correctionType);
+}
+
+function shouldSubmitCheckOut(correctionType: CorrectionType) {
+  return shouldShowCheckOut(correctionType);
+}
+
+function validateCorrectionForm(form: {
+  correctionType: CorrectionType;
+  checkIn: string;
+  checkOut: string;
+  status: string;
+  workLocation: string;
+  reason: string;
+}) {
+  const errors: Record<string, string> = {};
+  if (!form.correctionType) errors.correctionType = "Reason type is required.";
+
+  if (form.correctionType === "wrong_time" && !form.checkIn && !form.checkOut) {
+    errors.correctionField = "Enter a new check-in time or check-out time.";
+  } else if ((form.correctionType === "late_checkin" || form.correctionType === "missed_checkin") && !form.checkIn) {
+    errors.correctionField = "New check-in time is required.";
+  } else if ((form.correctionType === "early_checkout" || form.correctionType === "missed_checkout") && !form.checkOut) {
+    errors.correctionField = "New check-out time is required.";
+  } else if (form.correctionType === "status_correction" && !form.status) {
+    errors.correctionField = "New status is required.";
+  } else if (form.correctionType === "location_correction" && !form.workLocation) {
+    errors.correctionField = "New work location is required.";
   }
-  if (correctionType === "early_checkout") {
-    return attendance?.check_out_time
-      ? `Current checkout is ${format(new Date(attendance.check_out_time), "HH:mm")}. The request will ask admin to clear early checkout if valid.`
-      : "The request will ask admin to review the checkout and early checkout status.";
-  }
-  if (correctionType === "time_fix") return "Adjust the incorrect check-in or checkout time before submitting.";
-  return "Update the status or work location before submitting.";
+
+  if (!form.reason.trim()) errors.reason = "Reason is required.";
+  if (form.reason.length > MAX_REASON_LENGTH) errors.reason = `Reason must be ${MAX_REASON_LENGTH} characters or less.`;
+  return errors;
 }
