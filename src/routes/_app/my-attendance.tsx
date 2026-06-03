@@ -18,6 +18,39 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/my-attendance")({ component: MyAttendance });
 
+type CorrectionType = "late_checkin" | "early_checkout" | "time_fix" | "status_location";
+
+const CORRECTION_TYPES: Array<{
+  value: CorrectionType;
+  label: string;
+  message: string;
+}> = [
+  {
+    value: "late_checkin",
+    label: "Late check-in override",
+    message:
+      "Late check-in override request: I was marked late by a few minutes. Please review and mark this attendance as present if acceptable.",
+  },
+  {
+    value: "early_checkout",
+    label: "Early checkout override",
+    message:
+      "Early checkout correction request: I was marked as early checkout by mistake. Please review my checkout time and correct the status if acceptable.",
+  },
+  {
+    value: "time_fix",
+    label: "Wrong time",
+    message:
+      "Attendance time correction request: My check-in or checkout time is incorrect. Please review the corrected time.",
+  },
+  {
+    value: "status_location",
+    label: "Status or location",
+    message:
+      "Attendance status/location correction request: Please review the corrected status or work location.",
+  },
+];
+
 function MyAttendance() {
   const { user, profile } = useAuth();
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -29,6 +62,7 @@ function MyAttendance() {
   const [requests, setRequests] = useState<any[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [form, setForm] = useState({
+    correctionType: "time_fix" as CorrectionType,
     checkIn: "",
     checkOut: "",
     status: "present",
@@ -91,14 +125,28 @@ function MyAttendance() {
 
   const openRequest = () => {
     if (!attendance) return toast.error("Select a day with an attendance record");
+    const correctionType = getSuggestedCorrectionType(attendance);
     setForm({
+      correctionType,
       checkIn: toDateTimeInput(attendance.check_in_time),
       checkOut: toDateTimeInput(attendance.check_out_time),
-      status: attendance.status || "present",
+      status: getSuggestedStatus(attendance, correctionType),
       workLocation: attendance.work_location || "Office",
-      reason: "",
+      reason: getCorrectionMessage(correctionType),
     });
     setRequestOpen(true);
+  };
+
+  const selectCorrectionType = (correctionType: CorrectionType) => {
+    setForm((current) => ({
+      ...current,
+      correctionType,
+      status: attendance ? getSuggestedStatus(attendance, correctionType) : current.status,
+      reason:
+        !current.reason.trim() || isPresetCorrectionMessage(current.reason)
+          ? getCorrectionMessage(correctionType)
+          : current.reason,
+    }));
   };
 
   const submitRequest = async () => {
@@ -270,6 +318,26 @@ function MyAttendance() {
           <DialogHeader>
             <DialogTitle>Request Attendance Correction</DialogTitle>
           </DialogHeader>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {CORRECTION_TYPES.map((type) => (
+              <button
+                key={type.value}
+                type="button"
+                onClick={() => selectCorrectionType(type.value)}
+                className={`rounded-xl border px-3 py-2 text-left text-sm font-semibold transition ${
+                  form.correctionType === type.value
+                    ? "border-primary/40 bg-primary/15 text-white shadow-[0_0_24px_rgba(255,45,111,.18)]"
+                    : "border-white/10 bg-white/[0.035] text-muted-foreground hover:text-white"
+                }`}
+              >
+                {type.label}
+              </button>
+            ))}
+          </div>
+          <div className="rounded-xl border border-white/10 bg-white/[0.035] p-3 text-sm text-muted-foreground">
+            <span className="font-semibold text-white">{getCorrectionTypeLabel(form.correctionType)}:</span>{" "}
+            {getCorrectionHint(form.correctionType, attendance)}
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Correct check-in">
               <Input type="datetime-local" value={form.checkIn} onChange={(e) => setForm({ ...form, checkIn: e.target.value })} />
@@ -398,4 +466,42 @@ function toDateTimeInput(value?: string | null) {
 
 function fromDateTimeInput(value: string) {
   return value ? new Date(value).toISOString() : null;
+}
+
+function getSuggestedCorrectionType(attendance: any): CorrectionType {
+  if (attendance?.is_late) return "late_checkin";
+  if (attendance?.is_early_checkout) return "early_checkout";
+  return "time_fix";
+}
+
+function getSuggestedStatus(attendance: any, correctionType: CorrectionType) {
+  if (correctionType === "late_checkin" || correctionType === "early_checkout") return "present";
+  return attendance?.status || "present";
+}
+
+function getCorrectionMessage(correctionType: CorrectionType) {
+  return CORRECTION_TYPES.find((type) => type.value === correctionType)?.message || "";
+}
+
+function isPresetCorrectionMessage(message: string) {
+  return CORRECTION_TYPES.some((type) => type.message === message.trim());
+}
+
+function getCorrectionTypeLabel(correctionType: CorrectionType) {
+  return CORRECTION_TYPES.find((type) => type.value === correctionType)?.label || "Correction";
+}
+
+function getCorrectionHint(correctionType: CorrectionType, attendance: any) {
+  if (correctionType === "late_checkin") {
+    return attendance?.check_in_time
+      ? `Current check-in is ${format(new Date(attendance.check_in_time), "HH:mm")}. The request will ask admin to override the late mark.`
+      : "The request will ask admin to override the late mark.";
+  }
+  if (correctionType === "early_checkout") {
+    return attendance?.check_out_time
+      ? `Current checkout is ${format(new Date(attendance.check_out_time), "HH:mm")}. The request will ask admin to clear early checkout if valid.`
+      : "The request will ask admin to review the checkout and early checkout status.";
+  }
+  if (correctionType === "time_fix") return "Adjust the incorrect check-in or checkout time before submitting.";
+  return "Update the status or work location before submitting.";
 }
