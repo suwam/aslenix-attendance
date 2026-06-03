@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { formatWorkHours } from "@/lib/work-hours";
-import { CalendarClock, Loader2, Search, Edit3, History, ShieldCheck } from "lucide-react";
+import { CalendarClock, Clock3, FileText, History, Loader2, MapPin, Search, Edit3, ShieldCheck, UserRound } from "lucide-react";
 import { format } from "date-fns";
 import { isWeeklyOffDate } from "@/lib/weekly-off";
 import { toast } from "sonner";
@@ -344,43 +344,119 @@ function AttendancePage() {
       </GlassCard>
 
       <Dialog open={Boolean(editing)} onOpenChange={(open) => !open && setEditing(null)}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto border-white/10 bg-background/95 sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Edit Attendance</DialogTitle>
-          </DialogHeader>
-          <div className="rounded-xl border border-white/10 bg-white/[0.035] p-4">
-            <div className="text-sm font-semibold text-white">{editing?.full_name}</div>
-            <div className="mt-1 text-xs text-muted-foreground">{date}</div>
+        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto border-white/10 bg-background/95 p-0 shadow-[0_0_80px_-28px_oklch(0.65_0.27_22)] sm:max-w-4xl">
+          <div className="relative overflow-hidden rounded-t-xl border-b border-white/10 bg-[radial-gradient(circle_at_20%_0%,oklch(0.65_0.27_22/.22),transparent_34%),radial-gradient(circle_at_90%_10%,oklch(0.6_0.25_260/.24),transparent_36%),oklch(1_0_0/.035)] p-5 sm:p-6">
+            <DialogHeader>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
+                    <ShieldCheck size={13} />
+                    Audit protected edit
+                  </div>
+                  <DialogTitle className="text-2xl">Edit Attendance</DialogTitle>
+                  <div className="mt-1 text-sm text-muted-foreground">
+                    Review the original record, apply the correction, and preserve the reason in history.
+                  </div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/25 px-4 py-3 text-right">
+                  <div className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Record date</div>
+                  <div className="mt-1 font-semibold text-white">{format(new Date(date), "MMM d, yyyy")}</div>
+                </div>
+              </div>
+            </DialogHeader>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Check-in time">
-              <Input type="datetime-local" value={form.checkIn} onChange={(e) => setForm({ ...form, checkIn: e.target.value })} />
-            </Field>
-            <Field label="Check-out time">
-              <Input type="datetime-local" value={form.checkOut} onChange={(e) => setForm({ ...form, checkOut: e.target.value })} />
-            </Field>
-            <Field label="Attendance status">
-              <Select value={form.status} onValueChange={(value) => setForm({ ...form, status: value as EditForm["status"] })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
+
+          <div className="space-y-5 p-5 sm:p-6">
+            <div className="grid gap-3 lg:grid-cols-[1.1fr_1.5fr]">
+              <div className="rounded-xl border border-white/10 bg-white/[0.035] p-4">
+                <div className="flex items-center gap-3">
+                  {editing?.avatar_url ? (
+                    <img src={editing.avatar_url} className="h-12 w-12 rounded-full object-cover" />
+                  ) : (
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full text-sm font-semibold text-white" style={{ background: "var(--gradient-brand)" }}>
+                      {initials(editing?.full_name)}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <div className="font-semibold text-white">{editing?.full_name}</div>
+                    <div className="truncate text-xs text-muted-foreground">{editing?.email}</div>
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-2">
+                  <EditSnapshot icon={<Clock3 size={15} />} label="Original check-in" value={formatTime(editing?.attendance?.check_in_time)} />
+                  <EditSnapshot icon={<Clock3 size={15} />} label="Original check-out" value={formatTime(editing?.attendance?.check_out_time)} />
+                  <EditSnapshot icon={<MapPin size={15} />} label="Original location" value={editing?.attendance?.work_location || "-"} />
+                  <EditSnapshot icon={<UserRound size={15} />} label="Original status" value={editing?.attendance?.status?.replace("_", " ") || "-"} />
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-primary/20 bg-primary/[0.035] p-4 shadow-[inset_0_1px_0_oklch(1_0_0/.08)]">
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-semibold text-white">Corrected values</div>
+                    <div className="text-xs text-muted-foreground">These values will become the active attendance record.</div>
+                  </div>
+                  <Pill className="bg-primary/15 text-primary" label="live edit" />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Check-in time">
+                    <Input type="datetime-local" value={form.checkIn} onChange={(e) => setForm({ ...form, checkIn: e.target.value })} />
+                  </Field>
+                  <Field label="Check-out time">
+                    <Input type="datetime-local" value={form.checkOut} onChange={(e) => setForm({ ...form, checkOut: e.target.value })} />
+                  </Field>
+                  <Field label="Work location">
+                    <Input value={form.workLocation} onChange={(e) => setForm({ ...form, workLocation: e.target.value })} placeholder="Office, WFH, Client site..." />
+                  </Field>
+                  <Field label="Status">
+                    <Select value={form.status} onValueChange={(value) => setForm({ ...form, status: value as EditForm["status"] })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ATTENDANCE_STATUSES.map((status) => (
+                          <SelectItem key={status} value={status}>
+                            {status.replace("_", " ")}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                </div>
+                <div className="mt-4 grid gap-2 sm:grid-cols-3">
                   {ATTENDANCE_STATUSES.map((status) => (
-                    <SelectItem key={status} value={status}>
+                    <button
+                      key={status}
+                      type="button"
+                      onClick={() => setForm({ ...form, status })}
+                      className={`rounded-xl border px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.12em] transition ${
+                        form.status === status
+                          ? "border-primary/40 bg-primary/15 text-white shadow-[0_0_26px_-14px_oklch(0.65_0.27_22)]"
+                          : "border-white/10 bg-black/20 text-muted-foreground hover:border-white/20 hover:text-white"
+                      }`}
+                    >
                       {status.replace("_", " ")}
-                    </SelectItem>
+                    </button>
                   ))}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label="Work location">
-              <Input value={form.workLocation} onChange={(e) => setForm({ ...form, workLocation: e.target.value })} placeholder="Office, WFH, Client site..." />
-            </Field>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-warning/20 bg-warning/[0.045] p-4">
+              <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
+                <FileText size={16} className="text-warning" />
+                Reason for audit history
+              </div>
+              <Textarea
+                value={form.reason}
+                onChange={(e) => setForm({ ...form, reason: e.target.value })}
+                placeholder="Explain why this record is being corrected"
+                className="min-h-28 border-warning/20 bg-black/25"
+              />
+            </div>
           </div>
-          <Field label="Reason for change">
-            <Textarea value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} placeholder="Explain why this record is being corrected" className="min-h-28" />
-          </Field>
-          <DialogFooter>
+
+          <DialogFooter className="border-t border-white/10 bg-black/20 px-5 py-4 sm:px-6">
             <Button variant="outline" onClick={() => setEditing(null)}>
               Cancel
             </Button>
@@ -490,6 +566,18 @@ function DiffRow({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between gap-3 rounded-lg bg-black/20 px-3 py-2">
       <span className="text-muted-foreground">{label}</span>
       <span className="text-right font-medium text-white">{value}</span>
+    </div>
+  );
+}
+
+function EditSnapshot({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+      <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+        <span className="text-primary">{icon}</span>
+        <span>{label}</span>
+      </div>
+      <span className="text-right text-sm font-semibold text-white">{value}</span>
     </div>
   );
 }
