@@ -674,10 +674,15 @@ function WeeklyFeedbackPage() {
                 </section>
 
                 <aside className="weekly-feedback-dialog-side">
-                  <h3 className="mb-3 flex items-center gap-2 font-semibold">
-                    <History size={16} className="text-primary" />
-                    Review weeks
-                  </h3>
+                  <div className="weekly-review-panel-header">
+                    <div className="weekly-review-panel-icon">
+                      <History size={15} />
+                    </div>
+                    <div>
+                      <h3>Review weeks</h3>
+                      <p>{completedWeeks}/4 completed</p>
+                    </div>
+                  </div>
                   <div className="space-y-3">
                     {reviewWeeks.map((week) => {
                       const review = selectedHistory.find((item) =>
@@ -817,19 +822,21 @@ function CompactReviewCard({
   weekNumber: number;
   review?: WeeklyFeedbackRow;
 }) {
+  const score = review ? resolvedReviewScore(review) : null;
   return (
     <div className={`weekly-review-card ${review ? "completed" : "pending"}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">Week {weekNumber}</div>
-          <div className="mt-1 font-bold">{review?.rating || "Pending"}</div>
+      <div className="weekly-review-card-marker" />
+      <div className="weekly-review-card-main">
+        <div className="min-w-0">
+          <div className="weekly-review-card-kicker">Week {weekNumber}</div>
+          <div className="weekly-review-card-title">{review?.rating || "Pending"}</div>
+          <div className="weekly-review-card-date">
+            {review ? format(new Date(review.created_at), "MMM d, yyyy") : "No review yet"}
+          </div>
         </div>
-        <div className="rounded-xl bg-white/[0.06] px-2 py-1 text-sm font-bold tabular-nums">
-          {review ? resolvedReviewScore(review) : "--"}
+        <div className={`weekly-review-score ${review ? "completed" : "pending"}`}>
+          {score ?? "--"}
         </div>
-      </div>
-      <div className="mt-3 text-xs text-muted-foreground">
-        {review ? format(new Date(review.created_at), "MMM d, yyyy") : "No review yet"}
       </div>
     </div>
   );

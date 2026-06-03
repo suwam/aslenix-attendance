@@ -1261,6 +1261,37 @@
     max-height: calc(min(92vh, 900px) - 146px);
     overflow-y: auto;
   }
+  .weekly-review-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .weekly-review-panel-icon {
+    display: inline-flex;
+    width: 34px;
+    height: 34px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    border: 1px solid oklch(0.65 0.27 22 / 0.2);
+    background: oklch(0.65 0.27 22 / 0.1);
+    color: var(--primary);
+  }
+  .weekly-review-panel-header h3 {
+    color: oklch(0.96 0.01 260);
+    font-size: 16px;
+    font-weight: 850;
+    line-height: 1.1;
+  }
+  .weekly-review-panel-header p {
+    margin-top: 3px;
+    color: oklch(0.68 0.04 250);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
   .weekly-progress {
     height: 100%;
     border-radius: inherit;
@@ -1417,17 +1448,81 @@
     box-shadow: 0 0 34px -24px oklch(0.72 0.18 155 / 0.8);
   }
   .weekly-review-card {
+    position: relative;
+    display: block;
+    overflow: hidden;
     border-radius: 16px;
     border: 1px solid oklch(1 0 0 / 0.075);
     background: oklch(1 0 0 / 0.032);
-    padding: 14px;
+    padding: 15px;
   }
   .weekly-review-card.completed {
-    border-color: oklch(0.72 0.18 155 / 0.18);
+    border-color: oklch(0.72 0.18 155 / 0.24);
+    background:
+      linear-gradient(135deg, oklch(0.72 0.18 155 / 0.08), oklch(1 0 0 / 0.025)),
+      oklch(1 0 0 / 0.032);
   }
   .weekly-review-card:hover {
     transform: translateY(-2px);
     background: oklch(1 0 0 / 0.055);
+  }
+  .weekly-review-card-marker {
+    position: absolute;
+    inset: 14px auto 14px 0;
+    width: 3px;
+    border-radius: 999px;
+    background: oklch(1 0 0 / 0.14);
+  }
+  .weekly-review-card.completed .weekly-review-card-marker {
+    background: linear-gradient(180deg, oklch(0.72 0.18 155), oklch(0.6 0.24 245));
+    box-shadow: 0 0 18px oklch(0.72 0.18 155 / 0.28);
+  }
+  .weekly-review-card-main {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .weekly-review-card-kicker {
+    color: oklch(0.7 0.04 250);
+    font-size: 11px;
+    font-weight: 850;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .weekly-review-card-title {
+    margin-top: 6px;
+    color: oklch(0.96 0.01 260);
+    font-size: 16px;
+    font-weight: 850;
+    line-height: 1.15;
+  }
+  .weekly-review-card-date {
+    margin-top: 10px;
+    color: oklch(0.7 0.04 250);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .weekly-review-score {
+    display: inline-flex;
+    min-width: 42px;
+    height: 34px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: oklch(1 0 0 / 0.07);
+    color: oklch(0.92 0.01 260);
+    font-size: 15px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+  }
+  .weekly-review-score.completed {
+    border: 1px solid oklch(0.72 0.18 155 / 0.18);
+    background: oklch(0.72 0.18 155 / 0.12);
+    color: oklch(0.88 0.12 155);
+  }
+  .weekly-review-score.pending {
+    color: oklch(0.74 0.03 250);
   }
   .weekly-history-item.completed .weekly-history-dot {
     background: var(--success);
