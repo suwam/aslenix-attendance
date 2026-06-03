@@ -68,8 +68,10 @@ function ReportsPage() {
       "Department",
       "Check-in",
       "Check-out",
+      "Work location",
       "Hours",
       "Status",
+      "Edited",
       "Late",
       "Early checkout",
     ];
@@ -82,8 +84,10 @@ function ReportsPage() {
         row.department || "",
         attendance?.check_in_time ? format(new Date(attendance.check_in_time), "HH:mm") : "",
         attendance?.check_out_time ? format(new Date(attendance.check_out_time), "HH:mm") : "",
+        attendance?.work_location || "",
         attendance?.work_hours ? formatWorkHours(attendance.work_hours) : "",
         attendance ? attendanceLabel(attendance) : isWeeklyOff ? "Weekly off" : "Absent",
+        attendance?.is_edited ? "Yes" : "No",
         attendance?.is_late ? "Yes" : "No",
         attendance?.is_early_checkout ? "Yes" : "No",
       ]
@@ -167,8 +171,10 @@ function ReportsPage() {
                   <th className="p-3">Department</th>
                   <th className="p-3">In</th>
                   <th className="p-3">Out</th>
+                  <th className="p-3">Location</th>
                   <th className="p-3">Hours</th>
                   <th className="p-3">Status</th>
+                  <th className="p-3">Audit</th>
                 </tr>
               </thead>
               <tbody>
@@ -189,6 +195,7 @@ function ReportsPage() {
                           ? format(new Date(attendance.check_out_time), "HH:mm")
                           : "—"}
                       </td>
+                      <td className="p-3">{attendance?.work_location || "—"}</td>
                       <td className="p-3 tabular-nums">
                         {attendance?.work_hours
                           ? formatWorkHours(attendance.work_hours)
@@ -202,6 +209,15 @@ function ReportsPage() {
                               ? "Weekly off"
                               : "Absent"}
                         </span>
+                      </td>
+                      <td className="p-3">
+                        {attendance?.is_edited ? (
+                          <span className="rounded-full border border-primary/25 bg-primary/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                            Edited
+                          </span>
+                        ) : (
+                          "—"
+                        )}
                       </td>
                     </tr>
                   );

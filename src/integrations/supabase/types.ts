@@ -44,13 +44,16 @@ export type Database = {
           check_out_time: string | null;
           created_at: string;
           date: string;
+          is_edited: boolean;
           is_early_checkout: boolean;
           id: string;
           is_late: boolean;
           remarks: string | null;
           status: Database["public"]["Enums"]["attendance_status"];
+          updated_at: string;
           user_id: string;
           work_hours: number | null;
+          work_location: string;
         };
         Insert: {
           check_in_accuracy_meters?: number | null;
@@ -63,13 +66,16 @@ export type Database = {
           check_out_time?: string | null;
           created_at?: string;
           date: string;
+          is_edited?: boolean;
           is_early_checkout?: boolean;
           id?: string;
           is_late?: boolean;
           remarks?: string | null;
           status?: Database["public"]["Enums"]["attendance_status"];
+          updated_at?: string;
           user_id: string;
           work_hours?: number | null;
+          work_location?: string;
         };
         Update: {
           check_in_accuracy_meters?: number | null;
@@ -82,15 +88,130 @@ export type Database = {
           check_out_time?: string | null;
           created_at?: string;
           date?: string;
+          is_edited?: boolean;
           is_early_checkout?: boolean;
           id?: string;
           is_late?: boolean;
           remarks?: string | null;
           status?: Database["public"]["Enums"]["attendance_status"];
+          updated_at?: string;
           user_id?: string;
           work_hours?: number | null;
+          work_location?: string;
         };
         Relationships: [];
+      };
+      attendance_audit_logs: {
+        Row: {
+          attendance_id: string;
+          created_at: string;
+          edited_by: string;
+          edited_by_name: string;
+          employee_id: string;
+          employee_name: string;
+          id: string;
+          original_value: Json;
+          reason: string;
+          source: string;
+          updated_value: Json;
+        };
+        Insert: {
+          attendance_id: string;
+          created_at?: string;
+          edited_by: string;
+          edited_by_name: string;
+          employee_id: string;
+          employee_name: string;
+          id?: string;
+          original_value: Json;
+          reason: string;
+          source?: string;
+          updated_value: Json;
+        };
+        Update: {
+          attendance_id?: string;
+          created_at?: string;
+          edited_by?: string;
+          edited_by_name?: string;
+          employee_id?: string;
+          employee_name?: string;
+          id?: string;
+          original_value?: Json;
+          reason?: string;
+          source?: string;
+          updated_value?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "attendance_audit_logs_attendance_id_fkey";
+            columns: ["attendance_id"];
+            isOneToOne: false;
+            referencedRelation: "attendance";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      attendance_correction_requests: {
+        Row: {
+          admin_comment: string | null;
+          attendance_id: string;
+          created_at: string;
+          employee_name: string;
+          id: string;
+          reason: string;
+          requested_check_in_time: string | null;
+          requested_check_out_time: string | null;
+          requested_status: Database["public"]["Enums"]["attendance_status"] | null;
+          requested_work_location: string | null;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          status: Database["public"]["Enums"]["leave_status"];
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          admin_comment?: string | null;
+          attendance_id: string;
+          created_at?: string;
+          employee_name: string;
+          id?: string;
+          reason: string;
+          requested_check_in_time?: string | null;
+          requested_check_out_time?: string | null;
+          requested_status?: Database["public"]["Enums"]["attendance_status"] | null;
+          requested_work_location?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          status?: Database["public"]["Enums"]["leave_status"];
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          admin_comment?: string | null;
+          attendance_id?: string;
+          created_at?: string;
+          employee_name?: string;
+          id?: string;
+          reason?: string;
+          requested_check_in_time?: string | null;
+          requested_check_out_time?: string | null;
+          requested_status?: Database["public"]["Enums"]["attendance_status"] | null;
+          requested_work_location?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          status?: Database["public"]["Enums"]["leave_status"];
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "attendance_correction_requests_attendance_id_fkey";
+            columns: ["attendance_id"];
+            isOneToOne: false;
+            referencedRelation: "attendance";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       leave_requests: {
         Row: {
@@ -642,6 +763,29 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      apply_admin_attendance_edit: {
+        Args: {
+          _attendance_id: string;
+          _check_in_time: string | null;
+          _check_out_time: string | null;
+          _reason: string;
+          _status: Database["public"]["Enums"]["attendance_status"];
+          _work_location: string;
+        };
+        Returns: Database["public"]["Tables"]["attendance"]["Row"];
+      };
+      approve_attendance_correction_request: {
+        Args: { _admin_comment?: string | null; _request_id: string };
+        Returns: Database["public"]["Tables"]["attendance"]["Row"];
+      };
+      attendance_edit_snapshot: {
+        Args: { _row: Database["public"]["Tables"]["attendance"]["Row"] };
+        Returns: Json;
+      };
+      calculate_attendance_work_hours: {
+        Args: { _check_in: string | null; _check_out: string | null };
+        Returns: number;
+      };
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"];
@@ -650,6 +794,10 @@ export type Database = {
         Returns: boolean;
       };
       is_admin: { Args: { _user_id: string }; Returns: boolean };
+      reject_attendance_correction_request: {
+        Args: { _admin_comment?: string | null; _request_id: string };
+        Returns: Database["public"]["Tables"]["attendance_correction_requests"]["Row"];
+      };
       verify_employee_qr: {
         Args: { _token: string };
         Returns: {

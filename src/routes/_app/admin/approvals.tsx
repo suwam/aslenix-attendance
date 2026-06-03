@@ -5,7 +5,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Check, X, Pause, Trash2, Search, Loader2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Check, X, Pause, Trash2, Search, Loader2, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
@@ -14,12 +15,14 @@ export const Route = createFileRoute("/_app/admin/approvals")({ component: Appro
 
 function ApprovalsPage() {
   const [users, setUsers] = useState<any[]>([]);
+  const [corrections, setCorrections] = useState<any[]>([]);
   const [filter, setFilter] = useState<"pending" | "approved" | "rejected" | "suspended" | "all">(
     "pending",
   );
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [comments, setComments] = useState<Record<string, string>>({});
 
   const load = async () => {
     setLoading(true);
@@ -30,8 +33,15 @@ function ApprovalsPage() {
       .is("joining_date", null);
     let q = supabase.from("profiles").select("*").order("created_at", { ascending: false });
     if (filter !== "all") q = q.eq("approval_status", filter);
-    const { data } = await q;
+    const [{ data }, { data: correctionData }] = await Promise.all([
+      q,
+      supabase
+        .from("attendance_correction_requests")
+        .select("*, attendance(date, check_in_time, check_out_time, status, work_location)")
+        .order("created_at", { ascending: false }),
+    ]);
     setUsers(data ?? []);
+    setCorrections(correctionData ?? []);
     setLoading(false);
   };
   useEffect(() => {
@@ -70,6 +80,25 @@ function ApprovalsPage() {
     load();
   };
 
+  const reviewCorrection = async (id: string, action: "approved" | "rejected") => {
+    setBusy(id);
+    const comment = comments[id] || null;
+    const result =
+      action === "approved"
+        ? await supabase.rpc("approve_attendance_correction_request", {
+            _request_id: id,
+            _admin_comment: comment,
+          })
+        : await supabase.rpc("reject_attendance_correction_request", {
+            _request_id: id,
+            _admin_comment: comment,
+          });
+    setBusy(null);
+    if (result.error) return toast.error(result.error.message);
+    toast.success(action === "approved" ? "Correction approved and applied" : "Correction rejected");
+    load();
+  };
+
   const filtered = users.filter(
     (u) =>
       !search ||
@@ -89,8 +118,76 @@ function ApprovalsPage() {
     <>
       <PageHeader
         title="User Approvals"
-        subtitle="Review, approve, suspend or reject user accounts"
+        subtitle="Review user accounts and attendance correction requests"
       />
+
+      <GlassCard className="mb-5">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-lg font-semibold text-white">
+              <CalendarClock size={19} className="text-primary" />
+              Attendance Corrections
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Approved requests automatically update attendance and preserve audit history.
+            </div>
+          </div>
+          <RequestBadge status={`${corrections.filter((r) => r.status === "pending").length} pending`} />
+        </div>
+        {corrections.length === 0 ? (
+          <div className="rounded-xl border border-white/10 bg-white/[0.035] p-6 text-center text-muted-foreground">
+            No attendance correction requests.
+          </div>
+        ) : (
+          <div className="grid gap-3 lg:grid-cols-2">
+            {corrections.map((request) => (
+              <div key={request.id} className="rounded-xl border border-white/10 bg-white/[0.035] p-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="font-semibold text-white">{request.employee_name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {request.attendance?.date ? format(new Date(request.attendance.date), "MMM d, yyyy") : "Attendance"} · requested {format(new Date(request.created_at), "HH:mm")}
+                    </div>
+                  </div>
+                  <RequestBadge status={request.status} />
+                </div>
+                <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+                  <CorrectionValue label="Check-in" value={formatMaybeTime(request.requested_check_in_time)} />
+                  <CorrectionValue label="Check-out" value={formatMaybeTime(request.requested_check_out_time)} />
+                  <CorrectionValue label="Status" value={request.requested_status?.replace("_", " ") || "No change"} />
+                  <CorrectionValue label="Location" value={request.requested_work_location || "No change"} />
+                </div>
+                <div className="mt-3 rounded-lg bg-black/20 p-3 text-sm">
+                  <span className="text-muted-foreground">Reason: </span>
+                  {request.reason}
+                </div>
+                {request.status === "pending" ? (
+                  <div className="mt-3 space-y-3">
+                    <Textarea
+                      value={comments[request.id] || ""}
+                      onChange={(e) => setComments({ ...comments, [request.id]: e.target.value })}
+                      placeholder="Optional admin comment"
+                      className="min-h-20"
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      <Button disabled={busy === request.id} onClick={() => reviewCorrection(request.id, "approved")} className="neon-button rounded-lg">
+                        <Check size={14} className="mr-1" />
+                        Approve
+                      </Button>
+                      <Button disabled={busy === request.id} onClick={() => reviewCorrection(request.id, "rejected")} variant="outline">
+                        <X size={14} className="mr-1" />
+                        Reject
+                      </Button>
+                    </div>
+                  </div>
+                ) : request.admin_comment ? (
+                  <div className="mt-3 text-xs text-muted-foreground">Admin note: {request.admin_comment}</div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
+      </GlassCard>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-5">
         <div className="flex gap-2 flex-wrap">
@@ -231,6 +328,28 @@ function ApprovalsPage() {
       )}
     </>
   );
+}
+
+function CorrectionValue({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg bg-black/20 p-2">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="mt-1 font-semibold text-white">{value}</div>
+    </div>
+  );
+}
+
+function RequestBadge({ status }: { status: string }) {
+  const classes = status.includes("approved")
+    ? "bg-success/15 text-success"
+    : status.includes("rejected")
+      ? "bg-destructive/15 text-destructive"
+      : "bg-warning/15 text-warning";
+  return <span className={`w-fit rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${classes}`}>{status}</span>;
+}
+
+function formatMaybeTime(value?: string | null) {
+  return value ? format(new Date(value), "HH:mm") : "No change";
 }
 
 function StatusBadge({ status, suspended }: { status: string; suspended: boolean }) {
