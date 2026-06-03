@@ -324,9 +324,15 @@ function AttendancePage() {
                     <td className="p-4">
                       <div className="flex flex-wrap gap-2">
                         {isAdmin && (
-                          <Button size="sm" disabled={!r.attendance} onClick={() => startEdit(r)} className="neon-button rounded-lg">
-                            <Edit3 size={14} className="mr-1" />
-                            Edit Attendance
+                          <Button
+                            size="icon"
+                            disabled={!r.attendance}
+                            onClick={() => startEdit(r)}
+                            className="neon-button h-9 w-9 rounded-lg"
+                            title="Edit attendance"
+                            aria-label={`Edit attendance for ${r.full_name}`}
+                          >
+                            <Edit3 size={15} />
                           </Button>
                         )}
                         <Button size="sm" variant="outline" disabled={!r.attendance} onClick={() => loadHistory(r)}>
