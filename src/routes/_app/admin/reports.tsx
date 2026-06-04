@@ -302,7 +302,6 @@ function ReportsPage() {
                   <th className="p-3">Location</th>
                   <th className="p-3">Hours</th>
                   <th className="p-3">Status</th>
-                  <th className="p-3">Audit</th>
                 </tr>
               </thead>
               <tbody>
@@ -338,15 +337,6 @@ function ReportsPage() {
                               : "Absent"}
                         </span>
                       </td>
-                      <td className="p-3">
-                        {attendance?.is_edited ? (
-                          <span className="rounded-full border border-primary/25 bg-primary/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                            Edited
-                          </span>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
                     </tr>
                   );
                 })}
@@ -381,7 +371,6 @@ function WeeklyReportTable({ rows, weekStart, weekEnd }: { rows: any[]; weekStar
             <th className="p-3">Leave</th>
             <th className="p-3">WFH</th>
             <th className="p-3">Hours</th>
-            <th className="p-3">Audit</th>
           </tr>
         </thead>
         <tbody>
@@ -399,15 +388,6 @@ function WeeklyReportTable({ rows, weekStart, weekEnd }: { rows: any[]; weekStar
               <td className="p-3 tabular-nums">{row.leaveDays}</td>
               <td className="p-3 tabular-nums">{row.wfhDays}</td>
               <td className="p-3 tabular-nums">{formatWorkHours(row.totalHours)}</td>
-              <td className="p-3">
-                {row.editedDays > 0 ? (
-                  <span className="rounded-full border border-primary/25 bg-primary/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                    {row.editedDays} edited
-                  </span>
-                ) : (
-                  "—"
-                )}
-              </td>
             </tr>
           ))}
         </tbody>
