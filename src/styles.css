@@ -1191,6 +1191,7 @@
     flex-direction: column;
     height: min(92vh, 900px);
     min-height: 0;
+    min-width: 0;
   }
   .weekly-feedback-dialog-header {
     flex-shrink: 0;
@@ -1207,6 +1208,7 @@
     min-width: 0;
     align-items: center;
     gap: 16px;
+    flex: 1 1 auto;
   }
   .weekly-feedback-dialog-body {
     display: grid;
@@ -1548,16 +1550,18 @@
       height: calc(100dvh - 24px);
       max-height: calc(100dvh - 24px) !important;
       border-radius: 18px;
+      gap: 0;
     }
     .weekly-feedback-dialog-header {
       align-items: flex-start;
       flex-direction: column;
+      padding-right: 52px;
     }
     .weekly-feedback-dialog-body {
-      display: flex;
-      flex-direction: column;
+      display: grid;
       grid-template-columns: minmax(0, 1fr);
       gap: 14px;
+      width: 100%;
     }
     .weekly-feedback-dialog-main,
     .weekly-feedback-dialog-side {
@@ -1571,8 +1575,8 @@
       z-index: auto;
     }
     .weekly-feedback-dialog-main {
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      gap: 14px;
       order: 1;
     }
     .weekly-feedback-dialog-side {
@@ -1595,6 +1599,7 @@
     .weekly-feedback-form-card {
       position: relative;
       z-index: 1;
+      min-width: 0;
     }
     .weekly-feedback-submit-bar {
       position: static;
@@ -1620,7 +1625,7 @@
       font-size: 15px;
     }
     .weekly-feedback-profile [data-slot="dialog-title"] {
-      font-size: 20px;
+      font-size: 18px;
       line-height: 1.18;
       white-space: normal;
     }
@@ -1630,7 +1635,7 @@
     }
     .weekly-feedback-dialog-header {
       gap: 12px;
-      padding: 16px;
+      padding: 16px 48px 16px 16px;
     }
     .weekly-feedback-metrics {
       grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -1647,7 +1652,7 @@
       padding: 14px;
     }
     .weekly-feedback-dialog-side {
-      order: 2;
+      display: none;
     }
     .weekly-week-selector {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1660,7 +1665,7 @@
     .weekly-feedback-submit-bar {
       margin: 8px -14px -14px;
       padding: 14px;
-      z-index: 10;
+      z-index: auto;
     }
     .weekly-feedback-submit-bar .neon-button {
       min-height: 46px;
