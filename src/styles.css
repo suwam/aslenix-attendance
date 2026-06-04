@@ -1292,6 +1292,10 @@
     letter-spacing: .04em;
     text-transform: uppercase;
   }
+  .weekly-review-card-list {
+    display: grid;
+    gap: 12px;
+  }
   .weekly-progress {
     height: 100%;
     border-radius: inherit;
@@ -1563,7 +1567,7 @@
       width: 100%;
       min-width: 0;
       max-height: none;
-      overflow: visible !important;
+      overflow: visible;
       z-index: auto;
     }
     .weekly-feedback-dialog-main {
@@ -1576,6 +1580,14 @@
       align-self: stretch;
       margin-top: 0;
       margin-bottom: 72px;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+    .weekly-review-card-list {
+      gap: 12px;
+    }
+    .weekly-review-card {
+      transform: none !important;
     }
     .weekly-feedback-metrics {
       grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -1583,6 +1595,12 @@
     .weekly-feedback-form-card {
       position: relative;
       z-index: 1;
+    }
+    .weekly-feedback-submit-bar {
+      position: static;
+      z-index: auto;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
     }
   }
 

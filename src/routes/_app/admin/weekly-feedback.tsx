@@ -683,7 +683,7 @@ function WeeklyFeedbackPage() {
                       <p>{completedWeeks}/4 completed</p>
                     </div>
                   </div>
-                  <div className="space-y-3">
+                  <div className="weekly-review-card-list">
                     {reviewWeeks.map((week) => {
                       const review = selectedHistory.find((item) =>
                         getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate),
