@@ -289,7 +289,7 @@ function Leaderboard({ rows }: { rows: EmployeeRank[] }) {
                 <EligibilityBadge eligible={row.isEomEligible} />
               </div>
               <div className="mt-1 text-xs text-muted-foreground">{row.department} · {row.position}</div>
-              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="eom-leader-metrics mt-3 grid gap-3">
                 <MiniBar label="Task progress" value={row.taskProgress} detail={`${row.taskProgress}%`} />
                 <MiniBar label="Productivity" value={row.productivityContribution} detail={`${row.productivityContribution}%`} />
                 <MiniBar label="Active tasks" value={Math.min(100, row.activeTasks * 10)} detail={`${row.activeTasks}`} />
@@ -327,8 +327,8 @@ function WinnerMetric({
 
 function AnalyticsBar({ label, value }: { label: string; value: number }) {
   return (
-    <div>
-      <div className="mb-1 flex justify-between text-xs">
+    <div className="eom-analytics-bar">
+      <div className="eom-analytics-bar-label mb-1 flex justify-between text-xs">
         <span className="text-white/70">{label}</span>
         <span className="font-semibold text-white">{value}%</span>
       </div>
@@ -341,8 +341,8 @@ function AnalyticsBar({ label, value }: { label: string; value: number }) {
 
 function MiniBar({ label, value, detail }: { label: string; value: number; detail?: string }) {
   return (
-    <div>
-      <div className="mb-1 flex justify-between text-[10px] uppercase tracking-wider text-muted-foreground">
+    <div className="eom-mini-bar">
+      <div className="eom-mini-bar-label mb-1 flex justify-between text-[10px] uppercase tracking-wider text-muted-foreground">
         <span>{label}</span>
         <span>{detail ?? `${value}%`}</span>
       </div>
