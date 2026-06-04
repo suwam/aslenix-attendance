@@ -162,6 +162,7 @@ function EmployeeOfMonthPage() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
   const [officialAward, setOfficialAward] = useState<any>(null);
   const [savingAward, setSavingAward] = useState(false);
+  const [resettingAward, setResettingAward] = useState(false);
 
   const monthStart = startOfMonth(new Date()).toISOString().slice(0, 10);
 
@@ -429,6 +430,25 @@ function EmployeeOfMonthPage() {
     });
     setFeedback("");
     setNotes("");
+  };
+
+  const resetOfficialAward = async () => {
+    if (!officialAward) return;
+    const confirmed = window.confirm("Reset Employee of the Month for this month?");
+    if (!confirmed) return;
+
+    setResettingAward(true);
+    const { error } = await (supabase as any)
+      .from("employee_month_awards")
+      .delete()
+      .eq("month_start", monthStart);
+    setResettingAward(false);
+
+    if (error) return toast.error(error.message);
+
+    toast.success("Employee of the Month has been reset for this month");
+    setOfficialAward(null);
+    void loadEomData({ silent: true });
   };
 
   if (loading) {
