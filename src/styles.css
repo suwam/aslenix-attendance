@@ -382,7 +382,7 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
-    max-height: min(980px, 72vh);
+    max-height: min(760px, 68vh);
     overflow-y: auto;
     overscroll-behavior: contain;
     padding-right: 6px;
@@ -559,6 +559,11 @@
     padding: 18px 22px;
     transition: background .2s ease, transform .2s ease;
     background: oklch(0 0 0 / 0.02);
+  }
+  .eom-leaderboard-list {
+    max-height: min(760px, 68vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
   }
   .eom-rank-row:hover {
     background: oklch(1 0 0 / 0.05);

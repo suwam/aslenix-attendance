@@ -482,7 +482,7 @@ function EmployeeOfMonthPage() {
 
           <EligibilitySummary eligibleCount={rows.length} excludedRows={excludedRows} />
 
-          <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.15fr_.85fr]">
+          <section className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[1.15fr_.85fr]">
             <TopContenders rows={rows} />
             <Leaderboard rows={rows} />
           </section>
@@ -690,14 +690,14 @@ function contenderTrendLabel(trend: EmployeeRank["reviewTrend"]) {
 
 function Leaderboard({ rows }: { rows: EmployeeRank[] }) {
   return (
-    <GlassCard className="overflow-hidden p-0">
+    <GlassCard className="eom-leaderboard overflow-hidden p-0">
       <div className="border-b border-border px-5 py-4">
         <h3 className="flex items-center gap-2 font-semibold">
           <Trophy size={17} className="text-primary" />
           Top employee leaderboard
         </h3>
       </div>
-      <div className="divide-y divide-border/50">
+      <div className="eom-leaderboard-list divide-y divide-border/50">
         {rows.map((row, index) => (
           <div key={row.userId} className="eom-rank-row">
             <div className={`eom-rank-number ${index === 0 ? "eom-rank-first" : ""}`}>
