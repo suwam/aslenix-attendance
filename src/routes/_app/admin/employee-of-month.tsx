@@ -36,13 +36,13 @@ import {
   Cell,
   Pie,
   PieChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
-import { format } from "date-fns";
-import { getCurrentNepaliMonthRange, getNepaliMonthLabel } from "@/lib/nepali-calendar";
+import { getCurrentNepaliMonthRange, getNepaliMonthLabel, formatNepaliDate } from "@/lib/nepali-calendar";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
@@ -342,6 +342,7 @@ function EmployeeOfMonthPage() {
           productivity: Math.max(8, Math.min(100, base - (3 - index) * 7 + index * 3)),
           attendance: Math.max(8, Math.min(100, (ranked[0]?.attendancePct || 0) - (3 - index) * 4)),
           taskProgress: Math.max(0, Math.round((ranked[0]?.taskProgress || 0) * ((index + 1) / 4))),
+          tasksCompleted: Math.max(0, Math.round((ranked[0]?.completedTasks || 0) * ((index + 1) / 4))),
         };
       });
 
@@ -745,7 +746,7 @@ function Leaderboard({ rows }: { rows: EmployeeRank[] }) {
                   </span>
                 )}
                 <span className="eom-review-pill">
-                  Latest {row.latestReview ? format(new Date(row.latestReview.week_start), "MMM d") : "None"}
+                  Latest {row.latestReview ? `${formatNepaliDate(row.latestReview.week_start, "DD MMM")} BS` : "None"}
                 </span>
                 <span className="eom-review-pill">
                   <TrendIcon trend={row.reviewTrend} />
@@ -804,6 +805,42 @@ function EligibilitySummary({
 
 function AnalyticsPanel({ weekly, rows }: { weekly: any[]; rows: EmployeeRank[] }) {
   const winner = rows[0];
+  const productivityTarget = 85;
+  const attendanceTarget = 90;
+  const monthlyAverage = Math.round(
+    weekly.reduce((sum, row) => sum + Number(row.productivity || 0), 0) / Math.max(1, weekly.length),
+  );
+  const firstWeek = weekly[0]?.productivity || 0;
+  const lastWeek = weekly[weekly.length - 1]?.productivity || 0;
+  const growthPct = firstWeek ? Math.round(((lastWeek - firstWeek) / Math.max(1, firstWeek)) * 100) : 0;
+  const highWeek = weekly.reduce((best, row) => (Number(row.productivity || 0) > Number(best.productivity || 0) ? row : best), weekly[0] || {});
+  const lowWeek = weekly.reduce((worst, row) => (Number(row.productivity || 0) < Number(worst.productivity || 0) ? row : worst), weekly[0] || {});
+  const targetWeeks = weekly.filter((row) => Number(row.productivity || 0) >= productivityTarget).length;
+  const excellentWeeks = weekly.filter((row) => Number(row.productivity || 0) >= 90).length;
+  const trendSummary = `Productivity ${growthPct >= 0 ? "increased" : "decreased"} by ${Math.abs(growthPct)}% during this month.`;
+  const productivityInsight = makeEomProductivityInsight({
+    name: winner?.name || "Top employee",
+    monthlyAverage,
+    growthPct,
+    targetWeeks,
+    attendance: Math.round(weekly.reduce((sum, row) => sum + Number(row.attendance || 0), 0) / Math.max(1, weekly.length)),
+    taskProgress: winner?.taskProgress || 0,
+  });
+  const overallAttendance = Math.round(
+    weekly.reduce((sum, row) => sum + Number(row.attendance || 0), 0) / Math.max(1, weekly.length),
+  );
+  const bestAttendanceWeek = weekly.reduce((best, row) => (Number(row.attendance || 0) > Number(best.attendance || 0) ? row : best), weekly[0] || {});
+  const attendanceGrowth = weekly[0]?.attendance
+    ? Math.round(((Number(weekly[weekly.length - 1]?.attendance || 0) - Number(weekly[0]?.attendance || 0)) / Math.max(1, Number(weekly[0]?.attendance || 0))) * 100)
+    : 0;
+  const attendanceTargetWeeks = weekly.filter((row) => Number(row.attendance || 0) >= attendanceTarget).length;
+  const attendanceTargetAchievement = Math.round((attendanceTargetWeeks / Math.max(1, weekly.length)) * 100);
+  const attendanceInsight = makeEomAttendanceInsight({
+    overallAttendance,
+    bestWeek: bestAttendanceWeek.week || "W1",
+    growth: attendanceGrowth,
+    targetWeeks: attendanceTargetWeeks,
+  });
   const pieData = [
     { name: "Progress", value: winner?.taskProgress || 0 },
     { name: "Remaining", value: Math.max(0, 100 - (winner?.taskProgress || 0)) },
@@ -812,10 +849,16 @@ function AnalyticsPanel({ weekly, rows }: { weekly: any[]; rows: EmployeeRank[] 
   return (
     <div className="grid grid-cols-1 gap-6 xl:col-span-2 md:grid-cols-2">
       <GlassCard>
-        <h3 className="mb-4 flex items-center gap-2 font-semibold">
-          <BarChart3 size={16} className="text-primary" />
-          Productivity graph
-        </h3>
+        <div className="eom-productivity-header">
+          <h3 className="flex items-center gap-2 font-semibold">
+            <BarChart3 size={16} className="text-primary" />
+            Productivity graph
+          </h3>
+          <div className="eom-productivity-average">
+            <span>Monthly avg</span>
+            <b>{monthlyAverage}</b>
+          </div>
+        </div>
         <ResponsiveContainer width="100%" height={250}>
           <AreaChart data={weekly}>
             <defs>
@@ -826,28 +869,93 @@ function AnalyticsPanel({ weekly, rows }: { weekly: any[]; rows: EmployeeRank[] 
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 0.06)" />
             <XAxis dataKey="week" stroke="oklch(0.7 0.03 250)" fontSize={12} />
-            <YAxis stroke="oklch(0.7 0.03 250)" fontSize={12} />
-            <Tooltip contentStyle={tooltipStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipItemStyle} />
-            <Area type="monotone" dataKey="productivity" stroke="#ff2d6f" fill="url(#eomProductivity)" strokeWidth={3} />
+            <YAxis domain={[0, 100]} stroke="oklch(0.7 0.03 250)" fontSize={12} />
+            <Tooltip content={<EomProductivityTooltip />} />
+            <ReferenceLine y={productivityTarget} stroke="#f6c453" strokeDasharray="6 6" strokeWidth={1.4} />
+            <Area
+              type="monotone"
+              dataKey="productivity"
+              stroke="#ff2d6f"
+              fill="url(#eomProductivity)"
+              strokeWidth={3}
+              dot={(props) => <EomProductivityDot {...props} highWeek={highWeek.week} lowWeek={lowWeek.week} target={productivityTarget} />}
+              activeDot={{ r: 6, stroke: "#fff", strokeWidth: 2 }}
+              isAnimationActive
+              animationDuration={900}
+            />
           </AreaChart>
         </ResponsiveContainer>
+        <div className="eom-productivity-footer">
+          <div className={`eom-productivity-trend ${growthPct >= 0 ? "up" : "down"}`}>
+            <TrendingUp size={14} />
+            {trendSummary}
+          </div>
+          <div className="eom-productivity-legend">
+            <span><i className="target" />Target {productivityTarget}</span>
+            <span><i className="high" />High {highWeek.week || "--"}</span>
+            <span><i className="low" />Low {lowWeek.week || "--"}</span>
+          </div>
+          <div className="eom-productivity-badges">
+            {targetWeeks > 0 && <span><BadgeCheck size={13} /> Target met {targetWeeks}x</span>}
+            {excellentWeeks > 0 && <span><Trophy size={13} /> {excellentWeeks} excellent week{excellentWeeks === 1 ? "" : "s"}</span>}
+            {monthlyAverage >= productivityTarget && <span><Award size={13} /> Monthly target achieved</span>}
+          </div>
+          <div className="eom-productivity-ai">
+            <Sparkles size={14} />
+            {productivityInsight}
+          </div>
+        </div>
       </GlassCard>
 
-      <GlassCard>
-        <h3 className="mb-4 flex items-center gap-2 font-semibold">
-          <CalendarDays size={16} className="text-primary" />
-          Attendance chart
-        </h3>
+      <GlassCard className="eom-attendance-card">
+        <div className="eom-attendance-header">
+          <div>
+            <h3 className="flex items-center gap-2 font-semibold">
+              <CalendarDays size={16} className="text-primary" />
+              Attendance chart
+            </h3>
+            <p>Monthly Attendance Performance</p>
+          </div>
+          <div className="eom-attendance-legend">
+            <span><i className="actual" />Actual attendance</span>
+            <span><i className="target" />Target 90%</span>
+          </div>
+        </div>
+        <div className="eom-attendance-kpis">
+          <EomAttendanceKpi label="Overall Attendance" value={`${overallAttendance}%`} />
+          <EomAttendanceKpi label="Best Week" value={`${bestAttendanceWeek.week || "--"} · ${Math.round(bestAttendanceWeek.attendance || 0)}%`} />
+          <EomAttendanceKpi label="Attendance Growth" value={`${attendanceGrowth >= 0 ? "+" : ""}${attendanceGrowth}%`} tone={attendanceGrowth >= 0 ? "up" : "down"} />
+          <EomAttendanceKpi label="Target Achievement" value={`${attendanceTargetAchievement}%`} />
+        </div>
         <ResponsiveContainer width="100%" height={250}>
-          <BarChart data={weekly}>
-            <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 0.06)" />
+          <BarChart data={weekly} margin={{ top: 24, right: 8, left: -12, bottom: 2 }}>
+            <defs>
+              <linearGradient id="eomAttendanceActual" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#21d4fd" stopOpacity={0.98} />
+                <stop offset="55%" stopColor="#8b5cf6" stopOpacity={0.86} />
+                <stop offset="100%" stopColor="#ff2d6f" stopOpacity={0.68} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="4 6" stroke="oklch(1 0 0 / 0.075)" vertical={false} />
             <XAxis dataKey="week" stroke="oklch(0.7 0.03 250)" fontSize={12} />
-            <YAxis stroke="oklch(0.7 0.03 250)" fontSize={12} />
-            <Tooltip contentStyle={tooltipStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipItemStyle} />
-            <Bar dataKey="attendance" fill="#21d4fd" radius={[8, 8, 0, 0]} />
-            <Bar dataKey="taskProgress" fill="#f6c453" radius={[8, 8, 0, 0]} />
+            <YAxis domain={[0, 100]} stroke="oklch(0.7 0.03 250)" fontSize={12} tickFormatter={(value) => `${value}%`} />
+            <Tooltip content={<EomAttendanceTooltip target={attendanceTarget} />} />
+            <ReferenceLine y={attendanceTarget} stroke="#f6c453" strokeDasharray="7 6" strokeWidth={1.5} />
+            <Bar
+              dataKey="attendance"
+              fill="url(#eomAttendanceActual)"
+              radius={[12, 12, 5, 5]}
+              barSize={34}
+              label={<EomAttendanceValueLabel />}
+              isAnimationActive
+              animationDuration={850}
+            />
           </BarChart>
         </ResponsiveContainer>
+        <div className="eom-attendance-insight">
+          <Sparkles size={14} />
+          {attendanceInsight}
+        </div>
       </GlassCard>
 
       <GlassCard className="md:col-span-2">
@@ -879,6 +987,164 @@ function AnalyticsPanel({ weekly, rows }: { weekly: any[]; rows: EmployeeRank[] 
       </GlassCard>
     </div>
   );
+}
+
+function EomProductivityTooltip({ active, payload }: any) {
+  if (!active || !payload?.length) return null;
+  const row = payload[0]?.payload;
+  if (!row) return null;
+  return (
+    <div className="eom-productivity-tooltip">
+      <div className="eom-productivity-tooltip-week">{row.week}</div>
+      <div className="eom-productivity-tooltip-row">
+        <span>Productivity Score</span>
+        <b>{Math.round(row.productivity || 0)}</b>
+      </div>
+      <div className="eom-productivity-tooltip-row">
+        <span>Tasks Completed</span>
+        <b>{row.tasksCompleted || 0}</b>
+      </div>
+      <div className="eom-productivity-tooltip-row">
+        <span>Attendance</span>
+        <b>{Math.round(row.attendance || 0)}%</b>
+      </div>
+      <div className="eom-productivity-tooltip-status">{productivityStatus(row.productivity || 0)}</div>
+    </div>
+  );
+}
+
+function EomProductivityDot(props: any) {
+  const { cx, cy, payload, highWeek, lowWeek, target } = props;
+  if (typeof cx !== "number" || typeof cy !== "number") return null;
+  const isHigh = payload?.week === highWeek;
+  const isLow = payload?.week === lowWeek;
+  const metTarget = Number(payload?.productivity || 0) >= target;
+  const fill = isHigh ? "#22c55e" : isLow ? "#ff2d6f" : metTarget ? "#f6c453" : "#ff7ab3";
+  return (
+    <circle
+      cx={cx}
+      cy={cy}
+      r={isHigh || isLow || metTarget ? 5 : 3.5}
+      fill={fill}
+      stroke={isHigh || isLow || metTarget ? "#fff" : "#07111f"}
+      strokeWidth={isHigh || isLow || metTarget ? 2 : 1}
+      className={metTarget || isHigh ? "eom-exceptional-dot" : ""}
+    />
+  );
+}
+
+function productivityStatus(score: number) {
+  if (score >= 90) return "Excellent";
+  if (score >= 75) return "Good";
+  if (score >= 60) return "Average";
+  return "Needs Improvement";
+}
+
+function makeEomProductivityInsight({
+  name,
+  monthlyAverage,
+  growthPct,
+  targetWeeks,
+  attendance,
+  taskProgress,
+}: {
+  name: string;
+  monthlyAverage: number;
+  growthPct: number;
+  targetWeeks: number;
+  attendance: number;
+  taskProgress: number;
+}) {
+  const firstName = name.split(" ")[0] || "Employee";
+  if (monthlyAverage >= 90) {
+    return `${firstName} is performing at an excellent level with strong monthly productivity and ${targetWeeks} target week${targetWeeks === 1 ? "" : "s"}. Keep assigning high-impact tasks.`;
+  }
+  if (growthPct >= 15) {
+    return `${firstName} shows strong upward momentum with ${growthPct}% growth. Strength is consistency, while the next focus is sustaining task progress above ${Math.max(80, Math.round(taskProgress))}%.`;
+  }
+  if (attendance < 75) {
+    return `${firstName}'s productivity is being limited by attendance consistency. Improving attendance should lift monthly performance quickly.`;
+  }
+  if (monthlyAverage < 60) {
+    return `${firstName} needs support this month. Review blockers, reduce context switching, and set smaller weekly productivity targets.`;
+  }
+  return `${firstName} has stable productivity with a ${monthlyAverage}/100 monthly average. Focus on one more target-level week to strengthen EOM readiness.`;
+}
+
+function EomAttendanceKpi({ label, value, tone }: { label: string; value: string; tone?: "up" | "down" }) {
+  return (
+    <div className={`eom-attendance-kpi ${tone || ""}`}>
+      <span>{label}</span>
+      <b>{value}</b>
+    </div>
+  );
+}
+
+function EomAttendanceTooltip({ active, payload, target }: any) {
+  if (!active || !payload?.length) return null;
+  const row = payload[0]?.payload;
+  if (!row) return null;
+  const attendance = Math.round(Number(row.attendance || 0));
+  return (
+    <div className="eom-attendance-tooltip">
+      <div className="eom-attendance-tooltip-week">{row.week}</div>
+      <div className="eom-attendance-tooltip-row">
+        <span>Actual Attendance</span>
+        <b>{attendance}%</b>
+      </div>
+      <div className="eom-attendance-tooltip-row">
+        <span>Target</span>
+        <b>{target}%</b>
+      </div>
+      <div className="eom-attendance-tooltip-row">
+        <span>Task Progress</span>
+        <b>{Math.round(Number(row.taskProgress || 0))}%</b>
+      </div>
+      <div className={`eom-attendance-tooltip-status ${attendance >= target ? "met" : ""}`}>
+        {attendance >= target ? "Target achieved" : "Below target"}
+      </div>
+    </div>
+  );
+}
+
+function EomAttendanceValueLabel(props: any) {
+  const { x, y, width, value } = props;
+  if (typeof x !== "number" || typeof y !== "number" || typeof width !== "number") return null;
+  return (
+    <text
+      x={x + width / 2}
+      y={y - 8}
+      textAnchor="middle"
+      fill="#e5edf8"
+      fontSize={11}
+      fontWeight={800}
+    >
+      {Math.round(Number(value || 0))}%
+    </text>
+  );
+}
+
+function makeEomAttendanceInsight({
+  overallAttendance,
+  bestWeek,
+  growth,
+  targetWeeks,
+}: {
+  overallAttendance: number;
+  bestWeek: string;
+  growth: number;
+  targetWeeks: number;
+}) {
+  if (overallAttendance >= 90) {
+    return `Attendance is operating above the executive benchmark, with ${targetWeeks} target week${targetWeeks === 1 ? "" : "s"} and peak consistency in ${bestWeek}.`;
+  }
+  if (growth >= 10) {
+    return `Attendance improved by ${growth}% across the month. The trend is positive, and one more target-level week will strengthen EOM confidence.`;
+  }
+  if (growth < 0) {
+    return `Attendance declined by ${Math.abs(growth)}% this month. Review late or missed days and reinforce weekly consistency before the next evaluation cycle.`;
+  }
+  return `Attendance is stable at ${overallAttendance}%. Best performance was ${bestWeek}; focus on crossing the 90% benchmark consistently.`;
 }
 
 function FeedbackPanel({
@@ -1040,7 +1306,7 @@ function HrReviewsSection({
                       <span className="font-semibold">Week {selectedReviews.length - index}</span>
                       <span className="text-sm text-white/75">{review.rating}</span>
                       <span className="text-xs text-muted-foreground">
-                        {format(new Date(review.week_start), "MMM d, yyyy")}
+                        {formatNepaliDate(review.week_start, "DD MMMM YYYY")} BS
                       </span>
                     </div>
                     <MiniBar label="Review score" value={score * 10} detail={`${score}/10`} />
@@ -1113,7 +1379,7 @@ function HrReviewsSection({
                         <span className="font-semibold">Week {dialogEmployee.reviews.length - index}</span>
                         <span className="eom-review-rating">{review.rating}</span>
                         <span className="text-xs text-muted-foreground">
-                          {format(new Date(review.week_start), "MMM d, yyyy")}
+                          {formatNepaliDate(review.week_start, "DD MMMM YYYY")} BS
                         </span>
                       </div>
                       <div className="mt-1 text-xs text-muted-foreground">{dialogEmployee.position}</div>

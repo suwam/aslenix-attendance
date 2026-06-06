@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
+import { BSDateInput } from "@/components/BSDateInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,7 +33,7 @@ import {
   Sparkles,
   UserRound,
 } from "lucide-react";
-import { format } from "date-fns";
+import { bsInputToAdDateString, formatBsInput, formatNepaliDate } from "@/lib/nepali-calendar";
 
 export const Route = createFileRoute("/_app/profile")({ component: ProfilePage });
 
@@ -91,7 +92,7 @@ function ProfilePage() {
   const effectiveJoiningDate =
     form.joining_date || (form.approval_status === "approved" ? DEFAULT_JOINING_DATE : null);
   const joinedLabel = effectiveJoiningDate
-    ? format(new Date(effectiveJoiningDate), "MMM d, yyyy")
+    ? `${formatNepaliDate(effectiveJoiningDate, "DD MMMM YYYY")} BS`
     : "Not set";
 
   const uploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,6 +132,7 @@ function ProfilePage() {
         phone: form.phone,
         department: form.department,
         position: form.position,
+        joining_date: form.joining_date,
         address: form.address,
         blood_group: form.blood_group,
         emergency_contact: form.emergency_contact,
@@ -245,6 +247,12 @@ function ProfilePage() {
               </ProfileField>
               <ProfileField label="Position" icon={IdCard}>
                 <Input value={form.position || ""} onChange={(e) => setForm({ ...form, position: e.target.value })} />
+              </ProfileField>
+              <ProfileField label="Joining date (BS)" icon={CalendarDays}>
+                <BSDateInput
+                  value={form.joining_date ? formatBsInput(form.joining_date) : ""}
+                  onChange={(value) => setForm({ ...form, joining_date: value ? bsInputToAdDateString(value) : null })}
+                />
               </ProfileField>
               <ProfileField label="Address" icon={MapPin} className="sm:col-span-2">
                 <Input value={form.address || ""} onChange={(e) => setForm({ ...form, address: e.target.value })} />

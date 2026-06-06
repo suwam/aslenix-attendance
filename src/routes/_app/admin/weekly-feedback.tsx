@@ -26,6 +26,10 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  ComposedChart,
+  Line,
+  ReferenceArea,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -91,6 +95,7 @@ type EmployeeWeek = {
   overdueTasks: number;
   attendancePct: number;
   score: number;
+  totalTasks: number;
   streak: number;
   rank: number;
   trend: number;
@@ -204,6 +209,7 @@ function WeeklyFeedbackPage() {
           overdueTasks,
           attendancePct,
           score,
+          totalTasks: assignedTasks.length,
           streak: attendedDays.size,
           rank: 0,
           trend: previous ? score - Number(previous.score || 0) : score,
@@ -256,11 +262,49 @@ function WeeklyFeedbackPage() {
     attendance: row.attendancePct,
     tasks: row.completedTasks,
   }));
-  const trendRows = Array.from({ length: 5 }).map((_, index) => ({
-    week: `W${index + 1}`,
-    score: Math.max(0, Math.min(100, (selected?.score || 0) - (4 - index) * 6 + index * 2)),
-    attendance: Math.max(0, Math.min(100, (selected?.attendancePct || 0) - (4 - index) * 5)),
-  }));
+  const selectedTaskCompletion = selected
+    ? Math.min(100, Math.round((selected.completedTasks / Math.max(1, selected.totalTasks || selected.completedTasks)) * 100))
+    : 0;
+  const teamAverageScore = average(rows.map((row) => row.score));
+  const currentTrendRow = {
+    week: `W${currentWeekNumber}`,
+    weekLabel: `Current week`,
+    score: selected?.score || 0,
+    attendance: selected?.attendancePct || 0,
+    taskCompletion: selectedTaskCompletion,
+    status: performanceStatus(selected?.score || 0),
+    teamAverage: teamAverageScore,
+  };
+  const historyTrendRows = selectedHistory
+    .slice()
+    .sort((a, b) => new Date(a.week_start).getTime() - new Date(b.week_start).getTime())
+    .slice(-4)
+    .map((review, index, history) => {
+      const score = resolvedReviewScore(review);
+      const progressFactor = history.length <= 1 ? 1 : index / (history.length - 1);
+      return {
+        week: `W${getFeedbackWeekNumber(review)}`,
+        weekLabel: `${formatNepaliDate(review.week_start, "DD MMM YYYY")} BS`,
+        score,
+        attendance: Math.max(0, Math.min(100, Math.round((selected?.attendancePct || 0) - (history.length - 1 - index) * 4))),
+        taskCompletion: Math.max(0, Math.min(100, Math.round(selectedTaskCompletion - (1 - progressFactor) * 12))),
+        status: performanceStatus(score),
+        teamAverage: teamAverageScore,
+      };
+    });
+  const trendRows = [...historyTrendRows, currentTrendRow]
+    .filter((row, index, list) => list.findIndex((item) => item.week === row.week) === index)
+    .slice(-5);
+  const previousTrendRow = trendRows.length > 1 ? trendRows[trendRows.length - 2] : null;
+  const weeklyGrowth = previousTrendRow?.score
+    ? Math.round(((currentTrendRow.score - previousTrendRow.score) / Math.max(1, previousTrendRow.score)) * 100)
+    : 0;
+  const highPoint = trendRows.reduce((best, row) => (row.score > best.score ? row : best), trendRows[0] || currentTrendRow);
+  const lowPoint = trendRows.reduce((worst, row) => (row.score < worst.score ? row : worst), trendRows[0] || currentTrendRow);
+  const trendDirection = currentTrendRow.score >= (previousTrendRow?.score ?? currentTrendRow.score);
+  const aiInsight = selected
+    ? makeWeeklyProgressInsight(selected.name, currentTrendRow.score, weeklyGrowth, selected.attendancePct, selectedTaskCompletion)
+    : "Select an employee to view weekly progress insight.";
   const reviewedThisWeek = feedbackRows.filter((row) => getFeedbackWeekNumber(row) === currentWeekNumber).length;
   const totalReviews = feedbackRows.length;
   const avgHrRating = average(
@@ -448,26 +492,83 @@ function WeeklyFeedbackPage() {
           </GlassCard>
 
           <GlassCard className="weekly-feedback-panel">
-            <h3 className="mb-4 flex items-center gap-2 font-semibold">
-              <TrendingUp size={16} className="text-primary" />
-              Employee weekly progress
-            </h3>
+            <div className="weekly-progress-chart-header">
+              <div>
+                <h3 className="flex items-center gap-2 font-semibold">
+                  <TrendingUp size={16} className="text-primary" />
+                  Employee weekly progress
+                </h3>
+                <p className="mt-1 text-xs text-muted-foreground">Score, attendance, target, and team comparison</p>
+              </div>
+              <div className={`weekly-trend-chip ${trendDirection ? "up" : "down"}`}>
+                {trendDirection ? "↗ Improving" : "↘ Declining"}
+                <span>{weeklyGrowth >= 0 ? "+" : ""}{weeklyGrowth}%</span>
+              </div>
+            </div>
             <ResponsiveContainer width="100%" height={280}>
-              <AreaChart data={trendRows}>
+              <ComposedChart data={trendRows} margin={{ top: 8, right: 10, bottom: 2, left: -12 }}>
                 <defs>
                   <linearGradient id="weeklyTrend" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.75} />
                     <stop offset="95%" stopColor="#ff2d6f" stopOpacity={0.08} />
                   </linearGradient>
                 </defs>
+                <ReferenceArea y1={0} y2={50} fill="#ff2d6f" fillOpacity={0.08} />
+                <ReferenceArea y1={51} y2={75} fill="#f6c453" fillOpacity={0.07} />
+                <ReferenceArea y1={76} y2={100} fill="#22c55e" fillOpacity={0.08} />
                 <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 0.06)" />
                 <XAxis dataKey="week" stroke="oklch(0.7 0.03 250)" fontSize={12} />
-                <YAxis stroke="oklch(0.7 0.03 250)" fontSize={12} />
-                <Tooltip contentStyle={tooltipStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipItemStyle} />
-                <Area type="monotone" dataKey="score" stroke="#ff2d6f" fill="url(#weeklyTrend)" strokeWidth={3} />
-                <Area type="monotone" dataKey="attendance" stroke="#21d4fd" fill="transparent" strokeWidth={2} />
-              </AreaChart>
+                <YAxis domain={[0, 100]} stroke="oklch(0.7 0.03 250)" fontSize={12} />
+                <Tooltip content={<WeeklyProgressTooltip />} />
+                <ReferenceLine y={80} stroke="#f6c453" strokeDasharray="6 6" strokeWidth={1.5} />
+                <ReferenceLine y={teamAverageScore} stroke="#8b5cf6" strokeDasharray="4 5" strokeOpacity={0.7} />
+                <Area type="monotone" dataKey="score" fill="url(#weeklyTrend)" stroke="none" isAnimationActive animationDuration={900} />
+                <Line
+                  type="monotone"
+                  dataKey="score"
+                  name="Performance Score"
+                  stroke="#ff2d6f"
+                  strokeWidth={3}
+                  dot={(props) => <PerformanceDot {...props} highWeek={highPoint.week} lowWeek={lowPoint.week} />}
+                  activeDot={{ r: 6, strokeWidth: 2, stroke: "#fff" }}
+                  isAnimationActive
+                  animationDuration={900}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="attendance"
+                  name="Attendance %"
+                  stroke="#21d4fd"
+                  strokeWidth={2.4}
+                  dot={{ r: 3, fill: "#21d4fd", stroke: "#07111f", strokeWidth: 1 }}
+                  activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }}
+                  isAnimationActive
+                  animationDuration={1100}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="taskCompletion"
+                  name="Task Completion %"
+                  stroke="#f6c453"
+                  strokeWidth={1.8}
+                  strokeOpacity={0.85}
+                  dot={false}
+                  isAnimationActive
+                  animationDuration={1000}
+                />
+              </ComposedChart>
             </ResponsiveContainer>
+            <div className="weekly-zone-legend">
+              <span><i className="target" />Target 80</span>
+              <span><i className="team" />Team avg {teamAverageScore}</span>
+              <span><i className="needs" />0-50 Needs improvement</span>
+              <span><i className="average" />51-75 Average</span>
+              <span><i className="excellent" />76-100 Excellent</span>
+            </div>
+            <div className="weekly-ai-insight">
+              <Sparkles size={14} />
+              <span>{aiInsight}</span>
+            </div>
           </GlassCard>
         </section>
 
@@ -899,8 +1000,78 @@ function Avatar({ employee, size = "md" }: { employee: EmployeeWeek; size?: "md"
   );
 }
 
+function WeeklyProgressTooltip({ active, payload }: any) {
+  if (!active || !payload?.length) return null;
+  const row = payload[0]?.payload;
+  if (!row) return null;
+  return (
+    <div className="weekly-progress-tooltip">
+      <div className="weekly-progress-tooltip-week">{row.weekLabel || row.week}</div>
+      <div className="weekly-progress-tooltip-row">
+        <span>Performance Score</span>
+        <b>{Math.round(row.score)}</b>
+      </div>
+      <div className="weekly-progress-tooltip-row">
+        <span>Attendance</span>
+        <b>{Math.round(row.attendance)}%</b>
+      </div>
+      <div className="weekly-progress-tooltip-row">
+        <span>Task Completion</span>
+        <b>{Math.round(row.taskCompletion)}%</b>
+      </div>
+      <div className="weekly-progress-tooltip-status">
+        {row.status}
+      </div>
+    </div>
+  );
+}
+
+function PerformanceDot(props: any) {
+  const { cx, cy, payload, highWeek, lowWeek } = props;
+  if (typeof cx !== "number" || typeof cy !== "number") return null;
+  const isHigh = payload?.week === highWeek;
+  const isLow = payload?.week === lowWeek;
+  const fill = isHigh ? "#22c55e" : isLow ? "#ff2d6f" : "#ff7ab3";
+  const radius = isHigh || isLow ? 5.8 : 3.6;
+  return (
+    <circle
+      cx={cx}
+      cy={cy}
+      r={radius}
+      fill={fill}
+      stroke={isHigh || isLow ? "#ffffff" : "#07111f"}
+      strokeWidth={isHigh || isLow ? 2 : 1}
+      className={isHigh || isLow ? "weekly-highlight-dot" : ""}
+    />
+  );
+}
+
 function average(values: number[]) {
   return Math.round(values.reduce((sum, value) => sum + value, 0) / Math.max(1, values.length));
+}
+
+function performanceStatus(score: number) {
+  if (score >= 85) return "Excellent";
+  if (score >= 76) return "Good";
+  if (score >= 51) return "Average";
+  return "Needs Improvement";
+}
+
+function makeWeeklyProgressInsight(name: string, score: number, growth: number, attendance: number, taskCompletion: number) {
+  const firstName = name.split(" ")[0] || "Employee";
+  if (score >= 80 && growth >= 0) {
+    return `${firstName} is above target with ${growth >= 0 ? "+" : ""}${growth}% weekly growth, strong attendance, and ${taskCompletion}% task completion.`;
+  }
+  if (attendance < 70) {
+    return `${firstName}'s performance needs attendance focus this week; improving consistency should lift the overall score.`;
+  }
+  if (taskCompletion < 60) {
+    return `${firstName} is active but task completion is behind pace, so managers should review blockers early.`;
+  }
+  if (growth < 0) {
+    return `${firstName} is declining by ${Math.abs(growth)}% versus last week; check workload balance and overdue tasks.`;
+  }
+  return `${firstName} is trending steadily with a ${score}/100 score and balanced attendance-performance movement.`;
 }
 
 function getReviewWeekNumber(date: Date) {

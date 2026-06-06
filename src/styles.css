@@ -1950,6 +1950,315 @@
     box-shadow: 0 0 18px oklch(0.65 0.25 300 / 0.45);
     animation: eom-progress-glow 2.4s ease-in-out infinite;
   }
+  .eom-productivity-header {
+    margin-bottom: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .eom-productivity-average {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 999px;
+    border: 1px solid rgb(255 255 255 / 0.1);
+    background: rgb(255 255 255 / 0.045);
+    padding: 0.42rem 0.65rem;
+    color: rgb(203 213 225);
+    font-size: 0.72rem;
+    font-weight: 800;
+    backdrop-filter: blur(16px);
+  }
+  .eom-productivity-average b {
+    color: white;
+    font-size: 0.95rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .eom-productivity-footer {
+    margin-top: 0.65rem;
+    display: grid;
+    gap: 0.65rem;
+  }
+  .eom-productivity-trend {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    width: fit-content;
+    border-radius: 999px;
+    border: 1px solid rgb(255 255 255 / 0.1);
+    background: rgb(255 255 255 / 0.04);
+    padding: 0.38rem 0.62rem;
+    font-size: 0.74rem;
+    font-weight: 800;
+    color: rgb(226 232 240 / 0.9);
+  }
+  .eom-productivity-trend.up {
+    border-color: rgb(34 197 94 / 0.25);
+    color: rgb(134 239 172);
+  }
+  .eom-productivity-trend.down {
+    border-color: rgb(255 45 111 / 0.3);
+    color: rgb(255 122 179);
+  }
+  .eom-productivity-legend,
+  .eom-productivity-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+  }
+  .eom-productivity-legend span,
+  .eom-productivity-badges span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    border: 1px solid rgb(255 255 255 / 0.08);
+    background: rgb(255 255 255 / 0.035);
+    padding: 0.3rem 0.5rem;
+    color: rgb(148 163 184);
+    font-size: 0.68rem;
+    font-weight: 800;
+  }
+  .eom-productivity-badges span {
+    border-color: rgb(246 196 83 / 0.2);
+    color: rgb(253 230 138);
+  }
+  .eom-productivity-legend i {
+    height: 0.5rem;
+    width: 0.5rem;
+    border-radius: 999px;
+  }
+  .eom-productivity-legend .target {
+    background: #f6c453;
+  }
+  .eom-productivity-legend .high {
+    background: #22c55e;
+  }
+  .eom-productivity-legend .low {
+    background: #ff2d6f;
+  }
+  .eom-productivity-ai {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    border-radius: 1rem;
+    border: 1px solid rgb(255 45 111 / 0.16);
+    background:
+      radial-gradient(circle at top left, rgb(255 45 111 / 0.12), transparent 34%),
+      linear-gradient(135deg, rgb(255 255 255 / 0.055), rgb(255 255 255 / 0.025));
+    padding: 0.68rem 0.78rem;
+    color: rgb(226 232 240 / 0.9);
+    font-size: 0.76rem;
+    font-weight: 650;
+    line-height: 1.45;
+  }
+  .eom-productivity-ai svg {
+    margin-top: 0.12rem;
+    flex-shrink: 0;
+    color: var(--primary);
+  }
+  .eom-productivity-tooltip {
+    min-width: 210px;
+    border-radius: 1rem;
+    border: 1px solid rgb(255 255 255 / 0.12);
+    background:
+      radial-gradient(circle at top left, rgb(255 45 111 / 0.14), transparent 38%),
+      rgb(7 13 28 / 0.92);
+    padding: 0.75rem;
+    color: white;
+    box-shadow: 0 18px 50px rgb(0 0 0 / 0.35);
+    backdrop-filter: blur(18px);
+  }
+  .eom-productivity-tooltip-week {
+    margin-bottom: 0.55rem;
+    color: rgb(255 122 179);
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .eom-productivity-tooltip-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.18rem 0;
+    font-size: 0.76rem;
+    color: rgb(203 213 225);
+  }
+  .eom-productivity-tooltip-row b {
+    color: white;
+    font-variant-numeric: tabular-nums;
+  }
+  .eom-productivity-tooltip-status {
+    margin-top: 0.55rem;
+    width: fit-content;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgb(255 45 111 / 0.18), rgb(139 92 246 / 0.16));
+    padding: 0.25rem 0.48rem;
+    color: rgb(226 232 240);
+    font-size: 0.68rem;
+    font-weight: 850;
+  }
+  .eom-exceptional-dot {
+    filter: drop-shadow(0 0 10px rgb(255 255 255 / 0.34));
+  }
+  .eom-attendance-card {
+    background:
+      radial-gradient(circle at 12% 0%, rgb(33 212 253 / 0.1), transparent 32%),
+      radial-gradient(circle at 92% 8%, rgb(139 92 246 / 0.1), transparent 34%),
+      rgb(8 14 29 / 0.76);
+  }
+  .eom-attendance-header {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.85rem;
+  }
+  .eom-attendance-header p {
+    margin-top: 0.25rem;
+    color: rgb(148 163 184);
+    font-size: 0.78rem;
+    font-weight: 700;
+  }
+  .eom-attendance-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.45rem;
+  }
+  .eom-attendance-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    border: 1px solid rgb(255 255 255 / 0.08);
+    background: rgb(255 255 255 / 0.04);
+    padding: 0.34rem 0.55rem;
+    color: rgb(203 213 225);
+    font-size: 0.68rem;
+    font-weight: 850;
+  }
+  .eom-attendance-legend i {
+    height: 0.55rem;
+    width: 0.55rem;
+    border-radius: 999px;
+  }
+  .eom-attendance-legend .actual {
+    background: linear-gradient(135deg, #21d4fd, #8b5cf6 55%, #ff2d6f);
+  }
+  .eom-attendance-legend .target {
+    background: #f6c453;
+  }
+  .eom-attendance-kpis {
+    margin-bottom: 0.85rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+  .eom-attendance-kpi {
+    min-width: 0;
+    border-radius: 1rem;
+    border: 1px solid rgb(255 255 255 / 0.08);
+    background:
+      linear-gradient(135deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.025));
+    padding: 0.62rem 0.7rem;
+    box-shadow: 0 14px 34px rgb(0 0 0 / 0.18);
+  }
+  .eom-attendance-kpi span {
+    display: block;
+    overflow: hidden;
+    color: rgb(148 163 184);
+    font-size: 0.62rem;
+    font-weight: 850;
+    letter-spacing: 0.05em;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .eom-attendance-kpi b {
+    margin-top: 0.32rem;
+    display: block;
+    color: white;
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+  .eom-attendance-kpi.up b {
+    color: rgb(134 239 172);
+  }
+  .eom-attendance-kpi.down b {
+    color: rgb(255 122 179);
+  }
+  .eom-attendance-insight {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    border-radius: 1rem;
+    border: 1px solid rgb(33 212 253 / 0.16);
+    background:
+      radial-gradient(circle at top left, rgb(33 212 253 / 0.12), transparent 34%),
+      linear-gradient(135deg, rgb(255 255 255 / 0.055), rgb(255 255 255 / 0.025));
+    padding: 0.68rem 0.78rem;
+    color: rgb(226 232 240 / 0.9);
+    font-size: 0.76rem;
+    font-weight: 650;
+    line-height: 1.45;
+  }
+  .eom-attendance-insight svg {
+    margin-top: 0.12rem;
+    flex-shrink: 0;
+    color: var(--accent);
+  }
+  .eom-attendance-tooltip {
+    min-width: 205px;
+    border-radius: 1rem;
+    border: 1px solid rgb(255 255 255 / 0.12);
+    background:
+      radial-gradient(circle at top left, rgb(33 212 253 / 0.14), transparent 38%),
+      rgb(7 13 28 / 0.92);
+    padding: 0.75rem;
+    color: white;
+    box-shadow: 0 18px 50px rgb(0 0 0 / 0.35);
+    backdrop-filter: blur(18px);
+  }
+  .eom-attendance-tooltip-week {
+    margin-bottom: 0.55rem;
+    color: rgb(103 232 249);
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .eom-attendance-tooltip-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.18rem 0;
+    font-size: 0.76rem;
+    color: rgb(203 213 225);
+  }
+  .eom-attendance-tooltip-row b {
+    color: white;
+    font-variant-numeric: tabular-nums;
+  }
+  .eom-attendance-tooltip-status {
+    margin-top: 0.55rem;
+    width: fit-content;
+    border-radius: 999px;
+    background: rgb(255 45 111 / 0.16);
+    padding: 0.25rem 0.48rem;
+    color: rgb(255 183 213);
+    font-size: 0.68rem;
+    font-weight: 850;
+  }
+  .eom-attendance-tooltip-status.met {
+    background: rgb(34 197 94 / 0.16);
+    color: rgb(134 239 172);
+  }
   .eom-analytics-bar,
   .eom-mini-bar {
     min-width: 0;
@@ -2572,6 +2881,147 @@
       radial-gradient(circle at 12% 0%, oklch(0.65 0.27 22 / 0.1), transparent 28%),
       radial-gradient(circle at 88% 8%, oklch(0.58 0.25 250 / 0.12), transparent 34%),
       oklch(0.14 0.022 265 / 0.68);
+  }
+  .weekly-progress-chart-header {
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  .weekly-trend-chip {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.45rem;
+    border-radius: 999px;
+    border: 1px solid rgb(255 255 255 / 0.1);
+    background: rgb(255 255 255 / 0.04);
+    padding: 0.42rem 0.65rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: rgb(226 232 240 / 0.9);
+    box-shadow: 0 0 24px -18px var(--primary);
+    backdrop-filter: blur(18px);
+  }
+  .weekly-trend-chip span {
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.08);
+    padding: 0.12rem 0.38rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .weekly-trend-chip.up {
+    border-color: rgb(34 197 94 / 0.25);
+    color: rgb(134 239 172);
+  }
+  .weekly-trend-chip.down {
+    border-color: rgb(255 45 111 / 0.3);
+    color: rgb(255 122 179);
+  }
+  .weekly-zone-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    border-top: 1px solid rgb(255 255 255 / 0.08);
+    padding-top: 0.7rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: rgb(148 163 184);
+  }
+  .weekly-zone-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .weekly-zone-legend i {
+    height: 0.55rem;
+    width: 0.55rem;
+    border-radius: 999px;
+  }
+  .weekly-zone-legend .needs {
+    background: #ff2d6f;
+  }
+  .weekly-zone-legend .target {
+    background: #f6c453;
+    box-shadow: inset 0 0 0 2px rgb(7 13 28 / 0.9);
+  }
+  .weekly-zone-legend .team {
+    background: #8b5cf6;
+    box-shadow: inset 0 0 0 2px rgb(7 13 28 / 0.9);
+  }
+  .weekly-zone-legend .average {
+    background: #f6c453;
+  }
+  .weekly-zone-legend .excellent {
+    background: #22c55e;
+  }
+  .weekly-ai-insight {
+    margin-top: 0.75rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+    border-radius: 1rem;
+    border: 1px solid rgb(33 212 253 / 0.18);
+    background:
+      radial-gradient(circle at top left, rgb(33 212 253 / 0.14), transparent 34%),
+      linear-gradient(135deg, rgb(255 255 255 / 0.055), rgb(255 255 255 / 0.025));
+    padding: 0.7rem 0.8rem;
+    font-size: 0.78rem;
+    font-weight: 650;
+    line-height: 1.45;
+    color: rgb(226 232 240 / 0.9);
+    box-shadow: 0 0 30px -22px var(--accent);
+  }
+  .weekly-ai-insight svg {
+    margin-top: 0.12rem;
+    flex-shrink: 0;
+    color: var(--accent);
+  }
+  .weekly-progress-tooltip {
+    min-width: 210px;
+    border-radius: 1rem;
+    border: 1px solid rgb(255 255 255 / 0.12);
+    background:
+      radial-gradient(circle at top left, rgb(33 212 253 / 0.14), transparent 38%),
+      rgb(7 13 28 / 0.92);
+    padding: 0.75rem;
+    color: white;
+    box-shadow: 0 18px 50px rgb(0 0 0 / 0.35);
+    backdrop-filter: blur(18px);
+  }
+  .weekly-progress-tooltip-week {
+    margin-bottom: 0.55rem;
+    color: rgb(103 232 249);
+    font-size: 0.72rem;
+    font-weight: 850;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .weekly-progress-tooltip-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.18rem 0;
+    font-size: 0.76rem;
+    color: rgb(203 213 225);
+  }
+  .weekly-progress-tooltip-row b {
+    color: white;
+    font-variant-numeric: tabular-nums;
+  }
+  .weekly-progress-tooltip-status {
+    margin-top: 0.55rem;
+    width: fit-content;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgb(33 212 253 / 0.16), rgb(255 45 111 / 0.14));
+    padding: 0.26rem 0.5rem;
+    color: rgb(226 232 240);
+    font-size: 0.68rem;
+    font-weight: 850;
+  }
+  .weekly-highlight-dot {
+    filter: drop-shadow(0 0 10px rgb(255 255 255 / 0.34));
   }
   .weekly-feedback-queue-count {
     display: inline-flex;
