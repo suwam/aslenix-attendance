@@ -489,7 +489,7 @@ function EmployeeOfMonthPage() {
 
           <EligibilitySummary eligibleCount={rows.length} excludedRows={excludedRows} />
 
-          <section className="grid grid-cols-1 items-stretch gap-6 xl:grid-cols-[1.15fr_.85fr]">
+          <section className="eom-top-row grid grid-cols-1 items-stretch gap-6 xl:grid-cols-[1.15fr_.85fr]">
             <TopContenders rows={rows} />
             <Leaderboard rows={rows} />
           </section>

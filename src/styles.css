@@ -372,6 +372,14 @@
       0 26px 80px -44px oklch(0.65 0.25 300 / 0.88),
       inset 0 1px 0 oklch(1 0 0 / 0.14);
   }
+  .eom-top-row {
+    --eom-top-panel-height: min(820px, 86vh);
+  }
+  .eom-top-row > .eom-contenders,
+  .eom-top-row > .eom-leaderboard {
+    height: var(--eom-top-panel-height);
+    max-height: var(--eom-top-panel-height);
+  }
   .eom-contenders::before {
     content: "";
     position: absolute;
@@ -563,14 +571,13 @@
   }
   .eom-leaderboard {
     display: flex;
-    height: 100%;
     min-height: 0;
     flex-direction: column;
   }
   .eom-leaderboard-list {
     flex: 1;
     min-height: 0;
-    max-height: min(520px, 58vh);
+    max-height: none;
     overflow-y: auto;
     overscroll-behavior: contain;
   }
@@ -2040,6 +2047,17 @@
 @media (max-width: 1100px) {
   .eom-contender-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1279px) {
+  .eom-top-row > .eom-contenders,
+  .eom-top-row > .eom-leaderboard {
+    height: auto;
+    max-height: none;
+  }
+  .eom-leaderboard-list {
+    max-height: min(520px, 58vh);
   }
 }
 
