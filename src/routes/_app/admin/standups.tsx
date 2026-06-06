@@ -3,15 +3,18 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader, StatCard } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
+import { BSDateInput } from "@/components/BSDateInput";
 import { Input } from "@/components/ui/input";
 import { AlertTriangle, CalendarCheck2, Clock, Loader2, Search } from "lucide-react";
 import { format } from "date-fns";
 import { formatWorkHours } from "@/lib/work-hours";
+import { bsInputToAdDateString, formatBsInput, formatNepaliDate } from "@/lib/nepali-calendar";
 
 export const Route = createFileRoute("/_app/admin/standups")({ component: AdminStandupsPage });
 
 function AdminStandupsPage() {
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [bsDate, setBsDate] = useState(formatBsInput());
+  const date = bsInputToAdDateString(bsDate) ?? new Date().toISOString().slice(0, 10);
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -19,7 +22,7 @@ function AdminStandupsPage() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const [{ data: standups }, { data: profiles }] = await Promise.all([
+      const [{ data: standups }, { data: profiles }, { data: roleRows }] = await Promise.all([
         supabase
           .from("standups")
           .select("*")
@@ -29,14 +32,20 @@ function AdminStandupsPage() {
           .from("profiles")
           .select("user_id, full_name, email, department, avatar_url")
           .eq("approval_status", "approved"),
+        supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
       ]);
 
-      const profileByUser = new Map((profiles || []).map((profile) => [profile.user_id, profile]));
+      const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
+      const employeeProfiles = (profiles || []).filter((profile) => !adminUserIds.has(profile.user_id));
+      const employeeUserIds = new Set(employeeProfiles.map((profile) => profile.user_id));
+      const profileByUser = new Map(employeeProfiles.map((profile) => [profile.user_id, profile]));
       setRows(
-        (standups || []).map((standup) => ({
-          ...standup,
-          profile: profileByUser.get(standup.user_id),
-        })),
+        (standups || [])
+          .filter((standup) => employeeUserIds.has(standup.user_id))
+          .map((standup) => ({
+            ...standup,
+            profile: profileByUser.get(standup.user_id),
+          })),
       );
       setLoading(false);
     })();
@@ -65,10 +74,9 @@ function AdminStandupsPage() {
         title="Daily Standups"
         subtitle="Review what the team worked on today, tomorrow's plans, hours, and blockers"
         actions={
-          <Input
-            type="date"
-            value={date}
-            onChange={(event) => setDate(event.target.value)}
+          <BSDateInput
+            value={bsDate}
+            onChange={setBsDate}
             className="w-auto"
           />
         }
@@ -144,7 +152,7 @@ function AdminStandupsPage() {
                     </td>
                     <td className="p-4 tabular-nums">{formatWorkHours(row.work_hours)}</td>
                     <td className="p-4 text-muted-foreground whitespace-nowrap">
-                      {format(new Date(row.updated_at), "MMM d HH:mm")}
+                      {formatNepaliDate(row.updated_at, "DD MMMM YYYY")} BS · {format(new Date(row.updated_at), "HH:mm")}
                     </td>
                   </tr>
                 ))}

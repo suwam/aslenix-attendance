@@ -26,12 +26,16 @@ function EmployeesPage() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("approval_status", "approved")
-        .order("full_name");
-      setUsers(data ?? []);
+      const [{ data }, { data: roleRows }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("*")
+          .eq("approval_status", "approved")
+          .order("full_name"),
+        supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
+      ]);
+      const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
+      setUsers((data ?? []).filter((user) => !adminUserIds.has(user.user_id)));
       setLoading(false);
     })();
   }, []);

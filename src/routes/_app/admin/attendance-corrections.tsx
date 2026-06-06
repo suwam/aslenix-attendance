@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CalendarClock, Check, Clock, Loader2, Search, X } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { formatNepaliDate } from "@/lib/nepali-calendar";
 
 export const Route = createFileRoute("/_app/admin/attendance-corrections")({
   component: AttendanceCorrectionsPage,
@@ -222,7 +223,7 @@ function CorrectionCard({
             <Clock size={13} />
             <span>
               {request.attendance_date
-                ? format(new Date(request.attendance_date), "MMM d, yyyy")
+                ? `${formatNepaliDate(request.attendance_date, "DD MMMM YYYY")} BS`
                 : "Attendance record"}
             </span>
             <span>requested {format(new Date(request.created_at), "HH:mm")}</span>

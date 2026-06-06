@@ -56,6 +56,7 @@ import { useAuth } from "@/lib/auth-context";
 import { productivityScore } from "@/lib/tasks-utils";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
 import { resolvedReviewScore, reviewScoreFromRating } from "@/lib/employee-scoring";
+import { formatNepaliDate } from "@/lib/nepali-calendar";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/admin/weekly-feedback")({
@@ -127,13 +128,14 @@ function WeeklyFeedbackPage() {
     const weekStartIso = weekStartDate.toISOString();
     const today = new Date().toISOString().slice(0, 10);
     const reviewCycleStart = reviewWeeks[0]?.startDate || weekStart;
-    const [{ data: profiles }, { data: tasks }, assigneeResult, { data: attendance }, feedbackResult] =
+    const [{ data: profiles }, { data: roleRows }, { data: tasks }, assigneeResult, { data: attendance }, feedbackResult] =
       await Promise.all([
         supabase
           .from("profiles")
           .select("user_id, full_name, department, avatar_url")
           .eq("approval_status", "approved")
           .eq("is_suspended", false),
+        supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
         supabase.from("tasks").select("*"),
         supabase.from("task_assignees").select("task_id,user_id"),
         supabase
@@ -153,8 +155,10 @@ function WeeklyFeedbackPage() {
         : assigneeResult.data || [];
     const feedback = feedbackResult.error ? [] : feedbackResult.data || [];
     const elapsedDays = Math.max(1, Math.min(7, Math.floor((Date.now() - weekStartDate.getTime()) / 86400000) + 1));
+    const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
+    const employeeProfiles = (profiles || []).filter((profile) => !adminUserIds.has(profile.user_id));
 
-    const ranked = (profiles || [])
+    const ranked = employeeProfiles
       .map((profile) => {
         const assignedTasks = (tasks || []).filter(
           (task: any) =>
@@ -262,7 +266,9 @@ function WeeklyFeedbackPage() {
   const avgHrRating = average(
     feedbackRows.map((row) => resolvedReviewScore(row)),
   );
-  const lastReviewed = feedbackRows[0]?.created_at ? format(new Date(feedbackRows[0].created_at), "MMM d") : "None";
+  const lastReviewed = feedbackRows[0]?.created_at
+    ? `${formatNepaliDate(feedbackRows[0].created_at, "DD MMM")} BS`
+    : "None";
 
   useEffect(() => {
     setEditingReviewId(null);
@@ -797,7 +803,7 @@ function ReviewDetails({
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <ReviewDetail label="Rating" value={review.rating} />
         <ReviewDetail label="Score" value={resolvedReviewScore(review)} />
-        <ReviewDetail label="Submission date" value={format(new Date(review.created_at), "MMM d, yyyy")} />
+        <ReviewDetail label="Submission date" value={`${formatNepaliDate(review.created_at, "DD MMM YYYY")} BS`} />
         <ReviewDetail label="Strengths" value={review.strengths || "No strengths added."} />
         <ReviewDetail label="Improvements" value={review.improvements || "No improvements added."} />
         <ReviewDetail label="Notes" value={review.admin_notes || review.notes || "No notes added."} />
@@ -831,7 +837,7 @@ function CompactReviewCard({
           <div className="weekly-review-card-kicker">Week {weekNumber}</div>
           <div className="weekly-review-card-title">{review?.rating || "Pending"}</div>
           <div className="weekly-review-card-date">
-            {review ? format(new Date(review.created_at), "MMM d, yyyy") : "No review yet"}
+            {review ? `${formatNepaliDate(review.created_at, "DD MMM YYYY")} BS` : "No review yet"}
           </div>
         </div>
         <div className={`weekly-review-score ${review ? "completed" : "pending"}`}>

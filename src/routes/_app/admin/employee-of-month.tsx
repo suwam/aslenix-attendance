@@ -41,7 +41,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { format, startOfMonth, subMonths } from "date-fns";
+import { format } from "date-fns";
+import { getCurrentNepaliMonthRange, getNepaliMonthLabel } from "@/lib/nepali-calendar";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
@@ -171,7 +172,8 @@ function EmployeeOfMonthPage() {
   const [savingAward, setSavingAward] = useState(false);
   const [resettingAward, setResettingAward] = useState(false);
 
-  const monthStart = startOfMonth(new Date()).toISOString().slice(0, 10);
+  const nepaliMonth = getCurrentNepaliMonthRange();
+  const monthStart = nepaliMonth.startAd;
 
   const loadEomData = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
       if (!silent) setLoading(true);
@@ -179,6 +181,7 @@ function EmployeeOfMonthPage() {
       const today = new Date().toISOString().slice(0, 10);
       const [
         { data: profiles },
+        { data: roleRows },
         { data: tasks },
         assigneeResult,
         { data: attendance },
@@ -191,6 +194,7 @@ function EmployeeOfMonthPage() {
             .select("user_id, full_name, department, position, avatar_url, is_eom_eligible")
             .eq("approval_status", "approved")
             .eq("is_suspended", false),
+          supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
           supabase.from("tasks").select("*"),
           supabase.from("task_assignees").select("task_id,user_id"),
           supabase
@@ -211,7 +215,8 @@ function EmployeeOfMonthPage() {
       const elapsedDays = Math.max(1, new Date().getDate());
       const feedbackRows = (feedbackResult.error ? [] : feedbackResult.data || []) as WeeklyReview[];
       const progressRows = progressResult.error ? [] : progressResult.data || [];
-      const profileRows = ((profiles || []) as EomProfile[]);
+      const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
+      const profileRows = ((profiles || []) as EomProfile[]).filter((profile) => !adminUserIds.has(profile.user_id));
       const eligibleProfiles = profileRows.filter(isEomEligible);
       const excludedProfiles = profileRows.filter((profile) => !isEomEligible(profile));
 
@@ -1202,7 +1207,7 @@ function BadgeSection({ winner }: { winner: EmployeeRank }) {
 
 function PreviousWinners({ rows }: { rows: EmployeeRank[] }) {
   const months = [1, 2, 3].map((offset, index) => ({
-    month: format(subMonths(new Date(), offset), "MMMM yyyy"),
+    month: `${getNepaliMonthLabel(-offset)} BS`,
     employee: rows[index + 1] || rows[0],
   }));
 

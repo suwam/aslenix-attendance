@@ -13,6 +13,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { GlassCard } from "@/components/GlassCard";
+import { formatNepaliDate } from "@/lib/nepali-calendar";
 
 const COLORS = [
   "oklch(0.65 0.27 22)",
@@ -129,7 +130,7 @@ export default function AdminCharts({
                   <div className="text-xs text-muted-foreground truncate">{n.message}</div>
                 </div>
                 <div className="text-xs text-muted-foreground whitespace-nowrap">
-                  {format(new Date(n.created_at), "MMM d, HH:mm")}
+                  {formatNepaliDate(n.created_at, "DD MMM")} BS, {format(new Date(n.created_at), "HH:mm")}
                 </div>
               </li>
             ))}

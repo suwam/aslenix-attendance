@@ -33,7 +33,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { format, startOfMonth, startOfWeek, subDays } from "date-fns";
+import { format, startOfWeek, subDays } from "date-fns";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,7 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
+import { getCurrentNepaliMonthRange } from "@/lib/nepali-calendar";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/admin/productivity")({
@@ -82,8 +83,8 @@ type EmployeePulse = {
 };
 
 const today = new Date().toISOString().slice(0, 10);
-const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString().slice(0, 10);
-const monthStart = startOfMonth(new Date()).toISOString().slice(0, 10);
+const weekStart = startOfWeek(new Date(), { weekStartsOn: 0 }).toISOString().slice(0, 10);
+const monthStart = getCurrentNepaliMonthRange().startAd;
 
 function ProductivityCommandCenter() {
   const [loading, setLoading] = useState(true);
@@ -96,6 +97,7 @@ function ProductivityCommandCenter() {
     setLoading(true);
     const [
       { data: profiles },
+      { data: roleRows },
       { data: tasks },
       assigneeResult,
       { data: attendance },
@@ -107,6 +109,7 @@ function ProductivityCommandCenter() {
         .eq("approval_status", "approved")
         .eq("is_suspended", false)
         .order("full_name"),
+      supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
       supabase.from("tasks").select("*"),
       supabase.from("task_assignees").select("task_id,user_id"),
       supabase.from("attendance").select("*").gte("date", subDays(new Date(), 30).toISOString().slice(0, 10)),
@@ -122,9 +125,11 @@ function ProductivityCommandCenter() {
         : assigneeResult.data || [];
     const feedbackRows = feedbackResult.error ? [] : feedbackResult.data || [];
     const allTasks = (tasks || []) as TaskRow[];
+    const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
+    const employeeProfiles = (profiles ?? []).filter((profile) => !adminUserIds.has(profile.user_id));
     setTaskProgress(Object.fromEntries(allTasks.map((task) => [task.id, Number(task.progress || 0)])));
 
-    const ranked = (profiles || [])
+    const ranked = employeeProfiles
       .map((profile) => {
         const assignedTasks = allTasks.filter(
           (task) =>

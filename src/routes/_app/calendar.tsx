@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { CalendarDays, Edit3, Landmark, Plus, Save, ShieldCheck, Sparkles, Trash2 } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
+import { BSDateInput } from "@/components/BSDateInput";
 import { NepaliCalendar } from "@/components/NepaliCalendar";
 import { PageHeader } from "@/components/PageHeader";
 import { useAuth } from "@/lib/auth-context";
@@ -187,13 +188,11 @@ function CalendarPage() {
                 <div className="grid gap-2">
                   <div>
                     <Label className="text-[11px]">BS date</Label>
-                    <Input
+                    <BSDateInput
                       value={form.bsDate}
-                      onChange={(event) =>
-                        setForm((current) => ({ ...current, bsDate: event.target.value }))
-                      }
+                      onChange={(value) => setForm((current) => ({ ...current, bsDate: value }))}
                       placeholder="2083-02-14"
-                      className="h-9 rounded-xl"
+                      inputClassName="h-9 rounded-xl"
                     />
                   </div>
                   <div>

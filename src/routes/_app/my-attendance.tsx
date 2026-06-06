@@ -5,12 +5,14 @@ import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { AttendanceLocationLinks } from "@/components/AttendanceLocationLinks";
+import { BSDateInput, BSDateTimeInput } from "@/components/BSDateInput";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { formatWorkHours } from "@/lib/work-hours";
+import { bsInputToAdDateString, formatBsInput, formatNepaliDate } from "@/lib/nepali-calendar";
 import { CalendarDays, Edit3, History, Info, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { isWeeklyOffDate, WEEKLY_OFF_LABEL } from "@/lib/weekly-off";
@@ -43,7 +45,8 @@ const MAX_REASON_LENGTH = 500;
 
 function MyAttendance() {
   const { user, profile } = useAuth();
-  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [bsDate, setBsDate] = useState(formatBsInput());
+  const date = bsInputToAdDateString(bsDate) ?? format(new Date(), "yyyy-MM-dd");
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [requestOpen, setRequestOpen] = useState(false);
@@ -180,8 +183,11 @@ function MyAttendance() {
     <>
       <PageHeader title="My Attendance" subtitle="Your attendance for the selected day" />
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="max-w-48">
-          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        <div className="max-w-56">
+          <BSDateInput value={bsDate} onChange={setBsDate} />
+          <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            BS date
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
@@ -260,7 +266,7 @@ function MyAttendance() {
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.id} className="border-b border-border/40 hover:bg-muted/20">
-                    <td className="p-4">{format(new Date(r.date), "EEE, MMM d")}</td>
+                    <td className="p-4">{formatNepaliDate(r.date, "ddd DD, MMMM YYYY")} BS</td>
                     <td className="p-4 tabular-nums">
                       {r.check_in_time ? format(new Date(r.check_in_time), "HH:mm") : "—"}
                     </td>
@@ -357,11 +363,10 @@ function MyAttendance() {
               <div className="grid gap-4 sm:grid-cols-2">
                 {shouldShowCheckIn(form.correctionType) && (
                   <Field label="New Check-in Time" error={errors.correctionField}>
-                    <Input
-                      type="datetime-local"
+                    <BSDateTimeInput
                       value={form.checkIn}
-                      onChange={(e) => {
-                        setForm({ ...form, checkIn: e.target.value });
+                      onChange={(value) => {
+                        setForm({ ...form, checkIn: value });
                         setErrors((current) => ({ ...current, correctionField: "" }));
                       }}
                     />
@@ -369,11 +374,10 @@ function MyAttendance() {
                 )}
                 {shouldShowCheckOut(form.correctionType) && (
                   <Field label="New Check-out Time" error={errors.correctionField}>
-                    <Input
-                      type="datetime-local"
+                    <BSDateTimeInput
                       value={form.checkOut}
-                      onChange={(e) => {
-                        setForm({ ...form, checkOut: e.target.value });
+                      onChange={(value) => {
+                        setForm({ ...form, checkOut: value });
                         setErrors((current) => ({ ...current, correctionField: "" }));
                       }}
                     />

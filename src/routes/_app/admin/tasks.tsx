@@ -15,9 +15,9 @@ import {
 import { KanbanBoard } from "@/components/KanbanBoard";
 import { TaskDialog } from "@/components/TaskDialog";
 import { Plus, ListTodo, CheckCircle2, AlertTriangle, Activity } from "lucide-react";
-import { format } from "date-fns";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
 import { formatWorkHours } from "@/lib/work-hours";
+import { formatNepaliDate } from "@/lib/nepali-calendar";
 
 export const Route = createFileRoute("/_app/admin/tasks")({ component: AdminTasks });
 
@@ -98,7 +98,7 @@ function AdminTasks() {
         id: s.id,
         when: s.updated_at,
         who: names[s.user_id] || "User",
-        text: `Standup for ${s.date} (${formatWorkHours(s.work_hours)})`,
+        text: `Standup for ${formatNepaliDate(s.date, "DD MMM YYYY")} BS (${formatWorkHours(s.work_hours)})`,
       })),
     ]
       .sort((a, b) => +new Date(b.when) - +new Date(a.when))
@@ -166,7 +166,7 @@ function AdminTasks() {
                   <div className="text-xs text-muted-foreground truncate">{a.text}</div>
                 </div>
                 <div className="text-xs text-muted-foreground whitespace-nowrap">
-                  {format(new Date(a.when), "MMM d HH:mm")}
+                  {formatNepaliDate(a.when, "DD MMM")} BS
                 </div>
               </li>
             ))}

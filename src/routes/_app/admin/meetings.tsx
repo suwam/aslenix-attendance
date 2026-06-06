@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
+import { BSDateInput, GlassTimeInput } from "@/components/BSDateInput";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -32,6 +33,7 @@ import {
   Video,
 } from "lucide-react";
 import { addDays, format, isFuture, isPast, isToday } from "date-fns";
+import { bsInputToAdDateString, formatBsInput, formatNepaliDate } from "@/lib/nepali-calendar";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/admin/meetings")({ component: AdminMeetingsPage });
@@ -39,7 +41,8 @@ export const Route = createFileRoute("/_app/admin/meetings")({ component: AdminM
 type MeetingForm = {
   title: string;
   agenda: string;
-  meeting_time: string;
+  meeting_date_bs: string;
+  meeting_clock: string;
   location: string;
   meeting_link: string;
 };
@@ -47,7 +50,8 @@ type MeetingForm = {
 const emptyMeetingForm: MeetingForm = {
   title: "",
   agenda: "",
-  meeting_time: "",
+  meeting_date_bs: formatBsInput(),
+  meeting_clock: "",
   location: "",
   meeting_link: "",
 };
@@ -65,16 +69,18 @@ function AdminMeetingsPage() {
 
   const load = async () => {
     setLoading(true);
-    const [{ data }, { count }] = await Promise.all([
+    const [{ data }, { data: profiles }, { data: roleRows }] = await Promise.all([
       supabase.from("meetings").select("*").order("meeting_time", { ascending: false }),
       supabase
         .from("profiles")
-        .select("user_id", { count: "exact", head: true })
+        .select("user_id")
         .eq("approval_status", "approved")
         .eq("is_suspended", false),
+      supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
     ]);
+    const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
     setMeetings(data ?? []);
-    setEmployeeCount(count ?? 0);
+    setEmployeeCount((profiles ?? []).filter((profile) => !adminUserIds.has(profile.user_id)).length);
     setLoading(false);
   };
 
@@ -88,19 +94,24 @@ function AdminMeetingsPage() {
     setEditForm((current) => ({ ...current, [key]: value }));
 
   const notifyEmployees = async (title: string, message: string) => {
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("user_id")
-      .eq("approval_status", "approved")
-      .eq("is_suspended", false);
+    const [{ data: profiles }, { data: roleRows }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("user_id")
+        .eq("approval_status", "approved")
+        .eq("is_suspended", false),
+      supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
+    ]);
     const { data: existingNotifications } = await supabase
       .from("notifications")
       .select("user_id")
       .eq("type", "meeting")
       .eq("title", title)
       .eq("message", message);
+    const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
     const notifiedUserIds = new Set((existingNotifications ?? []).map((row) => row.user_id));
     const notifications = (profiles ?? [])
+      .filter((profile) => !adminUserIds.has(profile.user_id))
       .filter((profile) => !notifiedUserIds.has(profile.user_id))
       .map((profile) => ({
         user_id: profile.user_id,
@@ -118,14 +129,15 @@ function AdminMeetingsPage() {
     e.preventDefault();
     if (!user) return;
     if (!form.title.trim()) return toast.error("Meeting title required");
-    if (!form.meeting_time) return toast.error("Meeting time required");
+    if (!form.meeting_date_bs || !form.meeting_clock) return toast.error("Meeting date and time required");
+    const meetingTime = getMeetingDateTime(form);
+    if (!meetingTime) return toast.error("Enter a valid BS meeting date");
 
     setSaving(true);
     const title = form.title.trim();
     const agenda = form.agenda.trim();
     const location = form.location.trim();
     const meetingLink = form.meeting_link.trim();
-    const meetingTime = new Date(form.meeting_time);
     const { data: meeting, error } = await supabase.from("meetings").insert({
       title,
       agenda: agenda || null,
@@ -136,7 +148,7 @@ function AdminMeetingsPage() {
     }).select("*").maybeSingle();
 
     if (!error && meeting) {
-      const meetingWhen = format(meetingTime, "MMM d, yyyy HH:mm");
+      const meetingWhen = formatMeetingDateTime(meetingTime);
       const notificationTitle = "New meeting scheduled";
       const notificationMessage = `${title} on ${meetingWhen}${location ? ` at ${location}` : ""}.`;
       await notifyEmployees(notificationTitle, notificationMessage);
@@ -154,7 +166,8 @@ function AdminMeetingsPage() {
     setEditForm({
       title: meeting.title || "",
       agenda: meeting.agenda || "",
-      meeting_time: toLocalDateTimeInput(meeting.meeting_time),
+      meeting_date_bs: formatBsInput(meeting.meeting_time),
+      meeting_clock: format(new Date(meeting.meeting_time), "HH:mm"),
       location: meeting.location || "",
       meeting_link: meeting.meeting_link || "",
     });
@@ -164,10 +177,11 @@ function AdminMeetingsPage() {
     e.preventDefault();
     if (!editingMeeting) return;
     if (!editForm.title.trim()) return toast.error("Meeting title required");
-    if (!editForm.meeting_time) return toast.error("Meeting time required");
+    if (!editForm.meeting_date_bs || !editForm.meeting_clock) return toast.error("Meeting date and time required");
+    const meetingTime = getMeetingDateTime(editForm);
+    if (!meetingTime) return toast.error("Enter a valid BS meeting date");
 
     setUpdating(true);
-    const meetingTime = new Date(editForm.meeting_time);
     const payload = {
       title: editForm.title.trim(),
       agenda: editForm.agenda.trim() || null,
@@ -186,7 +200,7 @@ function AdminMeetingsPage() {
 
     if (!error && data) {
       const status = newTime > oldTime ? "Meeting postponed" : "Meeting updated";
-      const message = `${payload.title} is now on ${format(meetingTime, "MMM d, yyyy HH:mm")}${
+      const message = `${payload.title} is now on ${formatMeetingDateTime(meetingTime)}${
         payload.location ? ` at ${payload.location}` : ""
       }.`;
       await notifyEmployees(status, message);
@@ -209,7 +223,7 @@ function AdminMeetingsPage() {
     if (error) return toast.error(error.message);
     await notifyEmployees(
       "Meeting postponed",
-      `${meeting.title} is now on ${format(nextTime, "MMM d, yyyy HH:mm")}${meeting.location ? ` at ${meeting.location}` : ""}.`,
+      `${meeting.title} is now on ${formatMeetingDateTime(nextTime)}${meeting.location ? ` at ${meeting.location}` : ""}.`,
     );
     toast.success(`Postponed ${days === 1 ? "to tomorrow" : `by ${days} days`}`);
     load();
@@ -255,13 +269,16 @@ function AdminMeetingsPage() {
             <div>
               <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
                 <CalendarClock size={14} className="text-primary" />
+                Meeting date (BS)
+              </Label>
+              <BSDateInput value={form.meeting_date_bs} onChange={(value) => update("meeting_date_bs", value)} />
+            </div>
+            <div>
+              <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+                <Clock size={14} className="text-primary" />
                 Meeting time
               </Label>
-              <Input
-                type="datetime-local"
-                value={form.meeting_time}
-                onChange={(e) => update("meeting_time", e.target.value)}
-              />
+              <GlassTimeInput value={form.meeting_clock} onChange={(value) => update("meeting_clock", value)} />
             </div>
             <div>
               <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
@@ -349,13 +366,16 @@ function AdminMeetingsPage() {
               <div>
                 <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
                   <CalendarClock size={14} className="text-primary" />
+                  Meeting date (BS)
+                </Label>
+                <BSDateInput value={editForm.meeting_date_bs} onChange={(value) => updateEdit("meeting_date_bs", value)} />
+              </div>
+              <div>
+                <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+                  <Clock size={14} className="text-primary" />
                   Meeting time
                 </Label>
-                <Input
-                  type="datetime-local"
-                  value={editForm.meeting_time}
-                  onChange={(e) => updateEdit("meeting_time", e.target.value)}
-                />
+                <GlassTimeInput value={editForm.meeting_clock} onChange={(value) => updateEdit("meeting_clock", value)} />
               </div>
               <div>
                 <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
@@ -412,7 +432,7 @@ function MeetingCard({
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <Clock size={14} />
-                {format(new Date(meeting.meeting_time), "MMM d, yyyy HH:mm")}
+                {formatNepaliDate(meeting.meeting_time, "ddd DD, MMMM YYYY")} BS · {format(new Date(meeting.meeting_time), "HH:mm")}
               </span>
               {meeting.location && (
                 <span className="flex items-center gap-1.5">
@@ -495,9 +515,12 @@ function MeetingMetric({
   );
 }
 
-function toLocalDateTimeInput(value: string) {
-  const date = new Date(value);
-  const offset = date.getTimezoneOffset();
-  const local = new Date(date.getTime() - offset * 60000);
-  return local.toISOString().slice(0, 16);
+function getMeetingDateTime(form: Pick<MeetingForm, "meeting_date_bs" | "meeting_clock">) {
+  const adDate = bsInputToAdDateString(form.meeting_date_bs);
+  if (!adDate) return null;
+  return new Date(`${adDate}T${form.meeting_clock}:00`);
+}
+
+function formatMeetingDateTime(date: Date) {
+  return `${formatNepaliDate(date, "ddd DD, MMMM YYYY")} BS · ${format(date, "HH:mm")}`;
 }

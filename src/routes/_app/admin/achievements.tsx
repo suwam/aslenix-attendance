@@ -33,9 +33,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { format, startOfMonth } from "date-fns";
+import { format } from "date-fns";
+import { bsMonthInputToAdRange, formatBsMonthInput } from "@/lib/nepali-calendar";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
+import { BSMonthInput } from "@/components/BSDateInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -98,7 +100,7 @@ function AdminAchievementsPage() {
   const [badgeFilter, setBadgeFilter] = useState("All badges");
   const [departmentFilter, setDepartmentFilter] = useState("All departments");
   const [scoreFilter, setScoreFilter] = useState("all");
-  const [monthFilter, setMonthFilter] = useState(new Date().toISOString().slice(0, 7));
+  const [monthFilter, setMonthFilter] = useState(formatBsMonthInput());
   const [selected, setSelected] = useState<EmployeeAchievement | null>(null);
   const [manualBadge, setManualBadge] = useState("Productivity Hero");
   const [feedback, setFeedback] = useState("");
@@ -111,24 +113,31 @@ function AdminAchievementsPage() {
 
     (async () => {
       setLoading(true);
-      const monthStart = startOfMonth(new Date(`${monthFilter}-01T00:00:00`));
-      const monthStartDate = monthStart.toISOString().slice(0, 10);
+      const monthRange = bsMonthInputToAdRange(monthFilter);
+      if (!monthRange) {
+        toast.error("Enter a valid BS month in YYYY-MM format");
+        setLoading(false);
+        return;
+      }
+      const monthStartDate = monthRange.startAd;
       const monthStartIso = `${monthStartDate}T00:00:00.000Z`;
       const today = new Date().toISOString().slice(0, 10);
-      const [{ data: profiles }, { data: tasks }, assigneeResult, { data: attendance }, persistedResult] =
+      const monthEndDate = monthRange.endAd < today ? monthRange.endAd : today;
+      const [{ data: profiles }, { data: roleRows }, { data: tasks }, assigneeResult, { data: attendance }, persistedResult] =
         await Promise.all([
           supabase
             .from("profiles")
             .select("user_id, full_name, department, avatar_url")
             .eq("approval_status", "approved")
             .eq("is_suspended", false),
+          supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
           supabase.from("tasks").select("*"),
           supabase.from("task_assignees").select("task_id,user_id"),
           supabase
             .from("attendance")
             .select("user_id,date,status,work_hours")
             .gte("date", monthStartDate)
-            .lte("date", today),
+            .lte("date", monthEndDate),
           supabase.from("employee_achievements").select("*"),
         ]);
       const persistedRows = persistedResult.error ? [] : persistedResult.data || [];
@@ -141,11 +150,15 @@ function AdminAchievementsPage() {
           ? []
           : assigneeResult.data || [];
       const elapsedDays =
-        monthFilter === new Date().toISOString().slice(0, 7)
-          ? new Date().getDate()
-          : new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate();
+        Math.floor(
+          (new Date(`${monthEndDate}T00:00:00`).getTime() - new Date(`${monthStartDate}T00:00:00`).getTime()) /
+            86400000,
+        ) + 1;
+      const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
+      const employeeProfiles = (profiles || []).filter((profile) => !adminUserIds.has(profile.user_id));
+      const employeeUserIds = new Set(employeeProfiles.map((profile) => profile.user_id));
 
-      const generated = (profiles || []).flatMap((profile) => {
+      const generated = employeeProfiles.flatMap((profile) => {
         const assignedTasks = (tasks || []).filter(
           (task: any) =>
             task.assigned_to === profile.user_id ||
@@ -246,10 +259,11 @@ function AdminAchievementsPage() {
 
       const extraRows = persistedRows
         .filter((item) =>
+          employeeUserIds.has(item.user_id) &&
           !generated.some((row) => row.userId === item.user_id && row.badge === item.badge),
         )
         .map((item) => {
-          const profile = (profiles || []).find((profile) => profile.user_id === item.user_id);
+          const profile = employeeProfiles.find((profile) => profile.user_id === item.user_id);
           return {
             userId: item.user_id,
             name: profile?.full_name || "Unknown",
@@ -553,10 +567,9 @@ function AdminAchievementsPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Input
-                  type="month"
+                <BSMonthInput
                   value={monthFilter}
-                  onChange={(event) => setMonthFilter(event.target.value)}
+                  onChange={setMonthFilter}
                 />
               </div>
 

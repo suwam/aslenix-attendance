@@ -14,7 +14,7 @@ import {
   Trophy,
   Undo2,
 } from "lucide-react";
-import { format, startOfMonth } from "date-fns";
+import { getCurrentNepaliMonthRange } from "@/lib/nepali-calendar";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/GlassCard";
@@ -60,31 +60,36 @@ export function EmployeeOfMonthSection() {
     if (!visible) return;
     (async () => {
       setLoading(true);
-      const monthStart = startOfMonth(new Date()).toISOString().slice(0, 10);
+      const nepaliMonth = getCurrentNepaliMonthRange();
+      const monthStart = nepaliMonth.startAd;
+      const monthEnd = nepaliMonth.endAd;
       const monthStartIso = `${monthStart}T00:00:00.000Z`;
       const today = new Date().toISOString().slice(0, 10);
-      const [{ data: profiles }, { data: tasks }, assigneeResult, { data: attendance }] =
+      const [{ data: profiles }, { data: roleRows }, { data: tasks }, assigneeResult, { data: attendance }] =
         await Promise.all([
           supabase
             .from("profiles")
             .select("user_id, full_name, department, position, avatar_url, is_eom_eligible")
             .eq("approval_status", "approved")
             .eq("is_suspended", false),
+          supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
           supabase.from("tasks").select("*"),
           supabase.from("task_assignees").select("task_id,user_id"),
           supabase
             .from("attendance")
             .select("user_id,date,status,work_hours")
             .gte("date", monthStart)
-            .lte("date", today),
+            .lte("date", monthEnd),
         ]);
       const assignees =
         assigneeResult.error && isMissingSupabaseTableError(assigneeResult.error, "task_assignees")
           ? []
           : assigneeResult.data || [];
       const elapsedDays = Math.max(1, new Date().getDate());
+      const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
 
       const ranked = ((profiles || []) as EomProfile[])
+        .filter((profile) => !adminUserIds.has(profile.user_id))
         .filter(isEomEligible)
         .map((profile) => {
           const assignedTasks = (tasks || []).filter(
@@ -179,7 +184,7 @@ export function EmployeeOfMonthSection() {
           </div>
           <h2 className="text-2xl font-bold">Employee of the Month</h2>
           <p className="text-sm text-muted-foreground">
-            Leaderboard preview for {format(new Date(), "MMMM yyyy")}
+            Leaderboard preview for {getCurrentNepaliMonthRange().label} BS
           </p>
         </div>
         <Button

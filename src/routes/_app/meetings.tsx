@@ -16,6 +16,7 @@ import {
   Video,
 } from "lucide-react";
 import { differenceInMinutes, format, isToday } from "date-fns";
+import { formatNepaliDate } from "@/lib/nepali-calendar";
 
 export const Route = createFileRoute("/_app/meetings")({ component: MeetingsPage });
 
@@ -52,7 +53,7 @@ function MeetingsPage() {
             <MeetingMetric label="Today" value={todayMeetings} icon={Clock} />
             <MeetingMetric
               label="Next"
-              value={nextMeeting ? format(new Date(nextMeeting.meeting_time), "MMM d") : "None"}
+              value={nextMeeting ? `${formatNepaliDate(nextMeeting.meeting_time, "DD MMMM")} BS` : "None"}
               icon={Video}
             />
           </div>
@@ -123,7 +124,7 @@ function MeetingEmptyState() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <div className="text-xs uppercase tracking-wider text-muted-foreground">Today</div>
-              <div className="mt-1 text-xl font-bold text-white">{format(new Date(), "MMM d")}</div>
+              <div className="mt-1 text-xl font-bold text-white">{formatNepaliDate(new Date(), "DD MMMM")} BS</div>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
               <CalendarDays size={20} />
@@ -217,7 +218,7 @@ function MeetingMeta({ meeting }: { meeting: any }) {
     <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
       <span className="flex items-center gap-1.5">
         <Clock size={14} />
-        {format(new Date(meeting.meeting_time), "MMM d, yyyy HH:mm")}
+        {formatNepaliDate(meeting.meeting_time, "ddd DD, MMMM YYYY")} BS · {format(new Date(meeting.meeting_time), "HH:mm")}
       </span>
       {meeting.location && (
         <span className="flex items-center gap-1.5">

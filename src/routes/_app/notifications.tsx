@@ -14,6 +14,7 @@ import {
   MailCheck,
 } from "lucide-react";
 import { format } from "date-fns";
+import { formatNepaliDate } from "@/lib/nepali-calendar";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/notifications")({ component: NotifPage });
@@ -117,7 +118,7 @@ function NotifPage() {
         <NotificationMetric label="Read" value={readCount} icon={MailCheck} tone="green" />
         <NotificationMetric
           label="Latest"
-          value={latest ? format(new Date(latest.created_at), "MMM d") : "None"}
+          value={latest ? `${formatNepaliDate(latest.created_at, "DD MMM")} BS` : "None"}
           icon={Clock}
           tone="blue"
         />
@@ -174,7 +175,7 @@ function NotifPage() {
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <Clock size={13} />
-                    {format(new Date(n.created_at), "MMM d, yyyy HH:mm")}
+                    {formatNepaliDate(n.created_at, "DD MMM YYYY")} BS, {format(new Date(n.created_at), "HH:mm")}
                     {!n.is_read && <span className="text-primary">Tap to mark as read</span>}
                   </div>
                 </div>

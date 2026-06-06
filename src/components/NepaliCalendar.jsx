@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { BSDateInput } from "@/components/BSDateInput";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GlassCard } from "@/components/GlassCard";
@@ -340,11 +341,11 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
             <div className="grid gap-2">
               <div>
                 <Label className="text-[11px]">BS date</Label>
-                <Input
+                <BSDateInput
                   value={form.bsDate}
-                  onChange={(event) => setForm((current) => ({ ...current, bsDate: event.target.value }))}
+                  onChange={(value) => setForm((current) => ({ ...current, bsDate: value }))}
                   placeholder="2083-01-01"
-                  className="h-9 rounded-xl"
+                  inputClassName="h-9 rounded-xl"
                 />
               </div>
               <div>

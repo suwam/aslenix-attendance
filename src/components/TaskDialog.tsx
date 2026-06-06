@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { BSDateInput, GlassTimeInput } from "@/components/BSDateInput";
 import { toast } from "sonner";
 import {
   TASK_STATUSES,
@@ -24,6 +25,7 @@ import {
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
 import { Check, Download, Pencil, Paperclip, Send, Trash2, TrendingUp, X } from "lucide-react";
 import { format } from "date-fns";
+import { bsInputToAdDateString, formatBsInput, formatNepaliDate } from "@/lib/nepali-calendar";
 
 type ProgressUpdate = {
   id: string;
@@ -64,7 +66,8 @@ export function TaskDialog({
   const [editingProgressUpdateId, setEditingProgressUpdateId] = useState<string | null>(null);
   const [editingProgressNote, setEditingProgressNote] = useState("");
   const [savingProgressUpdateId, setSavingProgressUpdateId] = useState<string | null>(null);
-  const [deadline, setDeadline] = useState("");
+  const [deadlineDateBs, setDeadlineDateBs] = useState("");
+  const [deadlineTime, setDeadlineTime] = useState("");
   const [assignedTo, setAssignedTo] = useState<string>(user?.id || "");
   const [assignedToMany, setAssignedToMany] = useState<string[]>(user?.id ? [user.id] : []);
   const [tags, setTags] = useState("");
@@ -87,7 +90,8 @@ export function TaskDialog({
     setEditingProgressNote("");
     setSavingProgressUpdateId(null);
     setProgressUpdatesUnavailable(false);
-    setDeadline("");
+    setDeadlineDateBs("");
+    setDeadlineTime("");
     setAssignedTo(isAdmin ? "" : user?.id || "");
     setAssignedToMany(isAdmin ? [] : user?.id ? [user.id] : []);
     setTags("");
@@ -124,7 +128,8 @@ export function TaskDialog({
       setAssignedToMany(
         assignees?.length ? assignees.map((a) => a.user_id) : t.assigned_to ? [t.assigned_to] : [],
       );
-      setDeadline(t.deadline ? toDateTimeLocalValue(t.deadline) : "");
+      setDeadlineDateBs(t.deadline ? formatBsInput(t.deadline) : "");
+      setDeadlineTime(t.deadline ? format(new Date(t.deadline), "HH:mm") : "");
       setTags((t.tags || []).join(", "));
     }
     // hydrate user names for comments
@@ -154,11 +159,16 @@ export function TaskDialog({
     if (!open) return;
     setStatus(defaultStatus || "todo");
     if (isAdmin) {
-      supabase
-        .from("profiles")
-        .select("user_id, full_name")
-        .eq("approval_status", "approved")
-        .then(({ data }) => setEmployees(data || []));
+      Promise.all([
+        supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .eq("approval_status", "approved"),
+        supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
+      ]).then(([{ data }, { data: roleRows }]) => {
+        const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
+        setEmployees((data || []).filter((employee) => !adminUserIds.has(employee.user_id)));
+      });
     }
     if (taskId) loadTask();
     else resetForm();
@@ -223,13 +233,14 @@ export function TaskDialog({
       setLoading(false);
       return toast.error("Select at least one assignee");
     }
+    const deadlineIso = getDeadlineIso(deadlineDateBs, deadlineTime);
     const payload = {
       title,
       description: description || null,
       status,
       priority,
       progress: nextProgress,
-      deadline: deadline ? new Date(deadline).toISOString() : null,
+      deadline: deadlineIso,
       assigned_to: selectedAssignees[0],
       tags: tagsArr,
       completed_at: status === "completed" ? new Date().toISOString() : null,
@@ -277,7 +288,7 @@ export function TaskDialog({
     if (!error && savedTaskId && isAdmin) {
       await notifyTaskAssignees(selectedAssignees, taskId ? "Task updated" : "New task assigned", {
         title,
-        deadline,
+        deadline: deadlineIso || "",
       });
     }
     let progressNoteNotSaved = false;
@@ -425,7 +436,7 @@ export function TaskDialog({
     if (!assigneeIds.length) return;
 
     const deadlineText = task.deadline
-      ? ` Deadline: ${format(new Date(task.deadline), "MMM d, yyyy HH:mm")}.`
+      ? ` Deadline: ${formatTaskDateTime(task.deadline)}.`
       : "";
     await supabase.from("notifications").insert(
       assigneeIds.map((assigneeId) => ({
@@ -567,7 +578,7 @@ export function TaskDialog({
                           {update.old_progress}% -&gt; {update.new_progress}%
                         </span>
                         <div className="flex items-center gap-1.5">
-                          <span>{format(new Date(update.created_at), "MMM d, HH:mm")}</span>
+                          <span>{formatTaskDateTime(update.created_at)}</span>
                           {(isAdmin || update.user_id === user?.id) && (
                             <button
                               type="button"
@@ -621,15 +632,19 @@ export function TaskDialog({
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             <div>
-              <Label>Deadline</Label>
-              <Input
-                type="datetime-local"
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
+              <Label>Deadline date (BS)</Label>
+              <BSDateInput
+                value={deadlineDateBs}
+                onChange={setDeadlineDateBs}
                 disabled={!canEditTaskFields}
+                inputClassName={!canEditTaskFields ? "opacity-70" : undefined}
               />
+            </div>
+            <div>
+              <Label>Deadline time</Label>
+              <GlassTimeInput value={deadlineTime} onChange={setDeadlineTime} className={!canEditTaskFields ? "pointer-events-none opacity-70" : undefined} />
             </div>
             <div>
               <Label>Tags (comma-separated)</Label>
@@ -707,7 +722,7 @@ export function TaskDialog({
                     <div key={c.id} className="text-sm p-2.5 rounded-lg bg-muted/30">
                       <div className="flex justify-between text-xs text-muted-foreground mb-0.5">
                         <span className="font-medium text-foreground">{c.author}</span>
-                        <span>{format(new Date(c.created_at), "MMM d, HH:mm")}</span>
+                        <span>{formatTaskDateTime(c.created_at)}</span>
                       </div>
                       <div>{c.comment}</div>
                     </div>
@@ -770,20 +785,13 @@ export function TaskDialog({
   );
 }
 
-function toDateTimeLocalValue(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
+function getDeadlineIso(bsDate: string, time: string) {
+  if (!bsDate) return null;
+  const adDate = bsInputToAdDateString(bsDate);
+  if (!adDate) return null;
+  return new Date(`${adDate}T${time || "18:00"}:00`).toISOString();
+}
 
-  const pad = (part: number) => String(part).padStart(2, "0");
-  return [
-    date.getFullYear(),
-    "-",
-    pad(date.getMonth() + 1),
-    "-",
-    pad(date.getDate()),
-    "T",
-    pad(date.getHours()),
-    ":",
-    pad(date.getMinutes()),
-  ].join("");
+function formatTaskDateTime(value: string) {
+  return `${formatNepaliDate(value, "DD MMM YYYY")} BS, ${format(new Date(value), "HH:mm")}`;
 }

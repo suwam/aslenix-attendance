@@ -38,21 +38,26 @@ function AdminDashboard() {
   useEffect(() => {
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
-      const [profiles, attToday, leaves, pending] = await Promise.all([
+      const [profiles, roles, attToday, leaves, pending] = await Promise.all([
         supabase.from("profiles").select("*"),
+        supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
         supabase.from("attendance").select("*").eq("date", today),
         supabase.from("leave_requests").select("*").eq("status", "pending"),
         supabase.from("profiles").select("*").eq("approval_status", "pending"),
       ]);
-      const total = profiles.data?.length ?? 0;
+      const adminUserIds = new Set((roles.data ?? []).map((row) => row.user_id));
+      const employeeProfiles = (profiles.data ?? []).filter((profile) => !adminUserIds.has(profile.user_id));
+      const employeeIds = new Set(employeeProfiles.map((profile) => profile.user_id));
+      const employeeAttendanceToday = (attToday.data ?? []).filter((row) => employeeIds.has(row.user_id));
+
+      const total = employeeProfiles.length;
       const active =
-        profiles.data?.filter((p) => p.approval_status === "approved" && !p.is_suspended).length ??
-        0;
+        employeeProfiles.filter((p) => p.approval_status === "approved" && !p.is_suspended).length;
       const present =
-        attToday.data?.filter(
+        employeeAttendanceToday.filter(
           (a) => a.status === "present" || a.status === "late" || a.status === "wfh",
-        ).length ?? 0;
-      const late = attToday.data?.filter((a) => a.is_late).length ?? 0;
+        ).length;
+      const late = employeeAttendanceToday.filter((a) => a.is_late).length;
       const absent = Math.max(0, active - present);
       const pct = active ? Math.round((present / active) * 100) : 0;
       setStats({
@@ -61,7 +66,7 @@ function AdminDashboard() {
         present,
         absent,
         late,
-        leaves: leaves.data?.length ?? 0,
+        leaves: (leaves.data ?? []).filter((leave) => employeeIds.has(leave.user_id)).length,
         pending: pending.data?.length ?? 0,
         pct,
       });
@@ -71,19 +76,20 @@ function AdminDashboard() {
       for (let i = 6; i >= 0; i--) {
         const d = subDays(new Date(), i);
         const ds = d.toISOString().slice(0, 10);
-        const { data } = await supabase.from("attendance").select("status,is_late").eq("date", ds);
+        const { data } = await supabase.from("attendance").select("user_id,status,is_late").eq("date", ds);
+        const employeeRows = (data ?? []).filter((row) => employeeIds.has(row.user_id));
         days.push({
           day: format(d, "EEE"),
-          present: data?.filter((x: any) => x.status === "present").length ?? 0,
-          late: data?.filter((x: any) => x.status === "late" || x.is_late).length ?? 0,
-          wfh: data?.filter((x: any) => x.status === "wfh").length ?? 0,
+          present: employeeRows.filter((x: any) => x.status === "present").length,
+          late: employeeRows.filter((x: any) => x.status === "late" || x.is_late).length,
+          wfh: employeeRows.filter((x: any) => x.status === "wfh").length,
         });
       }
       setWeekly(days);
 
       // Departments
       const deptMap: Record<string, number> = {};
-      profiles.data?.forEach((p) => {
+      employeeProfiles.forEach((p) => {
         const k = p.department || "Unassigned";
         deptMap[k] = (deptMap[k] || 0) + 1;
       });

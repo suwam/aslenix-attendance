@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
+import { BSDateInput } from "@/components/BSDateInput";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -20,8 +21,8 @@ import {
   Target,
 } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
 import { formatWorkHours } from "@/lib/work-hours";
+import { bsInputToAdDateString, formatBsInput, formatNepaliDate } from "@/lib/nepali-calendar";
 
 export const Route = createFileRoute("/_app/standup")({ component: StandupPage });
 
@@ -42,7 +43,8 @@ function getAttendanceHours(
 
 function StandupPage() {
   const { user } = useAuth();
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [bsDate, setBsDate] = useState(formatBsInput());
+  const date = bsInputToAdDateString(bsDate) ?? new Date().toISOString().slice(0, 10);
   const [yesterday, setYesterday] = useState("");
   const [today, setToday] = useState("");
   const [blockers, setBlockers] = useState("");
@@ -126,10 +128,9 @@ function StandupPage() {
         title="Daily Standup"
         subtitle="Share what you worked on today, what you'll work on tomorrow, and what's blocking you"
         actions={
-          <Input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
+          <BSDateInput
+            value={bsDate}
+            onChange={setBsDate}
             className="w-auto"
           />
         }
@@ -172,7 +173,7 @@ function StandupPage() {
                 <h2 className="text-xl font-bold text-white">Today's standup report</h2>
               </div>
               <div className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-xs font-medium text-muted-foreground">
-                {format(new Date(`${date}T00:00:00`), "EEE, MMM d")}
+                {formatNepaliDate(date, "ddd DD, MMMM YYYY")} BS
               </div>
             </div>
           </div>
@@ -245,7 +246,7 @@ function StandupPage() {
               <li key={h.id} className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm">
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <div className="font-semibold text-white">
-                    {format(new Date(h.date), "EEE, MMM d")}
+                    {formatNepaliDate(h.date, "ddd DD, MMMM YYYY")} BS
                   </div>
                   <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary">
                     {formatWorkHours(h.work_hours)}

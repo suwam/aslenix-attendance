@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
 import { Calendar, Flag, MessageSquare, Paperclip } from "lucide-react";
-import { format, isPast } from "date-fns";
+import { isPast } from "date-fns";
 import { PRIORITY_COLORS, type TaskPriority, type TaskStatus } from "@/lib/tasks-utils";
+import { formatNepaliDate } from "@/lib/nepali-calendar";
 
 export interface TaskCardData {
   id: string;
@@ -100,7 +101,7 @@ export function TaskCard({
             {task.deadline && (
               <span className={`flex items-center gap-1 ${overdue ? "text-destructive" : ""}`}>
                 <Calendar size={11} />
-                {format(new Date(task.deadline), "MMM d")}
+                {formatNepaliDate(task.deadline, "DD MMM")} BS
                 {dueCountdown && <span className="font-medium">({dueCountdown})</span>}
               </span>
             )}

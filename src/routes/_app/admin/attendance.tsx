@@ -5,12 +5,14 @@ import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { AttendanceLocationLinks } from "@/components/AttendanceLocationLinks";
+import { BSDateInput, BSDateTimeInput } from "@/components/BSDateInput";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { formatWorkHours } from "@/lib/work-hours";
+import { bsInputToAdDateString, formatBsInput, formatNepaliDate } from "@/lib/nepali-calendar";
 import { CalendarClock, Clock3, FileText, History, Loader2, MapPin, Search, Edit3, ShieldCheck, UserRound } from "lucide-react";
 import { format } from "date-fns";
 import { isWeeklyOffDate } from "@/lib/weekly-off";
@@ -86,7 +88,8 @@ type EditForm = {
 
 function AttendancePage() {
   const { user, isAdmin } = useAuth();
-  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [bsDate, setBsDate] = useState(formatBsInput());
+  const date = bsInputToAdDateString(bsDate) ?? format(new Date(), "yyyy-MM-dd");
   const [rows, setRows] = useState<EmployeeRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -108,14 +111,17 @@ function AttendancePage() {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: att }, { data: profs }, correctionsResult] = await Promise.all([
+    const [{ data: att }, { data: profs }, { data: roleRows }, correctionsResult] = await Promise.all([
       supabase.from("attendance").select("*").eq("date", date),
       supabase.from("profiles").select("*").eq("approval_status", "approved"),
+      supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
       supabase.rpc("get_admin_attendance_correction_requests"),
     ]);
     if (correctionsResult.error) toast.error(`Unable to load correction requests: ${correctionsResult.error.message}`);
+    const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
+    const employeeProfiles = ((profs ?? []) as EmployeeRow[]).filter((profile) => !adminUserIds.has(profile.user_id));
     const map = new Map(((att ?? []) as AttendanceRecord[]).map((a) => [a.user_id, a]));
-    const merged = ((profs ?? []) as EmployeeRow[]).map((p) => ({ ...p, attendance: map.get(p.user_id) }));
+    const merged = employeeProfiles.map((p) => ({ ...p, attendance: map.get(p.user_id) }));
     setRows(merged);
     setCorrectionRequests(
       ((correctionsResult.data ?? []) as CorrectionRequest[]).filter(
@@ -212,7 +218,12 @@ function AttendancePage() {
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="sm:w-48" />
+          <div className="sm:w-52">
+            <BSDateInput value={bsDate} onChange={setBsDate} />
+            <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              BS date
+            </div>
+          </div>
           <div className="relative max-w-md flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search employee..." className="pl-9" />
@@ -366,7 +377,7 @@ function AttendancePage() {
                 </div>
                 <div className="rounded-xl border border-white/10 bg-black/25 px-4 py-3 text-right">
                   <div className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Record date</div>
-                  <div className="mt-1 font-semibold text-white">{format(new Date(date), "MMM d, yyyy")}</div>
+                  <div className="mt-1 font-semibold text-white">{formatNepaliDate(date, "ddd DD, MMMM YYYY")} BS</div>
                 </div>
               </div>
             </DialogHeader>
@@ -406,10 +417,10 @@ function AttendancePage() {
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field label="Check-in time">
-                    <Input type="datetime-local" value={form.checkIn} onChange={(e) => setForm({ ...form, checkIn: e.target.value })} />
+                    <BSDateTimeInput value={form.checkIn} onChange={(value) => setForm({ ...form, checkIn: value })} />
                   </Field>
                   <Field label="Check-out time">
-                    <Input type="datetime-local" value={form.checkOut} onChange={(e) => setForm({ ...form, checkOut: e.target.value })} />
+                    <BSDateTimeInput value={form.checkOut} onChange={(value) => setForm({ ...form, checkOut: value })} />
                   </Field>
                   <Field label="Work location">
                     <Input value={form.workLocation} onChange={(e) => setForm({ ...form, workLocation: e.target.value })} placeholder="Office, WFH, Client site..." />

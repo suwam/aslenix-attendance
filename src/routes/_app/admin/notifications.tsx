@@ -7,6 +7,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
 import { BellDot, CheckCheck, Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { formatNepaliDate } from "@/lib/nepali-calendar";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/admin/notifications")({ component: NotifPage });
@@ -86,7 +87,7 @@ function NotifPage() {
                 </div>
                 <div className="text-sm text-muted-foreground mt-0.5">{n.message}</div>
                 <div className="text-xs text-muted-foreground mt-1">
-                  {format(new Date(n.created_at), "MMM d, yyyy HH:mm")}
+                  {formatNepaliDate(n.created_at, "DD MMM YYYY")} BS, {format(new Date(n.created_at), "HH:mm")}
                 </div>
               </div>
               {!n.is_read && (

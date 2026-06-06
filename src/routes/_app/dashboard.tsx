@@ -1,9 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { PageHeader } from "@/components/PageHeader";
-import { GlassCard } from "@/components/GlassCard";
 import { LiveClock } from "@/components/LiveClock";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,29 +14,35 @@ import {
 } from "@/components/ui/dialog";
 import { getVerifiedAttendanceLocation } from "@/lib/attendance-location";
 import {
+  Activity,
   ArrowUpRight,
+  BadgeCheck,
   BellDot,
-  CheckCheck,
-  Clock,
-  CheckCircle2,
   Calendar,
   CalendarClock,
-  TrendingUp,
+  CheckCheck,
+  CheckCircle2,
+  CircleUserRound,
+  Clock,
+  Crown,
+  Flame,
+  Gauge,
+  History,
   LogIn,
   LogOut,
-  ListTodo,
-  Activity,
-  Zap,
-  AlertCircle,
-  Crown,
-  Sparkles,
   MessageSquare,
-  ShieldCheck,
+  Sparkles,
+  Target,
+  TrendingUp,
+  UserRoundCog,
+  Video,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
-import { format, startOfMonth } from "date-fns";
+import { format, isSameDay, subDays } from "date-fns";
 import { productivityScore } from "@/lib/tasks-utils";
 import { formatWorkHours } from "@/lib/work-hours";
+import { formatNepaliDate, getCurrentNepaliMonthRange } from "@/lib/nepali-calendar";
 import { isWeeklyOffDate, WEEKLY_OFF_LABEL } from "@/lib/weekly-off";
 
 export const Route = createFileRoute("/_app/dashboard")({ component: EmployeeDashboard });
@@ -52,8 +56,22 @@ type NotificationRow = {
   created_at: string;
 };
 
+type HeatmapDay = {
+  date: string;
+  status: "present" | "late" | "absent" | "holiday" | "none";
+};
+
+type ActivityItem = {
+  kind: string;
+  when: string;
+  text: string;
+};
+
+const WEEKLY_TARGET_HOURS = 42;
+const WEEKLY_WORKING_DAYS = 6;
+
 function EmployeeDashboard() {
-  const { user, profile } = useAuth();
+  const { user, profile, isAdmin } = useAuth();
   const [today, setToday] = useState<any>(null);
   const [monthStats, setMonthStats] = useState({ present: 0, late: 0, leave: 0, hours: 0 });
   const [taskStats, setTaskStats] = useState({
@@ -61,10 +79,13 @@ function EmployeeDashboard() {
     completed: 0,
     active: 0,
     overdue: 0,
+    pending: 0,
     score: 0,
   });
-  const [recent, setRecent] = useState<any[]>([]);
-  const [deadlineTasks, setDeadlineTasks] = useState<any[]>([]);
+  const [recent, setRecent] = useState<ActivityItem[]>([]);
+  const [focusTasks, setFocusTasks] = useState<any[]>([]);
+  const [meetings, setMeetings] = useState<any[]>([]);
+  const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
   const [monthAward, setMonthAward] = useState<any>(null);
   const [latestImprovement, setLatestImprovement] = useState<any>(null);
   const [improvementOpen, setImprovementOpen] = useState(false);
@@ -74,92 +95,116 @@ function EmployeeDashboard() {
 
   const todayDate = format(new Date(), "yyyy-MM-dd");
   const isWeeklyOff = isWeeklyOffDate(todayDate);
+  const firstName = profile?.full_name?.split(" ")[0] || "Suwam";
+  const nepaliMonth = getCurrentNepaliMonthRange();
+  const nepaliToday = formatNepaliDate(new Date());
 
   const load = async () => {
     if (!user) return;
-    const { data: t } = await supabase
-      .from("attendance")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("date", todayDate)
-      .maybeSingle();
+
+    const monthStart = nepaliMonth.startAd;
+    const monthEnd = nepaliMonth.endAd;
+    const historyStart = format(subDays(new Date(), 14), "yyyy-MM-dd");
+
+    const [{ data: t }, { data: monthAttendance }, { data: historyRows }, awardResult, improvementResult] =
+      await Promise.all([
+        supabase
+          .from("attendance")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("date", todayDate)
+          .maybeSingle(),
+        supabase.from("attendance").select("*").eq("user_id", user.id).gte("date", monthStart).lte("date", monthEnd),
+        supabase
+          .from("attendance")
+          .select("*")
+          .eq("user_id", user.id)
+          .gte("date", historyStart)
+          .order("date", { ascending: true }),
+        (supabase as any)
+          .from("employee_month_awards")
+          .select("*")
+          .eq("employee_id", user.id)
+          .eq("month_start", monthStart)
+          .maybeSingle(),
+        (supabase as any)
+          .from("weekly_feedback")
+          .select("id,week_start,rating,improvements,created_at")
+          .eq("employee_id", user.id)
+          .not("improvements", "is", null)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+
     setToday(t);
-    const monthStart = startOfMonth(new Date()).toISOString().slice(0, 10);
-    const [{ data: m }, awardResult, improvementResult] = await Promise.all([
-      supabase.from("attendance").select("*").eq("user_id", user.id).gte("date", monthStart),
-      (supabase as any)
-        .from("employee_month_awards")
-        .select("*")
-        .eq("employee_id", user.id)
-        .eq("month_start", monthStart)
-        .maybeSingle(),
-      (supabase as any)
-        .from("weekly_feedback")
-        .select("id,week_start,rating,improvements,created_at")
-        .eq("employee_id", user.id)
-        .not("improvements", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-    ]);
+    setAttendanceHistory(historyRows ?? []);
     setMonthAward(awardResult.error ? null : awardResult.data);
     const improvement = improvementResult.error ? null : improvementResult.data;
     setLatestImprovement(improvement);
     if (improvement?.id && !isImprovementDismissed(user.id, improvement.id)) {
       setImprovementOpen(true);
     }
+
+    const monthRows = monthAttendance ?? [];
+    const hours = Math.round(monthRows.reduce((sum, row) => sum + Number(row.work_hours || 0), 0) * 10) / 10;
     setMonthStats({
-      present:
-        m?.filter((x) => x.status === "present" || x.status === "late" || x.status === "wfh")
-          .length ?? 0,
-      late: m?.filter((x) => x.is_late).length ?? 0,
-      leave: m?.filter((x) => x.status === "leave").length ?? 0,
-      hours: Math.round((m?.reduce((a, x) => a + Number(x.work_hours || 0), 0) ?? 0) * 10) / 10,
+      present: monthRows.filter((row) => ["present", "late", "wfh"].includes(row.status)).length,
+      late: monthRows.filter((row) => row.is_late).length,
+      leave: monthRows.filter((row) => row.status === "leave").length,
+      hours,
     });
 
-    // Tasks + productivity
     const { data: tasks } = await supabase
       .from("tasks")
       .select("*")
       .eq("assigned_to", user.id)
       .order("deadline", { ascending: true, nullsFirst: false });
-    const total = tasks?.length || 0;
-    const completed = tasks?.filter((t) => t.status === "completed").length || 0;
-    const active =
-      tasks?.filter((t) => t.status === "in_progress" || t.status === "review").length || 0;
-    const now = Date.now();
-    const overdue =
-      tasks?.filter(
-        (t) => t.deadline && new Date(t.deadline).getTime() < now && t.status !== "completed",
-      ).length || 0;
-    const onTime =
-      tasks?.filter(
-        (t) =>
-          t.status === "completed" &&
-          (!t.deadline || !t.completed_at || new Date(t.completed_at) <= new Date(t.deadline)),
-      ).length || 0;
+    const taskRows = tasks ?? [];
+    const total = taskRows.length;
+    const completed = taskRows.filter((task) => task.status === "completed").length;
+    const active = taskRows.filter((task) => task.status === "in_progress" || task.status === "review").length;
+    const pending = taskRows.filter((task) => task.status !== "completed").length;
+    const overdue = taskRows.filter(
+      (task) => task.deadline && new Date(task.deadline).getTime() < Date.now() && task.status !== "completed",
+    ).length;
+    const onTime = taskRows.filter(
+      (task) =>
+        task.status === "completed" &&
+        (!task.deadline || !task.completed_at || new Date(task.completed_at) <= new Date(task.deadline)),
+    ).length;
     const score = productivityScore({
       completed,
       total,
       onTimeRate: completed ? onTime / completed : 0,
-      hours: monthStats.hours,
+      hours,
       targetHours: 160,
     });
-    setTaskStats({ total, completed, active, overdue, score });
-    setDeadlineTasks(
-      (tasks || [])
-        .filter((t) => t.status !== "completed")
+    setTaskStats({ total, completed, active, overdue, pending, score });
+    setFocusTasks(
+      taskRows
+        .filter((task) => task.status !== "completed")
         .sort((a, b) => {
+          const aOverdue = a.deadline && new Date(a.deadline).getTime() < Date.now();
+          const bOverdue = b.deadline && new Date(b.deadline).getTime() < Date.now();
+          if (aOverdue !== bOverdue) return aOverdue ? -1 : 1;
           if (!a.deadline && !b.deadline) return 0;
           if (!a.deadline) return 1;
           if (!b.deadline) return -1;
           return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
         })
-        .slice(0, 6),
+        .slice(0, 3),
     );
 
-    // Recent activity = recent task updates + own standups
-    const [{ data: rt }, { data: rs }] = await Promise.all([
+    const { data: meetingRows } = await supabase
+      .from("meetings")
+      .select("*")
+      .gte("meeting_time", new Date(new Date().setHours(0, 0, 0, 0)).toISOString())
+      .order("meeting_time", { ascending: true })
+      .limit(8);
+    setMeetings(meetingRows ?? []);
+
+    const [{ data: recentTasks }, { data: standups }] = await Promise.all([
       supabase
         .from("tasks")
         .select("id,title,status,updated_at")
@@ -174,21 +219,28 @@ function EmployeeDashboard() {
         .limit(5),
     ]);
     const items = [
-      ...(rt || []).map((t: any) => ({
+      ...(t?.check_in_time
+        ? [{ kind: "Attendance", when: t.check_in_time, text: `Checked in at ${format(new Date(t.check_in_time), "HH:mm")}` }]
+        : []),
+      ...(t?.check_out_time
+        ? [{ kind: "Attendance", when: t.check_out_time, text: `Checked out at ${format(new Date(t.check_out_time), "HH:mm")}` }]
+        : []),
+      ...(recentTasks || []).map((task: any) => ({
         kind: "Task",
-        when: t.updated_at,
-        text: `${t.title} → ${t.status}`,
+        when: task.updated_at,
+        text: `${task.title} moved to ${humanize(task.status)}`,
       })),
-      ...(rs || []).map((s: any) => ({
+      ...(standups || []).map((standup: any) => ({
         kind: "Standup",
-        when: s.updated_at,
-        text: `Logged standup for ${s.date}`,
+        when: standup.updated_at,
+        text: `Submitted standup for ${standup.date}`,
       })),
     ]
       .sort((a, b) => +new Date(b.when) - +new Date(a.when))
-      .slice(0, 6);
+      .slice(0, 7);
     setRecent(items);
   };
+
   useEffect(() => {
     load();
   }, [user]);
@@ -239,6 +291,7 @@ function EmployeeDashboard() {
 
   const checkIn = async () => {
     if (!user) return;
+    if (isAdmin) return toast.info("Admin accounts do not need attendance check-in.");
     if (isWeeklyOff) return toast.info("Saturday is a weekly off. Attendance is not required.");
     setBusy(true);
     let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
@@ -276,10 +329,12 @@ function EmployeeDashboard() {
     setBusy(false);
     if (error || !insertedToday) return toast.error(error?.message ?? "Unable to check in");
     setToday(insertedToday);
+    load();
     toast.success(isLate ? "Checked in (late)" : "Checked in");
   };
 
   const checkOut = async () => {
+    if (isAdmin) return toast.info("Admin accounts do not need attendance checkout.");
     if (!user || !today) return;
     setBusy(true);
     let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
@@ -314,7 +369,8 @@ function EmployeeDashboard() {
     setBusy(false);
     if (error || !updatedToday) return toast.error(error?.message ?? "Unable to check out");
     setToday(updatedToday);
-    toast.success(`Checked out — ${formatWorkHours(hours)} worked`);
+    load();
+    toast.success(`Checked out - ${formatWorkHours(hours)} worked`);
   };
 
   const status = isWeeklyOff
@@ -324,7 +380,17 @@ function EmployeeDashboard() {
       : today.check_out_time
         ? "Day completed"
         : "Working";
-  const firstName = profile?.full_name?.split(" ")[0] || "there";
+  const workedHours = liveWorkedHours(today, nowTick);
+  const weeklyWorkedHours = useMemo(
+    () => calculateWeeklyWorkedHours(attendanceHistory, today, workedHours),
+    [attendanceHistory, today, workedHours],
+  );
+  const workProgress = Math.min(100, Math.round((workedHours / 8) * 100));
+  const attendanceStreak = calculateAttendanceStreak(attendanceHistory, today);
+  const weeklyProgress = calculateWeeklyProgress(attendanceHistory, today);
+  const todayMeetings = meetings.filter((meeting) => isSameDay(new Date(meeting.meeting_time), new Date())).slice(0, 3);
+  const heatmapDays = useMemo(() => makeHeatmapDays(attendanceHistory), [attendanceHistory]);
+  const pendingLeaveRequests = monthStats.leave;
 
   const dismissImprovement = () => {
     if (user && latestImprovement?.id) {
@@ -375,7 +441,7 @@ function EmployeeDashboard() {
             <DialogTitle>Weekly improvement note</DialogTitle>
             <DialogDescription>
               {latestImprovement?.week_start
-                ? `Your HR review for the week of ${format(new Date(latestImprovement.week_start), "MMM d, yyyy")}`
+                ? `Your HR review for the week of ${formatNepaliDate(latestImprovement.week_start, "DD MMM YYYY")} BS`
                 : "Your latest HR weekly review"}
             </DialogDescription>
           </DialogHeader>
@@ -395,277 +461,236 @@ function EmployeeDashboard() {
         </DialogContent>
       </Dialog>
 
-      <PageHeader
-        title={`Hello, ${firstName}`}
-        subtitle="Your attendance, delivery focus, and productivity snapshot"
-        actions={
-          <>
-            <div className="rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5 text-xs font-medium text-muted-foreground">
-              {format(new Date(), "EEE, MMM d")}
-            </div>
-            <div className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
-              {status}
-            </div>
-          </>
-        }
-      />
-
-      {monthAward && (
-        <GlassCard className="mb-6 overflow-hidden border-amber-200/20 bg-white/[0.035]">
-          <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-200/20 bg-amber-300/10 text-amber-200">
-                <Crown size={28} />
-              </div>
-              <div>
-                <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-amber-200">
-                  <Sparkles size={14} />
-                  Employee of the Month
-                </div>
-                <h2 className="text-2xl font-bold">Congratulations, {firstName}!</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {monthAward.public_message ||
-                    `You earned the official ASLENIX monthly badge with a ${monthAward.score}/100 score.`}
-                </p>
-              </div>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-right">
-              <div className="text-3xl font-bold gradient-text tabular-nums">{monthAward.score}</div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Award score</div>
+      <main className="employee-dashboard">
+        <header className="employee-dashboard-header">
+          <div className="min-w-0">
+            <div className="employee-dashboard-kicker">Aslenix Attendance</div>
+            <h1>Hello, {firstName} 👋</h1>
+            <p>{nepaliToday} BS</p>
+          </div>
+          <div className="employee-dashboard-toolbar">
+            <div className="employee-header-clock">
+              <LiveClock className="employee-live-clock" />
             </div>
           </div>
-        </GlassCard>
-      )}
+        </header>
 
-      <div className="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_420px]">
-        <GlassCard className="relative overflow-hidden border-white/10 bg-white/[0.025] p-0">
-          <div className="relative z-10 grid gap-6 p-6 lg:grid-cols-[minmax(0,1fr)_250px] lg:p-7">
-            <div>
-              <div className="mb-5 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                <ShieldCheck size={15} className="text-primary" />
-                Daily operations
-              </div>
-              <LiveClock className="mb-7" />
-              <div className="grid grid-cols-1 gap-3 border-t border-white/10 pt-5 sm:grid-cols-3">
-                <TodayMetric
-                  label="Check-in"
-                  value={today?.check_in_time ? format(new Date(today.check_in_time), "HH:mm") : "—"}
-                />
-                <TodayMetric
-                  label="Check-out"
-                  value={today?.check_out_time ? format(new Date(today.check_out_time), "HH:mm") : "—"}
-                />
-                <TodayMetric
-                  label="Hours"
-                  value={today?.work_hours ? formatWorkHours(today.work_hours) : "—"}
-                />
-              </div>
+        {monthAward && (
+          <section className="employee-award-card">
+            <div className="employee-award-icon">
+              <Crown size={28} />
             </div>
+            <div className="min-w-0">
+              <div className="employee-dashboard-kicker">Employee of the Month</div>
+              <h2>Congratulations, {firstName}</h2>
+              <p>
+                {monthAward.public_message ||
+                  `You earned the official ASLENIX monthly badge with a ${monthAward.score}/100 score.`}
+              </p>
+            </div>
+            <div className="employee-award-score">
+              <span>{monthAward.score}</span>
+              Award score
+            </div>
+          </section>
+        )}
 
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <div className="mb-4 flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground">Status</div>
-                  <div className="mt-2 text-2xl font-bold text-white">{status}</div>
-                </div>
-                <StatusDot status={status} />
+        <section className="employee-kpi-grid">
+          <DashboardKpi
+            label={`Present Days · ${nepaliMonth.label} BS`}
+            value={monthStats.present}
+            trend={`+${attendanceStreak} day streak`}
+            icon={BadgeCheck}
+            tone="green"
+          />
+          <DashboardKpi
+            label="Hours Worked This Week"
+            value={formatWorkHours(weeklyWorkedHours)}
+            trend={`${Math.round((weeklyWorkedHours / WEEKLY_TARGET_HOURS) * 100)}% of 42h target`}
+            icon={Clock}
+            tone="blue"
+          />
+          <DashboardKpi
+            label="Pending Tasks"
+            value={taskStats.pending}
+            trend={taskStats.overdue ? `${taskStats.overdue} overdue` : "No overdue tasks"}
+            icon={Target}
+            tone={taskStats.overdue ? "red" : "amber"}
+          />
+          <DashboardKpi
+            label="Productivity Score"
+            value={`${taskStats.score}%`}
+            trend={`${taskStats.completed}/${taskStats.total} completed`}
+            icon={Gauge}
+            tone="pink"
+          />
+        </section>
+
+        <section className="employee-main-grid">
+          <article className="employee-panel employee-attendance-panel">
+            <div className="employee-panel-heading">
+              <div>
+                <span>Today's Attendance</span>
+                <h2>{status}</h2>
               </div>
-              {isWeeklyOff ? (
-                <div className="rounded-xl border border-accent/20 bg-accent/10 p-3 text-sm leading-6 text-accent">
-                  Saturday is weekly off for everyone. No attendance is required today.
+              <StatusDot status={status} />
+            </div>
+            {isAdmin ? (
+              <div className="employee-action-row employee-action-row-top">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-sm font-semibold text-muted-foreground">
+                  Admin attendance is not required.
                 </div>
-              ) : !today ? (
+              </div>
+            ) : (
+              <div className="employee-action-row employee-action-row-top">
                 <Button
                   onClick={checkIn}
-                  disabled={busy}
-                  className="neon-button h-12 w-full rounded-xl text-base"
+                  disabled={busy || isWeeklyOff || Boolean(today)}
+                  className="neon-button h-12 rounded-xl"
                 >
                   <LogIn size={17} className="mr-2" />
-                  Check in
+                  Check In
                 </Button>
-              ) : !today.check_out_time ? (
                 <Button
                   onClick={checkOut}
-                  disabled={busy}
+                  disabled={busy || !today || Boolean(today?.check_out_time)}
                   variant="outline"
-                  className="h-12 w-full rounded-xl text-base"
+                  className="h-12 rounded-xl"
                 >
                   <LogOut size={17} className="mr-2" />
-                  Check out
+                  Check Out
                 </Button>
+              </div>
+            )}
+            <div className="employee-attendance-body">
+              <WorkHoursRing progress={workProgress} hours={workedHours} />
+              <div className="employee-attendance-details">
+                <MiniMetric label="Check In" value={today?.check_in_time ? format(new Date(today.check_in_time), "HH:mm") : "--"} />
+                <MiniMetric label="Check Out" value={today?.check_out_time ? format(new Date(today.check_out_time), "HH:mm") : "--"} />
+                <MiniMetric label="Working Hours" value={workedHours ? formatWorkHours(workedHours) : "--"} />
+                <MiniMetric label="Attendance Streak" value={`${attendanceStreak} days`} />
+              </div>
+            </div>
+            <div className="employee-week-progress">
+              <div>
+                <span>Weekly Attendance Progress</span>
+                <strong>{weeklyProgress}/{WEEKLY_WORKING_DAYS} days</strong>
+              </div>
+              <div className="employee-progress-track">
+                <div style={{ width: `${Math.min(100, (weeklyProgress / WEEKLY_WORKING_DAYS) * 100)}%` }} />
+              </div>
+            </div>
+          </article>
+
+          <article className="employee-panel employee-quick-panel">
+            <div className="employee-panel-heading compact">
+              <div>
+                <span>Next Actions</span>
+                <h2>Quick Actions</h2>
+              </div>
+              <ArrowUpRight size={20} />
+            </div>
+            <div className="employee-quick-grid">
+              <QuickActionLink to="/tasks" icon={Target} label="My Tasks" />
+              <QuickActionLink to="/standup" icon={Activity} label="Daily Standup" />
+              <QuickActionLink to="/my-leaves" icon={Calendar} label="Request Leave" />
+              <QuickActionLink to="/my-attendance" icon={History} label="Attendance History" />
+              <QuickActionLink to="/meetings" icon={Video} label="Meetings" />
+              <QuickActionLink to="/profile" icon={UserRoundCog} label="Update Profile" />
+            </div>
+          </article>
+        </section>
+
+        <section className="employee-work-grid">
+          <article className="employee-panel">
+            <div className="employee-panel-heading compact">
+              <div>
+                <span>Work Management</span>
+                <h2>Overdue & Active Tasks</h2>
+              </div>
+              <Link to="/tasks" className="employee-pill-link">Open Tasks</Link>
+            </div>
+            <div className="employee-task-list">
+              {focusTasks.length ? (
+                focusTasks.map((task) => <TaskFocusCard key={task.id} task={task} nowTick={nowTick} />)
               ) : (
-                <div className="rounded-xl border border-success/20 bg-success/10 p-3 text-sm font-medium text-success">
-                  Worked {formatWorkHours(today.work_hours)} today
-                </div>
+                <EmptyPanel icon={CheckCircle2} title="No urgent tasks" text="Your active work queue is clear." />
               )}
             </div>
-          </div>
-        </GlassCard>
+          </article>
 
-        <GlassCard className="bg-white/[0.025]">
-          <div className="mb-4 flex items-center justify-between gap-3">
+          <article className="employee-panel">
+            <div className="employee-panel-heading compact">
+              <div>
+                <span>Schedule</span>
+                <h2>Today's Meetings</h2>
+              </div>
+              <Link to="/meetings" className="employee-pill-link">All Meetings</Link>
+            </div>
+            <div className="employee-meeting-list">
+              {todayMeetings.length ? (
+                todayMeetings.map((meeting) => <MeetingCard key={meeting.id} meeting={meeting} />)
+              ) : (
+                <EmptyPanel icon={CalendarClock} title="No meetings scheduled today" text="Your calendar is clear for focused work." />
+              )}
+            </div>
+          </article>
+        </section>
+
+        <section className="employee-analytics-grid">
+          <article className="employee-panel">
+            <div className="employee-panel-heading compact">
+              <div>
+                <span>Last 15 Days</span>
+                <h2>Attendance Heatmap</h2>
+              </div>
+            </div>
+            <div className="employee-heatmap">
+              {heatmapDays.map((day) => (
+                <span key={day.date} className={`heatmap-cell ${day.status}`} title={`${day.date}: ${day.status}`} />
+              ))}
+            </div>
+            <div className="employee-heatmap-legend">
+              <LegendDot tone="present" label="Present" />
+              <LegendDot tone="late" label="Late" />
+              <LegendDot tone="absent" label="Absent" />
+              <LegendDot tone="holiday" label="Holiday" />
+            </div>
+          </article>
+
+          <article className="employee-panel">
+            <div className="employee-panel-heading compact">
+              <div>
+                <span>Activity Feed</span>
+                <h2>Recent Activity</h2>
+              </div>
+            </div>
+            <div className="employee-timeline">
+              {recent.length ? (
+                recent.map((item, index) => <TimelineItem key={`${item.kind}-${item.when}-${index}`} item={item} />)
+              ) : (
+                <EmptyPanel icon={Activity} title="No recent activity" text="Task, attendance, and standup events will appear here." />
+              )}
+            </div>
+          </article>
+        </section>
+
+        <section className="employee-panel employee-insights">
+          <div className="employee-panel-heading compact">
             <div>
-              <h3 className="text-lg font-semibold">Quick actions</h3>
-              <p className="text-xs text-muted-foreground">Common employee workflows</p>
+              <span>AI Productivity Insights</span>
+              <h2>Recommended focus for today</h2>
             </div>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.04] text-primary">
-              <ArrowUpRight size={18} />
-            </div>
+            <Sparkles size={20} />
           </div>
-          <div className="grid gap-2">
-            <QuickActionLink to="/tasks" icon={ListTodo} label="My tasks" />
-            <QuickActionLink to="/standup" icon={Activity} label="Daily standup" />
-            <QuickActionLink to="/my-leaves" icon={Calendar} label="Request leave" />
-            <QuickActionLink to="/profile" icon={CheckCircle2} label="Update profile" />
+          <div className="employee-insight-grid">
+            <InsightItem icon={Flame} text={`Attendance streak: ${attendanceStreak} days`} />
+            <InsightItem icon={TrendingUp} text={`Productivity score is ${taskStats.score}% this month`} />
+            <InsightItem icon={Target} text={taskStats.overdue ? `${taskStats.overdue} task requires immediate attention` : "No overdue tasks right now"} />
+            <InsightItem icon={Calendar} text={pendingLeaveRequests ? `${pendingLeaveRequests} leave day this month` : "No pending leave requests"} />
           </div>
-        </GlassCard>
-      </div>
-
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <ExecutiveMetric label="Present this month" value={monthStats.present} icon={CheckCircle2} tone="green" />
-        <ExecutiveMetric label="Late arrivals" value={monthStats.late} icon={Clock} tone="amber" />
-        <ExecutiveMetric label="Leave days" value={monthStats.leave} icon={CalendarClock} tone="blue" />
-        <ExecutiveMetric label="Hours worked" value={formatWorkHours(monthStats.hours)} icon={TrendingUp} tone="red" />
-      </div>
-
-      <GlassCard className="mb-6 border-white/10 bg-white/[0.025]">
-        <div className="mb-5 flex items-center justify-between gap-3">
-          <div>
-            <h3 className="flex items-center gap-2 text-lg font-semibold">
-              <Clock size={16} className="text-primary" />
-              Task deadlines
-            </h3>
-            <p className="text-xs text-muted-foreground mt-1">
-              Countdown for active tasks assigned to you
-            </p>
-          </div>
-          <Link to="/tasks" className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/15">
-            Open tasks
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {deadlineTasks.map((task) => {
-            const countdown = getTaskCountdown(task.deadline, nowTick);
-            const isOverdue = countdown.state === "overdue";
-            const isDueSoon = countdown.state === "soon";
-
-            return (
-              <Link
-                key={task.id}
-                to="/tasks"
-                className="group rounded-2xl border border-white/10 bg-black/20 p-4 transition hover:border-primary/30 hover:bg-white/[0.045]"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold text-white">{task.title}</div>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      {task.deadline ? format(new Date(task.deadline), "MMM d, h:mm a") : "No deadline"}
-                    </div>
-                  </div>
-                  <span
-                    className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums ${
-                      isOverdue
-                        ? "bg-destructive/15 text-destructive"
-                        : isDueSoon
-                          ? "bg-amber-500/15 text-amber-400"
-                          : "bg-primary/15 text-primary"
-                    }`}
-                  >
-                    {countdown.label}
-                  </span>
-                </div>
-                <div className="mt-3">
-                  <div className="mb-1 flex items-center justify-between text-[11px] text-muted-foreground">
-                    <span className="capitalize">{task.status.replaceAll("_", " ")}</span>
-                    <span>{task.progress}%</span>
-                  </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{ width: `${task.progress}%`, background: "var(--gradient-brand)" }}
-                    />
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-          {deadlineTasks.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 p-6 text-center text-sm text-muted-foreground md:col-span-2 xl:col-span-3">
-              <AlertCircle size={18} className="mx-auto mb-2 text-primary" />
-              No active task deadlines right now.
-            </div>
-          )}
-        </div>
-      </GlassCard>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <GlassCard className="border-white/10 bg-white/[0.025]">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="flex items-center gap-2 font-semibold">
-              <Zap size={16} className="text-primary" /> Productivity score
-            </h3>
-            <span
-              className="text-3xl font-bold tabular-nums"
-              style={{
-                background: "var(--gradient-brand)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              }}
-            >
-              {taskStats.score}
-            </span>
-          </div>
-          <div className="mb-4 h-2 overflow-hidden rounded-full bg-white/10">
-            <div
-              className="h-full rounded-full transition-all"
-              style={{ width: `${taskStats.score}%`, background: "var(--gradient-brand)" }}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <ScoreTile label="Total" value={taskStats.total} />
-            <ScoreTile label="Completed" value={taskStats.completed} />
-            <ScoreTile label="Active" value={taskStats.active} />
-            <ScoreTile label="Overdue" value={taskStats.overdue} danger />
-          </div>
-        </GlassCard>
-
-        <GlassCard className="border-white/10 bg-white/[0.025] lg:col-span-2">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="font-semibold">Recent activity</h3>
-              <p className="text-xs text-muted-foreground">Latest task and standup updates</p>
-            </div>
-            <Link to="/tasks" className="rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-white/[0.06]">
-              View all
-            </Link>
-          </div>
-          <ul className="divide-y divide-white/10">
-            {recent.map((r, i) => (
-              <li key={i} className="flex items-start gap-3 py-3">
-                <div
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
-                  style={{ background: "var(--gradient-brand-soft)" }}
-                >
-                  <Activity size={12} className="text-primary" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs text-muted-foreground">{r.kind}</div>
-                  <div className="truncate text-sm font-medium text-white">{r.text}</div>
-                </div>
-                <div className="text-xs text-muted-foreground whitespace-nowrap">
-                  {format(new Date(r.when), "MMM d HH:mm")}
-                </div>
-              </li>
-            ))}
-            {recent.length === 0 && (
-              <li className="py-6 text-center text-sm text-muted-foreground">
-                No activity yet — create your first task.
-              </li>
-            )}
-          </ul>
-        </GlassCard>
-      </div>
+        </section>
+      </main>
     </>
   );
 }
@@ -704,7 +729,7 @@ function NotificationPopup({
               </DialogHeader>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3 text-xs text-muted-foreground">
-              {format(new Date(notification.created_at), "MMM d, yyyy HH:mm")}
+              {formatNepaliDate(notification.created_at, "DD MMM YYYY")} BS, {format(new Date(notification.created_at), "HH:mm")}
             </div>
             <DialogFooter className="mt-5 flex-col gap-2 sm:flex-row">
               <Button variant="outline" className="h-11 rounded-xl" onClick={onClose}>
@@ -722,26 +747,60 @@ function NotificationPopup({
   );
 }
 
-function TodayMetric({ label, value }: { label: string; value: string }) {
+function DashboardKpi({
+  label,
+  value,
+  trend,
+  icon: Icon,
+  tone,
+}: {
+  label: string;
+  value: string | number;
+  trend: string;
+  icon: typeof Clock;
+  tone: "green" | "blue" | "amber" | "red" | "pink";
+}) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-      <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="mt-2 text-xl font-bold tabular-nums text-white">{value}</div>
-    </div>
+    <article className={`employee-kpi-card ${tone}`}>
+      <div className="employee-kpi-icon">
+        <Icon size={20} />
+      </div>
+      <div className="employee-kpi-copy">
+        <span>{label}</span>
+        <div className="employee-kpi-value">
+          <strong>{value}</strong>
+          <small>{trend}</small>
+        </div>
+      </div>
+    </article>
   );
 }
 
 function StatusDot({ status }: { status: string }) {
-  const tone =
-    status === "Working"
-      ? "bg-success shadow-[0_0_24px_rgba(34,197,94,.35)]"
-      : status === "Day completed"
-        ? "bg-primary shadow-[0_0_24px_rgba(255,45,111,.3)]"
-        : "bg-muted-foreground";
-
+  const active = status === "Working";
   return (
-    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04]">
-      <span className={`h-3 w-3 rounded-full ${tone}`} />
+    <div className="employee-status-dot">
+      <span className={active ? "active" : ""} />
+    </div>
+  );
+}
+
+function WorkHoursRing({ progress, hours }: { progress: number; hours: number }) {
+  return (
+    <div className="employee-work-ring" style={{ ["--work-progress" as string]: `${progress * 3.6}deg` }}>
+      <div>
+        <strong>{hours ? formatWorkHours(hours) : "0h"}</strong>
+        <span>{progress}% of 8h</span>
+      </div>
+    </div>
+  );
+}
+
+function MiniMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="employee-mini-metric">
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }
@@ -751,74 +810,107 @@ function QuickActionLink({
   icon: Icon,
   label,
 }: {
-  to: "/tasks" | "/standup" | "/my-leaves" | "/profile";
-  icon: typeof ListTodo;
+  to: "/tasks" | "/standup" | "/my-leaves" | "/my-attendance" | "/meetings" | "/profile";
+  icon: typeof Target;
   label: string;
 }) {
   return (
-    <Link
-      to={to}
-      className="group flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm font-semibold text-white transition hover:border-primary/30 hover:bg-white/[0.05]"
-    >
-      <span className="flex min-w-0 items-center gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] text-muted-foreground transition group-hover:text-primary">
-          <Icon size={16} />
-        </span>
-        <span className="truncate">{label}</span>
-      </span>
-      <ArrowUpRight size={15} className="shrink-0 text-muted-foreground transition group-hover:text-primary" />
+    <Link to={to} className="employee-quick-action">
+      <Icon size={18} />
+      <span>{label}</span>
     </Link>
   );
 }
 
-function ExecutiveMetric({
-  label,
-  value,
-  icon: Icon,
-  tone,
-}: {
-  label: string;
-  value: string | number;
-  icon: typeof Clock;
-  tone: "green" | "amber" | "blue" | "red";
-}) {
-  const colors = {
-    green: "text-success bg-success/10 border-success/20",
-    amber: "text-warning bg-warning/10 border-warning/20",
-    blue: "text-blue-300 bg-blue-500/10 border-blue-400/20",
-    red: "text-primary bg-primary/10 border-primary/20",
-  };
+function TaskFocusCard({ task, nowTick }: { task: any; nowTick: number }) {
+  const countdown = getTaskCountdown(task.deadline, nowTick);
+  const priority = countdown.state === "overdue" ? "High" : countdown.state === "soon" ? "Medium" : "Normal";
 
   return (
-    <GlassCard className="border-white/10 bg-white/[0.025]">
-      <div className="flex items-start justify-between gap-4">
+    <article className="employee-task-card">
+      <div className="employee-task-top">
         <div className="min-w-0">
-          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
-          <div className="mt-3 truncate text-3xl font-bold tabular-nums text-white">{value}</div>
+          <h3>{task.title}</h3>
+          <p>{task.project_name || task.project || "Aslenix Workstream"}</p>
         </div>
-        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${colors[tone]}`}>
-          <Icon size={19} />
-        </div>
+        <span className={`employee-priority ${priority.toLowerCase()}`}>{priority}</span>
       </div>
-    </GlassCard>
+      <div className="employee-task-meta">
+        <span>
+          {task.deadline
+            ? `${formatNepaliDate(task.deadline, "DD MMM")} BS, ${format(new Date(task.deadline), "h:mm a")}`
+            : "No due date"}
+        </span>
+        <span>{countdown.label}</span>
+      </div>
+      <div className="employee-progress-track">
+        <div style={{ width: `${task.progress || 0}%` }} />
+      </div>
+      <Link to="/tasks" className="employee-secondary-button">
+        Continue Working
+        <ArrowUpRight size={14} />
+      </Link>
+    </article>
   );
 }
 
-function ScoreTile({
-  label,
-  value,
-  danger = false,
-}: {
-  label: string;
-  value: number;
-  danger?: boolean;
-}) {
+function MeetingCard({ meeting }: { meeting: any }) {
+  const start = new Date(meeting.meeting_time);
+
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={`mt-1 text-lg font-bold tabular-nums ${danger ? "text-destructive" : "text-white"}`}>
-        {value}
+    <article className="employee-meeting-card">
+      <div>
+        <h3>{meeting.title}</h3>
+        <p>{format(start, "h:mm a")} · 30 min · {meeting.location || "Online"}</p>
       </div>
+      {meeting.meeting_link ? (
+        <a href={meeting.meeting_link} target="_blank" rel="noreferrer" className="employee-secondary-button">
+          Join Meeting
+          <Video size={14} />
+        </a>
+      ) : (
+        <span className="employee-muted-pill">No link</span>
+      )}
+    </article>
+  );
+}
+
+function EmptyPanel({ icon: Icon, title, text }: { icon: typeof Activity; title: string; text: string }) {
+  return (
+    <div className="employee-empty-state">
+      <Icon size={22} />
+      <strong>{title}</strong>
+      <span>{text}</span>
+    </div>
+  );
+}
+
+function LegendDot({ tone, label }: { tone: HeatmapDay["status"]; label: string }) {
+  return (
+    <span>
+      <i className={`heatmap-cell ${tone}`} />
+      {label}
+    </span>
+  );
+}
+
+function TimelineItem({ item }: { item: ActivityItem }) {
+  return (
+    <div className="employee-timeline-item">
+      <span />
+      <div>
+        <strong>{item.text}</strong>
+        <small>{item.kind} · {formatNepaliDate(item.when, "DD MMM")} BS, {format(new Date(item.when), "HH:mm")}</small>
+      </div>
+    </div>
+  );
+}
+
+function InsightItem({ icon: Icon, text }: { icon: typeof Sparkles; text: string }) {
+  return (
+    <div className="employee-insight-item">
+      <Icon size={17} />
+      <span>{text}</span>
     </div>
   );
 }
@@ -828,6 +920,98 @@ function isBeforeOfficeEnd(now: Date, officeEndTime?: string | null) {
   const boundary = new Date(now);
   boundary.setHours(hour || 18, minute || 0, 0, 0);
   return now < boundary;
+}
+
+function liveWorkedHours(today: any, nowMs: number) {
+  if (!today?.check_in_time) return 0;
+  if (today.work_hours) return Number(today.work_hours);
+  const end = today.check_out_time ? new Date(today.check_out_time).getTime() : nowMs;
+  return Math.max(0, Math.round(((end - new Date(today.check_in_time).getTime()) / 3600000) * 100) / 100);
+}
+
+function calculateWeeklyWorkedHours(rows: any[], today: any, liveTodayHours: number) {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+  const end = new Date(start);
+  end.setDate(start.getDate() + WEEKLY_WORKING_DAYS - 1);
+
+  const todayDate = format(now, "yyyy-MM-dd");
+  const total = rows.reduce((sum, row) => {
+    const rowDate = new Date(`${row.date}T00:00:00`);
+    if (rowDate < start || rowDate > end || row.date === todayDate) return sum;
+    return sum + Number(row.work_hours || 0);
+  }, 0);
+
+  const todayHours = today?.date === todayDate ? liveTodayHours : 0;
+  return Math.round((total + todayHours) * 10) / 10;
+}
+
+function calculateAttendanceStreak(rows: any[], today: any) {
+  const todayDate = format(new Date(), "yyyy-MM-dd");
+  const rowByDate = new Map(rows.map((row) => [row.date, row]));
+  if (today?.date) rowByDate.set(today.date, today);
+
+  const latestDate = Array.from(rowByDate.keys())
+    .filter((date) => date <= todayDate)
+    .sort()
+    .at(-1);
+  if (!latestDate) return 0;
+
+  const latestRow = rowByDate.get(latestDate);
+  if (!["present", "late", "wfh"].includes(latestRow?.status)) return 0;
+
+  let streak = 0;
+  const start = new Date(`${latestDate}T00:00:00`);
+  for (let offset = 0; offset < 90; offset += 1) {
+    const date = format(subDays(start, offset), "yyyy-MM-dd");
+    if (isWeeklyOffDate(date)) continue;
+    const row = rowByDate.get(date);
+    if (row && ["present", "late", "wfh"].includes(row.status)) streak += 1;
+    else break;
+  }
+  return streak;
+}
+
+function calculateWeeklyProgress(rows: any[], today: any) {
+  const now = new Date();
+  const start = subDays(now, now.getDay());
+  const dates = new Set(rows.filter((row) => ["present", "late", "wfh"].includes(row.status)).map((row) => row.date));
+  if (today && ["present", "late", "wfh"].includes(today.status)) dates.add(today.date);
+  let count = 0;
+  for (let index = 0; index < WEEKLY_WORKING_DAYS; index += 1) {
+    if (dates.has(format(new Date(start.getFullYear(), start.getMonth(), start.getDate() + index), "yyyy-MM-dd"))) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+function makeHeatmapDays(rows: any[]): HeatmapDay[] {
+  const rowByDate = new Map(rows.map((row) => [row.date, row]));
+  return Array.from({ length: 15 }, (_, index) => {
+    const date = format(subDays(new Date(), 14 - index), "yyyy-MM-dd");
+    if (isWeeklyOffDate(date)) return { date, status: "holiday" };
+    const row = rowByDate.get(date);
+    if (!row) return { date, status: "none" };
+    if (row.status === "absent") return { date, status: "absent" };
+    if (row.is_late || row.status === "late") return { date, status: "late" };
+    if (["present", "wfh"].includes(row.status)) return { date, status: "present" };
+    return { date, status: "none" };
+  });
+}
+
+function initials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+}
+
+function humanize(value: string) {
+  return value.replaceAll("_", " ");
 }
 
 function improvementDismissalKey(userId: string, reviewId: string) {

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
+import { BSDateInput } from "@/components/BSDateInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,7 +30,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { bsInputToAdDateString, formatNepaliDate } from "@/lib/nepali-calendar";
 
 export const Route = createFileRoute("/_app/my-leaves")({ component: MyLeaves });
 
@@ -72,10 +73,13 @@ function MyLeaves() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    const startDate = bsInputToAdDateString(form.start_date);
+    const endDate = bsInputToAdDateString(form.end_date);
+    if (!startDate || !endDate) return toast.error("Enter valid BS dates in YYYY-MM-DD format");
     setBusy(true);
     const { error } = await supabase
       .from("leave_requests")
-      .insert({ ...form, user_id: user.id, leave_type: form.leave_type as any });
+      .insert({ ...form, start_date: startDate, end_date: endDate, user_id: user.id, leave_type: form.leave_type as any });
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Leave requested");
@@ -182,23 +186,21 @@ function MyLeaves() {
                 </Select>
               </div>
               <div>
-                <Label className="mb-2 block text-sm font-semibold text-white">Start date</Label>
-                <Input
-                  type="date"
+                <Label className="mb-2 block text-sm font-semibold text-white">Start date (BS)</Label>
+                <BSDateInput
                   required
                   value={form.start_date}
-                  onChange={(e) => setForm({ ...form, start_date: e.target.value })}
-                  className="rounded-xl border-white/10 bg-black/20"
+                  onChange={(value) => setForm({ ...form, start_date: value })}
+                  inputClassName="rounded-xl border-white/10 bg-black/20"
                 />
               </div>
               <div>
-                <Label className="mb-2 block text-sm font-semibold text-white">End date</Label>
-                <Input
-                  type="date"
+                <Label className="mb-2 block text-sm font-semibold text-white">End date (BS)</Label>
+                <BSDateInput
                   required
                   value={form.end_date}
-                  onChange={(e) => setForm({ ...form, end_date: e.target.value })}
-                  className="rounded-xl border-white/10 bg-black/20"
+                  onChange={(value) => setForm({ ...form, end_date: value })}
+                  inputClassName="rounded-xl border-white/10 bg-black/20"
                 />
               </div>
               <div className="sm:col-span-2">
@@ -248,8 +250,8 @@ function MyLeaves() {
                       <LeaveStatusPill status={r.status} />
                     </div>
                     <div className="mt-3 text-lg font-semibold text-white">
-                      {format(new Date(r.start_date), "MMM d, yyyy")} to{" "}
-                      {format(new Date(r.end_date), "MMM d, yyyy")}
+                      {formatNepaliDate(r.start_date, "DD MMMM YYYY")} BS to{" "}
+                      {formatNepaliDate(r.end_date, "DD MMMM YYYY")} BS
                     </div>
                     <div className="mt-1 text-sm text-muted-foreground">
                       {getLeaveDays(r.start_date, r.end_date)} requested days

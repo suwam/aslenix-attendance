@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { Input } from "@/components/ui/input";
+import { GlassTimeInput } from "@/components/BSDateInput";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Loader2, Save } from "lucide-react";
@@ -82,38 +83,25 @@ function SettingsPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Office start</Label>
-              <Input
-                type="time"
-                value={s.office_start_time?.slice(0, 5)}
-                onChange={(e) => setS({ ...s, office_start_time: e.target.value })}
-              />
+              <GlassTimeInput value={s.office_start_time?.slice(0, 5) || ""} onChange={(value) => setS({ ...s, office_start_time: value })} />
             </div>
             <div>
               <Label>Office end</Label>
-              <Input
-                type="time"
-                value={s.office_end_time?.slice(0, 5)}
-                onChange={(e) => setS({ ...s, office_end_time: e.target.value })}
-              />
+              <GlassTimeInput value={s.office_end_time?.slice(0, 5) || ""} onChange={(value) => setS({ ...s, office_end_time: value })} />
             </div>
             <div className="col-span-2">
               <Label>Late after</Label>
-              <Input
-                type="time"
-                value={s.late_after_time?.slice(0, 5)}
-                onChange={(e) => setS({ ...s, late_after_time: e.target.value })}
-              />
+              <GlassTimeInput value={s.late_after_time?.slice(0, 5) || ""} onChange={(value) => setS({ ...s, late_after_time: value })} />
               <p className="text-xs text-muted-foreground mt-1">
                 Check-ins after this time are flagged as late.
               </p>
             </div>
             <div className="col-span-2">
               <Label>Auto checkout at</Label>
-              <Input
-                type="time"
-                value={s.auto_checkout_time?.slice(0, 5)}
-                onChange={(e) => setS({ ...s, auto_checkout_time: e.target.value })}
-                disabled={!supportsAutoCheckout}
+              <GlassTimeInput
+                value={s.auto_checkout_time?.slice(0, 5) || ""}
+                onChange={(value) => setS({ ...s, auto_checkout_time: value })}
+                className={!supportsAutoCheckout ? "pointer-events-none opacity-60" : undefined}
               />
               <p className="text-xs text-muted-foreground mt-1">
                 {supportsAutoCheckout

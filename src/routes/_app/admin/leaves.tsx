@@ -46,7 +46,18 @@ function LeavesPage() {
       };
     });
 
-    let filtered = normalizedLeaves;
+    const requestUserIds = [...new Set(normalizedLeaves.map((l) => l.user_id))];
+    const { data: roleRows } = requestUserIds.length
+      ? await supabase
+          .from("user_roles")
+          .select("user_id, role")
+          .in("user_id", requestUserIds)
+          .in("role", ["admin", "super_admin", "hr_manager"])
+      : { data: [] };
+    const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
+    const employeeLeaves = normalizedLeaves.filter((leave) => !adminUserIds.has(leave.user_id));
+
+    let filtered = employeeLeaves;
     if (tab !== "all") filtered = filtered.filter((l) => l.status === tab);
 
     const ids = [...new Set(filtered.map((l) => l.user_id))];
@@ -56,7 +67,7 @@ function LeavesPage() {
       .in("user_id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
     const map = new Map((profs ?? []).map((p) => [p.user_id, p]));
 
-    setAllRows(normalizedLeaves);
+    setAllRows(employeeLeaves);
     setFilteredRows(
       filtered.map((l) => ({
         ...l,

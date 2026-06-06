@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
+import { BSDateInput } from "@/components/BSDateInput";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,19 +16,21 @@ import {
 import { Download, Printer, Loader2 } from "lucide-react";
 import { addDays, format, startOfWeek } from "date-fns";
 import { formatWorkHours } from "@/lib/work-hours";
+import { bsInputToAdDateString, formatBsInput, formatNepaliDate } from "@/lib/nepali-calendar";
 import { isWeeklyOffDate } from "@/lib/weekly-off";
 
 export const Route = createFileRoute("/_app/admin/reports")({ component: ReportsPage });
 
 function ReportsPage() {
   const [period, setPeriod] = useState<"daily" | "weekly">("daily");
-  const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [bsDate, setBsDate] = useState(formatBsInput());
+  const date = bsInputToAdDateString(bsDate) ?? format(new Date(), "yyyy-MM-dd");
   const [statusFilter, setStatusFilter] = useState("all");
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const isWeeklyOff = isWeeklyOffDate(date);
-  const weekStart = format(startOfWeek(new Date(date), { weekStartsOn: 1 }), "yyyy-MM-dd");
-  const weekEnd = format(addDays(new Date(weekStart), 6), "yyyy-MM-dd");
+  const weekStart = format(startOfWeek(new Date(`${date}T00:00:00`), { weekStartsOn: 0 }), "yyyy-MM-dd");
+  const weekEnd = format(addDays(new Date(`${weekStart}T00:00:00`), 5), "yyyy-MM-dd");
 
   const run = async () => {
     setLoading(true);
@@ -36,17 +39,20 @@ function ReportsPage() {
       setLoading(false);
       return;
     }
-    const [{ data: attendance }, { data: profiles }] = await Promise.all([
+    const [{ data: attendance }, { data: profiles }, { data: roleRows }] = await Promise.all([
       supabase.from("attendance").select("*").eq("date", date).order("date", { ascending: false }),
       supabase
         .from("profiles")
         .select("user_id, full_name, email, department")
         .eq("approval_status", "approved")
         .order("full_name"),
+      supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
     ]);
 
+    const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
+    const employeeProfiles = (profiles ?? []).filter((profile) => !adminUserIds.has(profile.user_id));
     const attendanceByUser = new Map((attendance ?? []).map((row) => [row.user_id, row]));
-    const merged = (profiles ?? []).map((profile) => ({
+    const merged = employeeProfiles.map((profile) => ({
       ...profile,
       attendance: attendanceByUser.get(profile.user_id) ?? null,
     }));
@@ -65,7 +71,7 @@ function ReportsPage() {
   };
 
   const runWeeklyReport = async () => {
-    const [{ data: attendance }, { data: profiles }] = await Promise.all([
+    const [{ data: attendance }, { data: profiles }, { data: roleRows }] = await Promise.all([
       supabase
         .from("attendance")
         .select("*")
@@ -77,14 +83,17 @@ function ReportsPage() {
         .select("user_id, full_name, email, department")
         .eq("approval_status", "approved")
         .order("full_name"),
+      supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
     ]);
 
+    const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
+    const employeeProfiles = (profiles ?? []).filter((profile) => !adminUserIds.has(profile.user_id));
     const attendanceByUser = new Map<string, any[]>();
     (attendance ?? []).forEach((row) => {
       attendanceByUser.set(row.user_id, [...(attendanceByUser.get(row.user_id) ?? []), row]);
     });
 
-    const merged = (profiles ?? []).map((profile) => {
+    const merged = employeeProfiles.map((profile) => {
       const records = attendanceByUser.get(profile.user_id) ?? [];
       const workDays = weekDates(weekStart).filter((day) => !isWeeklyOffDate(day)).length;
       return {
@@ -246,11 +255,11 @@ function ReportsPage() {
             </Select>
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">{period === "weekly" ? "Week date" : "Date"}</label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <label className="text-xs text-muted-foreground">{period === "weekly" ? "Week date (BS)" : "Date (BS)"}</label>
+            <BSDateInput value={bsDate} onChange={setBsDate} />
             {period === "weekly" && (
               <div className="mt-1 text-xs text-muted-foreground">
-                {format(new Date(weekStart), "MMM d")} - {format(new Date(weekEnd), "MMM d, yyyy")}
+                {formatNepaliDate(weekStart, "DD MMMM")} - {formatNepaliDate(weekEnd, "DD MMMM YYYY")} BS
               </div>
             )}
           </div>
@@ -309,7 +318,7 @@ function ReportsPage() {
                   const attendance = row.attendance;
                   return (
                     <tr key={row.user_id} className="border-b border-border/40 hover:bg-muted/20">
-                      <td className="p-3">{format(new Date(date), "MMM d, yyyy")}</td>
+                      <td className="p-3">{formatNepaliDate(date, "ddd DD, MMMM YYYY")} BS</td>
                       <td className="p-3 font-medium">{row.full_name || "—"}</td>
                       <td className="p-3 text-muted-foreground">{row.department || "—"}</td>
                       <td className="p-3 tabular-nums">
@@ -377,7 +386,7 @@ function WeeklyReportTable({ rows, weekStart, weekEnd }: { rows: any[]; weekStar
           {rows.map((row) => (
             <tr key={row.user_id} className="border-b border-border/40 hover:bg-muted/20">
               <td className="p-3">
-                {format(new Date(weekStart), "MMM d")} - {format(new Date(weekEnd), "MMM d")}
+                {formatNepaliDate(weekStart, "DD MMMM")} - {formatNepaliDate(weekEnd, "DD MMMM YYYY")} BS
               </td>
               <td className="p-3 font-medium">{row.full_name || "—"}</td>
               <td className="p-3 text-muted-foreground">{row.department || "—"}</td>
@@ -397,5 +406,5 @@ function WeeklyReportTable({ rows, weekStart, weekEnd }: { rows: any[]; weekStar
 }
 
 function weekDates(weekStart: string) {
-  return Array.from({ length: 7 }, (_, index) => format(addDays(new Date(weekStart), index), "yyyy-MM-dd"));
+  return Array.from({ length: 6 }, (_, index) => format(addDays(new Date(`${weekStart}T00:00:00`), index), "yyyy-MM-dd"));
 }

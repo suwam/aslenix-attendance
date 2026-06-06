@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { formatNepaliDate } from "@/lib/nepali-calendar";
 import { isWeeklyOffDate, WEEKLY_OFF_LABEL } from "@/lib/weekly-off";
 
 export const Route = createFileRoute("/_app/check-in")({ component: CheckInPage });
@@ -38,7 +39,7 @@ type AttendanceRow = {
 };
 
 function CheckInPage() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [today, setToday] = useState<AttendanceRow | null>(null);
   const [history, setHistory] = useState<AttendanceRow[]>([]);
   const [busy, setBusy] = useState(false);
@@ -70,6 +71,7 @@ function CheckInPage() {
 
   const checkIn = async () => {
     if (!user) return;
+    if (isAdmin) return toast.info("Admin accounts do not need attendance check-in.");
     if (isWeeklyOff) return toast.info("Saturday is a weekly off. Attendance is not required.");
     setBusy(true);
     let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
@@ -111,6 +113,7 @@ function CheckInPage() {
     toast.success(isLate ? "Checked in (late)" : "Checked in");
   };
   const checkOut = async () => {
+    if (isAdmin) return toast.info("Admin accounts do not need attendance checkout.");
     if (!today) return;
     setBusy(true);
     let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
@@ -158,6 +161,17 @@ function CheckInPage() {
   return (
     <>
       <PageHeader title="Check-in" subtitle="Daily attendance" />
+      {isAdmin ? (
+        <GlassCard className="border-white/10 bg-white/[0.025] py-16 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 text-primary">
+            <ShieldCheck size={24} />
+          </div>
+          <h2 className="mt-4 text-2xl font-bold text-white">Admin attendance is not required</h2>
+          <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+            Check-in and check-out are employee-only actions. Use the admin attendance page to monitor team records.
+          </p>
+        </GlassCard>
+      ) : (
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(380px,.95fr)]">
         <div className="space-y-6">
           <GlassCard glow="red" className="overflow-hidden p-0">
@@ -174,7 +188,7 @@ function CheckInPage() {
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-right">
                     <div className="text-xs uppercase tracking-wider text-muted-foreground">Today</div>
-                    <div className="mt-1 font-semibold text-white">{format(new Date(), "EEE, MMM d")}</div>
+                    <div className="mt-1 font-semibold text-white">{formatNepaliDate(new Date(), "ddd DD, MMMM YYYY")} BS</div>
                   </div>
                 </div>
 
@@ -285,6 +299,7 @@ function CheckInPage() {
           )}
         </GlassCard>
       </div>
+      )}
     </>
   );
 }
@@ -324,7 +339,7 @@ function AttendanceHistoryRow({ day }: { day: ReturnType<typeof buildLastSevenDa
           </div>
           <div>
             <div className="font-semibold text-white">{day.label}</div>
-            <div className="text-xs text-muted-foreground">{format(new Date(`${day.date}T00:00:00`), "MMM d, yyyy")}</div>
+            <div className="text-xs text-muted-foreground">{formatNepaliDate(day.date, "DD MMMM YYYY")} BS</div>
           </div>
         </div>
         <span className={`w-fit rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-wider ${status.pillClass}`}>
