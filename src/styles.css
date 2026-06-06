@@ -570,7 +570,7 @@
   .eom-leaderboard-list {
     flex: 1;
     min-height: 0;
-    max-height: none;
+    max-height: min(520px, 58vh);
     overflow-y: auto;
     overscroll-behavior: contain;
   }
