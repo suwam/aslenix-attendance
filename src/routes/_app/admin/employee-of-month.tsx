@@ -519,10 +519,17 @@ function EmployeeOfMonthPage() {
 }
 
 function TopContenders({ rows }: { rows: EmployeeRank[] }) {
-  const contenders = rows.slice(0, 3);
+  const contenders = rows.slice(0, 5);
   const leader = contenders[0];
   const leaderGap = contenders[0] && contenders[1] ? contenders[0].score - contenders[1].score : null;
   const isTightRace = leaderGap !== null && leaderGap <= 5;
+  const contenderLabels = [
+    "Top Performer",
+    "Rising Star",
+    "Consistent Contributor",
+    "Strong Challenger",
+    "Close Contender",
+  ];
 
   return (
     <article className="eom-contenders eom-page-hero glass">
@@ -531,7 +538,7 @@ function TopContenders({ rows }: { rows: EmployeeRank[] }) {
         <div>
           <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-amber-200/20 bg-amber-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-amber-200">
             <Trophy size={14} />
-            Top 3 Contenders
+            Top 5 Contenders
           </div>
           <h2 className="text-3xl font-bold md:text-4xl">Employee of the Month race</h2>
           <p className="mt-1 text-sm text-white/65">
@@ -555,13 +562,15 @@ function TopContenders({ rows }: { rows: EmployeeRank[] }) {
       </div>
 
       <div className="relative z-10 mt-6 eom-contender-grid">
-        {contenders[0] && (
-          <ContenderCard employee={contenders[0]} rank={1} label="Top Performer" featured />
-        )}
-        <div className="eom-contender-stack">
-          {contenders[1] && <ContenderCard employee={contenders[1]} rank={2} label="Rising Star" />}
-          {contenders[2] && <ContenderCard employee={contenders[2]} rank={3} label="Consistent Contributor" />}
-        </div>
+        {contenders.map((employee, index) => (
+          <ContenderCard
+            key={employee.userId}
+            employee={employee}
+            rank={index + 1}
+            label={contenderLabels[index]}
+            featured={index === 0}
+          />
+        ))}
       </div>
 
       <div className="relative z-10 mt-5 rounded-2xl border border-white/10 bg-black/20 p-4">
@@ -591,11 +600,11 @@ function ContenderCard({
   featured = false,
 }: {
   employee: EmployeeRank;
-  rank: 1 | 2 | 3;
+  rank: number;
   label: string;
   featured?: boolean;
 }) {
-  const rankTone = rank === 1 ? "gold" : rank === 2 ? "silver" : "bronze";
+  const rankTone = rank === 1 ? "gold" : rank === 2 ? "silver" : rank === 3 ? "bronze" : "neutral";
 
   return (
     <div className={`eom-contender-card ${rankTone} ${featured ? "featured" : ""}`}>
