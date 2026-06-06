@@ -570,7 +570,7 @@
   .eom-leaderboard-list {
     flex: 1;
     min-height: 0;
-    max-height: min(520px, 58vh);
+    max-height: none;
     overflow-y: auto;
     overscroll-behavior: contain;
   }
@@ -806,6 +806,40 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     padding-right: 6px;
+  }
+  .eom-review-name-list {
+    display: grid;
+    max-height: min(520px, 58vh);
+    gap: 10px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 6px;
+  }
+  .eom-review-name-row {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    border-radius: 16px;
+    border: 1px solid oklch(1 0 0 / 0.09);
+    background:
+      linear-gradient(180deg, oklch(1 0 0 / 0.055), oklch(1 0 0 / 0.026)),
+      oklch(0.13 0.025 265 / 0.64);
+    padding: 14px 16px;
+    color: white;
+    text-align: left;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
+  }
+  .eom-review-name-row:hover,
+  .eom-review-name-row.active {
+    transform: translateY(-1px);
+    border-color: oklch(0.74 0.23 205 / 0.34);
+    background:
+      linear-gradient(135deg, oklch(0.74 0.23 205 / 0.13), oklch(0.72 0.26 340 / 0.1)),
+      oklch(0.14 0.027 265 / 0.78);
+    box-shadow: 0 18px 48px -36px oklch(0.74 0.23 205 / 0.8);
   }
   .eom-review-employee-pill,
   .eom-review-name-button {

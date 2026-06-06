@@ -986,22 +986,9 @@ function HrReviewsSection({
 }) {
   const [reviewEmployeeId, setReviewEmployeeId] = useState(selectedEmployee?.userId || rows[0]?.userId || "");
   const [reviewDialogEmployeeId, setReviewDialogEmployeeId] = useState<string | null>(null);
-  const reviewRows = rows.flatMap((row) =>
-    row.reviews.map((review, index) => ({
-      ...review,
-      employeeId: row.userId,
-      employeeName: row.name,
-      department: row.department,
-      weekLabel: `Week ${row.reviews.length - index}`,
-      scoreValue: resolvedReviewScore(review),
-    })),
-  );
   const reviewEmployee =
     rows.find((row) => row.userId === reviewEmployeeId) || selectedEmployee || rows[0];
   const selectedReviews = reviewEmployee?.reviews || [];
-  const filteredReviewRows = reviewEmployeeId
-    ? reviewRows.filter((review) => review.employeeId === reviewEmployeeId)
-    : reviewRows;
   const employeesWithReviews = rows.filter((row) => row.reviewCount > 0);
   const dialogEmployee = rows.find((row) => row.userId === reviewDialogEmployeeId);
 
@@ -1069,51 +1056,28 @@ function HrReviewsSection({
           <History size={16} className="text-primary" />
           Review history
         </h3>
-        <div className="mb-4 flex flex-wrap gap-2">
-          {employeesWithReviews.map((employee) => (
-            <button
-              key={employee.userId}
-              type="button"
-              className={`eom-review-employee-pill ${employee.userId === reviewEmployeeId ? "active" : ""}`}
-              onClick={() => openEmployeeReviews(employee.userId)}
-            >
-              {employee.name}
-              <span>{employee.reviewCount}</span>
-            </button>
-          ))}
-        </div>
-        <div className="eom-review-history-list space-y-3">
-          {filteredReviewRows.length ? (
-            filteredReviewRows.map((review) => (
-              <article key={review.id} className="eom-review-card">
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        className="eom-review-name-button"
-                        onClick={() => openEmployeeReviews(review.employeeId)}
-                      >
-                        {review.employeeName}
-                      </button>
-                      <span className="eom-review-rating">{review.rating}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(review.week_start), "MMM d, yyyy")}
-                      </span>
-                    </div>
-                    <div className="mt-1 text-xs text-muted-foreground">{review.department}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xl font-bold gradient-text">{review.scoreValue}/10</div>
-                    <div className="text-[10px] uppercase text-muted-foreground">HR score</div>
-                  </div>
-                </div>
-                <div className="mt-4 grid grid-cols-1 gap-3">
-                  <ReviewText label="Strengths" value={review.strengths} />
-                  <ReviewText label="Improvements" value={review.improvements} />
-                  <ReviewText label="Admin notes" value={review.notes} />
-                </div>
-              </article>
+        <div className="eom-review-name-list">
+          {employeesWithReviews.length ? (
+            employeesWithReviews.map((employee) => (
+              <button
+                key={employee.userId}
+                type="button"
+                className={`eom-review-name-row ${employee.userId === reviewEmployeeId ? "active" : ""}`}
+                onClick={() => openEmployeeReviews(employee.userId)}
+              >
+                <span className="min-w-0">
+                  <span className="block truncate font-semibold">{employee.name}</span>
+                  <span className="mt-1 block truncate text-xs text-muted-foreground">
+                    {employee.department} · {employee.position}
+                  </span>
+                </span>
+                <span className="text-right">
+                  <span className="block text-lg font-black tabular-nums gradient-text">{employee.reviewAverage || 0}/10</span>
+                  <span className="mt-1 block text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {employee.reviewCount} reviews
+                  </span>
+                </span>
+              </button>
             ))
           ) : (
             <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5 text-sm text-muted-foreground">
