@@ -382,6 +382,10 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
+    max-height: min(980px, 72vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 6px;
   }
   .eom-contender-card {
     position: relative;
