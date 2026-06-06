@@ -359,6 +359,7 @@
   .eom-contenders {
     position: relative;
     overflow: hidden;
+    min-height: 0;
     border-radius: 24px;
     padding: 24px;
     background:
@@ -382,7 +383,7 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
-    max-height: min(760px, 68vh);
+    max-height: min(520px, 58vh);
     overflow-y: auto;
     overscroll-behavior: contain;
     padding-right: 6px;
@@ -561,7 +562,7 @@
     background: oklch(0 0 0 / 0.02);
   }
   .eom-leaderboard-list {
-    max-height: min(760px, 68vh);
+    max-height: min(520px, 58vh);
     overflow-y: auto;
     overscroll-behavior: contain;
   }
@@ -649,6 +650,9 @@
   }
   .eom-page-hero {
     min-height: 520px;
+  }
+  .eom-contenders.eom-page-hero {
+    min-height: 0;
   }
   .eom-stat-tile {
     display: flex;
