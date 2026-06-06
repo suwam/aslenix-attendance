@@ -783,6 +783,59 @@
   .eom-review-timeline-item:hover {
     background: oklch(1 0 0 / 0.055);
   }
+  .eom-review-timeline-list,
+  .eom-review-history-list {
+    max-height: min(520px, 58vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 6px;
+  }
+  .eom-review-employee-pill,
+  .eom-review-name-button {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+  }
+  .eom-review-employee-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border-radius: 999px;
+    border: 1px solid oklch(1 0 0 / 0.1);
+    background: oklch(1 0 0 / 0.045);
+    padding: 7px 10px;
+    color: oklch(1 0 0 / 0.78);
+    font-size: 12px;
+    font-weight: 800;
+    transition: border-color .18s ease, background .18s ease, color .18s ease, transform .18s ease;
+  }
+  .eom-review-employee-pill span {
+    display: inline-flex;
+    min-width: 20px;
+    justify-content: center;
+    border-radius: 999px;
+    background: oklch(1 0 0 / 0.08);
+    padding: 2px 6px;
+    font-size: 10px;
+  }
+  .eom-review-employee-pill:hover,
+  .eom-review-employee-pill.active {
+    border-color: oklch(0.74 0.23 205 / 0.36);
+    background: linear-gradient(135deg, oklch(0.74 0.23 205 / 0.18), oklch(0.72 0.26 340 / 0.14));
+    color: white;
+    transform: translateY(-1px);
+  }
+  .eom-review-name-button {
+    cursor: pointer;
+    font-weight: 800;
+    text-align: left;
+    transition: color .18s ease;
+  }
+  .eom-review-name-button:hover {
+    color: oklch(0.78 0.22 205);
+  }
   .eom-review-rating {
     border-radius: 999px;
     background: oklch(0.72 0.18 155 / 0.13);

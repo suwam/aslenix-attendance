@@ -977,16 +977,29 @@ function HrReviewsSection({
   rows: EmployeeRank[];
   selectedEmployee?: EmployeeRank;
 }) {
+  const [reviewEmployeeId, setReviewEmployeeId] = useState(selectedEmployee?.userId || rows[0]?.userId || "");
   const reviewRows = rows.flatMap((row) =>
     row.reviews.map((review, index) => ({
       ...review,
+      employeeId: row.userId,
       employeeName: row.name,
       department: row.department,
       weekLabel: `Week ${row.reviews.length - index}`,
       scoreValue: resolvedReviewScore(review),
     })),
   );
-  const selectedReviews = selectedEmployee?.reviews || [];
+  const reviewEmployee =
+    rows.find((row) => row.userId === reviewEmployeeId) || selectedEmployee || rows[0];
+  const selectedReviews = reviewEmployee?.reviews || [];
+  const filteredReviewRows = reviewEmployeeId
+    ? reviewRows.filter((review) => review.employeeId === reviewEmployeeId)
+    : reviewRows;
+  const employeesWithReviews = rows.filter((row) => row.reviewCount > 0);
+
+  useEffect(() => {
+    if (reviewEmployeeId && rows.some((row) => row.userId === reviewEmployeeId)) return;
+    setReviewEmployeeId(selectedEmployee?.userId || rows[0]?.userId || "");
+  }, [reviewEmployeeId, rows, selectedEmployee?.userId]);
 
   return (
     <section className="grid grid-cols-1 gap-6 xl:grid-cols-[.9fr_1.1fr]">
@@ -996,18 +1009,19 @@ function HrReviewsSection({
           HR Weekly Reviews
         </h3>
         <div className="grid grid-cols-2 gap-3">
-          <ReviewSummaryTile label="Average HR Rating" value={selectedEmployee ? ratingLabelFromAverage(selectedEmployee.reviewAverage) : "No reviews"} />
-          <ReviewSummaryTile label="Total Reviews" value={selectedEmployee?.reviewCount || 0} />
+          <ReviewSummaryTile label="Employee" value={reviewEmployee?.name || "None"} />
+          <ReviewSummaryTile label="Average HR Rating" value={reviewEmployee ? ratingLabelFromAverage(reviewEmployee.reviewAverage) : "No reviews"} />
+          <ReviewSummaryTile label="Total Reviews" value={reviewEmployee?.reviewCount || 0} />
           <ReviewSummaryTile
             label="Latest Review"
-            value={selectedEmployee?.latestReview ? selectedEmployee.latestReview.rating : "None"}
+            value={reviewEmployee?.latestReview ? reviewEmployee.latestReview.rating : "None"}
           />
           <ReviewSummaryTile
             label="Review Trend"
-            value={<span className="inline-flex items-center gap-1"><TrendIcon trend={selectedEmployee?.reviewTrend || "steady"} />{trendLabel(selectedEmployee?.reviewTrend || "steady")}</span>}
+            value={<span className="inline-flex items-center gap-1"><TrendIcon trend={reviewEmployee?.reviewTrend || "steady"} />{trendLabel(reviewEmployee?.reviewTrend || "steady")}</span>}
           />
         </div>
-        <div className="mt-5 space-y-3">
+        <div className="eom-review-timeline-list mt-5 space-y-3">
           {selectedReviews.length ? (
             selectedReviews.map((review, index) => {
               const score = resolvedReviewScore(review);
@@ -1040,14 +1054,33 @@ function HrReviewsSection({
           <History size={16} className="text-primary" />
           Review history
         </h3>
-        <div className="space-y-3">
-          {reviewRows.length ? (
-            reviewRows.map((review) => (
+        <div className="mb-4 flex flex-wrap gap-2">
+          {employeesWithReviews.map((employee) => (
+            <button
+              key={employee.userId}
+              type="button"
+              className={`eom-review-employee-pill ${employee.userId === reviewEmployeeId ? "active" : ""}`}
+              onClick={() => setReviewEmployeeId(employee.userId)}
+            >
+              {employee.name}
+              <span>{employee.reviewCount}</span>
+            </button>
+          ))}
+        </div>
+        <div className="eom-review-history-list space-y-3">
+          {filteredReviewRows.length ? (
+            filteredReviewRows.map((review) => (
               <article key={review.id} className="eom-review-card">
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold">{review.employeeName}</span>
+                      <button
+                        type="button"
+                        className="eom-review-name-button"
+                        onClick={() => setReviewEmployeeId(review.employeeId)}
+                      >
+                        {review.employeeName}
+                      </button>
                       <span className="eom-review-rating">{review.rating}</span>
                       <span className="text-xs text-muted-foreground">
                         {format(new Date(review.week_start), "MMM d, yyyy")}
