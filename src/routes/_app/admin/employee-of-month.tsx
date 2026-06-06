@@ -54,6 +54,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -482,7 +489,7 @@ function EmployeeOfMonthPage() {
 
           <EligibilitySummary eligibleCount={rows.length} excludedRows={excludedRows} />
 
-          <section className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[1.15fr_.85fr]">
+          <section className="grid grid-cols-1 items-stretch gap-6 xl:grid-cols-[1.15fr_.85fr]">
             <TopContenders rows={rows} />
             <Leaderboard rows={rows} />
           </section>
@@ -978,6 +985,7 @@ function HrReviewsSection({
   selectedEmployee?: EmployeeRank;
 }) {
   const [reviewEmployeeId, setReviewEmployeeId] = useState(selectedEmployee?.userId || rows[0]?.userId || "");
+  const [reviewDialogEmployeeId, setReviewDialogEmployeeId] = useState<string | null>(null);
   const reviewRows = rows.flatMap((row) =>
     row.reviews.map((review, index) => ({
       ...review,
@@ -995,6 +1003,12 @@ function HrReviewsSection({
     ? reviewRows.filter((review) => review.employeeId === reviewEmployeeId)
     : reviewRows;
   const employeesWithReviews = rows.filter((row) => row.reviewCount > 0);
+  const dialogEmployee = rows.find((row) => row.userId === reviewDialogEmployeeId);
+
+  const openEmployeeReviews = (employeeId: string) => {
+    setReviewEmployeeId(employeeId);
+    setReviewDialogEmployeeId(employeeId);
+  };
 
   useEffect(() => {
     if (reviewEmployeeId && rows.some((row) => row.userId === reviewEmployeeId)) return;
@@ -1002,6 +1016,7 @@ function HrReviewsSection({
   }, [reviewEmployeeId, rows, selectedEmployee?.userId]);
 
   return (
+    <>
     <section className="grid grid-cols-1 gap-6 xl:grid-cols-[.9fr_1.1fr]">
       <GlassCard className="eom-hr-panel">
         <h3 className="mb-4 flex items-center gap-2 font-semibold">
@@ -1060,7 +1075,7 @@ function HrReviewsSection({
               key={employee.userId}
               type="button"
               className={`eom-review-employee-pill ${employee.userId === reviewEmployeeId ? "active" : ""}`}
-              onClick={() => setReviewEmployeeId(employee.userId)}
+              onClick={() => openEmployeeReviews(employee.userId)}
             >
               {employee.name}
               <span>{employee.reviewCount}</span>
@@ -1077,7 +1092,7 @@ function HrReviewsSection({
                       <button
                         type="button"
                         className="eom-review-name-button"
-                        onClick={() => setReviewEmployeeId(review.employeeId)}
+                        onClick={() => openEmployeeReviews(review.employeeId)}
                       >
                         {review.employeeName}
                       </button>
@@ -1093,7 +1108,7 @@ function HrReviewsSection({
                     <div className="text-[10px] uppercase text-muted-foreground">HR score</div>
                   </div>
                 </div>
-                <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
+                <div className="mt-4 grid grid-cols-1 gap-3">
                   <ReviewText label="Strengths" value={review.strengths} />
                   <ReviewText label="Improvements" value={review.improvements} />
                   <ReviewText label="Admin notes" value={review.notes} />
@@ -1108,6 +1123,54 @@ function HrReviewsSection({
         </div>
       </GlassCard>
     </section>
+    <Dialog open={Boolean(dialogEmployee)} onOpenChange={(open) => !open && setReviewDialogEmployeeId(null)}>
+      <DialogContent className="eom-review-dialog max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-hidden border-white/10 bg-background/95 sm:max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>{dialogEmployee?.name || "Employee"} review history</DialogTitle>
+          <DialogDescription>
+            Weekly HR reviews for {dialogEmployee?.department || "this employee"}.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="eom-review-dialog-list space-y-3">
+          {dialogEmployee?.reviews.length ? (
+            dialogEmployee.reviews.map((review, index) => {
+              const score = resolvedReviewScore(review);
+
+              return (
+                <article key={review.id} className="eom-review-card">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold">Week {dialogEmployee.reviews.length - index}</span>
+                        <span className="eom-review-rating">{review.rating}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(review.week_start), "MMM d, yyyy")}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground">{dialogEmployee.position}</div>
+                    </div>
+                    <div className="text-left sm:text-right">
+                      <div className="text-xl font-bold gradient-text">{score}/10</div>
+                      <div className="text-[10px] uppercase text-muted-foreground">HR score</div>
+                    </div>
+                  </div>
+                  <div className="mt-4 grid grid-cols-1 gap-3">
+                    <ReviewText label="Strengths" value={review.strengths} />
+                    <ReviewText label="Improvements" value={review.improvements} />
+                    <ReviewText label="Admin notes" value={review.notes} />
+                  </div>
+                </article>
+              );
+            })
+          ) : (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5 text-sm text-muted-foreground">
+              No HR weekly reviews have been submitted for this employee yet.
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 

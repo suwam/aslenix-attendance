@@ -561,7 +561,15 @@
     transition: background .2s ease, transform .2s ease;
     background: oklch(0 0 0 / 0.02);
   }
+  .eom-leaderboard {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    flex-direction: column;
+  }
   .eom-leaderboard-list {
+    flex: 1;
+    min-height: 0;
     max-height: min(520px, 58vh);
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -786,6 +794,15 @@
   .eom-review-timeline-list,
   .eom-review-history-list {
     max-height: min(520px, 58vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 6px;
+  }
+  .eom-review-dialog {
+    box-shadow: 0 0 90px -34px oklch(0.74 0.23 205 / 0.8);
+  }
+  .eom-review-dialog-list {
+    max-height: calc(100dvh - 170px);
     overflow-y: auto;
     overscroll-behavior: contain;
     padding-right: 6px;
