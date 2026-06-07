@@ -1,7 +1,13 @@
 import { motion } from "framer-motion";
 import { Calendar, Flag, MessageSquare, Paperclip } from "lucide-react";
 import { isPast } from "date-fns";
-import { PRIORITY_COLORS, type TaskPriority, type TaskStatus } from "@/lib/tasks-utils";
+import {
+  PRIORITY_COLORS,
+  STATUS_BADGE_CLASSES,
+  STATUS_LABELS,
+  type TaskPriority,
+  type TaskStatus,
+} from "@/lib/tasks-utils";
 import { formatNepaliDate } from "@/lib/nepali-calendar";
 
 export interface TaskCardData {
@@ -24,10 +30,12 @@ export function TaskCard({
   task,
   onClick,
   onDragStart,
+  autoMoved = false,
 }: {
   task: TaskCardData;
   onClick?: () => void;
   onDragStart?: (e: React.DragEvent) => void;
+  autoMoved?: boolean;
 }) {
   const overdue = task.deadline && isPast(new Date(task.deadline)) && task.status !== "completed";
   const dueCountdown = task.deadline ? getDueCountdown(task.deadline, task.status) : null;
@@ -49,7 +57,9 @@ export function TaskCard({
         draggable
         onDragStart={onDragStart}
         onClick={onClick}
-        className="glass rounded-xl p-3.5 cursor-grab active:cursor-grabbing select-none border border-border hover:border-primary/40 hover:-translate-y-0.5 transition-all"
+        className={`glass kanban-task-card rounded-xl p-3.5 cursor-grab active:cursor-grabbing select-none border border-border hover:border-primary/40 hover:-translate-y-0.5 transition-all ${
+          autoMoved ? "kanban-task-card-auto-moved" : ""
+        }`}
       >
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex-1 min-w-0">
@@ -64,6 +74,14 @@ export function TaskCard({
           >
             <Flag size={9} className="inline -mt-0.5 mr-0.5" />
             {task.priority}
+          </span>
+        </div>
+
+        <div className="mb-2">
+          <span
+            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${STATUS_BADGE_CLASSES[task.status]}`}
+          >
+            {STATUS_LABELS[task.status]}
           </span>
         </div>
 

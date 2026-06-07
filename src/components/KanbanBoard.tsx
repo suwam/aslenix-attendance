@@ -5,7 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { TaskCard, TaskCardData } from "./TaskCard";
 import { TaskDialog } from "./TaskDialog";
-import { TASK_STATUSES, STATUS_LABELS, STATUS_COLORS, type TaskStatus } from "@/lib/tasks-utils";
+import {
+  TASK_STATUSES,
+  STATUS_LABELS,
+  STATUS_COLORS,
+  progressForStatus,
+  type TaskStatus,
+  type WorkflowTransition,
+} from "@/lib/tasks-utils";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
 import { toast } from "sonner";
 
@@ -17,6 +24,7 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
   const [defaultStatus, setDefaultStatus] = useState<TaskStatus>("todo");
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<TaskStatus | null>(null);
+  const [autoMovedId, setAutoMovedId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -96,23 +104,35 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
   const moveTo = async (id: string, status: TaskStatus) => {
     const t = tasks.find((x) => x.id === id);
     if (!t || t.status === status) return;
+    const nextProgress = progressForStatus(status, t.progress);
+    const completedAt = status === "completed" ? new Date().toISOString() : null;
     setTasks((prev) =>
       prev.map((x) =>
-        x.id === id ? { ...x, status, progress: status === "completed" ? 100 : x.progress } : x,
+        x.id === id ? { ...x, status, progress: nextProgress } : x,
       ),
     );
     const { error } = await supabase
       .from("tasks")
       .update({
         status,
-        progress: status === "completed" ? 100 : t.progress,
-        completed_at: status === "completed" ? new Date().toISOString() : null,
+        progress: nextProgress,
+        completed_at: completedAt,
       })
       .eq("id", id);
     if (error) {
       toast.error(error.message);
       load();
     }
+  };
+
+  const handleSaved = async (result?: { taskId?: string | null; transition?: WorkflowTransition }) => {
+    await load();
+    if (!result?.taskId || !result.transition) return;
+
+    setAutoMovedId(result.taskId);
+    window.setTimeout(() => {
+      setAutoMovedId((current) => (current === result.taskId ? null : current));
+    }, 1800);
   };
 
   return (
@@ -171,6 +191,7 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
                         setOpen(true);
                       }}
                       onDragStart={() => setDragId(t.id)}
+                      autoMoved={autoMovedId === t.id}
                     />
                   ))}
                 </AnimatePresence>
@@ -190,7 +211,7 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
         onOpenChange={setOpen}
         taskId={editId}
         defaultStatus={defaultStatus}
-        onSaved={load}
+        onSaved={handleSaved}
       />
     </>
   );

@@ -9,11 +9,58 @@ export const STATUS_LABELS: Record<TaskStatus, string> = {
 };
 
 export const STATUS_COLORS: Record<TaskStatus, string> = {
-  todo: "oklch(0.7 0.03 250)",
-  in_progress: "oklch(0.6 0.25 260)",
+  todo: "oklch(0.68 0.025 255)",
+  in_progress: "oklch(0.64 0.19 255)",
   review: "oklch(0.82 0.17 75)",
-  completed: "oklch(0.72 0.18 155)",
+  completed: "oklch(0.7 0.17 150)",
 };
+
+export const STATUS_BADGE_CLASSES: Record<TaskStatus, string> = {
+  todo: "border-slate-400/25 bg-slate-500/12 text-slate-300",
+  in_progress: "border-blue-400/25 bg-blue-500/12 text-blue-300",
+  review: "border-amber-400/30 bg-amber-500/14 text-amber-300",
+  completed: "border-emerald-400/25 bg-emerald-500/12 text-emerald-300",
+};
+
+export type WorkflowTransition = "review" | "completed" | null;
+
+export function clampProgress(value: number) {
+  return Math.min(100, Math.max(0, Math.round(Number.isFinite(value) ? value : 0)));
+}
+
+export function statusForProgress(progressValue: number): TaskStatus {
+  const progress = clampProgress(progressValue);
+  if (progress === 0) return "todo";
+  if (progress === 100) return "completed";
+  if (progress >= 98) return "review";
+  return "in_progress";
+}
+
+export function progressForStatus(status: TaskStatus, progressValue: number) {
+  const progress = clampProgress(progressValue);
+  if (status === "todo") return 0;
+  if (status === "completed") return 100;
+  if (status === "review") return Math.min(99, Math.max(98, progress));
+  return Math.min(97, Math.max(1, progress));
+}
+
+export function syncTaskWorkflow(status: TaskStatus, progressValue: number) {
+  const progress = clampProgress(progressValue);
+  const nextStatus = statusForProgress(progress);
+  const transition: WorkflowTransition =
+    status === "in_progress" && nextStatus === "review"
+      ? "review"
+      : status === "review" && nextStatus === "completed"
+        ? "completed"
+        : null;
+
+  return {
+    status: nextStatus,
+    progress,
+    transition,
+    completedAt: nextStatus === "completed" ? new Date().toISOString() : null,
+  };
+}
 
 export const PRIORITIES = ["low", "medium", "high", "urgent"] as const;
 export type TaskPriority = (typeof PRIORITIES)[number];

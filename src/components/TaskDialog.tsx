@@ -19,8 +19,11 @@ import {
   TASK_STATUSES,
   STATUS_LABELS,
   PRIORITIES,
+  progressForStatus,
+  syncTaskWorkflow,
   type TaskStatus,
   type TaskPriority,
+  type WorkflowTransition,
 } from "@/lib/tasks-utils";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
 import { Check, Download, Pencil, Paperclip, Send, Trash2, TrendingUp, X } from "lucide-react";
@@ -49,7 +52,7 @@ export function TaskDialog({
   onOpenChange: (v: boolean) => void;
   taskId?: string | null;
   defaultStatus?: TaskStatus;
-  onSaved?: () => void;
+  onSaved?: (result?: { taskId?: string | null; transition?: WorkflowTransition }) => void | Promise<void>;
 }) {
   const { user, isAdmin } = useAuth();
   const canEditTaskFields = isAdmin || !taskId;
@@ -171,12 +174,19 @@ export function TaskDialog({
       });
     }
     if (taskId) loadTask();
-    else resetForm();
+    else {
+      resetForm();
+      const nextStatus = defaultStatus || "todo";
+      setStatus(nextStatus);
+      setProgress(progressForStatus(nextStatus, 0));
+    }
   }, [open, taskId, defaultStatus, isAdmin, loadTask, resetForm]);
 
   const save = async () => {
     if (!user || !title.trim()) return toast.error("Title required");
-    const nextProgress = status === "completed" ? 100 : progress;
+    const workflow = syncTaskWorkflow(status, progress);
+    const nextProgress = workflow.progress;
+    const nextStatus = workflow.status;
     const progressIncreased = taskId ? nextProgress > initialProgress : false;
     if (progressIncreased && !progressNote.trim()) {
       return toast.error("Progress update note is required when progress increases");
@@ -184,13 +194,13 @@ export function TaskDialog({
 
     setLoading(true);
     if (taskId && !isAdmin) {
-      let { error } = await supabase.from("tasks").update({ progress }).eq("id", taskId);
+      let { error } = await supabase.from("tasks").update({ progress: nextProgress }).eq("id", taskId);
       let progressNoteNotSaved = false;
       if (!error && progressIncreased) {
         const progressUpdateResult = await saveProgressUpdate(
           taskId,
           initialProgress,
-          progress,
+          nextProgress,
           progressNote.trim(),
         );
         if (progressUpdateResult.missingTable) {
@@ -203,10 +213,14 @@ export function TaskDialog({
       if (error) return toast.error(error.message);
       if (progressNoteNotSaved) {
         toast.warning("Progress updated. Apply the task_progress_updates migration to save notes.");
+      } else if (workflow.transition === "review") {
+        toast.success("Task moved to Review", { description: "Task is ready for review." });
+      } else if (workflow.transition === "completed") {
+        toast.success("Task marked as Completed", { description: "Task successfully completed." });
       } else {
         toast.success("Progress updated");
       }
-      onSaved?.();
+      onSaved?.({ taskId, transition: workflow.transition });
       onOpenChange(false);
       return;
     }
@@ -237,13 +251,13 @@ export function TaskDialog({
     const payload = {
       title,
       description: description || null,
-      status,
+      status: nextStatus,
       priority,
       progress: nextProgress,
       deadline: deadlineIso,
       assigned_to: selectedAssignees[0],
       tags: tagsArr,
-      completed_at: status === "completed" ? new Date().toISOString() : null,
+      completed_at: workflow.completedAt,
     };
     let error;
     let savedTaskId = taskId;
@@ -313,10 +327,14 @@ export function TaskDialog({
       toast.warning(
         "Task saved for the first assignee. Apply the task_assignees migration to enable multiple assignees.",
       );
+    } else if (workflow.transition === "review") {
+      toast.success("Task moved to Review", { description: "Task is ready for review." });
+    } else if (workflow.transition === "completed") {
+      toast.success("Task marked as Completed", { description: "Task successfully completed." });
     } else {
       toast.success(taskId ? "Task updated" : "Task created");
     }
-    onSaved?.();
+    onSaved?.({ taskId: savedTaskId, transition: workflow.transition });
     onOpenChange(false);
   };
 
@@ -449,7 +467,14 @@ export function TaskDialog({
   };
 
   const updateProgress = (value: number) => {
-    setProgress(Math.min(100, Math.max(0, Math.round(value))));
+    const workflow = syncTaskWorkflow(status, value);
+    setProgress(workflow.progress);
+    setStatus(workflow.status);
+  };
+
+  const updateStatus = (value: TaskStatus) => {
+    setStatus(value);
+    setProgress(progressForStatus(value, progress));
   };
 
   return (
@@ -486,7 +511,7 @@ export function TaskDialog({
               <Label>Status</Label>
               <Select
                 value={status}
-                onValueChange={(v) => setStatus(v as TaskStatus)}
+                onValueChange={(v) => updateStatus(v as TaskStatus)}
                 disabled={!canEditTaskFields}
               >
                 <SelectTrigger>
