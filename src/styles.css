@@ -2415,6 +2415,42 @@
     box-shadow: 0 0 18px rgba(142, 203, 255, 0.28);
   }
 
+  .employee-kpi-card {
+    min-height: 118px;
+    padding: 18px;
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .employee-kpi-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+  }
+
+  .employee-kpi-card h3 {
+    font-size: 0.92rem;
+    line-height: 1.24;
+  }
+
+  .employee-kpi-card strong {
+    font-size: clamp(1.95rem, 2.45vw, 2.65rem);
+    line-height: 1;
+  }
+
+  .employee-kpi-card small {
+    font-size: 0.78rem;
+    line-height: 1.2;
+  }
+
+  .employee-kpi-card.amber .employee-kpi-value {
+    min-height: 52px;
+  }
+
+  .employee-kpi-card.amber strong {
+    font-size: clamp(1.95rem, 2.35vw, 2.55rem);
+  }
+
   @media (max-width: 1180px) {
     .employee-kpi-grid,
     .employee-insight-grid {
