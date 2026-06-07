@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AslenixLogo } from "@/components/AslenixLogo";
 import { GlassCard } from "@/components/GlassCard";
+import { formatNepaliDate } from "@/lib/nepali-calendar";
 import {
   ShieldCheck,
   ShieldX,
@@ -165,8 +166,8 @@ function ValidCard({ data }: { data: VerifyData }) {
         <Detail icon={<Building2 size={14} />} label="Department" value={data.department || "—"} />
         <Detail
           icon={<Calendar size={14} />}
-          label="Joined"
-          value={data.joining_date ? new Date(data.joining_date).toLocaleDateString() : "—"}
+          label="Joined (BS)"
+          value={data.joining_date ? `${formatNepaliDate(data.joining_date, "DD MMMM YYYY")} BS` : "—"}
         />
       </div>
 
