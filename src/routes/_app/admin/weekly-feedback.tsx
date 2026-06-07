@@ -137,7 +137,7 @@ function WeeklyFeedbackPage() {
       await Promise.all([
         supabase
           .from("profiles")
-          .select("user_id, full_name, department, avatar_url")
+          .select("user_id, full_name, department, position, avatar_url")
           .eq("approval_status", "approved")
           .eq("is_suspended", false),
         supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
@@ -161,7 +161,9 @@ function WeeklyFeedbackPage() {
     const feedback = feedbackResult.error ? [] : feedbackResult.data || [];
     const elapsedDays = Math.max(1, Math.min(7, Math.floor((Date.now() - weekStartDate.getTime()) / 86400000) + 1));
     const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
-    const employeeProfiles = (profiles || []).filter((profile) => !adminUserIds.has(profile.user_id));
+    const employeeProfiles = (profiles || []).filter(
+      (profile) => !adminUserIds.has(profile.user_id) && !isHrProfile(profile),
+    );
 
     const ranked = employeeProfiles
       .map((profile) => {
@@ -1112,6 +1114,11 @@ function getFeedbackWeekNumber(review: Pick<WeeklyFeedbackRow, "week_number" | "
 function isSameReviewCycle(reviewDate: string, weekStart?: string) {
   if (!weekStart) return false;
   return reviewDate.slice(0, 7) === weekStart.slice(0, 7);
+}
+
+function isHrProfile(profile: { department?: string | null; position?: string | null }) {
+  const text = `${profile.department || ""} ${profile.position || ""}`.toLowerCase();
+  return /\bhr\b/.test(text) || text.includes("human resources");
 }
 
 function getWeekStatus(weekNumber: number, currentWeekNumber: number, completed: boolean): WeekStatus {
