@@ -2415,6 +2415,79 @@
     box-shadow: 0 0 18px rgba(142, 203, 255, 0.28);
   }
 
+  .employee-attendance-panel,
+  .employee-quick-panel {
+    border-color: rgba(142, 203, 255, 0.3);
+    box-shadow:
+      0 28px 84px rgba(0, 0, 0, 0.48),
+      0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+      0 0 44px rgba(142, 203, 255, 0.08),
+      0 0 58px rgba(236, 72, 153, 0.06);
+  }
+
+  .employee-attendance-panel::after,
+  .employee-quick-panel::before {
+    background:
+      radial-gradient(circle at 9% 7%, rgba(142, 203, 255, 0.16), transparent 36%),
+      radial-gradient(circle at 90% 18%, rgba(236, 72, 153, 0.12), transparent 34%),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.045), transparent 40%);
+    opacity: 0.72;
+  }
+
+  .employee-attendance-details .employee-mini-metric {
+    border-color: rgba(142, 203, 255, 0.22);
+    background:
+      radial-gradient(circle at 0% 0%, rgba(142, 203, 255, 0.09), transparent 38%),
+      linear-gradient(145deg, rgba(7, 17, 32, 0.72), rgba(5, 9, 18, 0.74));
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 14px 38px rgba(0, 0, 0, 0.24);
+  }
+
+  .employee-week-progress {
+    border-color: rgba(142, 203, 255, 0.2);
+    background:
+      linear-gradient(135deg, rgba(142, 203, 255, 0.075), rgba(236, 72, 153, 0.045)),
+      rgba(255, 255, 255, 0.035);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+
+  .employee-progress-track {
+    height: 8px;
+    background:
+      linear-gradient(90deg, rgba(142, 203, 255, 0.12), rgba(236, 72, 153, 0.1)),
+      rgba(95, 124, 160, 0.2);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.07),
+      inset 0 0 12px rgba(0, 0, 0, 0.22);
+  }
+
+  .employee-progress-track > div,
+  .employee-progress-track > span {
+    display: block;
+    height: 100%;
+    min-width: 8px;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #8ecbff, #22d3ee 42%, #8b5cf6 72%, #ec4899);
+    box-shadow:
+      0 0 16px rgba(142, 203, 255, 0.42),
+      0 0 22px rgba(236, 72, 153, 0.18);
+  }
+
+  .employee-quick-panel .employee-quick-action {
+    background:
+      radial-gradient(circle at 50% 0%, rgba(142, 203, 255, 0.16), transparent 42%),
+      radial-gradient(circle at 100% 100%, rgba(236, 72, 153, 0.1), transparent 36%),
+      linear-gradient(145deg, rgba(13, 26, 42, 0.84), rgba(8, 13, 24, 0.86));
+  }
+
+  .employee-quick-panel .employee-quick-action svg {
+    box-shadow:
+      0 0 34px rgba(142, 203, 255, 0.22),
+      0 0 28px rgba(236, 72, 153, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  }
+
   .employee-kpi-card {
     min-height: 118px;
     padding: 18px;
