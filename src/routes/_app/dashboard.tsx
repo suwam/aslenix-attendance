@@ -59,6 +59,8 @@ type NotificationRow = {
 type HeatmapDay = {
   date: string;
   status: "present" | "late" | "absent" | "holiday" | "none";
+  checkIn?: string | null;
+  checkOut?: string | null;
 };
 
 type ActivityItem = {
@@ -390,6 +392,12 @@ function EmployeeDashboard() {
   const weeklyProgress = calculateWeeklyProgress(attendanceHistory, today);
   const todayMeetings = meetings.filter((meeting) => isSameDay(new Date(meeting.meeting_time), new Date())).slice(0, 3);
   const heatmapDays = useMemo(() => makeHeatmapDays(attendanceHistory), [attendanceHistory]);
+  const heatmapSummary = useMemo(() => summarizeHeatmap(heatmapDays, attendanceStreak, attendanceHistory, today), [
+    heatmapDays,
+    attendanceStreak,
+    attendanceHistory,
+    today,
+  ]);
   const pendingLeaveRequests = monthStats.leave;
 
   const dismissImprovement = () => {
@@ -638,17 +646,42 @@ function EmployeeDashboard() {
         </section>
 
         <section className="employee-analytics-grid">
-          <article className="employee-panel">
+          <article className="employee-panel employee-heatmap-panel">
             <div className="employee-panel-heading compact">
               <div>
-                <span>Last 15 Days</span>
+                <span className="employee-heatmap-kicker">
+                  <Activity size={14} />
+                  Last 15 Days
+                </span>
                 <h2>Attendance Heatmap</h2>
+              </div>
+              <div className="employee-heatmap-summary" aria-label="Attendance summary">
+                <HeatmapSummaryPill label="Present" value={heatmapSummary.present} tone="present" />
+                <HeatmapSummaryPill label="Late" value={heatmapSummary.late} tone="late" />
+                <HeatmapSummaryPill label="Absent" value={heatmapSummary.absent} tone="absent" />
+                <HeatmapSummaryPill label="Holiday" value={heatmapSummary.holiday} tone="holiday" />
               </div>
             </div>
             <div className="employee-heatmap">
               {heatmapDays.map((day) => (
-                <span key={day.date} className={`heatmap-cell ${day.status}`} title={`${day.date}: ${day.status}`} />
+                <span
+                  key={day.date}
+                  className={`heatmap-cell ${day.status}`}
+                  title={`${day.date}: ${humanize(day.status)}`}
+                >
+                  <span className="heatmap-tooltip">
+                    <strong>{day.date}</strong>
+                    <span>{humanize(day.status)}</span>
+                    <small>Check-in: {formatHeatmapTime(day.checkIn)}</small>
+                    <small>Check-out: {formatHeatmapTime(day.checkOut)}</small>
+                  </span>
+                </span>
               ))}
+            </div>
+            <div className="employee-heatmap-stats">
+              <HeatmapStatPill label="Attendance Rate" value={`${heatmapSummary.rate}%`} />
+              <HeatmapStatPill label="Current Streak" value={`${attendanceStreak} Days`} />
+              <HeatmapStatPill label="Best Streak" value={`${heatmapSummary.bestStreak} Days`} />
             </div>
             <div className="employee-heatmap-legend">
               <LegendDot tone="present" label="Present" />
@@ -894,6 +927,30 @@ function LegendDot({ tone, label }: { tone: HeatmapDay["status"]; label: string 
   );
 }
 
+function HeatmapSummaryPill({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: HeatmapDay["status"];
+}) {
+  return (
+    <span className={`employee-heatmap-summary-pill ${tone}`}>
+      {label}: <strong>{value}</strong>
+    </span>
+  );
+}
+
+function HeatmapStatPill({ label, value }: { label: string; value: string }) {
+  return (
+    <span>
+      {label}: <strong>{value}</strong>
+    </span>
+  );
+}
+
 function TimelineItem({ item }: { item: ActivityItem }) {
   return (
     <div className="employee-timeline-item">
@@ -990,14 +1047,56 @@ function makeHeatmapDays(rows: any[]): HeatmapDay[] {
   const rowByDate = new Map(rows.map((row) => [row.date, row]));
   return Array.from({ length: 15 }, (_, index) => {
     const date = format(subDays(new Date(), 14 - index), "yyyy-MM-dd");
-    if (isWeeklyOffDate(date)) return { date, status: "holiday" };
     const row = rowByDate.get(date);
+    if (isWeeklyOffDate(date)) {
+      return { date, status: "holiday", checkIn: row?.check_in_time, checkOut: row?.check_out_time };
+    }
     if (!row) return { date, status: "none" };
-    if (row.status === "absent") return { date, status: "absent" };
-    if (row.is_late || row.status === "late") return { date, status: "late" };
-    if (["present", "wfh"].includes(row.status)) return { date, status: "present" };
-    return { date, status: "none" };
+    if (row.status === "absent") return { date, status: "absent", checkIn: row.check_in_time, checkOut: row.check_out_time };
+    if (row.is_late || row.status === "late") return { date, status: "late", checkIn: row.check_in_time, checkOut: row.check_out_time };
+    if (["present", "wfh"].includes(row.status)) return { date, status: "present", checkIn: row.check_in_time, checkOut: row.check_out_time };
+    return { date, status: "none", checkIn: row.check_in_time, checkOut: row.check_out_time };
   });
+}
+
+function summarizeHeatmap(days: HeatmapDay[], currentStreak: number, rows: any[], today: any) {
+  const present = days.filter((day) => day.status === "present").length;
+  const late = days.filter((day) => day.status === "late").length;
+  const absent = days.filter((day) => day.status === "absent").length;
+  const holiday = days.filter((day) => day.status === "holiday").length;
+  const tracked = present + late + absent;
+  const rate = tracked ? Math.round(((present + late) / tracked) * 100) : 0;
+  return {
+    present,
+    late,
+    absent,
+    holiday,
+    rate,
+    bestStreak: Math.max(currentStreak, calculateBestAttendanceStreak(rows, today)),
+  };
+}
+
+function calculateBestAttendanceStreak(rows: any[], today: any) {
+  const byDate = new Map(rows.map((row) => [row.date, row]));
+  if (today?.date) byDate.set(today.date, today);
+  let best = 0;
+  let current = 0;
+  const dates = Array.from(byDate.keys()).sort();
+  for (const date of dates) {
+    const row = byDate.get(date);
+    if (row && ["present", "late", "wfh"].includes(row.status)) {
+      current += 1;
+      best = Math.max(best, current);
+    } else {
+      current = 0;
+    }
+  }
+  return best;
+}
+
+function formatHeatmapTime(value?: string | null) {
+  if (!value) return "--";
+  return format(new Date(value), "HH:mm");
 }
 
 function initials(name: string) {
