@@ -2452,6 +2452,73 @@
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   }
 
+  .employee-attendance-panel {
+    border-color: rgba(255, 139, 184, 0.34);
+    background:
+      radial-gradient(circle at 8% 10%, rgba(255, 110, 168, 0.2), transparent 34%),
+      radial-gradient(circle at 72% 0%, rgba(168, 85, 247, 0.16), transparent 36%),
+      radial-gradient(circle at 100% 70%, rgba(255, 74, 112, 0.12), transparent 34%),
+      linear-gradient(145deg, rgba(34, 22, 49, 0.92), rgba(17, 17, 36, 0.9));
+    box-shadow:
+      0 30px 86px rgba(11, 8, 24, 0.52),
+      0 0 46px rgba(255, 87, 145, 0.16),
+      0 0 64px rgba(168, 85, 247, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.13);
+  }
+
+  .employee-attendance-panel::after {
+    background:
+      linear-gradient(112deg, transparent 0 24%, rgba(255, 255, 255, 0.12) 38%, transparent 52%),
+      radial-gradient(circle at 10% 12%, rgba(255, 190, 214, 0.18), transparent 32%),
+      linear-gradient(135deg, rgba(255, 82, 139, 0.1), transparent 38%, rgba(168, 85, 247, 0.12));
+    opacity: 0.78;
+  }
+
+  .employee-attendance-panel .employee-panel-heading span {
+    color: #ffbdd4;
+    text-shadow: 0 0 22px rgba(255, 92, 151, 0.34);
+  }
+
+  .employee-attendance-panel .employee-panel-heading h2 {
+    color: #fff7fb;
+    text-shadow: 0 16px 44px rgba(255, 80, 139, 0.18);
+  }
+
+  .employee-attendance-panel .employee-action-row .neon-button {
+    border-color: rgba(255, 166, 204, 0.46);
+    background:
+      linear-gradient(135deg, rgba(255, 126, 182, 0.94) 0%, rgba(244, 63, 94, 0.9) 45%, rgba(147, 51, 234, 0.9) 100%);
+    color: #fff8fb;
+    box-shadow:
+      0 16px 36px rgba(244, 63, 94, 0.24),
+      0 0 32px rgba(236, 72, 153, 0.2),
+      0 0 34px rgba(168, 85, 247, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  }
+
+  .employee-attendance-panel .employee-action-row button:not(.neon-button) {
+    border-color: rgba(196, 181, 253, 0.42);
+    background:
+      linear-gradient(135deg, rgba(126, 34, 206, 0.3), rgba(219, 39, 119, 0.2)),
+      rgba(255, 255, 255, 0.055);
+    color: #fce7f3;
+    box-shadow:
+      0 14px 34px rgba(17, 11, 34, 0.32),
+      0 0 26px rgba(168, 85, 247, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  }
+
+  .employee-attendance-panel .employee-action-row .neon-button:hover,
+  .employee-attendance-panel .employee-action-row button:not(.neon-button):hover {
+    border-color: rgba(255, 205, 226, 0.58);
+    filter: brightness(1.06) saturate(1.05);
+    box-shadow:
+      0 20px 42px rgba(244, 63, 94, 0.28),
+      0 0 40px rgba(236, 72, 153, 0.24),
+      0 0 38px rgba(168, 85, 247, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+
   .employee-progress-track {
     height: 8px;
     background:
