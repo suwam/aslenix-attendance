@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
-import { BSDateInput } from "@/components/BSDateInput";
+import { BSDateInput, BSMonthInput } from "@/components/BSDateInput";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,26 +16,46 @@ import {
 import { Download, Printer, Loader2 } from "lucide-react";
 import { addDays, format, startOfWeek } from "date-fns";
 import { formatWorkHours } from "@/lib/work-hours";
-import { bsInputToAdDateString, formatBsInput, formatNepaliDate } from "@/lib/nepali-calendar";
+import {
+  bsInputToAdDateString,
+  bsMonthInputToAdRange,
+  formatBsInput,
+  formatBsMonthInput,
+  formatNepaliDate,
+} from "@/lib/nepali-calendar";
 import { isWeeklyOffDate } from "@/lib/weekly-off";
 
 export const Route = createFileRoute("/_app/admin/reports")({ component: ReportsPage });
 
+type ReportPeriod = "daily" | "weekly" | "monthly";
+
 function ReportsPage() {
-  const [period, setPeriod] = useState<"daily" | "weekly">("daily");
+  const [period, setPeriod] = useState<ReportPeriod>("daily");
   const [bsDate, setBsDate] = useState(formatBsInput());
+  const [bsMonth, setBsMonth] = useState(formatBsMonthInput());
   const date = bsInputToAdDateString(bsDate) ?? format(new Date(), "yyyy-MM-dd");
+  const monthRange = bsMonthInputToAdRange(bsMonth);
   const [statusFilter, setStatusFilter] = useState("all");
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const isWeeklyOff = isWeeklyOffDate(date);
   const weekStart = format(startOfWeek(new Date(`${date}T00:00:00`), { weekStartsOn: 0 }), "yyyy-MM-dd");
   const weekEnd = format(addDays(new Date(`${weekStart}T00:00:00`), 5), "yyyy-MM-dd");
+  const monthStart = monthRange?.startAd ?? date;
+  const monthEnd = monthRange?.endAd ?? date;
+  const aggregateStart = period === "monthly" ? monthStart : weekStart;
+  const aggregateEnd = period === "monthly" ? monthEnd : weekEnd;
+  const aggregateLabel = period === "monthly" ? monthRange?.label || bsMonth : "Week";
 
   const run = async () => {
     setLoading(true);
     if (period === "weekly") {
-      await runWeeklyReport();
+      await runAggregateReport(weekStart, weekEnd);
+      setLoading(false);
+      return;
+    }
+    if (period === "monthly") {
+      await runAggregateReport(monthStart, monthEnd);
       setLoading(false);
       return;
     }
@@ -70,13 +90,13 @@ function ReportsPage() {
     setLoading(false);
   };
 
-  const runWeeklyReport = async () => {
+  const runAggregateReport = async (startDate: string, endDate: string) => {
     const [{ data: attendance }, { data: profiles }, { data: roleRows }] = await Promise.all([
       supabase
         .from("attendance")
         .select("*")
-        .gte("date", weekStart)
-        .lte("date", weekEnd)
+        .gte("date", startDate)
+        .lte("date", endDate)
         .order("date", { ascending: true }),
       supabase
         .from("profiles")
@@ -95,7 +115,7 @@ function ReportsPage() {
 
     const merged = employeeProfiles.map((profile) => {
       const records = attendanceByUser.get(profile.user_id) ?? [];
-      const workDays = weekDates(weekStart).filter((day) => !isWeeklyOffDate(day)).length;
+      const workDays = dateRange(startDate, endDate).filter((day) => !isWeeklyOffDate(day)).length;
       return {
         ...profile,
         records,
@@ -131,8 +151,8 @@ function ReportsPage() {
   }, []);
 
   const exportCSV = () => {
-    if (period === "weekly") {
-      exportWeeklyCSV();
+    if (period === "weekly" || period === "monthly") {
+      exportAggregateCSV();
       return;
     }
     const header = [
@@ -177,10 +197,10 @@ function ReportsPage() {
     URL.revokeObjectURL(url);
   };
 
-  const exportWeeklyCSV = () => {
+  const exportAggregateCSV = () => {
     const header = [
-      "Week start",
-      "Week end",
+      period === "monthly" ? "Month start" : "Week start",
+      period === "monthly" ? "Month end" : "Week end",
       "Employee",
       "Email",
       "Department",
@@ -195,8 +215,8 @@ function ReportsPage() {
     ];
     const lines = rows.map((row) =>
       [
-        weekStart,
-        weekEnd,
+        aggregateStart,
+        aggregateEnd,
         row.full_name || "",
         row.email || "",
         row.department || "",
@@ -216,7 +236,7 @@ function ReportsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `aslenix-attendance-weekly-${weekStart}-to-${weekEnd}.csv`;
+    a.download = `aslenix-attendance-${period}-${aggregateStart}-to-${aggregateEnd}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -225,7 +245,7 @@ function ReportsPage() {
     <>
       <PageHeader
         title="Reports"
-        subtitle="Generate, filter and export daily or weekly attendance reports"
+        subtitle="Generate, filter and export daily, weekly or monthly attendance reports"
         actions={
           <>
             <Button variant="outline" onClick={() => window.print()}>
@@ -244,22 +264,35 @@ function ReportsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
           <div>
             <label className="text-xs text-muted-foreground">Report type</label>
-            <Select value={period} onValueChange={(value) => setPeriod(value as "daily" | "weekly")}>
+            <Select value={period} onValueChange={(value) => setPeriod(value as ReportPeriod)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="daily">Daily report</SelectItem>
                 <SelectItem value="weekly">Weekly report</SelectItem>
+                <SelectItem value="monthly">Monthly report</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div>
-            <label className="text-xs text-muted-foreground">{period === "weekly" ? "Week date (BS)" : "Date (BS)"}</label>
-            <BSDateInput value={bsDate} onChange={setBsDate} />
+            <label className="text-xs text-muted-foreground">
+              {period === "monthly" ? "Month (BS)" : period === "weekly" ? "Week date (BS)" : "Date (BS)"}
+            </label>
+            {period === "monthly" ? (
+              <BSMonthInput value={bsMonth} onChange={setBsMonth} />
+            ) : (
+              <BSDateInput value={bsDate} onChange={setBsDate} />
+            )}
             {period === "weekly" && (
               <div className="mt-1 text-xs text-muted-foreground">
                 {formatNepaliDate(weekStart, "DD MMMM")} - {formatNepaliDate(weekEnd, "DD MMMM YYYY")} BS
+              </div>
+            )}
+            {period === "monthly" && (
+              <div className="mt-1 text-xs text-muted-foreground">
+                {monthRange?.label || bsMonth} BS · {formatNepaliDate(monthStart, "DD MMMM")} -{" "}
+                {formatNepaliDate(monthEnd, "DD MMMM YYYY")} BS
               </div>
             )}
           </div>
@@ -295,9 +328,11 @@ function ReportsPage() {
             <Loader2 className="animate-spin text-primary" />
           </div>
         ) : rows.length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground">No records for this {period === "weekly" ? "week" : "day"}.</div>
-        ) : period === "weekly" ? (
-          <WeeklyReportTable rows={rows} weekStart={weekStart} weekEnd={weekEnd} />
+          <div className="text-center py-16 text-muted-foreground">
+            No records for this {period === "monthly" ? "month" : period === "weekly" ? "week" : "day"}.
+          </div>
+        ) : period === "weekly" || period === "monthly" ? (
+          <AggregateReportTable rows={rows} startDate={aggregateStart} endDate={aggregateEnd} label={aggregateLabel} period={period} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -364,13 +399,25 @@ function attendanceLabel(attendance: any) {
   return attendance.status.replace("_", " ");
 }
 
-function WeeklyReportTable({ rows, weekStart, weekEnd }: { rows: any[]; weekStart: string; weekEnd: string }) {
+function AggregateReportTable({
+  rows,
+  startDate,
+  endDate,
+  label,
+  period,
+}: {
+  rows: any[];
+  startDate: string;
+  endDate: string;
+  label: string;
+  period: ReportPeriod;
+}) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground border-b border-border">
-            <th className="p-3">Week</th>
+            <th className="p-3">{period === "monthly" ? "Month" : "Week"}</th>
             <th className="p-3">Employee</th>
             <th className="p-3">Department</th>
             <th className="p-3">Present</th>
@@ -386,7 +433,7 @@ function WeeklyReportTable({ rows, weekStart, weekEnd }: { rows: any[]; weekStar
           {rows.map((row) => (
             <tr key={row.user_id} className="border-b border-border/40 hover:bg-muted/20">
               <td className="p-3">
-                {formatNepaliDate(weekStart, "DD MMMM")} - {formatNepaliDate(weekEnd, "DD MMMM YYYY")} BS
+                {period === "monthly" ? `${label} BS` : `${formatNepaliDate(startDate, "DD MMMM")} - ${formatNepaliDate(endDate, "DD MMMM YYYY")} BS`}
               </td>
               <td className="p-3 font-medium">{row.full_name || "—"}</td>
               <td className="p-3 text-muted-foreground">{row.department || "—"}</td>
@@ -405,6 +452,9 @@ function WeeklyReportTable({ rows, weekStart, weekEnd }: { rows: any[]; weekStar
   );
 }
 
-function weekDates(weekStart: string) {
-  return Array.from({ length: 6 }, (_, index) => format(addDays(new Date(`${weekStart}T00:00:00`), index), "yyyy-MM-dd"));
+function dateRange(startDate: string, endDate: string) {
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+  const days = Math.max(0, Math.floor((end.getTime() - start.getTime()) / 86400000) + 1);
+  return Array.from({ length: days }, (_, index) => format(addDays(start, index), "yyyy-MM-dd"));
 }
