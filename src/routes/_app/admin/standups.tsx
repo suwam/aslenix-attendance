@@ -264,9 +264,9 @@ function AdminStandupsPage() {
         </GlassCard>
       ) : (
         <>
-          <section className="mt-5 grid gap-5 xl:grid-cols-[1.45fr_0.85fr]">
-            <GlassCard className="self-start border border-cyan-300/10 bg-[#070d1a]/70">
-              <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <section className="mt-5 grid items-stretch gap-5 xl:grid-cols-[1.45fr_0.85fr]">
+            <GlassCard className="flex h-full min-h-0 flex-col border border-cyan-300/10 bg-[#070d1a]/70">
+              <div className="mb-5 flex shrink-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200/80">Team Standup Feed</p>
                   <h2 className="text-2xl font-bold text-white">Progress intelligence</h2>
@@ -276,7 +276,7 @@ function AdminStandupsPage() {
                 </span>
               </div>
 
-              <div className="grid max-h-[34rem] gap-4 overflow-y-auto pr-2 [scrollbar-color:rgba(103,232,249,0.35)_rgba(255,255,255,0.06)] [scrollbar-width:thin]">
+              <div className="grid min-h-0 flex-1 auto-rows-max gap-4 overflow-y-auto pr-2 [scrollbar-color:rgba(103,232,249,0.35)_rgba(255,255,255,0.06)] [scrollbar-width:thin]">
                 {signals.map((row) => (
                   <StandupEmployeeCard
                     key={row.id}
