@@ -269,12 +269,14 @@ function ProductivityCommandCenter() {
     .slice(0, 4);
   const attendanceConcerns = employees.filter((employee) => employee.attendanceScore < 80).length;
   const burnoutRisk = employees.filter((employee) => employee.overdueTasks >= 2 || (employee.tasks.length >= 6 && employee.taskProgress < 55)).length;
+  const activeTasks = sum(employees.map((employee) => employee.tasks.length - employee.completedTasks));
   const teamHealth = clampScore(
     average(employees.map((employee) => employee.consistencyScore)) * 0.42 +
       average(employees.map((employee) => employee.punctualityScore)) * 0.28 +
       Math.max(0, 100 - burnoutRisk * 12) * 0.3,
   );
   const workloadBalance = clampScore(100 - Math.min(60, Math.abs(average(employees.map((employee) => employee.tasks.length)) - 4) * 10));
+  const aiEfficiency = clampScore(Math.round((teamScore * 0.45 + executionRate * 0.35 + workloadBalance * 0.2)));
   const forecast = clampScore(Math.round(teamScore * 0.58 + weeklyScore * 0.24 + executionRate * 0.18));
   const confidence = clampScore(72 + Math.min(18, employees.length * 2) - Math.min(12, overdueRisk * 2));
   const momentumDepartment = topMomentumDepartment(employees);
@@ -303,11 +305,13 @@ function ProductivityCommandCenter() {
       />
 
       <div className="productivity-shell space-y-6">
-        <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <SignalCard label="Productivity score" value={teamScore} icon={BrainCircuit} suffix="/100" trend={`+${Math.max(1, teamScore - 72)}% vs baseline`} />
-          <SignalCard label="Team health" value={teamHealth} icon={Users} suffix="/100" trend={`${workloadBalance}% workload balance`} />
-          <SignalCard label="Execution rate" value={executionRate} icon={Gauge} suffix="%" trend={`${completedToday} completed today`} />
-          <SignalCard label="Risk detection" value={overdueRisk + attendanceConcerns} icon={ShieldAlert} trend={`${burnoutRisk} burnout alerts`} tone="risk" />
+        <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
+          <SignalCard label="Productivity score" value={teamScore} icon={BrainCircuit} suffix="/100" trend={`+${Math.max(1, teamScore - 72)}% vs last week`} sparkline={sparklineValues(teamScore)} />
+          <SignalCard label="Team health" value={teamHealth} icon={Users} suffix="/100" trend={`${workloadBalance}% workload balance`} sparkline={sparklineValues(teamHealth)} />
+          <SignalCard label="Execution rate" value={executionRate} icon={Gauge} suffix="%" trend={`${completedToday} completed today`} sparkline={sparklineValues(executionRate)} />
+          <SignalCard label="AI efficiency" value={aiEfficiency} icon={Sparkles} suffix="%" trend={`${confidence}% model confidence`} sparkline={sparklineValues(aiEfficiency)} />
+          <SignalCard label="Burnout risk" value={burnoutRisk} icon={ShieldAlert} trend={`${overdueRisk} overdue tasks`} tone="risk" sparkline={sparklineValues(100 - burnoutRisk * 18)} />
+          <SignalCard label="Active tasks" value={activeTasks} icon={Target} trend={`${executionRate}% completion rate`} sparkline={sparklineValues(Math.min(100, activeTasks * 8))} />
         </section>
 
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.12fr_.88fr]">
@@ -387,6 +391,35 @@ function ProductivityCommandCenter() {
           </GlassCard>
         </section>
 
+        <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.05fr_.95fr]">
+          <GlassCard className="productivity-panel">
+            <h3 className="mb-4 flex items-center gap-2 font-semibold">
+              <MessageSquare size={17} className="text-cyan-200" />
+              AI Copilot Assistant
+            </h3>
+            <div className="grid gap-3">
+              <CopilotMessage role="AI Copilot" text={`Execution confidence is ${forecast}%. Prioritize ${overdueRisk} overdue task${overdueRisk === 1 ? "" : "s"} before assigning new work.`} />
+              <CopilotMessage role="Team Alert" text={burnoutRisk ? `${burnoutRisk} employee${burnoutRisk === 1 ? "" : "s"} show elevated workload pressure. Review task distribution today.` : "No burnout pattern detected. Team workload is within expected operating range."} tone="warning" />
+              <CopilotMessage role="Suggested Action" text={`${topEmployee?.name || "Top performer"} can mentor peers on execution rhythm. Schedule a lightweight coaching check-in for attention-list employees.`} tone="success" />
+              <div className="rounded-2xl border border-cyan-300/15 bg-cyan-300/10 px-4 py-3 text-sm text-cyan-50/90">
+                Ask AI: "Which team members need support before Friday?"
+              </div>
+            </div>
+          </GlassCard>
+
+          <GlassCard className="productivity-panel">
+            <h3 className="mb-4 flex items-center gap-2 font-semibold">
+              <BrainCircuit size={17} className="text-primary" />
+              AI Recommendation Center
+            </h3>
+            <div className="grid gap-3">
+              <RecommendationCard priority="High" title="Recover overdue execution" text={`Close or reassign ${overdueRisk} overdue task${overdueRisk === 1 ? "" : "s"} to protect the weekly forecast.`} />
+              <RecommendationCard priority="Medium" title="Improve attendance stability" text={`${attendanceConcerns} employee${attendanceConcerns === 1 ? "" : "s"} need punctuality coaching or schedule clarity.`} />
+              <RecommendationCard priority="Low" title="Scale top performer habits" text={`Convert ${topEmployee?.name || "the leader"}'s execution pattern into a short team playbook.`} />
+            </div>
+          </GlassCard>
+        </section>
+
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-[.9fr_1.1fr]">
           <GlassCard className="productivity-panel">
             <h3 className="mb-4 flex items-center gap-2 font-semibold">
@@ -415,6 +448,37 @@ function ProductivityCommandCenter() {
               <ForecastCard label="Attendance risk" value={attendanceConcerns} detail="Punctuality or presence concerns" />
               <ForecastCard label="Promotion signal" value={employees.filter((employee) => employee.dailyScore >= 88).length} detail="High-potential performers" />
             </div>
+          </GlassCard>
+        </section>
+
+        <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1fr]">
+          <GlassCard className="productivity-panel">
+            <h3 className="mb-4 flex items-center gap-2 font-semibold">
+              <Activity size={17} className="text-cyan-200" />
+              Team Intelligence Analytics
+            </h3>
+            <div className="grid gap-4 md:grid-cols-[1fr_.9fr]">
+              <ProductivityHeatmap employees={employees} />
+              <div className="grid gap-3">
+                <IntelligenceMetric label="Collaboration score" value={clampScore(Math.round((teamHealth + executionRate) / 2))} />
+                <IntelligenceMetric label="Focus time index" value={clampScore(100 - Math.min(42, activeTasks * 2))} />
+                <IntelligenceMetric label="Attendance intelligence" value={clampScore(100 - attendanceConcerns * 12)} />
+                <IntelligenceMetric label="Workload distribution" value={workloadBalance} />
+              </div>
+            </div>
+          </GlassCard>
+
+          <GlassCard className="productivity-panel">
+            <h3 className="mb-4 flex items-center gap-2 font-semibold">
+              <Radar size={17} className="text-primary" />
+              Task Intelligence Dashboard
+            </h3>
+            <TaskIntelligenceMatrix
+              completed={sum(employees.map((employee) => employee.completedTasks))}
+              active={activeTasks}
+              overdue={overdueRisk}
+              forecast={forecast}
+            />
           </GlassCard>
         </section>
 
@@ -617,6 +681,7 @@ function SignalCard({
   suffix = "",
   trend,
   tone = "default",
+  sparkline = [],
 }: {
   label: string;
   value: number;
@@ -624,6 +689,7 @@ function SignalCard({
   suffix?: string;
   trend?: string;
   tone?: "default" | "risk";
+  sparkline?: number[];
 }) {
   return (
     <GlassCard className="productivity-signal">
@@ -641,8 +707,23 @@ function SignalCard({
           <span className="text-base text-muted-foreground">{suffix}</span>
         </div>
         {trend && <div className="mt-1 text-xs font-semibold text-cyan-100/75">{trend}</div>}
+        <MiniSparkline values={sparkline} tone={tone} />
       </div>
     </GlassCard>
+  );
+}
+
+function MiniSparkline({ values, tone }: { values: number[]; tone: "default" | "risk" }) {
+  return (
+    <div className="mt-3 flex h-8 items-end gap-1" aria-hidden="true">
+      {values.map((value, index) => (
+        <span
+          key={`${value}-${index}`}
+          className={`w-1.5 rounded-full ${tone === "risk" ? "bg-gradient-to-t from-rose-500 to-amber-300" : "bg-gradient-to-t from-cyan-400 to-violet-400"}`}
+          style={{ height: `${Math.max(18, value)}%`, opacity: 0.42 + index * 0.08 }}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -682,6 +763,109 @@ function ForecastCard({ label, value, detail }: { label: string; value: string |
       <div className="text-2xl font-bold gradient-text tabular-nums">{value}</div>
       <div className="mt-1 text-sm font-semibold text-white/90">{label}</div>
       <div className="mt-2 text-xs leading-5 text-muted-foreground">{detail}</div>
+    </div>
+  );
+}
+
+function CopilotMessage({ role, text, tone = "default" }: { role: string; text: string; tone?: "default" | "warning" | "success" }) {
+  const toneClass = {
+    default: "border-cyan-300/15 bg-cyan-300/10 text-cyan-50/90",
+    warning: "border-warning/20 bg-warning/10 text-warning",
+    success: "border-success/20 bg-success/10 text-success",
+  }[tone];
+
+  return (
+    <div className={`rounded-2xl border p-4 ${toneClass}`}>
+      <div className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+        <Sparkles size={13} />
+        {role}
+      </div>
+      <p className="text-sm leading-6">{text}</p>
+    </div>
+  );
+}
+
+function RecommendationCard({ priority, title, text }: { priority: "High" | "Medium" | "Low"; title: string; text: string }) {
+  const tone = priority === "High" ? "bg-destructive/15 text-destructive" : priority === "Medium" ? "bg-warning/15 text-warning" : "bg-white/[0.06] text-white/60";
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan-300/25 hover:bg-white/[0.055]">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <h4 className="font-semibold text-white/90">{title}</h4>
+        <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${tone}`}>{priority}</span>
+      </div>
+      <p className="text-sm leading-6 text-muted-foreground">{text}</p>
+    </div>
+  );
+}
+
+function ProductivityHeatmap({ employees }: { employees: EmployeePulse[] }) {
+  const cells = Array.from({ length: 35 }).map((_, index) => {
+    const employee = employees[index % Math.max(1, employees.length)];
+    const value = employee ? clampScore(employee.dailyScore - ((index * 7) % 28) + (index % 5) * 4) : 0;
+    return value;
+  });
+
+  return (
+    <div>
+      <div className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Productivity heatmap</div>
+      <div className="grid grid-cols-7 gap-1.5">
+        {cells.map((value, index) => (
+          <span
+            key={index}
+            className="aspect-square rounded-md border border-white/10 transition-transform duration-200 hover:scale-110"
+            style={{
+              background: `linear-gradient(135deg, rgba(33,212,253,${0.12 + value / 150}), rgba(139,92,246,${0.08 + value / 180}))`,
+              boxShadow: value > 80 ? "0 0 18px rgba(33,212,253,0.22)" : undefined,
+            }}
+            title={`Intensity ${value}%`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function IntelligenceMetric({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+      <div className="mb-2 flex items-center justify-between text-xs font-semibold text-muted-foreground">
+        <span>{label}</span>
+        <span className="text-white tabular-nums">{value}%</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-white/10">
+        <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-violet-400 to-pink-400" style={{ width: `${value}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function TaskIntelligenceMatrix({
+  completed,
+  active,
+  overdue,
+  forecast,
+}: {
+  completed: number;
+  active: number;
+  overdue: number;
+  forecast: number;
+}) {
+  const rows = [
+    { label: "Completion progress", value: completed, detail: `${forecast}% predicted weekly completion`, tone: "cyan" },
+    { label: "Active workload", value: active, detail: "Open tasks in motion", tone: "violet" },
+    { label: "Overdue risk", value: overdue, detail: overdue ? "Immediate review recommended" : "No overdue drag", tone: "rose" },
+    { label: "Workload forecast", value: clampScore(100 - overdue * 12), detail: "Capacity confidence", tone: "emerald" },
+  ];
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {rows.map((row) => (
+        <div key={row.label} className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+          <div className="text-2xl font-bold gradient-text tabular-nums">{row.value}</div>
+          <div className="mt-1 text-sm font-semibold text-white/90">{row.label}</div>
+          <div className="mt-2 text-xs text-muted-foreground">{row.detail}</div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -784,6 +968,12 @@ function elapsedWeekDays() {
 
 function average(values: number[]) {
   return Math.round(values.reduce((total, value) => total + value, 0) / Math.max(1, values.length));
+}
+
+function sparklineValues(value: number) {
+  return Array.from({ length: 7 }).map((_, index) =>
+    clampScore(value - 18 + index * 4 + Math.round(Math.sin(index + value / 12) * 8)),
+  );
 }
 
 function sum(values: number[]) {
