@@ -265,7 +265,7 @@ function AdminStandupsPage() {
       ) : (
         <>
           <section className="mt-5 grid gap-5 xl:grid-cols-[1.45fr_0.85fr]">
-            <GlassCard className="border border-cyan-300/10 bg-[#070d1a]/70">
+            <GlassCard className="self-start border border-cyan-300/10 bg-[#070d1a]/70">
               <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200/80">Team Standup Feed</p>
@@ -276,7 +276,7 @@ function AdminStandupsPage() {
                 </span>
               </div>
 
-              <div className="grid max-h-[38rem] gap-4 overflow-y-auto pr-2 [scrollbar-color:rgba(103,232,249,0.35)_rgba(255,255,255,0.06)] [scrollbar-width:thin]">
+              <div className="grid max-h-[34rem] gap-4 overflow-y-auto pr-2 [scrollbar-color:rgba(103,232,249,0.35)_rgba(255,255,255,0.06)] [scrollbar-width:thin]">
                 {signals.map((row) => (
                   <StandupEmployeeCard
                     key={row.id}
@@ -471,7 +471,7 @@ function StandupEmployeeCard({ row, selected, onSelect }: { row: EmployeeSignal;
         selected ? "border-cyan-300/45 shadow-[0_0_38px_rgba(34,211,238,0.14)]" : "border-white/10",
       )}
     >
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+      <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-start">
         <div className="flex min-w-56 items-center gap-3">
           <EmployeeAvatar profile={row.profile} size="lg" />
           <div className="min-w-0">
