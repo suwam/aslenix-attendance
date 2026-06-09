@@ -78,11 +78,21 @@ function AdminDashboard() {
         const ds = d.toISOString().slice(0, 10);
         const { data } = await supabase.from("attendance").select("user_id,status,is_late").eq("date", ds);
         const employeeRows = (data ?? []).filter((row) => employeeIds.has(row.user_id));
+        const presentCount = employeeRows.filter((x: any) => x.status === "present" && !x.is_late).length;
+        const lateCount = employeeRows.filter((x: any) => x.status === "late" || x.is_late).length;
+        const wfhCount = employeeRows.filter((x: any) => x.status === "wfh").length;
+        const attendedCount = presentCount + lateCount + wfhCount;
         days.push({
           day: format(d, "EEE"),
-          present: employeeRows.filter((x: any) => x.status === "present").length,
-          late: employeeRows.filter((x: any) => x.status === "late" || x.is_late).length,
-          wfh: employeeRows.filter((x: any) => x.status === "wfh").length,
+          date: ds,
+          totalEmployees: active,
+          present: presentCount,
+          late: lateCount,
+          wfh: wfhCount,
+          absent: Math.max(0, active - attendedCount),
+          attendancePct: active ? Math.round((attendedCount / active) * 100) : 0,
+          noData: employeeRows.length === 0,
+          isToday: ds === today,
         });
       }
       setWeekly(days);
