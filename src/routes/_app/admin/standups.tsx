@@ -264,8 +264,8 @@ function AdminStandupsPage() {
         </GlassCard>
       ) : (
         <>
-          <section className="mt-5 grid items-stretch gap-5 xl:grid-cols-[1.45fr_0.85fr]">
-            <GlassCard className="flex h-full min-h-0 flex-col border border-cyan-300/10 bg-[#070d1a]/70">
+          <section className="mt-5 grid items-stretch gap-5 xl:h-[40rem] xl:grid-cols-[1.45fr_0.85fr]">
+            <GlassCard className="flex h-full min-h-0 flex-col overflow-hidden border border-cyan-300/10 bg-[#070d1a]/70">
               <div className="mb-5 flex shrink-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200/80">Team Standup Feed</p>
@@ -276,7 +276,7 @@ function AdminStandupsPage() {
                 </span>
               </div>
 
-              <div className="grid min-h-0 flex-1 auto-rows-max gap-4 overflow-y-auto pr-2 [scrollbar-color:rgba(103,232,249,0.35)_rgba(255,255,255,0.06)] [scrollbar-width:thin]">
+              <div className="grid min-h-0 flex-1 auto-rows-max gap-4 overflow-y-auto overscroll-contain pr-2 [scrollbar-color:rgba(103,232,249,0.35)_rgba(255,255,255,0.06)] [scrollbar-width:thin]">
                 {signals.map((row) => (
                   <StandupEmployeeCard
                     key={row.id}
@@ -295,7 +295,7 @@ function AdminStandupsPage() {
               </div>
             </GlassCard>
 
-            <div className="space-y-5">
+            <div className="min-h-0 space-y-5 overflow-y-auto pr-1 [scrollbar-color:rgba(103,232,249,0.28)_rgba(255,255,255,0.05)] [scrollbar-width:thin]">
               <GlassCard className="border border-amber-300/15 bg-[#0b1020]/75 shadow-[0_0_32px_rgba(251,191,36,0.08)]">
                 <div className="flex items-center justify-between">
                   <div>
