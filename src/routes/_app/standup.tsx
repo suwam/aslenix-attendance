@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/PageHeader";
@@ -11,14 +11,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   AlertTriangle,
+  Bot,
+  BrainCircuit,
   Calendar,
   CheckCircle2,
   Clock,
   ClipboardList,
   History,
+  Lightbulb,
   Save,
+  ShieldCheck,
   Sparkles,
   Target,
+  WandSparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatWorkHours } from "@/lib/work-hours";
@@ -122,40 +127,98 @@ function StandupPage() {
     load();
   };
 
+  const isSubmitted = Boolean(yesterday.trim() || today.trim() || blockers.trim());
+  const avgHistoryHours =
+    history.reduce((a, h) => a + Number(h.work_hours || 0), 0) / Math.max(1, history.length);
+  const blockerHistoryCount = history.filter((h) => h.blockers && h.blockers.trim()).length;
+  const quality = useMemo(() => getStandupQuality(yesterday, today, blockers, hours), [yesterday, today, blockers, hours]);
+  const suggestions = useMemo(
+    () => getAiSuggestions(yesterday, today, blockers, hoursSource, isSubmitted),
+    [yesterday, today, blockers, hoursSource, isSubmitted],
+  );
+
   return (
     <>
       <PageHeader
         title="Daily Standup"
-        subtitle="Share what you worked on today, what you'll work on tomorrow, and what's blocking you"
+        subtitle="Submit a clear daily update with AI guidance for progress, plans, blockers, and work hours."
         actions={
           <BSDateInput
             value={bsDate}
             onChange={setBsDate}
-            className="w-auto"
+            className="w-auto border-cyan-300/20 bg-white/5"
           />
         }
       />
+
+      <GlassCard className="mb-6 overflow-hidden border-cyan-300/15 bg-[#07111f]/70 p-0 shadow-[0_0_42px_rgba(34,211,238,0.1)]">
+        <div className="relative p-6">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(34,211,238,0.16),transparent_34%),radial-gradient(circle_at_85%_18%,rgba(168,85,247,0.14),transparent_30%)]" />
+          <div className="relative grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+            <div>
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10 text-cyan-200">
+                  <Bot size={23} />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200/80">AI Standup Assistant</p>
+                  <h2 className="text-2xl font-bold text-white">Make today's update crisp and useful</h2>
+                </div>
+              </div>
+              <p className="max-w-3xl text-sm leading-6 text-slate-300">
+                Your standup should tell the team what changed, what happens next, and whether anything needs manager help.
+              </p>
+              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                <SummaryBadge label="Status" value={isSubmitted ? "Submitted draft" : "Pending"} tone={isSubmitted ? "green" : "amber"} />
+                <SummaryBadge label="Quality" value={`${quality.score}%`} tone={quality.score >= 80 ? "green" : quality.score >= 55 ? "blue" : "amber"} />
+                <SummaryBadge label="Hours source" value={hoursSource === "attendance" ? "Attendance" : hoursSource === "standup" ? "Saved" : "Waiting"} tone="blue" />
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-black/20 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-200/80">AI Quality Check</p>
+                  <h3 className="mt-1 text-lg font-bold text-white">{quality.label}</h3>
+                </div>
+                <BrainCircuit className="text-fuchsia-200" />
+              </div>
+              <div className="mt-4 h-2.5 rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-blue-400 to-fuchsia-400 shadow-[0_0_18px_rgba(34,211,238,0.35)]"
+                  style={{ width: `${quality.score}%` }}
+                />
+              </div>
+              <ul className="mt-4 space-y-2">
+                {quality.notes.map((note) => (
+                  <li key={note} className="flex items-start gap-2 text-sm text-slate-300">
+                    <ShieldCheck size={15} className="mt-0.5 shrink-0 text-cyan-200" />
+                    <span>{note}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </GlassCard>
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StandupMetric label="Standups (7d)" value={history.length} icon={Calendar} tone="blue" />
         <StandupMetric
           label="Avg hours"
-          value={formatWorkHours(
-            history.reduce((a, h) => a + Number(h.work_hours || 0), 0) /
-              Math.max(1, history.length),
-          )}
+          value={formatWorkHours(avgHistoryHours)}
           icon={Clock}
           tone="green"
         />
         <StandupMetric
           label="With blockers"
-          value={history.filter((h) => h.blockers && h.blockers.trim()).length}
+          value={blockerHistoryCount}
           icon={AlertTriangle}
           tone="amber"
         />
         <StandupMetric
-          label="Today logged"
-          value={today || yesterday ? "Yes" : "No"}
+          label="Today status"
+          value={isSubmitted ? "Ready" : "Pending"}
           icon={CheckCircle2}
           tone="red"
         />
@@ -168,12 +231,17 @@ function StandupPage() {
               <div>
                 <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
                   <ClipboardList size={15} />
-                  Engineering update
+                  Daily execution update
                 </div>
                 <h2 className="text-xl font-bold text-white">Today's standup report</h2>
               </div>
-              <div className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-xs font-medium text-muted-foreground">
-                {formatNepaliDate(date, "ddd DD, MMMM YYYY")} BS
+              <div className="flex flex-wrap items-center gap-2">
+                <div className={`rounded-full border px-3 py-1.5 text-xs font-bold ${isSubmitted ? "border-success/25 bg-success/10 text-success" : "border-warning/25 bg-warning/10 text-warning"}`}>
+                  {isSubmitted ? "Submitted" : "Pending"}
+                </div>
+                <div className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                  {formatNepaliDate(date, "ddd DD, MMMM YYYY")} BS
+                </div>
               </div>
             </div>
           </div>
@@ -186,6 +254,7 @@ function StandupPage() {
               onChange={setYesterday}
               placeholder="Wrapped up auth flow, fixed UI bugs..."
               rows={4}
+              hint="Mention finished outcomes, shipped work, or measurable progress."
             />
             <StandupField
               icon={Target}
@@ -194,6 +263,7 @@ function StandupPage() {
               onChange={setToday}
               placeholder="Build dashboard widgets, review PRs..."
               rows={4}
+              hint="Write the next clear execution step, not a vague intention."
             />
             <StandupField
               icon={AlertTriangle}
@@ -202,12 +272,13 @@ function StandupPage() {
               onChange={setBlockers}
               placeholder="Waiting on design specs..."
               rows={3}
+              hint="Leave blank if nothing is blocking you. If blocked, include what help is needed."
             />
 
             <div className="grid grid-cols-1 gap-4 border-t border-white/10 pt-5 md:grid-cols-[minmax(0,1fr)_220px]">
               <div>
                 <Label className="text-xs uppercase tracking-wider text-muted-foreground">Work hours</Label>
-                <div className="mt-2 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 p-3">
+                <div className="mt-2 flex items-center gap-3 rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.055] p-3 shadow-[0_0_24px_rgba(34,211,238,0.08)]">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/10 text-success">
                     <Clock size={18} />
                   </div>
@@ -231,6 +302,27 @@ function StandupPage() {
           </div>
         </GlassCard>
 
+        <div className="space-y-6">
+        <GlassCard className="border-cyan-300/15 bg-white/[0.025]">
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-semibold text-white">AI writing helper</h3>
+              <p className="text-xs text-muted-foreground">Quick guidance before you save</p>
+            </div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-300/10 text-cyan-200">
+              <WandSparkles size={18} />
+            </div>
+          </div>
+          <div className="space-y-3">
+            {suggestions.map((suggestion) => (
+              <div key={suggestion} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-black/20 p-3 text-sm text-slate-300">
+                <Lightbulb size={15} className="mt-0.5 shrink-0 text-amber-200" />
+                <span>{suggestion}</span>
+              </div>
+            ))}
+          </div>
+        </GlassCard>
+
         <GlassCard className="border-white/10 bg-white/[0.025]">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
@@ -243,7 +335,7 @@ function StandupPage() {
           </div>
           <ul className="max-h-[520px] space-y-3 overflow-y-auto pr-1">
             {history.map((h) => (
-              <li key={h.id} className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm">
+              <li key={h.id} className="group rounded-2xl border border-white/10 bg-black/20 p-4 text-sm transition-all duration-300 hover:border-cyan-300/25 hover:bg-cyan-300/[0.055]">
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <div className="font-semibold text-white">
                     {formatNepaliDate(h.date, "ddd DD, MMMM YYYY")} BS
@@ -257,6 +349,11 @@ function StandupPage() {
                     <span>No notes</span>
                   )}
                 </div>
+                <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
+                  <HistorySignal label="Today" active={Boolean(h.yesterday?.trim())} />
+                  <HistorySignal label="Plan" active={Boolean(h.today?.trim())} />
+                  <HistorySignal label="Blocker" active={Boolean(h.blockers?.trim())} warning />
+                </div>
               </li>
             ))}
             {history.length === 0 && (
@@ -267,6 +364,7 @@ function StandupPage() {
             )}
           </ul>
         </GlassCard>
+        </div>
       </div>
     </>
   );
@@ -305,6 +403,45 @@ function StandupMetric({
   );
 }
 
+function SummaryBadge({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone: "blue" | "green" | "amber";
+}) {
+  const colors = {
+    blue: "border-cyan-300/20 bg-cyan-300/10 text-cyan-100",
+    green: "border-success/20 bg-success/10 text-success",
+    amber: "border-warning/20 bg-warning/10 text-warning",
+  };
+
+  return (
+    <div className={`rounded-2xl border p-3 ${colors[tone]}`}>
+      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-75">{label}</div>
+      <div className="mt-1 text-lg font-black text-white">{value}</div>
+    </div>
+  );
+}
+
+function HistorySignal({ label, active, warning = false }: { label: string; active: boolean; warning?: boolean }) {
+  return (
+    <div
+      className={`rounded-full border px-2 py-1 text-center font-semibold ${
+        active
+          ? warning
+            ? "border-warning/25 bg-warning/10 text-warning"
+            : "border-cyan-300/20 bg-cyan-300/10 text-cyan-100"
+          : "border-white/10 bg-white/[0.035] text-muted-foreground"
+      }`}
+    >
+      {label}
+    </div>
+  );
+}
+
 function StandupField({
   icon: Icon,
   label,
@@ -312,6 +449,7 @@ function StandupField({
   onChange,
   placeholder,
   rows,
+  hint,
 }: {
   icon: typeof CheckCircle2;
   label: string;
@@ -319,6 +457,7 @@ function StandupField({
   onChange: (value: string) => void;
   placeholder: string;
   rows: number;
+  hint: string;
 }) {
   return (
     <div>
@@ -335,6 +474,78 @@ function StandupField({
         placeholder={placeholder}
         className="rounded-2xl border-white/10 bg-black/20 text-base leading-6"
       />
+      <div className="mt-2 flex items-start gap-2 text-xs text-muted-foreground">
+        <Sparkles size={13} className="mt-0.5 shrink-0 text-cyan-200" />
+        <span>{hint}</span>
+      </div>
     </div>
   );
+}
+
+function getStandupQuality(yesterday: string, today: string, blockers: string, hours: number) {
+  const yesterdayWords = wordCount(yesterday);
+  const todayWords = wordCount(today);
+  const blockerWords = wordCount(blockers);
+  let score = 20;
+  const notes: string[] = [];
+
+  if (yesterdayWords >= 5) {
+    score += 25;
+    notes.push("Today's completed work has enough detail.");
+  } else {
+    notes.push("Add one concrete completed outcome for today.");
+  }
+
+  if (todayWords >= 5) {
+    score += 25;
+    notes.push("Tomorrow's plan is clear enough for the team.");
+  } else {
+    notes.push("Add a specific next step for tomorrow.");
+  }
+
+  if (hours > 0) {
+    score += 15;
+    notes.push("Work hours are attached to this update.");
+  } else {
+    notes.push("Check in and check out to attach automatic work hours.");
+  }
+
+  if (!blockers.trim()) {
+    score += 10;
+    notes.push("No blocker reported.");
+  } else if (blockerWords >= 4) {
+    score += 10;
+    notes.push("Blocker includes useful context for manager review.");
+  } else {
+    notes.push("Describe what help is needed for the blocker.");
+  }
+
+  score = Math.min(100, score);
+  return {
+    score,
+    label: score >= 80 ? "Strong standup" : score >= 55 ? "Almost ready" : "Needs more detail",
+    notes: notes.slice(0, 4),
+  };
+}
+
+function getAiSuggestions(
+  yesterday: string,
+  today: string,
+  blockers: string,
+  hoursSource: "attendance" | "standup" | "none",
+  isSubmitted: boolean,
+) {
+  const suggestions = [];
+  if (!isSubmitted) suggestions.push("Start with one sentence about the most important thing you completed today.");
+  if (wordCount(yesterday) < 5) suggestions.push("For today's work, include a deliverable, fix, meeting outcome, or measurable progress.");
+  if (wordCount(today) < 5) suggestions.push("For tomorrow, name the exact task you will move forward first.");
+  if (blockers.trim() && wordCount(blockers) < 4) suggestions.push("Your blocker is short. Add who or what you are waiting for.");
+  if (!blockers.trim()) suggestions.push("If you have no blocker, leaving the blocker field blank is perfect.");
+  if (hoursSource === "none") suggestions.push("Your work hours will become stronger once attendance has both check-in and check-out.");
+  if (suggestions.length === 0) suggestions.push("This standup is clear. Save it so your manager sees the latest execution signal.");
+  return suggestions.slice(0, 4);
+}
+
+function wordCount(value: string) {
+  return value.trim().split(/\s+/).filter(Boolean).length;
 }

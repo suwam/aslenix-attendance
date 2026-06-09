@@ -276,7 +276,7 @@ function AdminStandupsPage() {
                 </span>
               </div>
 
-              <div className="grid gap-4">
+              <div className="grid max-h-[38rem] gap-4 overflow-y-auto pr-2 [scrollbar-color:rgba(103,232,249,0.35)_rgba(255,255,255,0.06)] [scrollbar-width:thin]">
                 {signals.map((row) => (
                   <StandupEmployeeCard
                     key={row.id}
