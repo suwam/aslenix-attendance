@@ -1,6 +1,16 @@
 import { useState } from "react";
-import { BellDot } from "lucide-react";
-import { format } from "date-fns";
+import {
+  BellDot,
+  CheckCircle2,
+  ClipboardCheck,
+  FilePenLine,
+  ListChecks,
+  Megaphone,
+  Plane,
+  ShieldCheck,
+  UserPlus,
+} from "lucide-react";
+import { format, formatDistanceToNow, isSameDay } from "date-fns";
 import {
   ComposedChart,
   Bar,
@@ -63,6 +73,33 @@ type DepartmentRow = {
   percentage: number;
 };
 
+type ActivityFilter = "all" | "attendance" | "task" | "leave" | "employee";
+
+type ActivityKind =
+  | "attendance_approved"
+  | "attendance_correction"
+  | "task_updated"
+  | "task_completed"
+  | "leave_request"
+  | "employee_added"
+  | "announcement"
+  | "system";
+
+type ActivityFeedItem = {
+  id: string;
+  title: string;
+  message: string;
+  createdAt: string;
+  category: ActivityFilter | "system";
+  kind: ActivityKind;
+  badge: "Attendance" | "Task" | "Leave" | "Employee" | "System";
+  priority: "high" | "medium" | "low";
+  employeeName: string;
+  avatarUrl?: string | null;
+  groupedCount: number;
+  groupedTitle?: string;
+};
+
 export default function AdminCharts({
   weekly,
   deptData,
@@ -73,6 +110,7 @@ export default function AdminCharts({
   activity: any[];
 }) {
   const [activeDepartmentIndex, setActiveDepartmentIndex] = useState<number | null>(null);
+  const [activityFilter, setActivityFilter] = useState<ActivityFilter>("all");
   const weeklyRows = weekly.map((row) => {
     const present = Number(row.present ?? 0);
     const late = Number(row.late ?? 0);
@@ -94,6 +132,9 @@ export default function AdminCharts({
   const summary = summarizeWeeklyAttendance(weeklyRows);
   const departmentRows = makeDepartmentRows(deptData);
   const departmentTotal = departmentRows.reduce((sum, row) => sum + row.value, 0);
+  const activityItems = groupActivityItems(activity.map(normalizeActivityItem));
+  const filteredActivityItems = activityItems.filter((item) => activityFilter === "all" || item.category === activityFilter);
+  const activitySummary = summarizeActivities(activityItems);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -313,28 +354,56 @@ export default function AdminCharts({
       </GlassCard>
 
       <GlassCard className="lg:col-span-3">
-        <h3 className="text-lg font-semibold mb-4">Recent activity</h3>
-        {activity.length === 0 ? (
+        <div className="mb-4 flex flex-col gap-3">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h3 className="text-lg font-bold tracking-tight">Recent Activity</h3>
+              <p className="mt-1 text-xs text-muted-foreground">Live HRMS activity timeline</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <ActivitySummaryPill label="Today" value={activitySummary.today} />
+              <ActivitySummaryPill label="Activities" value={activitySummary.total} />
+              <ActivitySummaryPill label="Attendance" value={activitySummary.attendance} />
+              <ActivitySummaryPill label="Tasks" value={activitySummary.task} />
+              <ActivitySummaryPill label="Leave" value={activitySummary.leave} />
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2" role="tablist" aria-label="Activity filters">
+            {ACTIVITY_FILTERS.map((filter) => (
+              <button
+                key={filter.value}
+                type="button"
+                role="tab"
+                aria-selected={activityFilter === filter.value}
+                onClick={() => setActivityFilter(filter.value)}
+                className={`rounded-full border px-3 py-1.5 text-[11px] font-bold transition-all duration-200 ${
+                  activityFilter === filter.value
+                    ? "border-cyan-300/35 bg-cyan-300/12 text-cyan-100 shadow-[0_0_18px_rgba(103,232,249,0.14)]"
+                    : "border-white/10 bg-white/[0.035] text-white/58 hover:border-white/18 hover:bg-white/[0.06] hover:text-white/82"
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {activityItems.length === 0 ? (
           <div className="text-sm text-muted-foreground py-8 text-center">No activity yet</div>
         ) : (
-          <ul className="divide-y divide-border">
-            {activity.map((n) => (
-              <li key={n.id} className="py-3 flex items-start gap-3">
-                <div
-                  className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: "var(--gradient-brand-soft)" }}
-                >
-                  <BellDot size={14} className="text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium">{n.title}</div>
-                  <div className="text-xs text-muted-foreground truncate">{n.message}</div>
-                </div>
-                <div className="text-xs text-muted-foreground whitespace-nowrap">
-                  {formatNepaliDate(n.created_at, "DD MMM")} BS, {format(new Date(n.created_at), "HH:mm")}
-                </div>
+          <ul className="relative space-y-3 before:absolute before:left-[1.18rem] before:top-4 before:h-[calc(100%-2rem)] before:w-px before:bg-gradient-to-b before:from-cyan-300/30 before:via-white/10 before:to-transparent">
+            {filteredActivityItems.length ? (
+              filteredActivityItems.map((item, index) => (
+                <ActivityTimelineItem
+                  key={item.id}
+                  item={item}
+                  newest={index < 2}
+                />
+              ))
+            ) : (
+              <li className="rounded-xl border border-white/10 bg-white/[0.035] px-4 py-6 text-center text-sm text-muted-foreground">
+                No activity for this filter.
               </li>
-            ))}
+            )}
           </ul>
         )}
       </GlassCard>
@@ -351,6 +420,299 @@ function summarizeWeeklyAttendance(rows: WeeklyAttendanceDay[]) {
     ? Math.round(trackedRows.reduce((sum, row) => sum + Number(row.attendancePct ?? 0), 0) / trackedRows.length)
     : 0;
   return { avgAttendance, present, late, wfh };
+}
+
+const ACTIVITY_FILTERS: { label: string; value: ActivityFilter }[] = [
+  { label: "All", value: "all" },
+  { label: "Attendance", value: "attendance" },
+  { label: "Tasks", value: "task" },
+  { label: "Leave", value: "leave" },
+  { label: "Employees", value: "employee" },
+];
+
+const ACTIVITY_META: Record<ActivityKind, {
+  icon: typeof BellDot;
+  color: string;
+  bg: string;
+  label: string;
+}> = {
+  attendance_approved: {
+    icon: ShieldCheck,
+    color: "#22c55e",
+    bg: "rgba(34,197,94,0.12)",
+    label: "Attendance Approved",
+  },
+  attendance_correction: {
+    icon: FilePenLine,
+    color: "#f97316",
+    bg: "rgba(249,115,22,0.12)",
+    label: "Attendance Correction Request",
+  },
+  task_updated: {
+    icon: ListChecks,
+    color: "#60a5fa",
+    bg: "rgba(96,165,250,0.12)",
+    label: "Task Updated",
+  },
+  task_completed: {
+    icon: CheckCircle2,
+    color: "#10b981",
+    bg: "rgba(16,185,129,0.12)",
+    label: "Task Completed",
+  },
+  leave_request: {
+    icon: Plane,
+    color: "#a78bfa",
+    bg: "rgba(167,139,250,0.12)",
+    label: "Leave Request",
+  },
+  employee_added: {
+    icon: UserPlus,
+    color: "#22d3ee",
+    bg: "rgba(34,211,238,0.12)",
+    label: "Employee Added",
+  },
+  announcement: {
+    icon: Megaphone,
+    color: "#facc15",
+    bg: "rgba(250,204,21,0.12)",
+    label: "Announcement",
+  },
+  system: {
+    icon: BellDot,
+    color: "#94a3b8",
+    bg: "rgba(148,163,184,0.12)",
+    label: "System",
+  },
+};
+
+function ActivitySummaryPill({ label, value, className = "" }: { label: string; value: number; className?: string }) {
+  return (
+    <div className={`rounded-lg border border-white/10 bg-white/[0.035] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] ${className}`}>
+      <div className="text-[10px] font-semibold uppercase tracking-[0.13em] text-white/42">{label}</div>
+      <div className="mt-1 text-base font-extrabold leading-none text-white tabular-nums">{value}</div>
+    </div>
+  );
+}
+
+function ActivityTimelineItem({ item, newest }: { item: ActivityFeedItem; newest: boolean }) {
+  const meta = ACTIVITY_META[item.kind];
+  const Icon = meta.icon;
+  const absoluteTime = `${formatNepaliDate(item.createdAt, "DD MMM YYYY")} BS, ${format(new Date(item.createdAt), "HH:mm")}`;
+  const relativeTime = formatDistanceToNow(new Date(item.createdAt), { addSuffix: true });
+  const priority = priorityStyle(item.priority);
+  const groupedTitle = item.groupedTitle || item.title;
+  const subtitle = item.groupedCount > 1 ? `${item.groupedCount} updates today` : item.message;
+
+  return (
+    <li
+      className={`group relative flex gap-4 rounded-xl border p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/18 hover:bg-white/[0.055] ${
+        newest
+          ? "border-white/14 bg-white/[0.045] shadow-[0_0_30px_rgba(103,232,249,0.08),inset_0_1px_0_rgba(255,255,255,0.08)]"
+          : "border-white/8 bg-white/[0.025]"
+      }`}
+    >
+      <div className="relative z-10 flex shrink-0 flex-col items-center">
+        <div
+          className="flex h-10 w-10 items-center justify-center rounded-xl border shadow-[0_0_18px_currentColor]"
+          style={{ color: meta.color, backgroundColor: meta.bg, borderColor: `${meta.color}42` }}
+          aria-hidden="true"
+        >
+          <Icon size={17} />
+        </div>
+        <span
+          className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border border-[#0b1020]"
+          style={{ backgroundColor: priority.color }}
+          title={`${priority.label} priority`}
+        />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+          <div className="min-w-0">
+            <div className="mb-1 flex flex-wrap items-center gap-2">
+              <span
+                className="rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]"
+                style={{ color: meta.color, backgroundColor: meta.bg, borderColor: `${meta.color}38` }}
+              >
+                {item.badge}
+              </span>
+              {newest && (
+                <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-cyan-100">
+                  New
+                </span>
+              )}
+            </div>
+            <h4 className="truncate text-sm font-bold text-white/92">{groupedTitle}</h4>
+            <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{subtitle}</p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2 md:justify-end">
+            <EmployeeAvatar name={item.employeeName} avatarUrl={item.avatarUrl} />
+            <time
+              dateTime={item.createdAt}
+              title={absoluteTime}
+              className="whitespace-nowrap text-xs font-semibold text-white/52"
+            >
+              {relativeTime}
+            </time>
+          </div>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2 opacity-100 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
+          <ActivityAction label="View Details" />
+          <ActivityAction label="Open Employee" />
+          {item.category === "task" && <ActivityAction label="Open Task" />}
+        </div>
+      </div>
+    </li>
+  );
+}
+
+function ActivityAction({ label }: { label: string }) {
+  return (
+    <button
+      type="button"
+      className="rounded-full border border-white/10 bg-white/[0.035] px-2.5 py-1 text-[11px] font-semibold text-white/62 transition-colors hover:border-white/18 hover:bg-white/[0.07] hover:text-white"
+    >
+      {label}
+    </button>
+  );
+}
+
+function EmployeeAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string | null }) {
+  if (avatarUrl) {
+    return <img src={avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover ring-1 ring-white/15" />;
+  }
+
+  return (
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-gradient-to-br from-cyan-300/20 via-blue-400/15 to-violet-400/20 text-[11px] font-extrabold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
+      {initials(name)}
+    </div>
+  );
+}
+
+function normalizeActivityItem(item: any): ActivityFeedItem {
+  const title = String(item.title || "System activity");
+  const message = String(item.message || "");
+  const text = `${title} ${message}`.toLowerCase();
+  const kind = detectActivityKind(text);
+  const category = activityCategory(kind);
+  const createdAt = item.created_at || item.createdAt || new Date().toISOString();
+  const employeeName = extractEmployeeName(title, message);
+  return {
+    id: String(item.id || `${title}-${createdAt}`),
+    title,
+    message,
+    createdAt,
+    kind,
+    category,
+    badge: activityBadge(category),
+    priority: detectPriority(text, kind),
+    employeeName,
+    avatarUrl: item.avatar_url || item.avatarUrl || item.profile_photo_url || null,
+    groupedCount: 1,
+  };
+}
+
+function detectActivityKind(text: string): ActivityKind {
+  if (text.includes("correction")) return "attendance_correction";
+  if (text.includes("attendance") && (text.includes("approved") || text.includes("auto") || text.includes("checkout"))) return "attendance_approved";
+  if (text.includes("completed") && text.includes("task")) return "task_completed";
+  if (text.includes("task") || text.includes("moved to") || text.includes("updated")) return "task_updated";
+  if (text.includes("leave")) return "leave_request";
+  if (text.includes("employee") && (text.includes("added") || text.includes("approved") || text.includes("joined"))) return "employee_added";
+  if (text.includes("announcement") || text.includes("notice")) return "announcement";
+  return "system";
+}
+
+function activityCategory(kind: ActivityKind): ActivityFeedItem["category"] {
+  if (kind === "attendance_approved" || kind === "attendance_correction") return "attendance";
+  if (kind === "task_updated" || kind === "task_completed") return "task";
+  if (kind === "leave_request") return "leave";
+  if (kind === "employee_added") return "employee";
+  return "system";
+}
+
+function activityBadge(category: ActivityFeedItem["category"]): ActivityFeedItem["badge"] {
+  if (category === "attendance") return "Attendance";
+  if (category === "task") return "Task";
+  if (category === "leave") return "Leave";
+  if (category === "employee") return "Employee";
+  return "System";
+}
+
+function detectPriority(text: string, kind: ActivityKind): ActivityFeedItem["priority"] {
+  if (text.includes("urgent") || text.includes("rejected") || text.includes("overdue") || kind === "attendance_correction") return "high";
+  if (text.includes("pending") || text.includes("request") || kind === "leave_request") return "medium";
+  return "low";
+}
+
+function priorityStyle(priority: ActivityFeedItem["priority"]) {
+  if (priority === "high") return { color: "#fb7185", label: "High" };
+  if (priority === "medium") return { color: "#f59e0b", label: "Medium" };
+  return { color: "#94a3b8", label: "Low" };
+}
+
+function groupActivityItems(items: ActivityFeedItem[]) {
+  const grouped = new Map<string, ActivityFeedItem>();
+  const ordered: ActivityFeedItem[] = [];
+
+  items.forEach((item) => {
+    const date = new Date(item.createdAt);
+    const key = item.kind === "task_updated"
+      ? `task:${taskGroupingTitle(item)}:${format(date, "yyyy-MM-dd")}`
+      : item.id;
+
+    const existing = grouped.get(key);
+    if (existing) {
+      existing.groupedCount += 1;
+      if (new Date(item.createdAt) > new Date(existing.createdAt)) {
+        existing.createdAt = item.createdAt;
+      }
+      return;
+    }
+
+    const next = { ...item, groupedTitle: item.kind === "task_updated" ? taskGroupingTitle(item) : undefined };
+    grouped.set(key, next);
+    ordered.push(next);
+  });
+
+  return ordered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+function taskGroupingTitle(item: ActivityFeedItem) {
+  const source = item.title || item.message;
+  return source
+    .replace(/\bmoved to\b.*$/i, "")
+    .replace(/\btask\b/gi, "")
+    .replace(/[:|-]\s*(updated|completed|in progress|review).*$/i, "")
+    .trim() || item.title;
+}
+
+function summarizeActivities(items: ActivityFeedItem[]) {
+  const todayItems = items.filter((item) => isSameDay(new Date(item.createdAt), new Date()));
+  return {
+    today: todayItems.length,
+    total: items.length,
+    attendance: todayItems.filter((item) => item.category === "attendance").length,
+    task: todayItems.filter((item) => item.category === "task").length,
+    leave: todayItems.filter((item) => item.category === "leave").length,
+  };
+}
+
+function extractEmployeeName(title: string, message: string) {
+  const text = `${title} ${message}`;
+  const match = text.match(/\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})\b/);
+  return match?.[1] || "AS";
+}
+
+function initials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || "AS";
 }
 
 function makeDepartmentRows(deptData: any[]): DepartmentRow[] {
