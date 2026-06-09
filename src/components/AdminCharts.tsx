@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { BellDot } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -12,6 +13,7 @@ import {
   Cell,
   CartesianGrid,
   Line,
+  Sector,
 } from "recharts";
 import { GlassCard } from "@/components/GlassCard";
 import { formatNepaliDate } from "@/lib/nepali-calendar";
@@ -33,6 +35,13 @@ const ATTENDANCE_COLORS = {
   trend: "#67e8f9",
 };
 
+const DEPARTMENT_COLORS = {
+  uiux: "#fb7185",
+  hr: "#60a5fa",
+  marketing: "#34d399",
+  development: "#f59e0b",
+};
+
 type WeeklyAttendanceDay = {
   day: string;
   date?: string;
@@ -46,6 +55,14 @@ type WeeklyAttendanceDay = {
   isToday?: boolean;
 };
 
+type DepartmentRow = {
+  name: string;
+  value: number;
+  color: string;
+  gradientId: string;
+  percentage: number;
+};
+
 export default function AdminCharts({
   weekly,
   deptData,
@@ -55,6 +72,7 @@ export default function AdminCharts({
   deptData: any[];
   activity: any[];
 }) {
+  const [activeDepartmentIndex, setActiveDepartmentIndex] = useState<number | null>(null);
   const weeklyRows = weekly.map((row) => {
     const present = Number(row.present ?? 0);
     const late = Number(row.late ?? 0);
@@ -74,6 +92,8 @@ export default function AdminCharts({
     };
   });
   const summary = summarizeWeeklyAttendance(weeklyRows);
+  const departmentRows = makeDepartmentRows(deptData);
+  const departmentTotal = departmentRows.reduce((sum, row) => sum + row.value, 0);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -182,52 +202,114 @@ export default function AdminCharts({
       </GlassCard>
 
       <GlassCard>
-        <h3 className="text-lg font-semibold mb-4">Departments</h3>
-        {deptData.length === 0 ? (
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-bold tracking-tight">Departments</h3>
+            <p className="mt-1 text-xs text-muted-foreground">Employee distribution</p>
+          </div>
+          <span className="rounded-full border border-white/10 bg-white/[0.055] px-3 py-1 text-[11px] font-bold text-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+            {departmentRows.length} Departments
+          </span>
+        </div>
+        {departmentRows.length === 0 ? (
           <div className="text-sm text-muted-foreground py-12 text-center">No data yet</div>
         ) : (
-          <ResponsiveContainer width="100%" height={260}>
-            <PieChart>
-              <Pie
-                data={deptData}
-                dataKey="value"
-                cx="50%"
-                cy="50%"
-                innerRadius={50}
-                outerRadius={90}
-                paddingAngle={3}
-              >
-                {deptData.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  background: "oklch(0.18 0.025 265)",
-                  border: "1px solid oklch(1 0 0 / 0.1)",
-                  borderRadius: 12,
-                  color: "white",
-                }}
-                itemStyle={{ color: "white" }}
-                labelStyle={{ color: "white" }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        )}
-        <div className="mt-2 space-y-1.5">
-          {deptData.slice(0, 5).map((d, i) => (
-            <div key={d.name} className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <span
-                  className="h-2 w-2 rounded-full"
-                  style={{ background: COLORS[i % COLORS.length] }}
-                />
-                {d.name}
-              </div>
-              <span className="text-muted-foreground tabular-nums">{d.value}</span>
+          <>
+            <ResponsiveContainer width="100%" height={248}>
+              <PieChart role="img" aria-label={`Department distribution chart with ${departmentTotal} employees`}>
+                <defs>
+                  {departmentRows.map((row) => (
+                    <linearGradient key={row.gradientId} id={row.gradientId} x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor={lightenHex(row.color, 28)} />
+                      <stop offset="58%" stopColor={row.color} />
+                      <stop offset="100%" stopColor={darkenHex(row.color, 10)} />
+                    </linearGradient>
+                  ))}
+                  <filter id="departmentSliceGlow" x="-40%" y="-40%" width="180%" height="180%">
+                    <feDropShadow dx="0" dy="0" stdDeviation="3.2" floodOpacity="0.36" />
+                  </filter>
+                </defs>
+                <Pie
+                  data={departmentRows}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={96}
+                  paddingAngle={2.5}
+                  cornerRadius={7}
+                  activeIndex={activeDepartmentIndex ?? undefined}
+                  activeShape={renderActiveDepartmentShape}
+                  onMouseEnter={(_, index) => setActiveDepartmentIndex(index)}
+                  onMouseLeave={() => setActiveDepartmentIndex(null)}
+                  isAnimationActive
+                  animationDuration={750}
+                >
+                  {departmentRows.map((row, i) => (
+                    <Cell
+                      key={row.name}
+                      fill={`url(#${row.gradientId})`}
+                      stroke="rgba(8,13,28,0.88)"
+                      strokeWidth={activeDepartmentIndex === i ? 4 : 3}
+                      style={{
+                        filter: activeDepartmentIndex === i ? `drop-shadow(0 0 14px ${row.color}66)` : `drop-shadow(0 0 7px ${row.color}24)`,
+                        transition: "filter 180ms ease, opacity 180ms ease",
+                        opacity: activeDepartmentIndex == null || activeDepartmentIndex === i ? 1 : 0.58,
+                        outline: "none",
+                      }}
+                    />
+                  ))}
+                </Pie>
+                <text x="50%" y="47%" textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="30" fontWeight="800">
+                  {departmentTotal}
+                </text>
+                <text x="50%" y="59%" textAnchor="middle" dominantBaseline="middle" fill="rgba(226,232,240,0.62)" fontSize="11" fontWeight="700" letterSpacing="0.8">
+                  Employees
+                </text>
+                <Tooltip content={<DepartmentTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="mt-1 space-y-2" role="list" aria-label="Department employee breakdown">
+              {departmentRows.map((department, index) => {
+                const isActive = activeDepartmentIndex === index;
+                const isMuted = activeDepartmentIndex != null && !isActive;
+                return (
+                  <button
+                    key={department.name}
+                    type="button"
+                    role="listitem"
+                    onMouseEnter={() => setActiveDepartmentIndex(index)}
+                    onMouseLeave={() => setActiveDepartmentIndex(null)}
+                    onFocus={() => setActiveDepartmentIndex(index)}
+                    onBlur={() => setActiveDepartmentIndex(null)}
+                    className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-all duration-200 ${
+                      isActive
+                        ? "border-white/18 bg-white/[0.075] shadow-[0_10px_28px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.1)]"
+                        : "border-white/8 bg-white/[0.025] hover:border-white/14 hover:bg-white/[0.055]"
+                    } ${isMuted ? "opacity-55" : "opacity-100"}`}
+                    aria-label={`${department.name}: ${department.value} employees, ${department.percentage}% of total`}
+                  >
+                    <span
+                      className="h-2.5 w-2.5 shrink-0 rounded-full shadow-[0_0_14px_currentColor]"
+                      style={{ backgroundColor: department.color, color: department.color }}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-xs font-bold text-white/90">{department.name}</span>
+                      <span className="mt-0.5 block text-[10px] font-medium uppercase tracking-[0.12em] text-white/38">
+                        {department.percentage}% of workforce
+                      </span>
+                    </span>
+                    <span className="text-right">
+                      <span className="block text-sm font-extrabold tabular-nums text-white">{department.value}</span>
+                      <span className="block text-[10px] font-semibold text-muted-foreground">Employees</span>
+                    </span>
+                  </button>
+                );
+              })}
             </div>
-          ))}
-        </div>
+          </>
+        )}
       </GlassCard>
 
       <GlassCard className="lg:col-span-3">
@@ -269,6 +351,121 @@ function summarizeWeeklyAttendance(rows: WeeklyAttendanceDay[]) {
     ? Math.round(trackedRows.reduce((sum, row) => sum + Number(row.attendancePct ?? 0), 0) / trackedRows.length)
     : 0;
   return { avgAttendance, present, late, wfh };
+}
+
+function makeDepartmentRows(deptData: any[]): DepartmentRow[] {
+  const total = deptData.reduce((sum, row) => sum + Number(row.value ?? 0), 0);
+  return deptData.map((row, index) => {
+    const value = Number(row.value ?? 0);
+    const color = getDepartmentColor(row.name, index);
+    return {
+      name: row.name || "Unassigned",
+      value,
+      color,
+      gradientId: `departmentGradient${index}`,
+      percentage: total ? Math.round((value / total) * 100) : 0,
+    };
+  });
+}
+
+function getDepartmentColor(name: string, index: number) {
+  const key = String(name || "").toLowerCase().replace(/[^a-z]/g, "");
+  if (key.includes("uiux") || (key.includes("ui") && key.includes("ux"))) return DEPARTMENT_COLORS.uiux;
+  if (key === "hr" || key.includes("humanresources")) return DEPARTMENT_COLORS.hr;
+  if (key.includes("marketing")) return DEPARTMENT_COLORS.marketing;
+  if (key.includes("development") || key.includes("developer") || key.includes("engineering")) return DEPARTMENT_COLORS.development;
+  return COLORS[index % COLORS.length];
+}
+
+function renderActiveDepartmentShape(props: any) {
+  const {
+    cx,
+    cy,
+    innerRadius,
+    outerRadius,
+    startAngle,
+    endAngle,
+    fill,
+    payload,
+    percent,
+  } = props;
+
+  return (
+    <g>
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius + 6}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={fill}
+        stroke="rgba(255,255,255,0.42)"
+        strokeWidth={2}
+        cornerRadius={8}
+        style={{ filter: `drop-shadow(0 0 18px ${payload.color}78)` }}
+      />
+      <Sector
+        cx={cx}
+        cy={cy}
+        innerRadius={outerRadius + 8}
+        outerRadius={outerRadius + 10}
+        startAngle={startAngle}
+        endAngle={endAngle}
+        fill={payload.color}
+        opacity={0.32}
+      />
+      {percent > 0.08 && (
+        <text
+          x={cx}
+          y={cy - outerRadius - 18}
+          textAnchor="middle"
+          fill="rgba(255,255,255,0.78)"
+          fontSize={10}
+          fontWeight={800}
+        >
+          {payload.percentage}%
+        </text>
+      )}
+    </g>
+  );
+}
+
+function DepartmentTooltip({ active, payload }: any) {
+  if (!active || !payload?.length) return null;
+  const row = payload[0]?.payload as DepartmentRow | undefined;
+  if (!row) return null;
+
+  return (
+    <div className="min-w-48 rounded-xl border border-white/10 bg-[#101827]/95 p-3 text-xs text-white shadow-[0_18px_60px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
+      <div className="mb-2 flex items-center gap-2 border-b border-white/10 pb-2">
+        <span className="h-2.5 w-2.5 rounded-full shadow-[0_0_14px_currentColor]" style={{ backgroundColor: row.color, color: row.color }} />
+        <div>
+          <div className="font-bold">{row.name}</div>
+          <div className="text-[11px] text-white/50">Department share</div>
+        </div>
+      </div>
+      <TooltipRow label="Employee count" value={row.value} color={row.color} />
+      <TooltipRow label="Percentage share" value={`${row.percentage}%`} />
+    </div>
+  );
+}
+
+function lightenHex(hex: string, amount: number) {
+  return adjustHex(hex, amount);
+}
+
+function darkenHex(hex: string, amount: number) {
+  return adjustHex(hex, -amount);
+}
+
+function adjustHex(hex: string, amount: number) {
+  if (!hex.startsWith("#") || hex.length !== 7) return hex;
+  const channels = [1, 3, 5].map((start) => {
+    const value = parseInt(hex.slice(start, start + 2), 16);
+    return Math.max(0, Math.min(255, value + amount)).toString(16).padStart(2, "0");
+  });
+  return `#${channels.join("")}`;
 }
 
 function WeeklySummaryTile({ label, value, tone }: { label: string; value: string | number; tone: "blue" | "present" | "late" | "wfh" }) {
