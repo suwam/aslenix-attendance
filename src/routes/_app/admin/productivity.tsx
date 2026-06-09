@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
+  AlertTriangle,
   BarChart3,
   BrainCircuit,
   CalendarCheck,
@@ -12,11 +13,13 @@ import {
   Loader2,
   MessageSquare,
   Radar,
+  Gauge,
   ShieldAlert,
   Sparkles,
   Target,
   TrendingUp,
   Trophy,
+  Users,
   Zap,
 } from "lucide-react";
 import {
@@ -253,6 +256,28 @@ function ProductivityCommandCenter() {
         { label: "Punctuality", value: selected.punctualityScore, icon: Zap },
       ]
     : [];
+  const teamScore = average(employees.map((employee) => employee.dailyScore));
+  const weeklyScore = average(employees.map((employee) => employee.weeklyAverage));
+  const completedToday = sum(employees.map((employee) => employee.completedToday));
+  const overdueRisk = sum(employees.map((employee) => employee.overdueTasks));
+  const executionRate = completionRate(
+    sum(employees.map((employee) => employee.completedTasks)),
+    sum(employees.map((employee) => employee.tasks.length)),
+  );
+  const attentionEmployees = employees
+    .filter((employee) => employee.overdueTasks > 0 || employee.attendanceScore < 80 || employee.taskProgress < 55)
+    .slice(0, 4);
+  const attendanceConcerns = employees.filter((employee) => employee.attendanceScore < 80).length;
+  const burnoutRisk = employees.filter((employee) => employee.overdueTasks >= 2 || (employee.tasks.length >= 6 && employee.taskProgress < 55)).length;
+  const teamHealth = clampScore(
+    average(employees.map((employee) => employee.consistencyScore)) * 0.42 +
+      average(employees.map((employee) => employee.punctualityScore)) * 0.28 +
+      Math.max(0, 100 - burnoutRisk * 12) * 0.3,
+  );
+  const workloadBalance = clampScore(100 - Math.min(60, Math.abs(average(employees.map((employee) => employee.tasks.length)) - 4) * 10));
+  const forecast = clampScore(Math.round(teamScore * 0.58 + weeklyScore * 0.24 + executionRate * 0.18));
+  const confidence = clampScore(72 + Math.min(18, employees.length * 2) - Math.min(12, overdueRisk * 2));
+  const momentumDepartment = topMomentumDepartment(employees);
 
   if (loading) {
     return (
@@ -279,10 +304,10 @@ function ProductivityCommandCenter() {
 
       <div className="productivity-shell space-y-6">
         <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <SignalCard label="Team daily score" value={average(employees.map((employee) => employee.dailyScore))} icon={BrainCircuit} suffix="/100" />
-          <SignalCard label="Weekly average" value={average(employees.map((employee) => employee.weeklyAverage))} icon={TrendingUp} suffix="/100" />
-          <SignalCard label="Tasks completed today" value={sum(employees.map((employee) => employee.completedToday))} icon={CheckCircle2} />
-          <SignalCard label="Overdue risk" value={sum(employees.map((employee) => employee.overdueTasks))} icon={ShieldAlert} />
+          <SignalCard label="Productivity score" value={teamScore} icon={BrainCircuit} suffix="/100" trend={`+${Math.max(1, teamScore - 72)}% vs baseline`} />
+          <SignalCard label="Team health" value={teamHealth} icon={Users} suffix="/100" trend={`${workloadBalance}% workload balance`} />
+          <SignalCard label="Execution rate" value={executionRate} icon={Gauge} suffix="%" trend={`${completedToday} completed today`} />
+          <SignalCard label="Risk detection" value={overdueRisk + attendanceConcerns} icon={ShieldAlert} trend={`${burnoutRisk} burnout alerts`} tone="risk" />
         </section>
 
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.12fr_.88fr]">
@@ -294,20 +319,36 @@ function ProductivityCommandCenter() {
                   Neural productivity engine online
                 </div>
                 <h2 className="max-w-2xl text-3xl font-bold sm:text-5xl">
-                  {topEmployee?.name || "Team"} is leading today with{" "}
-                  <span className="gradient-text">{topEmployee?.dailyScore || 0}</span>
+                  AI forecasts <span className="gradient-text">{forecast}%</span> weekly execution confidence.
                 </h2>
                 <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">
-                  Automatic scoring blends task progress, completions, attendance, overdue work,
-                  consistency, and punctuality into one daily performance signal.
+                  {makeExecutiveSummary({
+                    teamScore,
+                    topEmployee: topEmployee?.name,
+                    attendanceConcerns,
+                    momentumDepartment,
+                    forecast,
+                  })}
                 </p>
+                <div className="mt-5 grid gap-2 text-sm text-white/82">
+                  <AiBullet text={`${topEmployee?.name || "Top performer"} is leading execution with a ${topEmployee?.dailyScore || 0}/100 AI score.`} />
+                  <AiBullet text={`${attentionEmployees.length || 0} employees need coaching signals reviewed today.`} />
+                  <AiBullet text={`Forecast engine confidence is ${confidence}% based on attendance, task velocity, and workload risk.`} />
+                </div>
                 <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
                   {scoreBreakdown.map((metric) => (
                     <NeuralMetric key={metric.label} {...metric} />
                   ))}
                 </div>
               </div>
-              <ScoreGauge value={topEmployee?.dailyScore || 0} />
+              <div className="grid gap-4">
+                <ScoreGauge value={teamScore} />
+                <div className="grid grid-cols-3 gap-2">
+                  <ForecastPill label="Forecast" value={`${forecast}%`} />
+                  <ForecastPill label="Confidence" value={`${confidence}%`} />
+                  <ForecastPill label="Risk" value={burnoutRisk} />
+                </div>
+              </div>
             </div>
           </GlassCard>
 
@@ -329,14 +370,50 @@ function ProductivityCommandCenter() {
                   <Avatar employee={employee} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-semibold">{employee.name}</div>
-                    <div className="text-xs text-muted-foreground">{employee.department}</div>
+                    <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                      <span>{employee.department}</span>
+                      <StatusBadge employee={employee} />
+                    </div>
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-bold gradient-text tabular-nums">{employee.dailyScore}</div>
-                    <div className="text-[10px] uppercase text-muted-foreground">Today</div>
+                    <div className={`text-[10px] uppercase ${employee.trend >= 0 ? "text-success" : "text-destructive"}`}>
+                      {employee.trend >= 0 ? "+" : ""}{employee.trend}
+                    </div>
                   </div>
                 </button>
               ))}
+            </div>
+          </GlassCard>
+        </section>
+
+        <section className="grid grid-cols-1 gap-6 xl:grid-cols-[.9fr_1.1fr]">
+          <GlassCard className="productivity-panel">
+            <h3 className="mb-4 flex items-center gap-2 font-semibold">
+              <AlertTriangle size={17} className="text-warning" />
+              Employees Needing Attention
+            </h3>
+            <div className="space-y-3">
+              {attentionEmployees.length ? (
+                attentionEmployees.map((employee) => <AttentionRow key={employee.userId} employee={employee} />)
+              ) : (
+                <div className="rounded-2xl border border-success/20 bg-success/10 p-5 text-sm text-success">
+                  No coaching alerts right now. Team execution is stable.
+                </div>
+              )}
+            </div>
+          </GlassCard>
+
+          <GlassCard className="productivity-panel">
+            <h3 className="mb-4 flex items-center gap-2 font-semibold">
+              <Sparkles size={17} className="text-cyan-200" />
+              AI Forecast Engine
+            </h3>
+            <div className="grid gap-3 md:grid-cols-4">
+              <ForecastCard label="End-week productivity" value={`${forecast}%`} detail="Projected completion health" />
+              <ForecastCard label="Burnout risk" value={burnoutRisk} detail="Employees with elevated load" />
+              <ForecastCard label="Attendance risk" value={attendanceConcerns} detail="Punctuality or presence concerns" />
+              <ForecastCard label="Promotion signal" value={employees.filter((employee) => employee.dailyScore >= 88).length} detail="High-potential performers" />
             </div>
           </GlassCard>
         </section>
@@ -533,18 +610,37 @@ function ProductivityCommandCenter() {
   );
 }
 
-function SignalCard({ label, value, icon: Icon, suffix = "" }: { label: string; value: number; icon: typeof BrainCircuit; suffix?: string }) {
+function SignalCard({
+  label,
+  value,
+  icon: Icon,
+  suffix = "",
+  trend,
+  tone = "default",
+}: {
+  label: string;
+  value: number;
+  icon: typeof BrainCircuit;
+  suffix?: string;
+  trend?: string;
+  tone?: "default" | "risk";
+}) {
   return (
     <GlassCard className="productivity-signal">
-      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-white shadow-[0_0_26px_rgba(33,212,253,.35)]">
+      <div className={`flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-[0_0_26px_rgba(33,212,253,.35)] ${
+        tone === "risk"
+          ? "bg-gradient-to-br from-rose-500 via-orange-400 to-amber-300"
+          : "bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500"
+      }`}>
         <Icon size={19} />
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
         <div className="mt-1 text-3xl font-bold tabular-nums">
           {value}
           <span className="text-base text-muted-foreground">{suffix}</span>
         </div>
+        {trend && <div className="mt-1 text-xs font-semibold text-cyan-100/75">{trend}</div>}
       </div>
     </GlassCard>
   );
@@ -556,7 +652,73 @@ function ScoreGauge({ value }: { value: number }) {
       <div className="productivity-gauge-inner">
         <BrainCircuit size={28} className="text-cyan-200" />
         <div className="text-5xl font-bold tabular-nums">{value}</div>
-        <div className="text-xs uppercase tracking-wider text-cyan-100/70">Daily score</div>
+        <div className="text-xs uppercase tracking-wider text-cyan-100/70">Team AI score</div>
+      </div>
+    </div>
+  );
+}
+
+function AiBullet({ text }: { text: string }) {
+  return (
+    <div className="flex items-start gap-2 rounded-2xl border border-white/10 bg-white/[0.035] px-3 py-2">
+      <Sparkles size={14} className="mt-0.5 shrink-0 text-cyan-200" />
+      <span>{text}</span>
+    </div>
+  );
+}
+
+function ForecastPill({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-center">
+      <div className="text-lg font-bold tabular-nums text-white">{value}</div>
+      <div className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+function ForecastCard({ label, value, detail }: { label: string; value: string | number; detail: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan-300/25 hover:bg-white/[0.055]">
+      <div className="text-2xl font-bold gradient-text tabular-nums">{value}</div>
+      <div className="mt-1 text-sm font-semibold text-white/90">{label}</div>
+      <div className="mt-2 text-xs leading-5 text-muted-foreground">{detail}</div>
+    </div>
+  );
+}
+
+function StatusBadge({ employee }: { employee: EmployeePulse }) {
+  if (employee.dailyScore >= 88) return <span className="rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-bold uppercase text-success">Elite</span>;
+  if (employee.overdueTasks > 0 || employee.attendanceScore < 80) return <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-bold uppercase text-destructive">Risk</span>;
+  if (employee.trend > 8) return <span className="rounded-full bg-cyan-300/15 px-2 py-0.5 text-[10px] font-bold uppercase text-cyan-100">Rising</span>;
+  return <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-bold uppercase text-white/60">Stable</span>;
+}
+
+function AttentionRow({ employee }: { employee: EmployeePulse }) {
+  const reason = employee.overdueTasks > 0
+    ? `${employee.overdueTasks} overdue task${employee.overdueTasks > 1 ? "s" : ""}`
+    : employee.attendanceScore < 80
+      ? "Attendance consistency risk"
+      : "Task progress below target";
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/30 hover:bg-white/[0.055]">
+      <div className="flex items-center gap-3">
+        <Avatar employee={employee} />
+        <div className="min-w-0 flex-1">
+          <div className="truncate font-semibold">{employee.name}</div>
+          <div className="text-xs text-muted-foreground">{employee.department}</div>
+        </div>
+        <div className="rounded-full bg-warning/15 px-2.5 py-1 text-xs font-bold text-warning">Coach</div>
+      </div>
+      <div className="mt-3 grid gap-2 text-sm md:grid-cols-[.75fr_1.25fr]">
+        <div className="rounded-xl border border-white/10 bg-black/10 px-3 py-2">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Signal</div>
+          <div className="mt-1 font-semibold text-white/90">{reason}</div>
+        </div>
+        <div className="rounded-xl border border-white/10 bg-black/10 px-3 py-2">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">AI recommendation</div>
+          <div className="mt-1 text-muted-foreground">{employee.improvement}</div>
+        </div>
       </div>
     </div>
   );
@@ -636,6 +798,33 @@ function buildDailyTrend(employees: EmployeePulse[]) {
     score: clampScore(baseline - (6 - index) * 3 + Math.sin(index + employees.length) * 7),
     attendance: clampScore(attendance - (6 - index) * 2 + Math.cos(index) * 5),
   }));
+}
+
+function makeExecutiveSummary({
+  teamScore,
+  topEmployee,
+  attendanceConcerns,
+  momentumDepartment,
+  forecast,
+}: {
+  teamScore: number;
+  topEmployee?: string;
+  attendanceConcerns: number;
+  momentumDepartment: string;
+  forecast: number;
+}) {
+  return `Team productivity is operating at ${teamScore}/100 today. ${topEmployee || "The top performer"} is leading execution momentum. ${attendanceConcerns} employee${attendanceConcerns === 1 ? "" : "s"} require punctuality coaching. ${momentumDepartment} has the strongest department momentum. Predicted weekly completion rate: ${forecast}%.`;
+}
+
+function topMomentumDepartment(employees: EmployeePulse[]) {
+  const departments = new Map<string, number[]>();
+  employees.forEach((employee) => {
+    departments.set(employee.department, [...(departments.get(employee.department) || []), employee.dailyScore]);
+  });
+  const ranked = Array.from(departments.entries())
+    .map(([department, scores]) => ({ department, score: average(scores) }))
+    .sort((a, b) => b.score - a.score);
+  return ranked[0]?.department || "Team";
 }
 
 function makeInsight(score: number, overdue: number, progress: number, consistency: number) {

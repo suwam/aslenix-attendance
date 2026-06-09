@@ -110,7 +110,7 @@ function AdminDashboard() {
         .from("notifications")
         .select("*")
         .order("created_at", { ascending: false })
-        .limit(8);
+        .limit(50);
       setActivity(notif ?? []);
     })();
   }, []);
