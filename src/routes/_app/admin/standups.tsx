@@ -471,8 +471,8 @@ function StandupEmployeeCard({ row, selected, onSelect }: { row: EmployeeSignal;
         selected ? "border-cyan-300/45 shadow-[0_0_38px_rgba(34,211,238,0.14)]" : "border-white/10",
       )}
     >
-      <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-start">
-        <div className="flex min-w-56 items-center gap-3">
+      <div className="grid gap-4 xl:grid-cols-[minmax(180px,0.75fr)_minmax(0,1.55fr)_116px] xl:items-start">
+        <div className="flex min-w-0 items-start gap-3">
           <EmployeeAvatar profile={row.profile} size="lg" />
           <div className="min-w-0">
             <h3 className="truncate text-lg font-bold text-white">{getEmployeeName(row)}</h3>
@@ -484,20 +484,20 @@ function StandupEmployeeCard({ row, selected, onSelect }: { row: EmployeeSignal;
           </div>
         </div>
 
-        <div className="grid flex-1 gap-3 md:grid-cols-2">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2">
           <StandupSnippet label="Today" text={row.yesterday || "No completed work update shared."} />
           <StandupSnippet label="Tomorrow" text={row.today || "No execution plan shared."} />
           <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
             <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Hours</p>
             <p className="mt-2 text-2xl font-black text-white tabular-nums">{formatWorkHours(row.hours)}</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-3 sm:col-span-2 xl:col-span-1">
             <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/70">AI Insight</p>
-            <p className="mt-2 text-sm leading-relaxed text-slate-200">{makeEmployeeInsight(row)}</p>
+            <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-200">{makeEmployeeInsight(row)}</p>
           </div>
         </div>
 
-        <div className="min-w-28 rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-center">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-center">
           <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Score</p>
           <p className="mt-1 text-3xl font-black text-white">{row.score}</p>
           <p className="text-xs text-cyan-100/70">AI productivity</p>
@@ -609,9 +609,9 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
 
 function StandupSnippet({ label, text }: { label: string; text: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+    <div className="min-h-[5.25rem] rounded-2xl border border-white/10 bg-black/20 p-3">
       <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
-      <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-200">{text}</p>
+      <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-200">{text}</p>
     </div>
   );
 }
