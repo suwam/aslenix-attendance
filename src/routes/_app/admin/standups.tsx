@@ -265,13 +265,18 @@ function AdminStandupsPage() {
       ) : (
         <>
           <section className="mt-5 grid items-stretch gap-5 xl:h-[40rem] xl:grid-cols-[1.45fr_0.85fr]">
-            <GlassCard className="flex h-full min-h-0 flex-col overflow-hidden border border-cyan-300/10 bg-[#070d1a]/70">
+            <GlassCard className="flex h-full min-h-0 flex-col overflow-hidden border border-[rgba(0,180,255,0.15)] bg-[#071827]/80 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
               <div className="mb-5 flex shrink-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200/80">Team Standup Feed</p>
-                  <h2 className="text-2xl font-bold text-white">Progress intelligence</h2>
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200/85">Team Standup Feed</p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10 text-cyan-200 shadow-[0_0_18px_rgba(34,211,238,0.18)]">
+                      <BrainCircuit size={15} />
+                    </span>
+                    <h2 className="text-xl font-semibold text-slate-100">Progress Intelligence</h2>
+                  </div>
                 </div>
-                <span className="w-fit rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
+                <span className="w-fit rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-50 shadow-[0_0_18px_rgba(34,211,238,0.12)]">
                   {signals.length} employee updates
                 </span>
               </div>
@@ -467,19 +472,19 @@ function StandupEmployeeCard({ row, selected, onSelect }: { row: EmployeeSignal;
       type="button"
       onClick={onSelect}
       className={cn(
-        "group w-full rounded-3xl border bg-white/[0.04] p-4 text-left transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan-300/30 hover:bg-cyan-300/[0.07] hover:shadow-[0_0_34px_rgba(34,211,238,0.12)]",
-        selected ? "border-cyan-300/45 shadow-[0_0_38px_rgba(34,211,238,0.14)]" : "border-white/10",
+        "group w-full rounded-3xl border bg-[#0B2238]/72 p-5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/35 hover:bg-[#0D2942]/84 hover:shadow-[0_18px_42px_rgba(0,0,0,0.28),0_0_30px_rgba(34,211,238,0.12)]",
+        selected ? "border-cyan-300/50 shadow-[0_0_42px_rgba(34,211,238,0.14)]" : "border-[rgba(0,180,255,0.15)]",
       )}
     >
-      <div className="grid gap-4 xl:grid-cols-[minmax(180px,0.75fr)_minmax(0,1.55fr)_116px] xl:items-start">
-        <div className="flex min-w-0 items-start gap-3">
+      <div className="grid gap-5 xl:grid-cols-[minmax(190px,0.78fr)_minmax(0,1.55fr)_132px] xl:items-start">
+        <div className="flex min-w-0 items-start gap-4">
           <EmployeeAvatar profile={row.profile} size="lg" />
           <div className="min-w-0">
-            <h3 className="truncate text-lg font-bold text-white">{getEmployeeName(row)}</h3>
-            <p className="truncate text-sm text-muted-foreground">{row.profile?.department || row.profile?.email || "Team member"}</p>
-            <div className="mt-2 flex flex-wrap gap-2">
+            <h3 className="truncate text-xl font-semibold leading-tight text-white">{getEmployeeName(row)}</h3>
+            <p className="mt-1 truncate text-base text-slate-400">{row.profile?.department || row.profile?.email || "Team member"}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
               <StatusPill status={row.status} />
-              <span className="rounded-full border border-fuchsia-300/20 bg-fuchsia-300/10 px-2.5 py-1 text-xs font-semibold text-fuchsia-100">{row.badge}</span>
+              <span className="rounded-full border border-violet-300/30 bg-violet-500/15 px-3 py-1 text-xs font-semibold text-violet-100 shadow-[0_0_16px_rgba(139,92,246,0.2)]">{row.badge}</span>
             </div>
           </div>
         </div>
@@ -487,20 +492,20 @@ function StandupEmployeeCard({ row, selected, onSelect }: { row: EmployeeSignal;
         <div className="grid min-w-0 gap-3 sm:grid-cols-2">
           <StandupSnippet label="Today" text={row.yesterday || "No completed work update shared."} />
           <StandupSnippet label="Tomorrow" text={row.today || "No execution plan shared."} />
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
-            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Hours</p>
-            <p className="mt-2 text-2xl font-black text-white tabular-nums">{formatWorkHours(row.hours)}</p>
+          <div className="rounded-2xl border border-[rgba(0,180,255,0.15)] bg-[#081B2D]/85 p-4">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-slate-400">Hours</p>
+            <p className="mt-2 text-4xl font-black leading-none text-white tabular-nums">{formatWorkHours(row.hours)}</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-3 sm:col-span-2 xl:col-span-1">
-            <p className="text-xs uppercase tracking-[0.18em] text-cyan-100/70">AI Insight</p>
-            <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-200">{makeEmployeeInsight(row)}</p>
+          <div className="rounded-2xl border border-[rgba(0,180,255,0.15)] bg-[#081B2D]/85 p-4 sm:col-span-2 xl:col-span-1">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-cyan-100/70">AI Insight</p>
+            <p className="mt-2 line-clamp-4 text-[15px] leading-6 text-slate-100">{makeEmployeeInsight(row)}</p>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-center">
-          <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Score</p>
-          <p className="mt-1 text-3xl font-black text-white">{row.score}</p>
-          <p className="text-xs text-cyan-100/70">AI productivity</p>
+        <div className="rounded-3xl border border-cyan-300/20 bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.18),transparent_42%),linear-gradient(180deg,rgba(139,92,246,0.14),rgba(11,34,56,0.86))] p-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_0_24px_rgba(34,211,238,0.1)]">
+          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-slate-400">Score</p>
+          <p className="mt-1 text-5xl font-black leading-none text-white">{row.score}</p>
+          <p className="mt-2 text-xs font-semibold text-cyan-100/80">AI productivity</p>
         </div>
       </div>
     </button>
@@ -609,9 +614,9 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
 
 function StandupSnippet({ label, text }: { label: string; text: string }) {
   return (
-    <div className="min-h-[5.25rem] rounded-2xl border border-white/10 bg-black/20 p-3">
-      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
-      <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-200">{text}</p>
+    <div className="min-h-[6rem] rounded-2xl border border-[rgba(0,180,255,0.15)] bg-[#081B2D]/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
+      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-slate-400">{label}</p>
+      <p className="mt-2 line-clamp-3 text-[15px] leading-6 text-slate-100">{text}</p>
     </div>
   );
 }
@@ -639,11 +644,11 @@ function RiskCard({ title, text, recommendation, tone }: { title: string; text: 
 
 function StatusPill({ status }: { status: EmployeeSignal["status"] }) {
   const classes = {
-    "On Track": "border-emerald-300/25 bg-emerald-300/10 text-emerald-100",
-    "Needs Attention": "border-amber-300/25 bg-amber-300/10 text-amber-100",
-    Blocked: "border-red-300/25 bg-red-400/10 text-red-100",
+    "On Track": "border-emerald-300/35 bg-emerald-400/15 text-emerald-50 shadow-[0_0_16px_rgba(34,197,94,0.18)]",
+    "Needs Attention": "border-amber-300/35 bg-amber-300/15 text-amber-50 shadow-[0_0_16px_rgba(245,158,11,0.18)]",
+    Blocked: "border-red-300/35 bg-red-400/15 text-red-50 shadow-[0_0_16px_rgba(248,113,113,0.18)]",
   }[status];
-  return <span className={cn("rounded-full border px-2.5 py-1 text-xs font-bold", classes)}>● {status}</span>;
+  return <span className={cn("rounded-full border px-3 py-1 text-xs font-bold", classes)}>● {status}</span>;
 }
 
 function IntelScore({ label, value }: { label: string; value: number }) {
