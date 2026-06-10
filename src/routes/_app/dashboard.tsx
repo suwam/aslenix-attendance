@@ -43,6 +43,7 @@ import {
 import { toast } from "sonner";
 import { format, isSameDay, subDays } from "date-fns";
 import { productivityScore } from "@/lib/tasks-utils";
+import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
 import { formatWorkHours } from "@/lib/work-hours";
 import { formatNepaliDate, getCurrentNepaliMonthRange } from "@/lib/nepali-calendar";
 import { isWeeklyOffDate, WEEKLY_OFF_LABEL } from "@/lib/weekly-off";
@@ -159,22 +160,35 @@ function EmployeeDashboard() {
       hours,
     });
 
-    const { data: tasks } = await supabase
-      .from("tasks")
-      .select("*")
-      .eq("assigned_to", user.id)
-      .order("deadline", { ascending: true, nullsFirst: false });
-    const taskRows = tasks ?? [];
+    const [directTaskResult, assigneeResult] = await Promise.all([
+      supabase.from("tasks").select("*").eq("assigned_to", user.id),
+      supabase.from("task_assignees").select("task_id").eq("user_id", user.id),
+    ]);
+    const assignedTaskIds =
+      assigneeResult.error && isMissingSupabaseTableError(assigneeResult.error, "task_assignees")
+        ? []
+        : (assigneeResult.data || []).map((row) => row.task_id).filter(Boolean);
+    const { data: multiAssignedTasks } = assignedTaskIds.length
+      ? await supabase.from("tasks").select("*").in("id", assignedTaskIds)
+      : { data: [] };
+    const taskRows = Array.from(
+      new Map([...(directTaskResult.data || []), ...(multiAssignedTasks || [])].map((task) => [task.id, task])).values(),
+    ).sort((a, b) => {
+      if (!a.deadline && !b.deadline) return 0;
+      if (!a.deadline) return 1;
+      if (!b.deadline) return -1;
+      return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+    });
     const total = taskRows.length;
-    const completed = taskRows.filter((task) => task.status === "completed").length;
-    const active = taskRows.filter((task) => task.status === "in_progress" || task.status === "review").length;
-    const pending = taskRows.filter((task) => task.status !== "completed").length;
+    const completed = taskRows.filter(isDashboardTaskComplete).length;
+    const active = taskRows.filter((task) => !isDashboardTaskComplete(task) && (task.status === "in_progress" || task.status === "review")).length;
+    const pending = taskRows.filter((task) => !isDashboardTaskComplete(task)).length;
     const overdue = taskRows.filter(
-      (task) => task.deadline && new Date(task.deadline).getTime() < Date.now() && task.status !== "completed",
+      (task) => task.deadline && new Date(task.deadline).getTime() < Date.now() && !isDashboardTaskComplete(task),
     ).length;
     const onTime = taskRows.filter(
       (task) =>
-        task.status === "completed" &&
+        isDashboardTaskComplete(task) &&
         (!task.deadline || !task.completed_at || new Date(task.completed_at) <= new Date(task.deadline)),
     ).length;
     const score = productivityScore({
@@ -187,7 +201,7 @@ function EmployeeDashboard() {
     setTaskStats({ total, completed, active, overdue, pending, score });
     setFocusTasks(
       taskRows
-        .filter((task) => task.status !== "completed")
+        .filter((task) => !isDashboardTaskComplete(task))
         .sort((a, b) => {
           const aOverdue = a.deadline && new Date(a.deadline).getTime() < Date.now();
           const bOverdue = b.deadline && new Date(b.deadline).getTime() < Date.now();
@@ -208,13 +222,7 @@ function EmployeeDashboard() {
       .limit(8);
     setMeetings(meetingRows ?? []);
 
-    const [{ data: recentTasks }, { data: standups }] = await Promise.all([
-      supabase
-        .from("tasks")
-        .select("id,title,status,updated_at")
-        .eq("assigned_to", user.id)
-        .order("updated_at", { ascending: false })
-        .limit(5),
+    const [{ data: standups }] = await Promise.all([
       supabase
         .from("standups")
         .select("id,date,today,updated_at")
@@ -229,10 +237,14 @@ function EmployeeDashboard() {
       ...(t?.check_out_time
         ? [{ kind: "Attendance", when: t.check_out_time, text: `Checked out at ${format(new Date(t.check_out_time), "HH:mm")}` }]
         : []),
-      ...(recentTasks || []).map((task: any) => ({
+      ...taskRows
+        .filter((task) => task.updated_at)
+        .sort((a, b) => +new Date(b.updated_at) - +new Date(a.updated_at))
+        .slice(0, 5)
+        .map((task: any) => ({
         kind: "Task",
         when: task.updated_at,
-        text: `${task.title} moved to ${humanize(task.status)}`,
+        text: `${task.title} moved to ${isDashboardTaskComplete(task) ? "completed" : humanize(task.status)}`,
       })),
       ...(standups || []).map((standup: any) => ({
         kind: "Standup",
@@ -1203,6 +1215,10 @@ function initials(name: string) {
 
 function humanize(value: string) {
   return value.replaceAll("_", " ");
+}
+
+function isDashboardTaskComplete(task: { status?: string | null; progress?: number | null }) {
+  return task.status === "completed" || Number(task.progress || 0) >= 100;
 }
 
 function improvementDismissalKey(userId: string, reviewId: string) {
