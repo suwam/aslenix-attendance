@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
@@ -15,7 +15,7 @@ import {
   Sparkles,
   Video,
 } from "lucide-react";
-import { differenceInMinutes, format, isToday } from "date-fns";
+import { differenceInMinutes, format, isFuture, isPast, isToday } from "date-fns";
 import { formatNepaliDate } from "@/lib/nepali-calendar";
 
 export const Route = createFileRoute("/_app/meetings")({ component: MeetingsPage });
@@ -25,23 +25,41 @@ function MeetingsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase
-      .from("meetings")
-      .select("*")
-      .gte("meeting_time", new Date().toISOString())
-      .order("meeting_time", { ascending: true })
-      .then(({ data }) => {
-        setMeetings(data ?? []);
-        setLoading(false);
-      });
+    const loadMeetings = () => {
+      supabase
+        .from("meetings")
+        .select("*")
+        .order("meeting_time", { ascending: false })
+        .then(({ data }) => {
+          setMeetings(data ?? []);
+          setLoading(false);
+        });
+    };
+
+    loadMeetings();
+
+    const channel = supabase
+      .channel("employee-meetings")
+      .on("postgres_changes", { event: "*", schema: "public", table: "meetings" }, loadMeetings)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
-  const nextMeeting = meetings[0];
+  const upcomingMeetings = meetings
+    .filter((meeting) => isFuture(new Date(meeting.meeting_time)))
+    .sort((a, b) => new Date(a.meeting_time).getTime() - new Date(b.meeting_time).getTime());
+  const pastMeetings = meetings
+    .filter((meeting) => isPast(new Date(meeting.meeting_time)))
+    .sort((a, b) => new Date(b.meeting_time).getTime() - new Date(a.meeting_time).getTime());
+  const nextMeeting = upcomingMeetings[0];
   const todayMeetings = meetings.filter((meeting) => isToday(new Date(meeting.meeting_time))).length;
 
   return (
     <>
-      <PageHeader title="Meetings" subtitle="Upcoming meetings, links, and agenda notes" />
+      <PageHeader title="Meetings" subtitle="Upcoming and past meetings, links, and agenda notes" />
       {loading ? (
         <div className="flex justify-center py-20">
           <Loader2 className="animate-spin text-primary" />
@@ -49,7 +67,7 @@ function MeetingsPage() {
       ) : (
         <div className="grid gap-5">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <MeetingMetric label="Upcoming" value={meetings.length} icon={CalendarClock} />
+            <MeetingMetric label="Upcoming" value={upcomingMeetings.length} icon={CalendarClock} />
             <MeetingMetric label="Today" value={todayMeetings} icon={Clock} />
             <MeetingMetric
               label="Next"
@@ -58,7 +76,7 @@ function MeetingsPage() {
             />
           </div>
 
-          {meetings.length === 0 ? (
+          {upcomingMeetings.length === 0 ? (
             <MeetingEmptyState />
           ) : nextMeeting && (
             <GlassCard className="overflow-hidden border-primary/20 bg-white/[0.03]">
@@ -88,16 +106,35 @@ function MeetingsPage() {
             </GlassCard>
           )}
 
-          {meetings.length > 0 && (
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {meetings.map((meeting) => (
+          {upcomingMeetings.length > 0 && (
+            <MeetingSection title="Upcoming meetings">
+              {upcomingMeetings.map((meeting) => (
                 <EmployeeMeetingCard key={meeting.id} meeting={meeting} />
               ))}
-            </div>
+            </MeetingSection>
+          )}
+
+          {pastMeetings.length > 0 && (
+            <MeetingSection title="Past meetings">
+              {pastMeetings.map((meeting) => (
+                <EmployeeMeetingCard key={meeting.id} meeting={meeting} />
+              ))}
+            </MeetingSection>
           )}
         </div>
       )}
     </>
+  );
+}
+
+function MeetingSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="grid gap-3">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-white">{title}</h2>
+      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">{children}</div>
+    </section>
   );
 }
 
@@ -162,8 +199,10 @@ function EmptyHint({
 }
 
 function EmployeeMeetingCard({ meeting }: { meeting: any }) {
+  const past = isPast(new Date(meeting.meeting_time));
+
   return (
-    <GlassCard className="group flex flex-col gap-4 border-white/10 bg-white/[0.025] transition hover:border-primary/25 hover:bg-white/[0.04] sm:flex-row sm:items-start">
+    <GlassCard className={`group flex flex-col gap-4 border-white/10 bg-white/[0.025] transition hover:border-primary/25 hover:bg-white/[0.04] sm:flex-row sm:items-start ${past ? "opacity-75" : ""}`}>
       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
         <CalendarClock size={19} />
       </div>
@@ -233,8 +272,10 @@ function MeetingMeta({ meeting }: { meeting: any }) {
 function MeetingCountdown({ time }: { time: string }) {
   const minutes = differenceInMinutes(new Date(time), new Date());
   const label =
-    minutes <= 0
-      ? "Starting now"
+    minutes < 0
+      ? "Past"
+      : minutes === 0
+        ? "Starting now"
       : minutes < 60
         ? `${minutes}m left`
         : minutes < 1440
