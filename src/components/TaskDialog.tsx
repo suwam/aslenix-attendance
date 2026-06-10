@@ -889,15 +889,17 @@ export function TaskDialog({
                 <X size={14} className="mr-1.5" />
                 Cancel
               </Button>
-              <Button onClick={save} disabled={loading} className="neon-button">
-                {loading
-                  ? "Saving..."
-                  : taskId && !isAdmin
-                    ? "Save progress"
-                    : taskId
-                      ? "Save changes"
-                      : "Create task"}
-              </Button>
+              {!(isEmployeeTaskEdit && progress >= 100) && (
+                <Button onClick={save} disabled={loading} className="neon-button">
+                  {loading
+                    ? "Saving..."
+                    : taskId && !isAdmin
+                      ? "Save progress"
+                      : taskId
+                        ? "Save changes"
+                        : "Create task"}
+                </Button>
+              )}
               {isEmployeeTaskEdit && progress >= 100 && (
                 <Button onClick={requestReview} disabled={loading} className="neon-button">
                   Request Review
