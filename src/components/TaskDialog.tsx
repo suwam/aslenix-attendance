@@ -478,7 +478,13 @@ export function TaskDialog({
     const { error } = await (supabase as any).rpc("notify_admins_task_review_requested", {
       _task_id: taskId,
     });
-    if (error) throw error;
+    if (!error) return;
+
+    if (!/function .*notify_admins_task_review_requested/i.test(error.message || "")) {
+      throw error;
+    }
+
+    console.warn("Task review notification RPC is missing. Apply the latest Supabase migrations.", error);
   };
 
   const requestReview = async () => {

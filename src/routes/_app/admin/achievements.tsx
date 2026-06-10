@@ -73,7 +73,12 @@ type EmployeeAchievement = {
   badge: string;
   badgeType: "productivity" | "streak" | "tasks" | "attendance" | "quality";
   score: number;
+  tasksAssigned: number;
   completedTasks: number;
+  averageProgress: number;
+  reviewsCompleted: number;
+  achievementScore: number;
+  pendingTasks: number;
   attendancePct: number;
   date: string;
   status: "Approved" | "Pending" | "Manual";
@@ -82,15 +87,60 @@ type EmployeeAchievement = {
   history: string[];
 };
 
-const badgeOptions = [
-  "All badges",
-  "Productivity Hero",
-  "30-Day Streak",
-  "Fast Worker",
-  "Attendance Pro",
-  "No Overdue Tasks",
-  "Elite Performer",
+const achievementCatalog = [
+  {
+    badge: "Productivity Hero",
+    badgeType: "productivity" as const,
+    description: "Awarded for consistently high productivity and task delivery.",
+  },
+  {
+    badge: "Fast Finisher",
+    badgeType: "tasks" as const,
+    description: "Awarded for completing assigned work quickly with strong progress.",
+  },
+  {
+    badge: "Team Player",
+    badgeType: "quality" as const,
+    description: "Awarded for reliable collaboration and strong review participation.",
+  },
+  {
+    badge: "Consistency Master",
+    badgeType: "attendance" as const,
+    description: "Awarded for steady attendance, streaks, and dependable follow-through.",
+  },
+  {
+    badge: "Top Performer of the Month",
+    badgeType: "productivity" as const,
+    description: "Awarded to the employee with the strongest monthly achievement score.",
+  },
+  {
+    badge: "30-Day Streak",
+    badgeType: "streak" as const,
+    description: "Awarded for maintaining a 30-day attendance streak.",
+  },
+  {
+    badge: "Fast Worker",
+    badgeType: "tasks" as const,
+    description: "Awarded for completing multiple tasks in the selected month.",
+  },
+  {
+    badge: "Attendance Pro",
+    badgeType: "attendance" as const,
+    description: "Awarded for excellent attendance during the selected month.",
+  },
+  {
+    badge: "No Overdue Tasks",
+    badgeType: "quality" as const,
+    description: "Awarded for keeping assigned work free from overdue tasks.",
+  },
+  {
+    badge: "Elite Performer",
+    badgeType: "productivity" as const,
+    description: "Awarded for an exceptional productivity score.",
+  },
 ];
+
+const badgeOptions = ["All badges", ...achievementCatalog.map((item) => item.badge)];
 
 function AdminAchievementsPage() {
   const { loading: authLoading, isAdmin } = useAuth();
@@ -103,6 +153,8 @@ function AdminAchievementsPage() {
   const [monthFilter, setMonthFilter] = useState(formatBsMonthInput());
   const [selected, setSelected] = useState<EmployeeAchievement | null>(null);
   const [manualBadge, setManualBadge] = useState("Productivity Hero");
+  const [assignSearch, setAssignSearch] = useState("");
+  const [assignDate, setAssignDate] = useState(new Date().toISOString().slice(0, 10));
   const [feedback, setFeedback] = useState("");
 
   useEffect(() => {
@@ -123,7 +175,15 @@ function AdminAchievementsPage() {
       const monthStartIso = `${monthStartDate}T00:00:00.000Z`;
       const today = new Date().toISOString().slice(0, 10);
       const monthEndDate = monthRange.endAd < today ? monthRange.endAd : today;
-      const [{ data: profiles }, { data: roleRows }, { data: tasks }, assigneeResult, { data: attendance }, persistedResult] =
+      const [
+        { data: profiles },
+        { data: roleRows },
+        { data: tasks },
+        assigneeResult,
+        { data: attendance },
+        persistedResult,
+        feedbackResult,
+      ] =
         await Promise.all([
           supabase
             .from("profiles")
@@ -139,10 +199,19 @@ function AdminAchievementsPage() {
             .gte("date", monthStartDate)
             .lte("date", monthEndDate),
           supabase.from("employee_achievements").select("*"),
+          supabase
+            .from("weekly_feedback")
+            .select("employee_id,review_score,week_start")
+            .gte("week_start", monthStartDate)
+            .lte("week_start", monthEndDate),
         ]);
       const persistedRows = persistedResult.error ? [] : persistedResult.data || [];
       if (persistedResult.error) {
         console.warn("Unable to load persisted employee achievements", persistedResult.error);
+      }
+      const weeklyFeedbackRows = feedbackResult.error ? [] : feedbackResult.data || [];
+      if (feedbackResult.error) {
+        console.warn("Unable to load weekly feedback for achievements", feedbackResult.error);
       }
 
       const assignees =
@@ -168,10 +237,21 @@ function AdminAchievementsPage() {
         );
         const completedTasks = assignedTasks.filter(
           (task: any) =>
-            task.status === "completed" &&
+            (task.status === "completed" || Number(task.progress || 0) >= 100) &&
             (!task.completed_at ||
               new Date(task.completed_at).getTime() >= new Date(monthStartIso).getTime()),
         ).length;
+        const tasksAssigned = assignedTasks.length;
+        const averageProgress = tasksAssigned
+          ? Math.round(
+              assignedTasks.reduce((sum: number, task: any) => sum + Number(task.progress || 0), 0) /
+                tasksAssigned,
+            )
+          : 0;
+        const pendingTasks = assignedTasks.filter(
+          (task: any) => task.status !== "completed" && Number(task.progress || 0) < 100,
+        ).length;
+        const reviewsCompleted = weeklyFeedbackRows.filter((row) => row.employee_id === profile.user_id).length;
         const overdueTasks = assignedTasks.filter(
           (task: any) =>
             task.deadline &&
@@ -198,10 +278,26 @@ function AdminAchievementsPage() {
           hours,
           targetHours: 160,
         });
+        const achievementScore = Math.min(
+          100,
+          Math.round(score * 0.55 + averageProgress * 0.3 + Math.min(100, reviewsCompleted * 25) * 0.15),
+        );
         const streak = countRecentStreak(activeDates, 30);
         const earned = [
           score >= 80
             ? { badge: "Productivity Hero", badgeType: "productivity" as const }
+            : null,
+          completedTasks >= 5 && overdueTasks === 0
+            ? { badge: "Fast Finisher", badgeType: "tasks" as const }
+            : null,
+          reviewsCompleted >= 2 || tasksAssigned >= 3
+            ? { badge: "Team Player", badgeType: "quality" as const }
+            : null,
+          streak >= 20 || attendancePct >= 90
+            ? { badge: "Consistency Master", badgeType: "attendance" as const }
+            : null,
+          achievementScore >= 90
+            ? { badge: "Top Performer of the Month", badgeType: "productivity" as const }
             : null,
           streak >= 30 ? { badge: "30-Day Streak", badgeType: "streak" as const } : null,
           completedTasks >= 5 ? { badge: "Fast Worker", badgeType: "tasks" as const } : null,
@@ -225,7 +321,12 @@ function AdminAchievementsPage() {
           badge: item.badge,
           badgeType: item.badgeType,
           score,
+          tasksAssigned,
           completedTasks,
+          averageProgress,
+          reviewsCompleted,
+          achievementScore,
+          pendingTasks,
           attendancePct,
           date: new Date(Date.now() - index * 86400000).toISOString(),
           status:
@@ -264,6 +365,7 @@ function AdminAchievementsPage() {
         )
         .map((item) => {
           const profile = employeeProfiles.find((profile) => profile.user_id === item.user_id);
+          const base = generated.find((row) => row.userId === item.user_id);
           return {
             userId: item.user_id,
             name: profile?.full_name || "Unknown",
@@ -271,14 +373,19 @@ function AdminAchievementsPage() {
             avatarUrl: profile?.avatar_url || null,
             badge: item.badge,
             badgeType: item.badge_type as EmployeeAchievement["badgeType"],
-            score: 0,
-            completedTasks: 0,
-            attendancePct: 0,
+            score: base?.score ?? 0,
+            tasksAssigned: base?.tasksAssigned ?? 0,
+            completedTasks: base?.completedTasks ?? 0,
+            averageProgress: base?.averageProgress ?? 0,
+            reviewsCompleted: base?.reviewsCompleted ?? 0,
+            achievementScore: base?.achievementScore ?? 0,
+            pendingTasks: base?.pendingTasks ?? 0,
+            attendancePct: base?.attendancePct ?? 0,
             date: item.created_at,
             status: normalizeStatus(item.status),
-            streak: 0,
-            overdueTasks: 0,
-            history: [],
+            streak: base?.streak ?? 0,
+            overdueTasks: base?.overdueTasks ?? 0,
+            history: base?.history ?? [],
           };
         });
 
@@ -328,26 +435,56 @@ function AdminAchievementsPage() {
     null,
   );
   const leaderboard = Array.from(new Map(rows.map((row) => [row.userId, row])).values())
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => b.achievementScore - a.achievementScore)
     .slice(0, 5);
   const chartRows = leaderboard.map((row) => ({
-    name: row.name.split(" ")[0],
-    score: row.score,
-    attendance: row.attendancePct,
-    tasks: row.completedTasks,
+    name: getInitials(row.name),
+    fullName: row.name,
+    avatarUrl: row.avatarUrl,
+    tasksAssigned: row.tasksAssigned,
+    tasksCompleted: row.completedTasks,
+    averageProgress: row.averageProgress,
+    reviewsCompleted: row.reviewsCompleted,
+    achievementScore: row.achievementScore,
+    tasksPending: row.pendingTasks,
   }));
   const approvedCount = rows.filter((row) => row.status === "Approved").length;
   const pendingCount = rows.filter((row) => row.status === "Pending").length;
   const manualCount = rows.filter((row) => row.status === "Manual").length;
   const selectedKey = selected ? `${selected.userId}-${selected.badge}` : "";
+  const employeeOptions = Array.from(new Map(rows.map((row) => [row.userId, row])).values()).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+  const assignmentEmployees = employeeOptions.filter((row) => {
+    const query = assignSearch.trim().toLowerCase();
+    return !query || row.name.toLowerCase().includes(query) || row.department.toLowerCase().includes(query);
+  });
+  const selectedEmployeeRows = selected ? rows.filter((row) => row.userId === selected.userId) : [];
+  const selectedAchievements = selectedEmployeeRows
+    .filter((row) => row.badge !== "Performance Review")
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const selectedBadgeMeta = achievementCatalog.find((item) => item.badge === manualBadge);
+  const analyticsSummary = {
+    topPerformer: leaderboard[0],
+    mostTasksCompleted: rows.reduce<EmployeeAchievement | null>(
+      (best, row) => (!best || row.completedTasks > best.completedTasks ? row : best),
+      null,
+    ),
+    highestProgress: rows.reduce<EmployeeAchievement | null>(
+      (best, row) => (!best || row.averageProgress > best.averageProgress ? row : best),
+      null,
+    ),
+    tasksPending: Array.from(new Map(rows.map((row) => [row.userId, row])).values()).reduce(
+      (sum, row) => sum + row.pendingTasks,
+      0,
+    ),
+  };
 
   const badgeTypeByName: Record<string, EmployeeAchievement['badgeType']> = {
-    "Productivity Hero": "productivity",
-    "30-Day Streak": "streak",
-    "Fast Worker": "tasks",
-    "Attendance Pro": "attendance",
-    "No Overdue Tasks": "quality",
-    "Elite Performer": "productivity",
+    ...(Object.fromEntries(achievementCatalog.map((item) => [item.badge, item.badgeType])) as Record<
+      string,
+      EmployeeAchievement["badgeType"]
+    >),
   };
 
   const normalizeStatus = (status: string | null | undefined): EmployeeAchievement["status"] =>
@@ -367,6 +504,11 @@ function AdminAchievementsPage() {
     if (selected && selected.userId === target.userId && selected.badge === target.badge) {
       setSelected({ ...target, ...updates });
     }
+  };
+
+  const selectEmployeeForAssignment = (userId: string) => {
+    const next = rows.find((row) => row.userId === userId) || null;
+    setSelected(next);
   };
 
   const handleApprove = async (row?: EmployeeAchievement | null) => {
@@ -410,12 +552,14 @@ function AdminAchievementsPage() {
     }
 
     const badgeType = badgeTypeByName[manualBadge] ?? "quality";
+    const assignedAt = `${assignDate || new Date().toISOString().slice(0, 10)}T00:00:00.000Z`;
     const { error } = await supabase.from("employee_achievements").upsert(
       {
         user_id: selected.userId,
         badge: manualBadge,
         badge_type: badgeType,
         status: "Manual",
+        created_at: assignedAt,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "user_id,badge" },
@@ -431,13 +575,27 @@ function AdminAchievementsPage() {
       return;
     }
 
-    updateRow(selected, {
+    const existingRow = rows.find((row) => row.userId === selected.userId && row.badge === manualBadge);
+    const assignedRow: EmployeeAchievement = {
+      ...(existingRow || selected),
       badge: manualBadge,
       badgeType,
       status: "Manual",
-      date: new Date().toISOString(),
+      date: assignedAt,
+      history: Array.from(new Set([...(selected.history || []), manualBadge])),
+    };
+
+    setRows((prev) => {
+      const exists = prev.some((item) => item.userId === assignedRow.userId && item.badge === manualBadge);
+      if (exists) {
+        return prev.map((item) =>
+          item.userId === assignedRow.userId && item.badge === manualBadge ? assignedRow : item,
+        );
+      }
+      return [assignedRow, ...prev];
     });
-    toast.success(`Assigned ${manualBadge} to ${selected.name}`);
+    setSelected(assignedRow);
+    toast.success(`${manualBadge} assigned to ${selected.name} successfully.`);
   };
 
   const handleRemove = async (row?: EmployeeAchievement | null) => {
@@ -621,15 +779,40 @@ function AdminAchievementsPage() {
                 <BarChart3 size={16} className="text-primary" />
                 Performance analytics
               </h3>
+              <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
+                <AnalyticsSummaryItem
+                  label="Top Performer"
+                  value={analyticsSummary.topPerformer?.name || "-"}
+                />
+                <AnalyticsSummaryItem
+                  label="Most Tasks Completed"
+                  value={
+                    analyticsSummary.mostTasksCompleted
+                      ? `${analyticsSummary.mostTasksCompleted.name} (${analyticsSummary.mostTasksCompleted.completedTasks})`
+                      : "-"
+                  }
+                />
+                <AnalyticsSummaryItem
+                  label="Highest Progress"
+                  value={
+                    analyticsSummary.highestProgress
+                      ? `${analyticsSummary.highestProgress.name} (${analyticsSummary.highestProgress.averageProgress}%)`
+                      : "-"
+                  }
+                />
+                <AnalyticsSummaryItem label="Tasks Pending" value={analyticsSummary.tasksPending} />
+              </div>
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={chartRows}>
                   <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 0.06)" />
-                  <XAxis dataKey="name" stroke="oklch(0.7 0.03 250)" fontSize={12} />
+                  <XAxis dataKey="name" stroke="oklch(0.7 0.03 250)" fontSize={12} tick={<PerformanceXAxisTick />} />
                   <YAxis stroke="oklch(0.7 0.03 250)" fontSize={12} />
-                  <Tooltip contentStyle={tooltipStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipItemStyle} />
-                  <Bar dataKey="score" fill="#ff2d6f" radius={[8, 8, 0, 0]} />
-                  <Bar dataKey="attendance" fill="#21d4fd" radius={[8, 8, 0, 0]} />
-                  <Bar dataKey="tasks" fill="#f6c453" radius={[8, 8, 0, 0]} />
+                  <Tooltip content={<PerformanceTooltip />} />
+                  <Bar dataKey="tasksAssigned" name="Tasks Assigned" fill="#8b5cf6" radius={[8, 8, 0, 0]} isAnimationActive animationDuration={900} />
+                  <Bar dataKey="tasksCompleted" name="Tasks Completed" fill="#21d4fd" radius={[8, 8, 0, 0]} isAnimationActive animationDuration={900} />
+                  <Bar dataKey="averageProgress" name="Average Progress %" fill="#f6c453" radius={[8, 8, 0, 0]} isAnimationActive animationDuration={900} />
+                  <Bar dataKey="reviewsCompleted" name="Reviews Completed" fill="#34d399" radius={[8, 8, 0, 0]} isAnimationActive animationDuration={900} />
+                  <Bar dataKey="achievementScore" name="Achievement Score" fill="#ff2d6f" radius={[8, 8, 0, 0]} isAnimationActive animationDuration={900} />
                 </BarChart>
               </ResponsiveContainer>
             </GlassCard>
@@ -640,6 +823,39 @@ function AdminAchievementsPage() {
                 Admin controls
               </h3>
               <div className="space-y-3">
+                <div className="relative">
+                  <Search
+                    size={16}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  />
+                  <Input
+                    value={assignSearch}
+                    onChange={(event) => setAssignSearch(event.target.value)}
+                    placeholder="Search employee..."
+                    className="pl-9"
+                  />
+                </div>
+                <Select value={selected?.userId || ""} onValueChange={selectEmployeeForAssignment}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select employee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {assignmentEmployees.map((employee) => (
+                      <SelectItem key={employee.userId} value={employee.userId}>
+                        {employee.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selected && (
+                  <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+                    <Avatar row={selected} />
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold">{selected.name}</div>
+                      <div className="text-xs text-muted-foreground">{selected.department}</div>
+                    </div>
+                  </div>
+                )}
                 <Select value={manualBadge} onValueChange={setManualBadge}>
                   <SelectTrigger>
                     <SelectValue />
@@ -652,12 +868,34 @@ function AdminAchievementsPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3 text-sm text-muted-foreground">
+                  {selectedBadgeMeta?.description || "Select an achievement to preview the description."}
+                </div>
+                <Input type="date" value={assignDate} onChange={(event) => setAssignDate(event.target.value)} />
                 <Textarea
                   value={feedback}
                   onChange={(event) => setFeedback(event.target.value)}
                   rows={4}
                   placeholder="Performance review notes or admin feedback..."
                 />
+                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Current achievements
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedAchievements.length ? (
+                      selectedAchievements.slice(0, 5).map((achievement) => (
+                        <BadgePill
+                          key={`${achievement.userId}-${achievement.badge}`}
+                          badge={achievement.badge}
+                          type={achievement.badgeType}
+                        />
+                      ))
+                    ) : (
+                      <span className="text-sm text-muted-foreground">No achievements assigned yet.</span>
+                    )}
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-2">
                   <Button className="neon-button rounded-xl" onClick={handleManualAssign}>
                     <PlusCircle size={14} className="mr-1.5" />
@@ -672,6 +910,7 @@ function AdminAchievementsPage() {
                   <MessageSquare size={14} className="mr-1.5" />
                   Feedback
                 </Button>
+                <AchievementHistory rows={rows} />
               </div>
             </GlassCard>
           </section>
@@ -680,6 +919,88 @@ function AdminAchievementsPage() {
 
       <EmployeeDetailModal employee={selected} onOpenChange={(open) => !open && setSelected(null)} />
     </>
+  );
+}
+
+function AnalyticsSummaryItem({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="mt-1 truncate text-sm font-bold text-white">{value}</div>
+    </div>
+  );
+}
+
+function PerformanceXAxisTick(props: any) {
+  const { x, y, payload } = props;
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <rect x={-15} y={4} width={30} height={24} rx={10} fill="oklch(1 0 0 / 0.055)" />
+      <text x={0} y={20} textAnchor="middle" fill="oklch(0.9 0.03 250)" fontSize={10} fontWeight={700}>
+        {payload.value}
+      </text>
+    </g>
+  );
+}
+
+function PerformanceTooltip({ active, payload }: any) {
+  if (!active || !payload?.length) return null;
+  const row = payload[0].payload;
+  const stats = [
+    ["Tasks Assigned", row.tasksAssigned],
+    ["Tasks Completed", row.tasksCompleted],
+    ["Average Progress", `${row.averageProgress}%`],
+    ["Reviews Completed", row.reviewsCompleted],
+    ["Achievement Score", row.achievementScore],
+    ["Tasks Pending", row.tasksPending],
+  ];
+
+  return (
+    <div style={tooltipStyle} className="min-w-56 p-3 shadow-2xl">
+      <div className="mb-2 font-semibold text-white">{row.fullName}</div>
+      <div className="space-y-1">
+        {stats.map(([label, value]) => (
+          <div key={label} className="flex items-center justify-between gap-6 text-xs">
+            <span className="text-muted-foreground">{label}</span>
+            <span className="font-semibold tabular-nums text-white">{value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AchievementHistory({ rows }: { rows: EmployeeAchievement[] }) {
+  const history = rows
+    .filter((row) => row.badge !== "Performance Review")
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5);
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+      <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        Achievement history
+      </div>
+      <div className="space-y-3">
+        {history.length ? (
+          history.map((row) => (
+            <div key={`${row.userId}-${row.badge}-${row.date}`} className="flex gap-3">
+              <Avatar row={row} />
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold">{row.name}</div>
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <BadgePill badge={row.badge} type={row.badgeType} />
+                </div>
+                <div className="mt-1 text-xs text-muted-foreground">Assigned by Admin</div>
+                <div className="text-xs text-muted-foreground">{format(new Date(row.date), "dd MMM yyyy")}</div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-sm text-muted-foreground">No achievement history yet.</div>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -863,8 +1184,11 @@ function ActivityFeed({ rows }: { rows: EmployeeAchievement[] }) {
                 {row.status === "Pending" ? "is ready for" : "unlocked"}{" "}
                 <span className="text-primary">{row.badge}</span>
               </div>
+              <div className="line-clamp-2 text-xs text-muted-foreground">
+                {achievementDescription(row.badge)}
+              </div>
               <div className="text-xs text-muted-foreground">
-                {format(new Date(row.date), "MMM d, HH:mm")}
+                Assigned by Admin - {format(new Date(row.date), "MMM d, HH:mm")}
               </div>
             </div>
           </div>
@@ -917,10 +1241,10 @@ function EmployeeDetailModal({
               </div>
 
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <DetailStat label="Assigned" value={employee.tasksAssigned} icon={PlusCircle} />
                 <DetailStat label="Completed" value={employee.completedTasks} icon={CheckCircle2} />
-                <DetailStat label="Attendance" value={`${employee.attendancePct}%`} icon={CalendarCheck2} />
-                <DetailStat label="Streak" value={`${employee.streak}d`} icon={Flame} />
-                <DetailStat label="Overdue" value={employee.overdueTasks} icon={ShieldCheck} />
+                <DetailStat label="Avg Progress" value={`${employee.averageProgress}%`} icon={BarChart3} />
+                <DetailStat label="Reviews" value={employee.reviewsCompleted} icon={MessageSquare} />
               </div>
 
               <GlassCard>
@@ -944,9 +1268,11 @@ function EmployeeDetailModal({
               </GlassCard>
 
               <GlassCard>
-                <h4 className="mb-3 font-semibold">Admin feedback history</h4>
+                <h4 className="mb-3 font-semibold">Achievement details</h4>
                 <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-sm text-muted-foreground">
-                  No saved feedback history yet. Use the admin controls to add review notes.
+                  <div className="font-semibold text-white">{employee.badge}</div>
+                  <div className="mt-1">{achievementDescription(employee.badge)}</div>
+                  <div className="mt-3 text-xs">Assigned by Admin - {format(new Date(employee.date), "dd MMM yyyy, HH:mm")}</div>
                 </div>
               </GlassCard>
             </div>
@@ -1021,12 +1347,7 @@ function Avatar({
   row: Pick<EmployeeAchievement, "name" | "avatarUrl">;
   size?: "md" | "lg";
 }) {
-  const initials = row.name
-    .split(" ")
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  const initials = getInitials(row.name);
   const className = size === "lg" ? "h-16 w-16 text-lg" : "h-10 w-10 text-xs";
   return row.avatarUrl ? (
     <img src={row.avatarUrl} alt="" className={`${className} shrink-0 rounded-2xl object-cover ring-2 ring-primary/40`} />
@@ -1034,6 +1355,23 @@ function Avatar({
     <div className={`${className} flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-violet-500 to-cyan-400 font-bold text-white shadow-[0_0_24px_rgba(125,92,255,.35)]`}>
       {initials}
     </div>
+  );
+}
+
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
+function achievementDescription(badge: string) {
+  return (
+    achievementCatalog.find((item) => item.badge === badge)?.description ||
+    "Achievement assigned from employee performance signals."
   );
 }
 
