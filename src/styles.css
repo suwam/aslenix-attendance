@@ -4599,6 +4599,10 @@
     position: sticky;
     bottom: -1px;
     z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
     margin: 8px -18px -18px;
     padding: 16px 18px 18px;
     border-top: 1px solid oklch(1 0 0 / 0.08);
@@ -4609,7 +4613,10 @@
     backdrop-filter: blur(18px);
   }
   .weekly-feedback-submit-bar .neon-button {
+    width: auto;
+    min-width: 260px;
     min-height: 48px;
+    padding-inline: 24px;
     border-radius: 14px;
     font-weight: 850;
     box-shadow: 0 14px 36px -24px oklch(0.58 0.24 255 / 0.9);
@@ -5023,9 +5030,12 @@
     .weekly-feedback-submit-bar {
       margin: 8px -14px -14px;
       padding: 14px;
+      align-items: stretch;
       z-index: auto;
     }
     .weekly-feedback-submit-bar .neon-button {
+      width: 100%;
+      min-width: 0;
       min-height: 46px;
       font-size: 14px;
     }

@@ -768,7 +768,7 @@ function WeeklyFeedbackPage() {
                       </div>
 
                       <div className="weekly-feedback-submit-bar">
-                        <Button onClick={saveFeedback} disabled={saving || formLocked} className="neon-button w-full rounded-xl">
+                        <Button onClick={saveFeedback} disabled={saving || formLocked} className="neon-button rounded-xl">
                           {canEditSelectedReview ? <Edit3 size={14} className="mr-1.5" /> : <Save size={14} className="mr-1.5" />}
                           {saving ? "Saving..." : canEditSelectedReview ? "Update review" : `Submit Week ${selectedWeekNumber} feedback`}
                         </Button>
