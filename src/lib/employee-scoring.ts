@@ -64,20 +64,29 @@ export function calculateOverduePenalty(overdueTasks: number) {
 
 export function calculateFinalEmployeeScore({
   taskProgressContribution,
+  completedTaskContribution,
   attendance,
   averageReviewScore,
   achievementBonus,
   overduePenalty = 0,
 }: {
   taskProgressContribution: number;
+  completedTaskContribution?: number;
   attendance: number;
   averageReviewScore: number;
   achievementBonus: number;
   overduePenalty?: number;
 }) {
   const normalizedReviewScore = averageReviewScore * 10;
-  const score =
-    taskProgressContribution * 0.4 +
+  const hasCompletedTaskContribution = typeof completedTaskContribution === "number";
+  const score = hasCompletedTaskContribution
+    ? taskProgressContribution * 0.35 +
+      Math.min(100, Math.max(0, completedTaskContribution)) * 0.15 +
+      attendance * 0.22 +
+      normalizedReviewScore * 0.2 +
+      achievementBonus * 0.08 -
+      overduePenalty
+    : taskProgressContribution * 0.4 +
       attendance * 0.25 +
       normalizedReviewScore * 0.25 +
       achievementBonus * 0.1 -

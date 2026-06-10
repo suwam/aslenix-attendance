@@ -92,6 +92,7 @@ type EmployeeRank = {
   productivityContribution: number;
   activeTasks: number;
   completionTrend: number;
+  completedTaskContribution: number;
   dailyImprovement: number;
   completedTasks: number;
   totalTasks: number;
@@ -236,6 +237,9 @@ function EmployeeOfMonthPage() {
               (!task.completed_at ||
                 new Date(task.completed_at).getTime() >= new Date(monthStartIso).getTime()),
           ).length;
+          const completedTaskContribution = assignedTasks.length
+            ? Math.round((completedTasks / assignedTasks.length) * 100)
+            : 0;
           const overdueTasks = assignedTasks.filter(
             (task: any) =>
               task.deadline &&
@@ -290,6 +294,7 @@ function EmployeeOfMonthPage() {
           const overduePenalty = calculateOverduePenalty(overdueTasks);
           const score = calculateFinalEmployeeScore({
             taskProgressContribution: taskMetrics.productivityContribution,
+            completedTaskContribution,
             attendance: attendancePct,
             averageReviewScore: reviewAverage,
             achievementBonus,
@@ -309,6 +314,7 @@ function EmployeeOfMonthPage() {
             productivityContribution: taskMetrics.productivityContribution,
             activeTasks: taskMetrics.activeTasks,
             completionTrend: taskMetrics.completionTrend,
+            completedTaskContribution,
             dailyImprovement,
             completedTasks,
             totalTasks: taskMetrics.totalTasks,
@@ -330,6 +336,7 @@ function EmployeeOfMonthPage() {
         .sort(
           (a, b) =>
             b.score - a.score ||
+            b.completedTaskContribution - a.completedTaskContribution ||
             b.taskProgress - a.taskProgress ||
             b.attendancePct - a.attendancePct,
         )
@@ -400,6 +407,7 @@ function EmployeeOfMonthPage() {
   const totals = useMemo(
     () => ({
       taskProgress: Math.round(rows.reduce((sum, row) => sum + row.taskProgress, 0) / Math.max(1, rows.length)),
+      completedTasks: rows.reduce((sum, row) => sum + row.completedTasks, 0),
       activeTasks: rows.reduce((sum, row) => sum + row.activeTasks, 0),
       attendance: Math.round(rows.reduce((sum, row) => sum + row.attendancePct, 0) / Math.max(1, rows.length)),
       streak: Math.max(0, ...rows.map((row) => row.streak)),
@@ -485,8 +493,9 @@ function EmployeeOfMonthPage() {
         </GlassCard>
       ) : (
         <div className="eom-page space-y-6">
-          <section className="grid grid-cols-1 gap-4 md:grid-cols-5">
+          <section className="grid grid-cols-1 gap-4 md:grid-cols-6">
             <StatTile label="Task progress" value={`${totals.taskProgress}%`} icon={CheckCircle2} />
+            <StatTile label="Completed tasks" value={totals.completedTasks} icon={BadgeCheck} />
             <StatTile label="Active tasks" value={totals.activeTasks} icon={Target} />
             <StatTile label="Attendance" value={`${totals.attendance}%`} icon={BadgeCheck} />
             <StatTile label="HR reviews" value={rows.reduce((sum, row) => sum + row.reviewCount, 0)} icon={MessageSquare} />
@@ -657,6 +666,7 @@ function ContenderCard({
       <div className="eom-contender-metrics-grid mt-5 grid gap-3">
         <ContenderMetric label="Task progress" value={`${employee.taskProgress}%`} icon={CheckCircle2} />
         <ContenderMetric label="Attendance" value={`${employee.attendancePct}%`} icon={BadgeCheck} />
+        <ContenderMetric label="Completed tasks" value={employee.completedTasks} icon={BadgeCheck} />
         <ContenderMetric label="Active tasks" value={employee.activeTasks} icon={Target} />
         <ContenderMetric label="HR review" value={`${employee.reviewAverage}/10`} icon={MessageSquare} />
         <ContenderMetric label="Daily improvement" value={`${employee.dailyImprovement}%`} icon={TrendingUp} />
@@ -669,6 +679,7 @@ function ContenderCard({
 
       <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
         <AnalyticsBar label="Task progression" value={employee.taskProgress} />
+        <AnalyticsBar label="Completed tasks" value={employee.completedTaskContribution} />
         <AnalyticsBar label="Productivity" value={employee.productivityContribution} />
         <AnalyticsBar label="Attendance" value={employee.attendancePct} />
         <AnalyticsBar label="HR review score" value={employee.reviewAverage * 10} />
@@ -728,6 +739,7 @@ function Leaderboard({ rows }: { rows: EmployeeRank[] }) {
               <div className="mt-1 text-xs text-muted-foreground">{row.department} · {row.position}</div>
               <div className="eom-leader-metrics mt-3 grid gap-3">
                 <MiniBar label="Task progress" value={row.taskProgress} detail={`${row.taskProgress}%`} />
+                <MiniBar label="Completed tasks" value={row.completedTaskContribution} detail={`${row.completedTasks}`} />
                 <MiniBar label="Productivity" value={row.productivityContribution} detail={`${row.productivityContribution}%`} />
                 <MiniBar label="Active tasks" value={Math.min(100, row.activeTasks * 10)} detail={`${row.activeTasks}`} />
                 <MiniBar label="Attendance" value={row.attendancePct} detail={`${row.attendancePct}%`} />
@@ -738,7 +750,7 @@ function Leaderboard({ rows }: { rows: EmployeeRank[] }) {
                   {ratingLabelFromAverage(row.reviewAverage)} · {row.reviewCount} reviews
                 </span>
                 <span className="eom-review-pill">
-                  Trend {row.completionTrend}% · +{row.dailyImprovement}%/day
+                  Completed {row.completedTaskContribution}% · +{row.dailyImprovement}%/day
                 </span>
                 {row.overduePenalty > 0 && (
                   <span className="eom-review-pill">
