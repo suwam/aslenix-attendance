@@ -42,6 +42,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { differenceInCalendarDays } from "date-fns";
 import { getCurrentNepaliMonthRange, getNepaliMonthLabel, formatNepaliDate } from "@/lib/nepali-calendar";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
@@ -143,6 +144,23 @@ type WeeklyReview = {
 
 const chartColors = ["#21d4fd", "#8b5cf6", "#ff2d6f", "#f6c453", "#22c55e"];
 
+function isDateInRange(value: string | null | undefined, startIso: string, endIso: string) {
+  if (!value) return false;
+  const time = new Date(value).getTime();
+  return time >= new Date(startIso).getTime() && time <= new Date(endIso).getTime();
+}
+
+function isTaskRelevantForMonth(task: any, startIso: string, endIso: string) {
+  const createdInMonth = isDateInRange(task.created_at, startIso, endIso);
+  const completedInMonth = isDateInRange(task.completed_at || task.updated_at, startIso, endIso);
+  const dueInMonth = isDateInRange(task.deadline, startIso, endIso);
+  const openDuringMonth =
+    task.status !== "completed" &&
+    (!task.created_at || new Date(task.created_at).getTime() <= new Date(endIso).getTime());
+
+  return createdInMonth || completedInMonth || dueInMonth || openDuringMonth;
+}
+
 async function fetchWeeklyReviews() {
   const result = await (supabase as any)
     .from("weekly_feedback")
@@ -175,11 +193,16 @@ function EmployeeOfMonthPage() {
 
   const nepaliMonth = getCurrentNepaliMonthRange();
   const monthStart = nepaliMonth.startAd;
+  const monthEnd = nepaliMonth.endAd;
 
   const loadEomData = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
       if (!silent) setLoading(true);
       const monthStartIso = `${monthStart}T00:00:00.000Z`;
+      const monthEndIso = `${monthEnd}T23:59:59.999Z`;
       const today = new Date().toISOString().slice(0, 10);
+      const effectiveEnd = today < monthEnd ? today : monthEnd;
+      const monthStartDate = new Date(`${monthStart}T00:00:00`);
+      const effectiveEndDate = new Date(`${effectiveEnd}T00:00:00`);
       const [
         { data: profiles },
         { data: roleRows },
@@ -202,18 +225,19 @@ function EmployeeOfMonthPage() {
             .from("attendance")
             .select("user_id,date,status,work_hours")
             .gte("date", monthStart)
-            .lte("date", today),
+            .lte("date", effectiveEnd),
           fetchWeeklyReviews(),
           (supabase as any)
             .from("task_progress_updates")
             .select("task_id,old_progress,new_progress,created_at")
-            .gte("created_at", monthStartIso),
+            .gte("created_at", monthStartIso)
+            .lte("created_at", monthEndIso),
         ]);
       const assignees =
         assigneeResult.error && isMissingSupabaseTableError(assigneeResult.error, "task_assignees")
           ? []
           : assigneeResult.data || [];
-      const elapsedDays = Math.max(1, new Date().getDate());
+      const elapsedDays = Math.max(1, differenceInCalendarDays(effectiveEndDate, monthStartDate) + 1);
       const feedbackRows = (feedbackResult.error ? [] : feedbackResult.data || []) as WeeklyReview[];
       const progressRows = progressResult.error ? [] : progressResult.data || [];
       const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
@@ -230,15 +254,17 @@ function EmployeeOfMonthPage() {
                 (assignee) => assignee.task_id === task.id && assignee.user_id === profile.user_id,
               ),
           );
-          const taskMetrics = calculateTaskProgressMetrics(assignedTasks);
+          const monthRelevantTasks = assignedTasks.filter((task: any) =>
+            isTaskRelevantForMonth(task, monthStartIso, monthEndIso),
+          );
+          const taskMetrics = calculateTaskProgressMetrics(monthRelevantTasks);
           const completedTasks = assignedTasks.filter(
             (task: any) =>
               (task.status === "completed" || Number(task.progress || 0) >= 100) &&
-              (!task.completed_at ||
-                new Date(task.completed_at).getTime() >= new Date(monthStartIso).getTime()),
+              isDateInRange(task.completed_at || task.updated_at, monthStartIso, monthEndIso),
           ).length;
-          const completedTaskContribution = assignedTasks.length
-            ? Math.round((completedTasks / assignedTasks.length) * 100)
+          const completedTaskContribution = monthRelevantTasks.length
+            ? Math.round((completedTasks / monthRelevantTasks.length) * 100)
             : 0;
           const overdueTasks = assignedTasks.filter(
             (task: any) =>
@@ -255,7 +281,7 @@ function EmployeeOfMonthPage() {
               .map((row) => row.date),
           ).size;
           const attendancePct = Math.min(100, Math.round((attendedDays / elapsedDays) * 100));
-          const assignedTaskIds = new Set(assignedTasks.map((task: any) => task.id));
+          const assignedTaskIds = new Set(monthRelevantTasks.map((task: any) => task.id));
           const progressGain = progressRows
             .filter((row: any) => assignedTaskIds.has(row.task_id))
             .reduce(
@@ -271,11 +297,16 @@ function EmployeeOfMonthPage() {
             taskMetrics.averageProgress >= 10 ? "Progress Starter" : null,
             taskMetrics.averageProgress >= 50 ? "Momentum Builder" : null,
             attendancePct >= 90 ? "Attendance Pro" : null,
-            overdueTasks === 0 && assignedTasks.length > 0 ? "No Overdue" : null,
+            overdueTasks === 0 && monthRelevantTasks.length > 0 ? "No Overdue" : null,
             streak >= 7 ? "7 Day Streak" : null,
             taskMetrics.averageProgress >= 95 ? "Diamond Focus" : null,
           ].filter(Boolean) as string[];
-          const reviews = feedbackRows.filter((item) => item.employee_id === profile.user_id);
+          const reviews = feedbackRows.filter(
+            (item) =>
+              item.employee_id === profile.user_id &&
+              item.week_start >= monthStart &&
+              item.week_start <= effectiveEnd,
+          );
           const reviewAverage = calculateReviewAverage(reviews);
           const latestReview = reviews[0] || null;
           const latestReviewScore = latestReview ? resolvedReviewScore(latestReview) : 0;
@@ -378,7 +409,7 @@ function EmployeeOfMonthPage() {
         .maybeSingle();
       setOfficialAward(awardResult.error ? null : awardResult.data);
       setLoading(false);
-  }, [monthStart]);
+  }, [monthEnd, monthStart]);
 
   const refreshEomData = useCallback(() => {
     void loadEomData({ silent: true });
@@ -420,18 +451,24 @@ function EmployeeOfMonthPage() {
   const submitFeedback = async () => {
     if (!user || !selectedEmployee) return;
     setSavingAward(true);
-    const { error } = await (supabase as any).from("employee_month_awards").upsert(
-      {
-        employee_id: selectedEmployee.userId,
-        admin_id: user.id,
-        month_start: monthStart,
-        score: selectedEmployee.score,
-        rating,
-        public_message: feedback || null,
-        internal_notes: notes || null,
-      },
-      { onConflict: "employee_id,month_start" },
-    );
+    const resetResult = await (supabase as any)
+      .from("employee_month_awards")
+      .delete()
+      .eq("month_start", monthStart);
+    if (resetResult.error) {
+      setSavingAward(false);
+      return toast.error(resetResult.error.message);
+    }
+
+    const { error } = await (supabase as any).from("employee_month_awards").insert({
+      employee_id: selectedEmployee.userId,
+      admin_id: user.id,
+      month_start: monthStart,
+      score: selectedEmployee.score,
+      rating,
+      public_message: feedback || null,
+      internal_notes: notes || null,
+    });
     setSavingAward(false);
     if (error) return toast.error(error.message);
     toast.success(`${selectedEmployee.name} was assigned Employee of the Month`);
