@@ -30,10 +30,12 @@ import {
   History,
   LogIn,
   LogOut,
+  MapPin,
   MessageSquare,
   Sparkles,
   Target,
   TrendingUp,
+  Users,
   UserRoundCog,
   Video,
   Zap,
@@ -429,6 +431,7 @@ function EmployeeDashboard() {
     <>
       <NotificationPopup
         notification={notificationPopup}
+        meetings={meetings}
         blocked={improvementOpen}
         onClose={closeNotificationPopup}
         onRead={markNotificationRead}
@@ -730,53 +733,142 @@ function EmployeeDashboard() {
 
 function NotificationPopup({
   notification,
+  meetings,
   blocked,
   onClose,
   onRead,
 }: {
   notification: NotificationRow | null;
+  meetings: any[];
   blocked: boolean;
   onClose: () => void;
   onRead: () => void;
 }) {
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const meeting = useMemo(() => getNotificationMeeting(notification, meetings), [notification, meetings]);
+  const meetingTime = meeting?.meeting_time ? new Date(meeting.meeting_time) : new Date(notification?.created_at ?? Date.now());
+  const isRescheduled = Boolean(
+    notification && /reschedul|postpon|updated|changed|now on/i.test(`${notification.title} ${notification.message}`),
+  );
+  const countdown = getMeetingPopupCountdown(meetingTime, nowMs);
+  const fallbackTitle = notification?.title.replace(/^(new\s+)?meeting\s+(scheduled|postponed|updated|rescheduled):?\s*/i, "");
+  const meetingName = meeting?.title || fallbackTitle || "Weekly Review & Team Status Meeting";
+  const location = meeting?.location || parseNotificationLocation(notification?.message) || "Office Meeting Room";
+
+  useEffect(() => {
+    if (!notification || blocked) return;
+    const interval = window.setInterval(() => setNowMs(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, [blocked, notification]);
+
   return (
     <Dialog open={Boolean(notification) && !blocked} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border-white/10 bg-background/95 p-0 sm:max-w-md">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-hidden rounded-[28px] border-0 bg-transparent p-0 shadow-[0_30px_100px_rgba(0,0,0,.55)] duration-300 data-[state=open]:slide-in-from-bottom-4 sm:max-w-2xl">
         {notification && (
-          <div className="p-5 sm:p-6">
-            <div className="mb-5 flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10 text-primary shadow-[0_0_28px_rgba(255,45,111,.2)]">
-                <BellDot size={22} />
-              </div>
-              <DialogHeader className="min-w-0 flex-1 text-left">
-                <div className="mb-2 flex w-fit items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                  <BellDot size={12} />
-                  New notification
+          <div className="relative rounded-[28px] bg-gradient-to-br from-[#ff3b7f] via-[#7b61ff] to-[#4f9cff] p-[1px] shadow-[0_0_42px_rgba(123,97,255,.34)]">
+            <div className="absolute inset-0 rounded-[28px] bg-gradient-to-br from-[#ff3b7f]/30 via-[#7b61ff]/25 to-[#4f9cff]/30 blur-2xl" />
+            <div className="relative overflow-hidden rounded-[27px] border border-white/10 bg-[#080a14]/90 p-5 text-white backdrop-blur-2xl sm:p-7">
+              <div className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-[#4f9cff]/20 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-28 -left-20 h-56 w-56 rounded-full bg-[#ff3b7f]/15 blur-3xl" />
+
+              <DialogHeader className="relative items-center text-center">
+                <div className="mb-4 flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/90 shadow-[inset_0_1px_0_rgba(255,255,255,.08)]">
+                  <span className="h-2 w-2 rounded-full bg-[#4f9cff] shadow-[0_0_14px_rgba(79,156,255,.95)]" />
+                  {isRescheduled ? "Meeting Rescheduled" : "Upcoming Meeting"}
                 </div>
-                <DialogTitle className="text-xl font-bold leading-tight text-white sm:text-2xl">
-                  {notification.title}
+
+                <div className="relative mb-5 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[#ff3b7f] via-[#7b61ff] to-[#4f9cff] shadow-[0_0_46px_rgba(123,97,255,.48)] sm:h-28 sm:w-28">
+                  <div className="absolute inset-0 animate-ping rounded-full bg-[#7b61ff]/20" />
+                  <div className="relative flex h-[82%] w-[82%] items-center justify-center rounded-full border border-white/20 bg-black/20 backdrop-blur-md">
+                    <CalendarClock className="h-11 w-11 animate-pulse text-white sm:h-12 sm:w-12" strokeWidth={1.7} />
+                  </div>
+                </div>
+
+                <DialogTitle className="max-w-xl text-2xl font-black leading-tight text-white sm:text-4xl">
+                  {isRescheduled ? "Your meeting schedule changed" : "You have an upcoming meeting"}
                 </DialogTitle>
-                <DialogDescription className="mt-2 max-h-40 overflow-y-auto text-sm leading-6 text-muted-foreground">
-                  {notification.message}
+                <DialogDescription className="mt-3 max-w-xl text-base font-semibold leading-7 text-white/85 sm:text-lg">
+                  {meetingName}
                 </DialogDescription>
               </DialogHeader>
+
+              <div className="relative mt-6 grid gap-3 rounded-2xl border border-white/10 bg-white/[0.055] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.08)] sm:grid-cols-2 sm:p-5">
+                <MeetingPopupDetail icon={Calendar} label="Date" value={`${format(meetingTime, "EEEE")}, ${formatNepaliDate(meetingTime, "DD MMMM YYYY")} BS`} />
+                <MeetingPopupDetail icon={Clock} label="Time" value={format(meetingTime, "h:mm a")} />
+                <MeetingPopupDetail icon={MapPin} label="Location" value={location} />
+                <MeetingPopupDetail icon={Users} label="Attendees" value="All Team Members" />
+              </div>
+
+              <div className="relative mt-4 rounded-2xl border border-[#7b61ff]/30 bg-white/[0.065] p-4 text-center shadow-[0_0_28px_rgba(123,97,255,.16),inset_0_1px_0_rgba(255,255,255,.08)]">
+                <div className="text-xs font-bold uppercase tracking-[0.18em] text-white/55">Starts In</div>
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  <CountdownUnit value={countdown.days} label="Days" />
+                  <CountdownUnit value={countdown.hours} label="Hours" />
+                  <CountdownUnit value={countdown.minutes} label="Minutes" />
+                </div>
+              </div>
+
+              <p className="relative mt-5 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm leading-6 text-white/72">
+                The meeting schedule has been updated. Please be prepared with your weekly progress updates and
+                discussion points.
+              </p>
+
+              <DialogFooter className="relative mt-5 flex-col gap-3 sm:flex-row sm:space-x-0">
+                <Button
+                  variant="outline"
+                  className="h-12 rounded-xl border-white/15 bg-white/[0.045] text-white hover:border-white/30 hover:bg-white/[0.09] focus-visible:ring-[#7b61ff]"
+                  onClick={onClose}
+                >
+                  Remind Me Later
+                </Button>
+                <Button
+                  asChild
+                  className="h-12 rounded-xl border-0 bg-[linear-gradient(135deg,#ff3b7f,#7b61ff,#4f9cff)] px-6 font-bold text-white shadow-[0_0_24px_rgba(123,97,255,.36)] transition-shadow hover:shadow-[0_0_34px_rgba(79,156,255,.55)] focus-visible:ring-[#4f9cff]"
+                >
+                  <Link to="/meetings" onClick={onRead}>
+                    <CheckCheck size={16} className="mr-2" />
+                    View Meeting
+                  </Link>
+                </Button>
+              </DialogFooter>
             </div>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3 text-xs text-muted-foreground">
-              {formatNepaliDate(notification.created_at, "DD MMM YYYY")} BS, {format(new Date(notification.created_at), "HH:mm")}
-            </div>
-            <DialogFooter className="mt-5 flex-col gap-2 sm:flex-row">
-              <Button variant="outline" className="h-11 rounded-xl" onClick={onClose}>
-                Later
-              </Button>
-              <Button className="neon-button h-11 rounded-xl" onClick={onRead}>
-                <CheckCheck size={14} className="mr-1.5" />
-                Mark as read
-              </Button>
-            </DialogFooter>
           </div>
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function MeetingPopupDetail({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Calendar;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex min-w-0 items-center gap-3 rounded-xl border border-white/10 bg-black/20 p-3">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.08] text-[#8fbaff]">
+        <Icon size={18} />
+      </div>
+      <div className="min-w-0">
+        <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/45">{label}</div>
+        <div className="mt-1 truncate text-sm font-semibold text-white sm:text-base">{value}</div>
+      </div>
+    </div>
+  );
+}
+
+function CountdownUnit({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/25 px-2 py-3">
+      <div className="font-mono text-2xl font-black leading-none text-white sm:text-3xl">
+        {String(value).padStart(2, "0")}
+      </div>
+      <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">{label}</div>
+    </div>
   );
 }
 
@@ -1139,6 +1231,36 @@ function hasSeenNotification(id: string) {
 function markNotificationSeen(id: string) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(notificationSeenKey(id), "1");
+}
+
+function getNotificationMeeting(notification: NotificationRow | null, meetings: any[]) {
+  if (!notification) return null;
+  const haystack = `${notification.title} ${notification.message}`.toLowerCase();
+  return (
+    meetings.find((meeting) => {
+      const title = String(meeting.title || "").toLowerCase();
+      return title.length > 2 && haystack.includes(title);
+    }) ?? null
+  );
+}
+
+function parseNotificationLocation(message?: string) {
+  if (!message) return null;
+  const match = message.match(/\s+at\s+(.+?)(?:\.|$)/i);
+  return match?.[1]?.trim() || null;
+}
+
+function getMeetingPopupCountdown(time: Date, nowMs: number) {
+  const diffMs = Math.max(0, time.getTime() - nowMs);
+  const minuteMs = 60 * 1000;
+  const hourMs = 60 * minuteMs;
+  const dayMs = 24 * hourMs;
+
+  return {
+    days: Math.floor(diffMs / dayMs),
+    hours: Math.floor((diffMs % dayMs) / hourMs),
+    minutes: Math.floor((diffMs % hourMs) / minuteMs),
+  };
 }
 
 function getTaskCountdown(deadline: string | null, nowMs: number) {
