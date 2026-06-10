@@ -70,3 +70,61 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+CREATE OR REPLACE FUNCTION public.notify_admins_task_review_requested(_task_id uuid)
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_employee_name text;
+  v_task_title text;
+  v_count integer := 0;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Authentication required';
+  END IF;
+
+  SELECT COALESCE(NULLIF(p.full_name, ''), 'Employee')
+  INTO v_employee_name
+  FROM public.profiles p
+  WHERE p.user_id = auth.uid()
+  LIMIT 1;
+
+  SELECT COALESCE(NULLIF(t.title, ''), 'a task')
+  INTO v_task_title
+  FROM public.tasks t
+  WHERE t.id = _task_id
+    AND (
+      t.assigned_to = auth.uid()
+      OR EXISTS (
+        SELECT 1
+        FROM public.task_assignees ta
+        WHERE ta.task_id = t.id
+          AND ta.user_id = auth.uid()
+      )
+    )
+  LIMIT 1;
+
+  IF v_task_title IS NULL THEN
+    RAISE EXCEPTION 'Task is not assigned to this employee';
+  END IF;
+
+  INSERT INTO public.notifications (user_id, title, message, type)
+  SELECT DISTINCT
+    ur.user_id,
+    'Task review requested',
+    COALESCE(v_employee_name, 'Employee') || ' completed ' || v_task_title || ' and requested review.',
+    'task'
+  FROM public.user_roles ur
+  WHERE ur.role IN ('admin', 'super_admin', 'hr_manager')
+    AND ur.user_id <> auth.uid();
+
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  RETURN v_count;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.notify_admins_task_review_requested(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.notify_admins_task_review_requested(uuid) TO authenticated;

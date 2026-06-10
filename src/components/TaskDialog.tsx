@@ -475,22 +475,10 @@ export function TaskDialog({
   const notifyAdminsTaskReviewRequested = async () => {
     if (!taskId || !user) return;
 
-    const [{ data: roleRows }, { data: profile }] = await Promise.all([
-      supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
-      supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle(),
-    ]);
-    const adminIds = Array.from(new Set((roleRows || []).map((row) => row.user_id).filter(Boolean)));
-    if (!adminIds.length) return;
-
-    const employeeName = profile?.full_name || user.email || "Employee";
-    await supabase.from("notifications").insert(
-      adminIds.map((adminId) => ({
-        user_id: adminId,
-        title: "Task review requested",
-        message: `${employeeName} completed ${title || "a task"} and requested review.`,
-        type: "task",
-      })),
-    );
+    const { error } = await (supabase as any).rpc("notify_admins_task_review_requested", {
+      _task_id: taskId,
+    });
+    if (error) throw error;
   };
 
   const requestReview = async () => {
@@ -517,7 +505,11 @@ export function TaskDialog({
       }
     }
     if (!error) {
-      await notifyAdminsTaskReviewRequested();
+      try {
+        await notifyAdminsTaskReviewRequested();
+      } catch (notificationError: any) {
+        error = notificationError;
+      }
     }
     setLoading(false);
     if (error) return toast.error(error.message);
