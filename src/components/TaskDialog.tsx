@@ -57,6 +57,7 @@ export function TaskDialog({
   const { user, isAdmin } = useAuth();
   const canEditTaskFields = isAdmin || !taskId;
   const canDeleteTask = isAdmin && Boolean(taskId);
+  const isEmployeeTaskEdit = Boolean(taskId && !isAdmin);
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -104,10 +105,12 @@ export function TaskDialog({
 
   const loadTask = useCallback(async () => {
     if (!taskId) return;
-    const [{ data: t }, { data: c }, { data: a }, progressResult, assigneeResult] = await Promise.all([
+    const [{ data: t }, { data: c }, attachmentResult, progressResult, assigneeResult] = await Promise.all([
       supabase.from("tasks").select("*").eq("id", taskId).maybeSingle(),
       supabase.from("task_comments").select("*").eq("task_id", taskId).order("created_at"),
-      supabase.from("task_attachments").select("*").eq("task_id", taskId).order("created_at"),
+      isAdmin
+        ? supabase.from("task_attachments").select("*").eq("task_id", taskId).order("created_at")
+        : Promise.resolve({ data: [] }),
       supabase
         .from("task_progress_updates")
         .select("*")
@@ -155,8 +158,8 @@ export function TaskDialog({
     setProgressUpdates(
       progressRows.map((x: any) => ({ ...x, author: names[x.user_id] || "User" })) as ProgressUpdate[],
     );
-    setAttachments(a || []);
-  }, [taskId]);
+    setAttachments(attachmentResult.data || []);
+  }, [isAdmin, taskId]);
 
   useEffect(() => {
     if (!open) return;
@@ -187,16 +190,18 @@ export function TaskDialog({
     const workflow = syncTaskWorkflow(status, progress);
     const nextProgress = workflow.progress;
     const nextStatus = workflow.status;
+    const progressChanged = taskId ? nextProgress !== initialProgress : false;
     const progressIncreased = taskId ? nextProgress > initialProgress : false;
-    if (progressIncreased && !progressNote.trim()) {
-      return toast.error("Progress update note is required when progress increases");
+    const progressNoteRequired = isEmployeeTaskEdit ? progressChanged : progressIncreased;
+    if (progressNoteRequired && !progressNote.trim()) {
+      return toast.error(isEmployeeTaskEdit ? "Update comment is required when progress changes" : "Progress update note is required when progress increases");
     }
 
     setLoading(true);
     if (taskId && !isAdmin) {
       let { error } = await supabase.from("tasks").update({ progress: nextProgress }).eq("id", taskId);
       let progressNoteNotSaved = false;
-      if (!error && progressIncreased) {
+      if (!error && progressChanged) {
         const progressUpdateResult = await saveProgressUpdate(
           taskId,
           initialProgress,
@@ -410,6 +415,7 @@ export function TaskDialog({
   };
 
   const uploadFile = async (file: File) => {
+    if (!isAdmin) return toast.error("Only admins can add attachments");
     if (!taskId || !user) return toast.error("Save task first");
     const path = `${user.id}/${taskId}/${Date.now()}-${file.name}`;
     const { error: upErr } = await supabase.storage.from("task-files").upload(path, file);
@@ -466,6 +472,61 @@ export function TaskDialog({
     );
   };
 
+  const notifyAdminsTaskReviewRequested = async () => {
+    if (!taskId || !user) return;
+
+    const [{ data: roleRows }, { data: profile }] = await Promise.all([
+      supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
+      supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle(),
+    ]);
+    const adminIds = Array.from(new Set((roleRows || []).map((row) => row.user_id).filter(Boolean)));
+    if (!adminIds.length) return;
+
+    const employeeName = profile?.full_name || user.email || "Employee";
+    await supabase.from("notifications").insert(
+      adminIds.map((adminId) => ({
+        user_id: adminId,
+        title: "Task review requested",
+        message: `${employeeName} completed ${title || "a task"} and requested review.`,
+        type: "task",
+      })),
+    );
+  };
+
+  const requestReview = async () => {
+    if (!taskId || !user || progress < 100) return;
+    const progressChanged = progress !== initialProgress;
+    if (progressChanged && !progressNote.trim()) {
+      return toast.error("Update comment is required when progress changes");
+    }
+
+    setLoading(true);
+    let { error } = await supabase
+      .from("tasks")
+      .update({ progress: 100, status: "review", completed_at: null })
+      .eq("id", taskId);
+    if (!error && progressChanged) {
+      const progressUpdateResult = await saveProgressUpdate(
+        taskId,
+        initialProgress,
+        100,
+        progressNote.trim(),
+      );
+      if (!progressUpdateResult.missingTable) {
+        error = progressUpdateResult.error;
+      }
+    }
+    if (!error) {
+      await notifyAdminsTaskReviewRequested();
+    }
+    setLoading(false);
+    if (error) return toast.error(error.message);
+    setStatus("review");
+    toast.success("Review requested", { description: "Admins have been notified." });
+    onSaved?.({ taskId, transition: "review" });
+    onOpenChange(false);
+  };
+
   const updateProgress = (value: number) => {
     const workflow = syncTaskWorkflow(status, value);
     setProgress(workflow.progress);
@@ -476,6 +537,10 @@ export function TaskDialog({
     setStatus(value);
     setProgress(progressForStatus(value, progress));
   };
+
+  const employeeProgressHistory = [...progressUpdates].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -569,19 +634,25 @@ export function TaskDialog({
                 className="w-20 tabular-nums"
               />
             </div>
-            {taskId && progress > initialProgress && (
+            {taskId && (isEmployeeTaskEdit || progress > initialProgress) && (
               <div className="mt-3">
-                <Label>Progress update note</Label>
+                <Label>{isEmployeeTaskEdit ? "Update Comment" : "Progress update note"}</Label>
                 <Textarea
                   value={progressNote}
                   onChange={(e) => setProgressNote(e.target.value)}
                   rows={3}
-                  placeholder={`What was completed from ${initialProgress}% to ${progress}%?`}
+                  placeholder={
+                    isEmployeeTaskEdit
+                      ? "Add an update comment..."
+                      : `What was completed from ${initialProgress}% to ${progress}%?`
+                  }
                   className="mt-1"
                 />
-                <div className="mt-1 text-xs text-muted-foreground">
-                  Required because progress increased.
-                </div>
+                {progress !== initialProgress && (
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {isEmployeeTaskEdit ? "Required because progress changed." : "Required because progress increased."}
+                  </div>
+                )}
                 {progressUpdatesUnavailable && (
                   <div className="mt-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
                     Progress will save, but notes need the task_progress_updates migration.
@@ -589,7 +660,32 @@ export function TaskDialog({
                 )}
               </div>
             )}
-            {taskId && progressUpdates.length > 0 && (
+            {isEmployeeTaskEdit && (
+              <div className="mt-4 rounded-lg border border-border bg-muted/20 p-3">
+                <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+                  <TrendingUp size={14} className="text-primary" />
+                  Progress History
+                </div>
+                <div className="max-h-44 space-y-2 overflow-y-auto">
+                  {employeeProgressHistory.map((update) => (
+                    <div key={update.id} className="rounded-md bg-background/50 p-2 text-sm">
+                      <div className="mb-1 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">
+                          {update.old_progress}% -&gt; {update.new_progress}%
+                        </span>
+                        <span>{formatTaskDateTime(update.created_at)}</span>
+                      </div>
+                      <div className="text-foreground">{update.note}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">{update.author}</div>
+                    </div>
+                  ))}
+                  {employeeProgressHistory.length === 0 && (
+                    <div className="text-xs text-muted-foreground">No progress updates yet.</div>
+                  )}
+                </div>
+              </div>
+            )}
+            {taskId && !isEmployeeTaskEdit && progressUpdates.length > 0 && (
               <div className="mt-4 rounded-lg border border-border bg-muted/20 p-3">
                 <div className="mb-2 flex items-center gap-2 text-sm font-medium">
                   <TrendingUp size={14} className="text-primary" />
@@ -711,6 +807,7 @@ export function TaskDialog({
 
           {taskId && (
             <>
+              {isAdmin && (
               <div className="border-t border-border pt-4">
                 <Label className="mb-2 block">Attachments</Label>
                 <div className="space-y-1.5 mb-2">
@@ -739,6 +836,7 @@ export function TaskDialog({
                   />
                 </label>
               </div>
+              )}
 
               <div className="border-t border-border pt-4">
                 <Label className="mb-2 block">Comments</Label>
@@ -802,6 +900,11 @@ export function TaskDialog({
                       ? "Save changes"
                       : "Create task"}
               </Button>
+              {isEmployeeTaskEdit && progress >= 100 && (
+                <Button onClick={requestReview} disabled={loading} className="neon-button">
+                  Request Review
+                </Button>
+              )}
             </div>
           </div>
         </div>
