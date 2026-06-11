@@ -41,6 +41,11 @@ type TaskProgressLike = {
   task_complexity?: string | null;
 };
 
+type AttendanceLike = {
+  date?: string | null;
+  status?: string | null;
+};
+
 export function reviewScoreFromRating(rating?: string | null) {
   return REVIEW_SCORE_BY_RATING[rating as ReviewRating] ?? 0;
 }
@@ -112,6 +117,26 @@ export function normalizedTaskComplexity(value?: string | null): TaskComplexity 
 
 export function effortPointsForTask(task: TaskProgressLike) {
   return TASK_COMPLEXITY_POINTS[normalizedTaskComplexity(task.task_complexity)];
+}
+
+export function attendanceCreditForStatus(status?: string | null) {
+  if (status === "present" || status === "wfh") return 1;
+  if (status === "late") return 0.7;
+  if (status === "half_day") return 0.5;
+  return 0;
+}
+
+export function calculateWeightedAttendancePct(rows: AttendanceLike[], elapsedDays: number) {
+  const creditByDate = new Map<string, number>();
+
+  rows.forEach((row) => {
+    if (!row.date) return;
+    const credit = attendanceCreditForStatus(row.status);
+    creditByDate.set(row.date, Math.max(creditByDate.get(row.date) || 0, credit));
+  });
+
+  const totalCredit = Array.from(creditByDate.values()).reduce((sum, value) => sum + value, 0);
+  return Math.min(100, Math.round((totalCredit / Math.max(1, elapsedDays)) * 100));
 }
 
 export function calculateOverduePenalty(overdueTasks: number) {

@@ -70,6 +70,7 @@ import {
   calculateOverduePenalty,
   calculateReviewAverage,
   calculateTaskProgressMetrics,
+  calculateWeightedAttendancePct,
   ratingLabelFromAverage,
   resolvedReviewScore,
   TASK_COMPLEXITY_DESCRIPTIONS,
@@ -297,12 +298,7 @@ function EmployeeOfMonthPage() {
           const employeeAttendance = (attendance || []).filter(
             (row) => row.user_id === profile.user_id,
           );
-          const attendedDays = new Set(
-            employeeAttendance
-              .filter((row) => ["present", "late", "wfh"].includes(row.status || ""))
-              .map((row) => row.date),
-          ).size;
-          const attendancePct = Math.min(100, Math.round((attendedDays / elapsedDays) * 100));
+          const attendancePct = calculateWeightedAttendancePct(employeeAttendance, elapsedDays);
           const assignedTaskIds = new Set(monthRelevantTasks.map((task: any) => task.id));
           const progressGain = progressRows
             .filter((row: any) => assignedTaskIds.has(row.task_id))

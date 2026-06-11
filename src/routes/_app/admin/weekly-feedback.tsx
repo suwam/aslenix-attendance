@@ -59,7 +59,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { productivityScore } from "@/lib/tasks-utils";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
-import { resolvedReviewScore, reviewScoreFromRating } from "@/lib/employee-scoring";
+import { calculateWeightedAttendancePct, resolvedReviewScore, reviewScoreFromRating } from "@/lib/employee-scoring";
 import { formatNepaliDate } from "@/lib/nepali-calendar";
 import { toast } from "sonner";
 
@@ -192,7 +192,7 @@ function WeeklyFeedbackPage() {
             .map((row) => row.date),
         );
         const hours = employeeAttendance.reduce((sum, row) => sum + Number(row.work_hours || 0), 0);
-        const attendancePct = Math.min(100, Math.round((attendedDays.size / elapsedDays) * 100));
+        const attendancePct = calculateWeightedAttendancePct(employeeAttendance, elapsedDays);
         const score = productivityScore({
           completed: completedTasks,
           total: Math.max(assignedTasks.length, completedTasks),
