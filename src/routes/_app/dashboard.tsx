@@ -423,20 +423,13 @@ function EmployeeDashboard() {
 
   const showNotificationOnce = (notification: NotificationRow) => {
     if (notification.is_read || hasSeenNotification(notification.id)) return;
+    if (!isMeetingNotification(notification)) return;
     markNotificationSeen(notification.id);
     setNotificationPopup(notification);
   };
 
   const closeNotificationPopup = () => {
     setNotificationPopup(null);
-  };
-
-  const markNotificationRead = async () => {
-    if (!notificationPopup) return;
-    const notification = notificationPopup;
-    markNotificationSeen(notification.id);
-    setNotificationPopup(null);
-    await supabase.from("notifications").update({ is_read: true }).eq("id", notification.id);
   };
 
   return (
@@ -446,7 +439,6 @@ function EmployeeDashboard() {
         meetings={meetings}
         blocked={improvementOpen}
         onClose={closeNotificationPopup}
-        onRead={markNotificationRead}
       />
 
       <Dialog
@@ -748,13 +740,11 @@ function NotificationPopup({
   meetings,
   blocked,
   onClose,
-  onRead,
 }: {
   notification: NotificationRow | null;
   meetings: any[];
   blocked: boolean;
   onClose: () => void;
-  onRead: () => void;
 }) {
   const [nowMs, setNowMs] = useState(() => Date.now());
   const meeting = useMemo(() => getNotificationMeeting(notification, meetings), [notification, meetings]);
@@ -763,7 +753,7 @@ function NotificationPopup({
     notification && /reschedul|postpon|updated|changed|now on/i.test(`${notification.title} ${notification.message}`),
   );
   const countdown = getMeetingPopupCountdown(meetingTime, nowMs);
-  const fallbackTitle = notification?.title.replace(/^(new\s+)?meeting\s+(scheduled|postponed|updated|rescheduled):?\s*/i, "");
+  const fallbackTitle = getNotificationMeetingTitle(notification);
   const meetingName = meeting?.title || fallbackTitle || "Weekly Review & Team Status Meeting";
   const location = meeting?.location || parseNotificationLocation(notification?.message) || "Office Meeting Room";
 
@@ -837,7 +827,7 @@ function NotificationPopup({
                   asChild
                   className="h-12 rounded-xl border-0 bg-[linear-gradient(135deg,#ff3b7f,#7b61ff,#4f9cff)] px-6 font-bold text-white shadow-[0_0_24px_rgba(123,97,255,.36)] transition-shadow hover:shadow-[0_0_34px_rgba(79,156,255,.55)] focus-visible:ring-[#4f9cff]"
                 >
-                  <Link to="/meetings" onClick={onRead}>
+                  <Link to="/meetings" onClick={onClose}>
                     <CheckCheck size={16} className="mr-2" />
                     View Meeting
                   </Link>
@@ -1256,8 +1246,33 @@ function getNotificationMeeting(notification: NotificationRow | null, meetings: 
     meetings.find((meeting) => {
       const title = String(meeting.title || "").toLowerCase();
       return title.length > 2 && haystack.includes(title);
-    }) ?? null
+    }) ??
+    meetings
+      .filter((meeting) => new Date(meeting.meeting_time).getTime() >= Date.now() - 60 * 60 * 1000)
+      .sort((a, b) => new Date(a.meeting_time).getTime() - new Date(b.meeting_time).getTime())[0] ??
+    null
   );
+}
+
+function isMeetingNotification(notification: NotificationRow) {
+  const text = `${notification.type || ""} ${notification.title || ""} ${notification.message || ""}`;
+  return /meeting/i.test(text);
+}
+
+function getNotificationMeetingTitle(notification: NotificationRow | null) {
+  if (!notification) return "";
+  const title = String(notification.title || "").trim();
+  const message = String(notification.message || "").trim();
+  const genericTitle = /^(task updated|new task assigned|task moved|task marked|meeting scheduled|new meeting scheduled|meeting postponed|meeting updated|meeting rescheduled)$/i.test(title);
+
+  if (title && !genericTitle && !/^meeting\s+(scheduled|postponed|updated|rescheduled):?\s*/i.test(title)) {
+    return title;
+  }
+
+  const messageTitle = message.match(/^(.+?)\s+(?:is now on|on)\s+/i)?.[1]?.trim();
+  if (messageTitle) return messageTitle;
+
+  return title.replace(/^(new\s+)?meeting\s+(scheduled|postponed|updated|rescheduled):?\s*/i, "").trim();
 }
 
 function parseNotificationLocation(message?: string) {

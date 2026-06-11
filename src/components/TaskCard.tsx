@@ -10,7 +10,6 @@ import {
 } from "@/lib/tasks-utils";
 import {
   TASK_COMPLEXITY_LABELS,
-  TASK_COMPLEXITY_POINTS,
   normalizedTaskComplexity,
   type TaskComplexity,
 } from "@/lib/employee-scoring";
@@ -92,7 +91,7 @@ export function TaskCard({
             {STATUS_LABELS[task.status]}
           </span>
           <span className="inline-flex items-center rounded-full border border-cyan-300/25 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-cyan-100">
-            {TASK_COMPLEXITY_LABELS[complexity]} · {TASK_COMPLEXITY_POINTS[complexity]} pts
+            {TASK_COMPLEXITY_LABELS[complexity]}
           </span>
         </div>
 
