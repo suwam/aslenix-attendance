@@ -7,6 +7,7 @@ import {
   BarChart3,
   CalendarDays,
   CheckCircle2,
+  ClipboardList,
   Crown,
   Flame,
   Gem,
@@ -69,6 +70,7 @@ import {
   calculateFinalEmployeeScore,
   calculateOverduePenalty,
   calculateReviewAverage,
+  calculateStandupScore,
   calculateTaskProgressMetrics,
   calculateWeightedAttendancePct,
   ratingLabelFromAverage,
@@ -114,6 +116,9 @@ type EmployeeRank = {
   overdueTasks: number;
   overduePenalty: number;
   attendancePct: number;
+  standupScore: number;
+  standupSubmittedDays: number;
+  standupSubmissionRate: number;
   streak: number;
   score: number;
   achievementBonus: number;
@@ -227,6 +232,7 @@ function EmployeeOfMonthPage() {
         { data: tasks },
         assigneeResult,
         { data: attendance },
+        { data: standups },
         feedbackResult,
         progressResult,
       ] =
@@ -242,6 +248,11 @@ function EmployeeOfMonthPage() {
           supabase
             .from("attendance")
             .select("user_id,date,status,work_hours")
+            .gte("date", monthStart)
+            .lte("date", effectiveEnd),
+          supabase
+            .from("standups")
+            .select("user_id,date,yesterday,today,blockers,work_hours")
             .gte("date", monthStart)
             .lte("date", effectiveEnd),
           fetchWeeklyReviews(),
@@ -299,6 +310,8 @@ function EmployeeOfMonthPage() {
             (row) => row.user_id === profile.user_id,
           );
           const attendancePct = calculateWeightedAttendancePct(employeeAttendance, elapsedDays);
+          const employeeStandups = (standups || []).filter((row) => row.user_id === profile.user_id);
+          const standupMetrics = calculateStandupScore(employeeStandups, elapsedDays);
           const assignedTaskIds = new Set(monthRelevantTasks.map((task: any) => task.id));
           const progressGain = progressRows
             .filter((row: any) => assignedTaskIds.has(row.task_id))
@@ -315,6 +328,7 @@ function EmployeeOfMonthPage() {
             taskMetrics.effortProgress >= 10 ? "Progress Starter" : null,
             taskMetrics.effortProgress >= 50 ? "Momentum Builder" : null,
             attendancePct >= 90 ? "Attendance Pro" : null,
+            standupMetrics.score >= 85 ? "Standup Pro" : null,
             overdueTasks === 0 && monthRelevantTasks.length > 0 ? "No Overdue" : null,
             streak >= 7 ? "7 Day Streak" : null,
             taskMetrics.effortProgress >= 95 ? "Diamond Focus" : null,
@@ -354,6 +368,7 @@ function EmployeeOfMonthPage() {
             completedTaskContribution,
             attendance: attendancePct,
             averageReviewScore: reviewAverage,
+            standupScore: standupMetrics.score,
             achievementBonus,
             overduePenalty,
           });
@@ -386,6 +401,9 @@ function EmployeeOfMonthPage() {
             overdueTasks,
             overduePenalty,
             attendancePct,
+            standupScore: standupMetrics.score,
+            standupSubmittedDays: standupMetrics.submittedDays,
+            standupSubmissionRate: standupMetrics.submissionRate,
             streak,
             score,
             achievementBonus,
@@ -428,6 +446,7 @@ function EmployeeOfMonthPage() {
           week: `W${index + 1}`,
           productivity: Math.max(8, Math.min(100, base - (3 - index) * 7 + index * 3)),
           attendance: Math.max(8, Math.min(100, (ranked[0]?.attendancePct || 0) - (3 - index) * 4)),
+          standup: Math.max(8, Math.min(100, (ranked[0]?.standupScore || 0) - (3 - index) * 3)),
           taskProgress: Math.max(0, Math.round((ranked[0]?.effortProgress || 0) * ((index + 1) / 4))),
           tasksCompleted: Math.max(0, Math.round((ranked[0]?.completedEffortPoints || 0) * ((index + 1) / 4))),
         };
@@ -473,6 +492,7 @@ function EmployeeOfMonthPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, refreshEomData)
       .on("postgres_changes", { event: "*", schema: "public", table: "task_assignees" }, refreshEomData)
       .on("postgres_changes", { event: "*", schema: "public", table: "attendance" }, refreshEomData)
+      .on("postgres_changes", { event: "*", schema: "public", table: "standups" }, refreshEomData)
       .on("postgres_changes", { event: "*", schema: "public", table: "weekly_feedback" }, refreshEomData)
       .on("postgres_changes", { event: "*", schema: "public", table: "task_progress_updates" }, refreshEomData)
       .subscribe();
@@ -499,6 +519,7 @@ function EmployeeOfMonthPage() {
       completedTasks: visibleRows.reduce((sum, row) => sum + row.completedTasks, 0),
       activeTasks: visibleRows.reduce((sum, row) => sum + row.activeTasks, 0),
       attendance: Math.round(visibleRows.reduce((sum, row) => sum + row.attendancePct, 0) / Math.max(1, visibleRows.length)),
+      standup: Math.round(visibleRows.reduce((sum, row) => sum + row.standupScore, 0) / Math.max(1, visibleRows.length)),
       streak: Math.max(0, ...visibleRows.map((row) => row.streak)),
       overdue: visibleRows.reduce((sum, row) => sum + row.overdueTasks, 0),
       score: Math.round(visibleRows.reduce((sum, row) => sum + row.score, 0) / Math.max(1, visibleRows.length)),
@@ -579,7 +600,7 @@ function EmployeeOfMonthPage() {
     <>
       <PageHeader
         title="Employee of the Month"
-        subtitle="Fair monthly scoring by department, task effort, attendance, HR reviews, and normalized performance"
+        subtitle="Fair monthly scoring by department, task effort, attendance, standups, HR reviews, and normalized performance"
       />
 
       {!winner ? (
@@ -593,6 +614,7 @@ function EmployeeOfMonthPage() {
             <StatTile label="Effort points" value={totals.effortPoints} icon={BadgeCheck} />
             <StatTile label="Active tasks" value={totals.activeTasks} icon={Target} />
             <StatTile label="Attendance" value={`${totals.attendance}%`} icon={BadgeCheck} />
+            <StatTile label="Standup" value={`${totals.standup}%`} icon={ClipboardList} />
             <StatTile label="HR reviews" value={rows.reduce((sum, row) => sum + row.reviewCount, 0)} icon={MessageSquare} />
             <StatTile label="Normalized score" value={totals.score} icon={Zap} />
           </section>
@@ -665,7 +687,7 @@ function TopContenders({ rows }: { rows: EmployeeRank[] }) {
           </div>
           <h2 className="text-3xl font-bold md:text-4xl">Employee of the Month race</h2>
           <p className="mt-1 text-sm text-white/65">
-            Live ranking from effort-weighted task progress, attendance, HR reviews, bonuses, and overdue penalties.
+            Live ranking from effort-weighted task progress, attendance, standups, HR reviews, bonuses, and overdue penalties.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -769,6 +791,7 @@ function ContenderCard({
         <ContenderMetric label="Attendance" value={`${employee.attendancePct}%`} icon={BadgeCheck} />
         <ContenderMetric label="Effort points" value={`${employee.earnedEffortPoints}/${employee.effortPoints}`} icon={BadgeCheck} />
         <ContenderMetric label="Active tasks" value={employee.activeTasks} icon={Target} />
+        <ContenderMetric label="Standup" value={`${employee.standupScore}%`} icon={ClipboardList} />
         <ContenderMetric label="HR review" value={`${employee.reviewAverage}/10`} icon={MessageSquare} />
         <ContenderMetric label="Normalized score" value={employee.normalizedPerformanceScore} icon={TrendingUp} />
         <ContenderMetric
@@ -783,6 +806,7 @@ function ContenderCard({
         <AnalyticsBar label="Completed effort" value={employee.completedTaskContribution} />
         <AnalyticsBar label="Normalized performance" value={employee.normalizedPerformanceScore} />
         <AnalyticsBar label="Attendance" value={employee.attendancePct} />
+        <AnalyticsBar label="Standup score" value={employee.standupScore} />
         <AnalyticsBar label="HR review score" value={employee.reviewAverage * 10} />
       </div>
     </div>
@@ -916,6 +940,7 @@ function Leaderboard({ rows, departmentFilter }: { rows: EmployeeRank[]; departm
                 <MiniBar label="Normalized" value={row.normalizedPerformanceScore} detail={`${row.normalizedPerformanceScore}/100`} />
                 <MiniBar label="Active tasks" value={Math.min(100, row.activeTasks * 10)} detail={`${row.activeTasks}`} />
                 <MiniBar label="Attendance" value={row.attendancePct} detail={`${row.attendancePct}%`} />
+                <MiniBar label="Standup" value={row.standupScore} detail={`${row.standupSubmittedDays} days · ${row.standupSubmissionRate}%`} />
                 <MiniBar label="HR avg" value={row.reviewAverage * 10} detail={row.reviewAverage ? `${row.reviewAverage}/10` : "0"} />
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
@@ -924,6 +949,9 @@ function Leaderboard({ rows, departmentFilter }: { rows: EmployeeRank[]; departm
                 </span>
                 <span className="eom-review-pill">
                   {complexitySummary(row.complexityBreakdown)} · +{row.dailyImprovement}%/day
+                </span>
+                <span className="eom-review-pill">
+                  Standup {row.standupScore}% · {row.standupSubmittedDays} days
                 </span>
                 {row.overduePenalty > 0 && (
                   <span className="eom-review-pill">
@@ -1192,6 +1220,10 @@ function EomProductivityTooltip({ active, payload }: any) {
       <div className="eom-productivity-tooltip-row">
         <span>Attendance</span>
         <b>{Math.round(row.attendance || 0)}%</b>
+      </div>
+      <div className="eom-productivity-tooltip-row">
+        <span>Standup</span>
+        <b>{Math.round(row.standup || 0)}%</b>
       </div>
       <div className="eom-productivity-tooltip-status">{productivityStatus(row.productivity || 0)}</div>
     </div>

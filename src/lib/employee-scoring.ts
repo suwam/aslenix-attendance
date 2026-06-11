@@ -46,6 +46,14 @@ type AttendanceLike = {
   status?: string | null;
 };
 
+type StandupLike = {
+  date?: string | null;
+  yesterday?: string | null;
+  today?: string | null;
+  blockers?: string | null;
+  work_hours?: number | string | null;
+};
+
 export function reviewScoreFromRating(rating?: string | null) {
   return REVIEW_SCORE_BY_RATING[rating as ReviewRating] ?? 0;
 }
@@ -139,6 +147,37 @@ export function calculateWeightedAttendancePct(rows: AttendanceLike[], elapsedDa
   return Math.min(100, Math.round((totalCredit / Math.max(1, elapsedDays)) * 100));
 }
 
+export function calculateStandupScore(rows: StandupLike[], elapsedDays: number) {
+  const submittedByDate = new Map<string, StandupLike>();
+
+  rows.forEach((row) => {
+    if (!row.date || !isStandupSubmitted(row)) return;
+    const existing = submittedByDate.get(row.date);
+    if (!existing || standupQualityScore(row) > standupQualityScore(existing)) {
+      submittedByDate.set(row.date, row);
+    }
+  });
+
+  const submittedRows = Array.from(submittedByDate.values());
+  const submittedDays = submittedRows.length;
+  const submissionRate = Math.min(100, Math.round((submittedDays / Math.max(1, elapsedDays)) * 100));
+  const averageQuality = submittedDays
+    ? Math.round(submittedRows.reduce((sum, row) => sum + standupQualityScore(row), 0) / submittedDays)
+    : 0;
+  const blockerCommunication = submittedDays
+    ? Math.round(submittedRows.reduce((sum, row) => sum + blockerCommunicationScore(row), 0) / submittedDays)
+    : 0;
+  const score = Math.round(submissionRate * 0.5 + averageQuality * 0.3 + blockerCommunication * 0.2);
+
+  return {
+    score,
+    submittedDays,
+    submissionRate,
+    averageQuality,
+    blockerCommunication,
+  };
+}
+
 export function calculateOverduePenalty(overdueTasks: number) {
   return Math.min(20, overdueTasks * 5);
 }
@@ -148,6 +187,7 @@ export function calculateFinalEmployeeScore({
   completedTaskContribution,
   attendance,
   averageReviewScore,
+  standupScore = 0,
   achievementBonus,
   overduePenalty = 0,
 }: {
@@ -155,22 +195,25 @@ export function calculateFinalEmployeeScore({
   completedTaskContribution?: number;
   attendance: number;
   averageReviewScore: number;
+  standupScore?: number;
   achievementBonus: number;
   overduePenalty?: number;
 }) {
   const normalizedReviewScore = averageReviewScore * 10;
   const hasCompletedTaskContribution = typeof completedTaskContribution === "number";
   const score = hasCompletedTaskContribution
-    ? taskProgressContribution * 0.35 +
-      Math.min(100, Math.max(0, completedTaskContribution)) * 0.12 +
+    ? taskProgressContribution * 0.3 +
+      Math.min(100, Math.max(0, completedTaskContribution)) * 0.1 +
+      attendance * 0.2 +
+      normalizedReviewScore * 0.18 +
+      standupScore * 0.15 +
+      achievementBonus * 0.07 -
+      overduePenalty
+    : taskProgressContribution * 0.35 +
       attendance * 0.22 +
       normalizedReviewScore * 0.2 +
-      achievementBonus * 0.11 -
-      overduePenalty
-    : taskProgressContribution * 0.4 +
-      attendance * 0.25 +
-      normalizedReviewScore * 0.25 +
-      achievementBonus * 0.1 -
+      standupScore * 0.15 +
+      achievementBonus * 0.08 -
       overduePenalty;
   return Math.round(Math.min(100, Math.max(0, score)));
 }
@@ -181,4 +224,28 @@ export function ratingLabelFromAverage(score: number) {
   if (score >= 3.5) return "Average";
   if (score > 0) return "Poor";
   return "No reviews";
+}
+
+function isStandupSubmitted(row: StandupLike) {
+  return Boolean(row.yesterday?.trim() || row.today?.trim() || row.blockers?.trim());
+}
+
+function standupQualityScore(row: StandupLike) {
+  if (!isStandupSubmitted(row)) return 0;
+  let score = 0;
+  if (wordCount(row.yesterday) >= 5) score += 35;
+  if (wordCount(row.today) >= 5) score += 35;
+  if (Number(row.work_hours || 0) > 0) score += 15;
+  score += blockerCommunicationScore(row) >= 100 ? 15 : 8;
+  return Math.min(100, score);
+}
+
+function blockerCommunicationScore(row: StandupLike) {
+  const blockers = row.blockers?.trim() || "";
+  if (!blockers) return 100;
+  return wordCount(blockers) >= 4 ? 100 : 60;
+}
+
+function wordCount(value?: string | null) {
+  return String(value || "").trim().split(/\s+/).filter(Boolean).length;
 }

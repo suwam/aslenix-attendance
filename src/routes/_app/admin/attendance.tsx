@@ -119,7 +119,11 @@ function AttendancePage() {
     ]);
     if (correctionsResult.error) toast.error(`Unable to load correction requests: ${correctionsResult.error.message}`);
     const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
-    const employeeProfiles = ((profs ?? []) as EmployeeRow[]).filter((profile) => !adminUserIds.has(profile.user_id));
+    const employeeProfiles = ((profs ?? []) as EmployeeRow[])
+      .filter((profile) => !adminUserIds.has(profile.user_id))
+      .sort((a, b) =>
+        String(a.full_name || "").localeCompare(String(b.full_name || ""), undefined, { sensitivity: "base" }),
+      );
     const map = new Map(((att ?? []) as AttendanceRecord[]).map((a) => [a.user_id, a]));
     const merged = employeeProfiles.map((p) => ({ ...p, attendance: map.get(p.user_id) }));
     setRows(merged);

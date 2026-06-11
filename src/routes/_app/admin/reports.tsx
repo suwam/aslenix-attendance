@@ -70,7 +70,9 @@ function ReportsPage() {
     ]);
 
     const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
-    const employeeProfiles = (profiles ?? []).filter((profile) => !adminUserIds.has(profile.user_id));
+    const employeeProfiles = sortByEmployeeName(
+      (profiles ?? []).filter((profile) => !adminUserIds.has(profile.user_id)),
+    );
     const attendanceByUser = new Map((attendance ?? []).map((row) => [row.user_id, row]));
     const merged = employeeProfiles.map((profile) => ({
       ...profile,
@@ -107,7 +109,9 @@ function ReportsPage() {
     ]);
 
     const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
-    const employeeProfiles = (profiles ?? []).filter((profile) => !adminUserIds.has(profile.user_id));
+    const employeeProfiles = sortByEmployeeName(
+      (profiles ?? []).filter((profile) => !adminUserIds.has(profile.user_id)),
+    );
     const attendanceByUser = new Map<string, any[]>();
     (attendance ?? []).forEach((row) => {
       attendanceByUser.set(row.user_id, [...(attendanceByUser.get(row.user_id) ?? []), row]);
@@ -397,6 +401,14 @@ function attendanceLabel(attendance: any) {
   if (attendance.is_early_checkout) return "Early checkout";
   if (attendance.is_late) return "Late";
   return attendance.status.replace("_", " ");
+}
+
+function sortByEmployeeName<T extends { full_name?: string | null }>(rows: T[]) {
+  return [...rows].sort((a, b) =>
+    String(a.full_name || "").localeCompare(String(b.full_name || ""), undefined, {
+      sensitivity: "base",
+    }),
+  );
 }
 
 function AggregateReportTable({

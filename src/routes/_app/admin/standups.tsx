@@ -112,7 +112,10 @@ function AdminStandupsPage() {
           .map((standup) => ({
             ...standup,
             profile: profileByUser.get(standup.user_id),
-          })),
+          }))
+          .sort((a, b) =>
+            employeeName(a).localeCompare(employeeName(b), undefined, { sensitivity: "base" }),
+          ),
       );
       setLoading(false);
     })();
@@ -801,6 +804,10 @@ function makeEmployeeInsight(row: EmployeeSignal) {
 
 function getEmployeeName(row?: StandupRow) {
   return row?.profile?.full_name || "Unknown user";
+}
+
+function employeeName(row: StandupRow) {
+  return row.profile?.full_name || row.profile?.email || "";
 }
 
 function getFirstName(row: StandupRow) {
