@@ -235,135 +235,136 @@ function StandupPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.35fr)_420px]">
-        <GlassCard className="overflow-hidden border-white/10 bg-white/[0.025] p-0">
-          <div className="border-b border-white/10 bg-white/[0.025] px-6 py-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
-                  <ClipboardList size={15} />
-                  Daily execution update
-                </div>
-                <h2 className="text-xl font-bold text-white">Today's standup report</h2>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <div className={`rounded-full border px-3 py-1.5 text-xs font-bold ${isSubmitted ? "border-success/25 bg-success/10 text-success" : "border-warning/25 bg-warning/10 text-warning"}`}>
-                  {isSubmitted ? "Submitted" : "Pending"}
-                </div>
-                <div className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-xs font-medium text-muted-foreground">
-                  {formatNepaliDate(date, "ddd DD, MMMM YYYY")} BS
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-5 p-6">
-            <StandupField
-              icon={CheckCircle2}
-              label="Today I worked on"
-              value={yesterday}
-              onChange={setYesterday}
-              placeholder="Wrapped up auth flow, fixed UI bugs..."
-              rows={4}
-              hint="Mention finished outcomes, shipped work, or measurable progress."
-            />
-            <StandupField
-              icon={Target}
-              label="Tomorrow I plan to work on"
-              value={today}
-              onChange={setToday}
-              placeholder="Build dashboard widgets, review PRs..."
-              rows={4}
-              hint="Write the next clear execution step, not a vague intention."
-            />
-            <StandupField
-              icon={AlertTriangle}
-              label="Blockers"
-              value={blockers}
-              onChange={setBlockers}
-              placeholder="Waiting on design specs..."
-              rows={3}
-              hint="Leave blank if nothing is blocking you. If blocked, include what help is needed."
-            />
-
-            <div className="grid grid-cols-1 gap-4 border-t border-white/10 pt-5 md:grid-cols-[minmax(0,1fr)_220px]">
-              <div>
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Work hours</Label>
-                <div className="mt-2 flex items-center gap-3 rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.055] p-3 shadow-[0_0_24px_rgba(34,211,238,0.08)]">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/10 text-success">
-                    <Clock size={18} />
-                  </div>
-                  <Input type="text" value={formatWorkHours(hours)} readOnly className="border-0 bg-transparent px-0 text-lg font-bold shadow-none focus-visible:ring-0" />
-                </div>
-                <div className="mt-2 text-xs text-muted-foreground">
-                  {hoursSource === "attendance"
-                    ? "Auto calculated from check-in and check-out."
-                    : hoursSource === "standup"
-                      ? "Using previously saved hours. Check out to auto-calculate."
-                      : "Check in and check out to calculate work hours."}
-                </div>
-              </div>
-              <div className="flex items-end">
-                <Button onClick={save} disabled={busy || !hasStandupContent} className="neon-button h-12 w-full rounded-xl text-base disabled:cursor-not-allowed disabled:opacity-45">
-                  <Save size={15} className="mr-2" />
-                  {busy ? "Saving..." : hasStandupContent ? "Save standup" : "Add update first"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </GlassCard>
-
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_520px] xl:items-stretch">
         <div className="space-y-6">
-        <GlassCard className="border-cyan-300/15 bg-white/[0.025]">
-          <div className="mb-5 flex items-center justify-between gap-3">
-            <div>
-              <h3 className="text-lg font-semibold text-white">AI writing helper</h3>
-              <p className="text-xs text-muted-foreground">Limited guidance before you save</p>
-            </div>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-300/10 text-cyan-200">
-              <WandSparkles size={18} />
-            </div>
-          </div>
-          <div className="mb-4 rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.055] p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100/75">Readiness</div>
-                <div className="mt-1 text-2xl font-black text-white">{quality.score}%</div>
+          <GlassCard className="overflow-hidden border-white/10 bg-white/[0.025] p-0">
+            <div className="border-b border-white/10 bg-white/[0.025] px-6 py-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
+                    <ClipboardList size={15} />
+                    Daily execution update
+                  </div>
+                  <h2 className="text-xl font-bold text-white">Today's standup report</h2>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className={`rounded-full border px-3 py-1.5 text-xs font-bold ${isSubmitted ? "border-success/25 bg-success/10 text-success" : "border-warning/25 bg-warning/10 text-warning"}`}>
+                    {isSubmitted ? "Submitted" : "Pending"}
+                  </div>
+                  <div className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                    {formatNepaliDate(date, "ddd DD, MMMM YYYY")} BS
+                  </div>
+                </div>
               </div>
-              <div className="text-right text-xs text-muted-foreground">
-                {quality.label}
-              </div>
             </div>
-            <div className="mt-3 h-2 rounded-full bg-white/10">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-blue-400 to-fuchsia-400"
-                style={{ width: `${quality.score}%` }}
-              />
-            </div>
-          </div>
-          <div className="mb-4 grid grid-cols-2 gap-2">
-            {writingSignals.map((signal) => (
-              <WritingSignal key={signal.label} {...signal} />
-            ))}
-          </div>
-          <div className="space-y-3">
-            {suggestions.map((suggestion) => (
-              <div key={suggestion.title} className={`flex items-start gap-3 rounded-2xl border p-3 text-sm ${suggestion.tone === "good" ? "border-success/20 bg-success/10 text-success" : suggestion.tone === "warn" ? "border-warning/20 bg-warning/10 text-warning" : "border-white/10 bg-black/20 text-slate-300"}`}>
-                {suggestion.tone === "good" ? (
-                  <CheckCircle2 size={15} className="mt-0.5 shrink-0" />
-                ) : (
-                  <Lightbulb size={15} className="mt-0.5 shrink-0" />
-                )}
-                <span>
-                  <span className="block font-semibold text-white">{suggestion.title}</span>
-                  <span className="mt-0.5 block leading-relaxed">{suggestion.text}</span>
-                </span>
-              </div>
-            ))}
-          </div>
-        </GlassCard>
 
-        <GlassCard className="border-white/10 bg-white/[0.025]">
+            <div className="space-y-5 p-6">
+              <StandupField
+                icon={CheckCircle2}
+                label="Today I worked on"
+                value={yesterday}
+                onChange={setYesterday}
+                placeholder="Wrapped up auth flow, fixed UI bugs..."
+                rows={4}
+                hint="Mention finished outcomes, shipped work, or measurable progress."
+              />
+              <StandupField
+                icon={Target}
+                label="Tomorrow I plan to work on"
+                value={today}
+                onChange={setToday}
+                placeholder="Build dashboard widgets, review PRs..."
+                rows={4}
+                hint="Write the next clear execution step, not a vague intention."
+              />
+              <StandupField
+                icon={AlertTriangle}
+                label="Blockers"
+                value={blockers}
+                onChange={setBlockers}
+                placeholder="Waiting on design specs..."
+                rows={3}
+                hint="Leave blank if nothing is blocking you. If blocked, include what help is needed."
+              />
+
+              <div className="grid grid-cols-1 gap-4 border-t border-white/10 pt-5 md:grid-cols-[minmax(0,1fr)_220px]">
+                <div>
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Work hours</Label>
+                  <div className="mt-2 flex items-center gap-3 rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.055] p-3 shadow-[0_0_24px_rgba(34,211,238,0.08)]">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/10 text-success">
+                      <Clock size={18} />
+                    </div>
+                    <Input type="text" value={formatWorkHours(hours)} readOnly className="border-0 bg-transparent px-0 text-lg font-bold shadow-none focus-visible:ring-0" />
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    {hoursSource === "attendance"
+                      ? "Auto calculated from check-in and check-out."
+                      : hoursSource === "standup"
+                        ? "Using previously saved hours. Check out to auto-calculate."
+                        : "Check in and check out to calculate work hours."}
+                  </div>
+                </div>
+                <div className="flex items-end">
+                  <Button onClick={save} disabled={busy || !hasStandupContent} className="neon-button h-12 w-full rounded-xl text-base disabled:cursor-not-allowed disabled:opacity-45">
+                    <Save size={15} className="mr-2" />
+                    {busy ? "Saving..." : hasStandupContent ? "Save standup" : "Add update first"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </GlassCard>
+
+          <GlassCard className="border-cyan-300/15 bg-white/[0.025]">
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold text-white">AI writing helper</h3>
+                <p className="text-xs text-muted-foreground">Limited guidance before you save</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-300/10 text-cyan-200">
+                <WandSparkles size={18} />
+              </div>
+            </div>
+            <div className="mb-4 rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.055] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100/75">Readiness</div>
+                  <div className="mt-1 text-2xl font-black text-white">{quality.score}%</div>
+                </div>
+                <div className="text-right text-xs text-muted-foreground">
+                  {quality.label}
+                </div>
+              </div>
+              <div className="mt-3 h-2 rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-blue-400 to-fuchsia-400"
+                  style={{ width: `${quality.score}%` }}
+                />
+              </div>
+            </div>
+            <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
+              {writingSignals.map((signal) => (
+                <WritingSignal key={signal.label} {...signal} />
+              ))}
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {suggestions.map((suggestion) => (
+                <div key={suggestion.title} className={`flex items-start gap-3 rounded-2xl border p-3 text-sm ${suggestion.tone === "good" ? "border-success/20 bg-success/10 text-success" : suggestion.tone === "warn" ? "border-warning/20 bg-warning/10 text-warning" : "border-white/10 bg-black/20 text-slate-300"}`}>
+                  {suggestion.tone === "good" ? (
+                    <CheckCircle2 size={15} className="mt-0.5 shrink-0" />
+                  ) : (
+                    <Lightbulb size={15} className="mt-0.5 shrink-0" />
+                  )}
+                  <span>
+                    <span className="block font-semibold text-white">{suggestion.title}</span>
+                    <span className="mt-0.5 block leading-relaxed">{suggestion.text}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </GlassCard>
+        </div>
+
+        <GlassCard className="flex min-h-[680px] flex-col border-white/10 bg-white/[0.025] xl:h-full">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
               <h3 className="text-lg font-semibold text-white">Recent standups</h3>
@@ -373,7 +374,7 @@ function StandupPage() {
               <History size={18} />
             </div>
           </div>
-          <ul className="max-h-[520px] overflow-y-auto pr-1 pt-1">
+          <ul className="min-h-0 flex-1 overflow-y-auto pr-1 pt-1">
             {recentStandups.map((h, index) => (
               <li
                 key={h.id}
@@ -406,7 +407,6 @@ function StandupPage() {
             )}
           </ul>
         </GlassCard>
-        </div>
       </div>
     </>
   );
