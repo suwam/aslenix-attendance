@@ -7,6 +7,22 @@ export const REVIEW_SCORE_BY_RATING: Record<ReviewRating, number> = {
   Poor: 2,
 };
 
+export type TaskComplexity = "small" | "medium" | "large" | "epic";
+
+export const TASK_COMPLEXITY_POINTS: Record<TaskComplexity, number> = {
+  small: 2,
+  medium: 5,
+  large: 13,
+  epic: 34,
+};
+
+export const TASK_COMPLEXITY_LABELS: Record<TaskComplexity, string> = {
+  small: "Small",
+  medium: "Medium",
+  large: "Large",
+  epic: "Epic",
+};
+
 type ReviewLike = {
   rating?: string | null;
   review_score?: number | null;
@@ -15,6 +31,7 @@ type ReviewLike = {
 type TaskProgressLike = {
   progress?: number | null;
   status?: string | null;
+  task_complexity?: string | null;
 };
 
 export function reviewScoreFromRating(rating?: string | null) {
@@ -34,6 +51,15 @@ export function calculateReviewAverage(reviews: ReviewLike[]) {
 
 export function calculateTaskProgressMetrics(tasks: TaskProgressLike[]) {
   const totalTasks = tasks.length;
+  const totalEffortPoints = tasks.reduce((sum, task) => sum + effortPointsForTask(task), 0);
+  const completedEffortPoints = tasks
+    .filter((task) => task.status === "completed" || Number(task.progress || 0) >= 100)
+    .reduce((sum, task) => sum + effortPointsForTask(task), 0);
+  const earnedEffortPoints = tasks.reduce(
+    (sum, task) =>
+      sum + effortPointsForTask(task) * (Math.min(100, Math.max(0, Number(task.progress || 0))) / 100),
+    0,
+  );
   const totalTaskProgress = tasks.reduce(
     (sum, task) => sum + Math.min(100, Math.max(0, Number(task.progress || 0))),
     0,
@@ -46,6 +72,12 @@ export function calculateTaskProgressMetrics(tasks: TaskProgressLike[]) {
     (task) => task.status !== "completed" && Number(task.progress || 0) < 100,
   ).length;
   const completionTrend = totalTasks ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const effortProgress = totalEffortPoints
+    ? Number(((earnedEffortPoints / totalEffortPoints) * 100).toFixed(1))
+    : 0;
+  const effortCompletion = totalEffortPoints
+    ? Number(((completedEffortPoints / totalEffortPoints) * 100).toFixed(1))
+    : 0;
 
   return {
     totalTasks,
@@ -53,9 +85,26 @@ export function calculateTaskProgressMetrics(tasks: TaskProgressLike[]) {
     completedTasks,
     totalTaskProgress,
     averageProgress,
-    productivityContribution: averageProgress,
+    totalEffortPoints,
+    earnedEffortPoints: Number(earnedEffortPoints.toFixed(1)),
+    completedEffortPoints,
+    effortProgress,
+    effortCompletion,
+    productivityContribution: effortProgress,
     completionTrend,
   };
+}
+
+export function normalizedTaskComplexity(value?: string | null): TaskComplexity {
+  const normalized = String(value || "").toLowerCase();
+  if (normalized === "small" || normalized === "medium" || normalized === "large" || normalized === "epic") {
+    return normalized;
+  }
+  return "medium";
+}
+
+export function effortPointsForTask(task: TaskProgressLike) {
+  return TASK_COMPLEXITY_POINTS[normalizedTaskComplexity(task.task_complexity)];
 }
 
 export function calculateOverduePenalty(overdueTasks: number) {
@@ -81,10 +130,10 @@ export function calculateFinalEmployeeScore({
   const hasCompletedTaskContribution = typeof completedTaskContribution === "number";
   const score = hasCompletedTaskContribution
     ? taskProgressContribution * 0.35 +
-      Math.min(100, Math.max(0, completedTaskContribution)) * 0.15 +
+      Math.min(100, Math.max(0, completedTaskContribution)) * 0.12 +
       attendance * 0.22 +
       normalizedReviewScore * 0.2 +
-      achievementBonus * 0.08 -
+      achievementBonus * 0.11 -
       overduePenalty
     : taskProgressContribution * 0.4 +
       attendance * 0.25 +

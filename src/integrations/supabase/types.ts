@@ -651,6 +651,7 @@ export type Database = {
           progress: number;
           status: Database["public"]["Enums"]["task_status"];
           tags: string[] | null;
+          task_complexity: Database["public"]["Enums"]["task_complexity"];
           title: string;
           updated_at: string;
         };
@@ -666,6 +667,7 @@ export type Database = {
           progress?: number;
           status?: Database["public"]["Enums"]["task_status"];
           tags?: string[] | null;
+          task_complexity?: Database["public"]["Enums"]["task_complexity"];
           title: string;
           updated_at?: string;
         };
@@ -681,6 +683,7 @@ export type Database = {
           progress?: number;
           status?: Database["public"]["Enums"]["task_status"];
           tags?: string[] | null;
+          task_complexity?: Database["public"]["Enums"]["task_complexity"];
           title?: string;
           updated_at?: string;
         };
@@ -847,6 +850,7 @@ export type Database = {
       leave_status: "pending" | "approved" | "rejected" | "cancelled";
       leave_type: "sick" | "casual" | "vacation" | "emergency" | "wfh";
       qr_status: "active" | "inactive" | "revoked";
+      task_complexity: "small" | "medium" | "large" | "epic";
       task_priority: "low" | "medium" | "high" | "urgent";
       task_status: "todo" | "in_progress" | "review" | "completed";
     };
@@ -980,6 +984,7 @@ export const Constants = {
       leave_status: ["pending", "approved", "rejected", "cancelled"],
       leave_type: ["sick", "casual", "vacation", "emergency", "wfh"],
       qr_status: ["active", "inactive", "revoked"],
+      task_complexity: ["small", "medium", "large", "epic"],
       task_priority: ["low", "medium", "high", "urgent"],
       task_status: ["todo", "in_progress", "review", "completed"],
     },

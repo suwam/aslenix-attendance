@@ -25,6 +25,11 @@ import {
   type TaskPriority,
   type WorkflowTransition,
 } from "@/lib/tasks-utils";
+import {
+  TASK_COMPLEXITY_LABELS,
+  TASK_COMPLEXITY_POINTS,
+  type TaskComplexity,
+} from "@/lib/employee-scoring";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
 import { Check, Download, Pencil, Paperclip, Send, Trash2, TrendingUp, X } from "lucide-react";
 import { format } from "date-fns";
@@ -63,6 +68,7 @@ export function TaskDialog({
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<TaskStatus>(defaultStatus || "todo");
   const [priority, setPriority] = useState<TaskPriority>("medium");
+  const [taskComplexity, setTaskComplexity] = useState<TaskComplexity>("medium");
   const [progress, setProgress] = useState(0);
   const [initialProgress, setInitialProgress] = useState(0);
   const [progressNote, setProgressNote] = useState("");
@@ -86,6 +92,7 @@ export function TaskDialog({
     setTitle("");
     setDescription("");
     setPriority("medium");
+    setTaskComplexity("medium");
     setProgress(0);
     setInitialProgress(0);
     setProgressNote("");
@@ -127,6 +134,7 @@ export function TaskDialog({
       setDescription(t.description || "");
       setStatus(t.status);
       setPriority(t.priority);
+      setTaskComplexity((t.task_complexity || "medium") as TaskComplexity);
       setProgress(t.progress);
       setInitialProgress(t.progress);
       setProgressNote("");
@@ -258,6 +266,7 @@ export function TaskDialog({
       description: description || null,
       status: nextStatus,
       priority,
+      task_complexity: taskComplexity,
       progress: nextProgress,
       deadline: deadlineIso,
       assigned_to: selectedAssignees[0],
@@ -569,7 +578,7 @@ export function TaskDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
               <Label>Status</Label>
               <Select
@@ -584,6 +593,25 @@ export function TaskDialog({
                   {TASK_STATUSES.map((s) => (
                     <SelectItem key={s} value={s}>
                       {STATUS_LABELS[s]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Complexity</Label>
+              <Select
+                value={taskComplexity}
+                onValueChange={(v) => setTaskComplexity(v as TaskComplexity)}
+                disabled={!canEditTaskFields}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(TASK_COMPLEXITY_LABELS) as TaskComplexity[]).map((complexity) => (
+                    <SelectItem key={complexity} value={complexity}>
+                      {TASK_COMPLEXITY_LABELS[complexity]} · {TASK_COMPLEXITY_POINTS[complexity]} pts
                     </SelectItem>
                   ))}
                 </SelectContent>

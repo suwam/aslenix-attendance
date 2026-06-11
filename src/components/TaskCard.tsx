@@ -8,6 +8,12 @@ import {
   type TaskPriority,
   type TaskStatus,
 } from "@/lib/tasks-utils";
+import {
+  TASK_COMPLEXITY_LABELS,
+  TASK_COMPLEXITY_POINTS,
+  normalizedTaskComplexity,
+  type TaskComplexity,
+} from "@/lib/employee-scoring";
 import { formatNepaliDate } from "@/lib/nepali-calendar";
 
 export interface TaskCardData {
@@ -16,6 +22,7 @@ export interface TaskCardData {
   description: string | null;
   status: TaskStatus;
   priority: TaskPriority;
+  task_complexity?: TaskComplexity | null;
   progress: number;
   deadline: string | null;
   assigned_to: string;
@@ -38,6 +45,7 @@ export function TaskCard({
   autoMoved?: boolean;
 }) {
   const overdue = task.deadline && isPast(new Date(task.deadline)) && task.status !== "completed";
+  const complexity = normalizedTaskComplexity(task.task_complexity);
   const dueCountdown = task.deadline ? getDueCountdown(task.deadline, task.status) : null;
   const assigneeNames = task.assignee_names?.length
     ? task.assignee_names
@@ -77,11 +85,14 @@ export function TaskCard({
           </span>
         </div>
 
-        <div className="mb-2">
+        <div className="mb-2 flex flex-wrap gap-1.5">
           <span
             className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${STATUS_BADGE_CLASSES[task.status]}`}
           >
             {STATUS_LABELS[task.status]}
+          </span>
+          <span className="inline-flex items-center rounded-full border border-cyan-300/25 bg-cyan-400/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-cyan-100">
+            {TASK_COMPLEXITY_LABELS[complexity]} · {TASK_COMPLEXITY_POINTS[complexity]} pts
           </span>
         </div>
 

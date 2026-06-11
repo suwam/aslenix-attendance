@@ -72,6 +72,10 @@ import {
   calculateTaskProgressMetrics,
   ratingLabelFromAverage,
   resolvedReviewScore,
+  TASK_COMPLEXITY_LABELS,
+  TASK_COMPLEXITY_POINTS,
+  normalizedTaskComplexity,
+  type TaskComplexity,
 } from "@/lib/employee-scoring";
 import { eomEligibilityLabel, isEomEligible } from "@/lib/eom-eligibility";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
@@ -91,6 +95,14 @@ type EmployeeRank = {
   taskProgress: number;
   totalTaskProgress: number;
   productivityContribution: number;
+  effortPoints: number;
+  earnedEffortPoints: number;
+  completedEffortPoints: number;
+  effortProgress: number;
+  effortCompletion: number;
+  normalizedPerformanceScore: number;
+  departmentRank: number;
+  complexityBreakdown: Record<TaskComplexity, number>;
   activeTasks: number;
   completionTrend: number;
   completedTaskContribution: number;
@@ -143,6 +155,9 @@ type WeeklyReview = {
 };
 
 const chartColors = ["#21d4fd", "#8b5cf6", "#ff2d6f", "#f6c453", "#22c55e"];
+const EOM_DEPARTMENTS = ["Development", "UI/UX", "Marketing", "HR", "QA"] as const;
+const DEPARTMENT_FILTERS = ["All Departments", ...EOM_DEPARTMENTS] as const;
+type DepartmentFilter = (typeof DEPARTMENT_FILTERS)[number];
 
 function isDateInRange(value: string | null | undefined, startIso: string, endIso: string) {
   if (!value) return false;
@@ -187,6 +202,7 @@ function EmployeeOfMonthPage() {
   const [feedback, setFeedback] = useState("");
   const [notes, setNotes] = useState("");
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState<DepartmentFilter>("All Departments");
   const [officialAward, setOfficialAward] = useState<any>(null);
   const [savingAward, setSavingAward] = useState(false);
   const [resettingAward, setResettingAward] = useState(false);
@@ -258,13 +274,18 @@ function EmployeeOfMonthPage() {
             isTaskRelevantForMonth(task, monthStartIso, monthEndIso),
           );
           const taskMetrics = calculateTaskProgressMetrics(monthRelevantTasks);
-          const completedTasks = assignedTasks.filter(
+          const completedMonthTasks = assignedTasks.filter(
             (task: any) =>
               (task.status === "completed" || Number(task.progress || 0) >= 100) &&
               isDateInRange(task.completed_at || task.updated_at, monthStartIso, monthEndIso),
-          ).length;
-          const completedTaskContribution = monthRelevantTasks.length
-            ? Math.round((completedTasks / monthRelevantTasks.length) * 100)
+          );
+          const completedTasks = completedMonthTasks.length;
+          const completedMonthEffortPoints = completedMonthTasks.reduce(
+            (sum: number, task: any) => sum + TASK_COMPLEXITY_POINTS[normalizedTaskComplexity(task.task_complexity)],
+            0,
+          );
+          const completedTaskContribution = taskMetrics.totalEffortPoints
+            ? Math.round((completedMonthEffortPoints / taskMetrics.totalEffortPoints) * 100)
             : 0;
           const overdueTasks = assignedTasks.filter(
             (task: any) =>
@@ -294,13 +315,21 @@ function EmployeeOfMonthPage() {
             : 0;
           const streak = countRecentStreak(new Set(employeeAttendance.map((row) => row.date)), 30);
           const badges = [
-            taskMetrics.averageProgress >= 10 ? "Progress Starter" : null,
-            taskMetrics.averageProgress >= 50 ? "Momentum Builder" : null,
+            taskMetrics.effortProgress >= 10 ? "Progress Starter" : null,
+            taskMetrics.effortProgress >= 50 ? "Momentum Builder" : null,
             attendancePct >= 90 ? "Attendance Pro" : null,
             overdueTasks === 0 && monthRelevantTasks.length > 0 ? "No Overdue" : null,
             streak >= 7 ? "7 Day Streak" : null,
-            taskMetrics.averageProgress >= 95 ? "Diamond Focus" : null,
+            taskMetrics.effortProgress >= 95 ? "Diamond Focus" : null,
           ].filter(Boolean) as string[];
+          const complexityBreakdown = monthRelevantTasks.reduce(
+            (breakdown: Record<TaskComplexity, number>, task: any) => {
+              const complexity = normalizedTaskComplexity(task.task_complexity);
+              breakdown[complexity] += 1;
+              return breakdown;
+            },
+            { small: 0, medium: 0, large: 0, epic: 0 },
+          );
           const reviews = feedbackRows.filter(
             (item) =>
               item.employee_id === profile.user_id &&
@@ -340,9 +369,17 @@ function EmployeeOfMonthPage() {
             position: profile.position || "Employee",
             isEomEligible: true,
             avatarUrl: profile.avatar_url,
-            taskProgress: taskMetrics.averageProgress,
+            taskProgress: taskMetrics.effortProgress,
             totalTaskProgress: taskMetrics.totalTaskProgress,
             productivityContribution: taskMetrics.productivityContribution,
+            effortPoints: taskMetrics.totalEffortPoints,
+            earnedEffortPoints: taskMetrics.earnedEffortPoints,
+            completedEffortPoints: completedMonthEffortPoints || taskMetrics.completedEffortPoints,
+            effortProgress: taskMetrics.effortProgress,
+            effortCompletion: taskMetrics.effortCompletion,
+            normalizedPerformanceScore: score,
+            departmentRank: 0,
+            complexityBreakdown,
             activeTasks: taskMetrics.activeTasks,
             completionTrend: taskMetrics.completionTrend,
             completedTaskContribution,
@@ -367,11 +404,26 @@ function EmployeeOfMonthPage() {
         .sort(
           (a, b) =>
             b.score - a.score ||
-            b.completedTaskContribution - a.completedTaskContribution ||
-            b.taskProgress - a.taskProgress ||
+            b.normalizedPerformanceScore - a.normalizedPerformanceScore ||
+            b.earnedEffortPoints - a.earnedEffortPoints ||
             b.attendancePct - a.attendancePct,
-        )
-        .slice(0, 8);
+        );
+
+      const departmentRanks = new Map<string, number>();
+      EOM_DEPARTMENTS.forEach((department) => {
+        ranked
+          .filter((row) => row.department === department)
+          .sort(
+            (a, b) =>
+              b.normalizedPerformanceScore - a.normalizedPerformanceScore ||
+              b.earnedEffortPoints - a.earnedEffortPoints ||
+              b.attendancePct - a.attendancePct,
+          )
+          .forEach((row, index) => departmentRanks.set(row.userId, index + 1));
+      });
+      ranked.forEach((row, index) => {
+        row.departmentRank = departmentRanks.get(row.userId) || index + 1;
+      });
 
       const weeklyRows = Array.from({ length: 4 }).map((_, index) => {
         const base = ranked[0]?.score || 0;
@@ -379,8 +431,8 @@ function EmployeeOfMonthPage() {
           week: `W${index + 1}`,
           productivity: Math.max(8, Math.min(100, base - (3 - index) * 7 + index * 3)),
           attendance: Math.max(8, Math.min(100, (ranked[0]?.attendancePct || 0) - (3 - index) * 4)),
-          taskProgress: Math.max(0, Math.round((ranked[0]?.taskProgress || 0) * ((index + 1) / 4))),
-          tasksCompleted: Math.max(0, Math.round((ranked[0]?.completedTasks || 0) * ((index + 1) / 4))),
+          taskProgress: Math.max(0, Math.round((ranked[0]?.effortProgress || 0) * ((index + 1) / 4))),
+          tasksCompleted: Math.max(0, Math.round((ranked[0]?.completedEffortPoints || 0) * ((index + 1) / 4))),
         };
       });
 
@@ -433,19 +485,28 @@ function EmployeeOfMonthPage() {
     };
   }, [loadEomData, refreshEomData]);
 
-  const winner = rows[0];
+  const filteredRows = useMemo(
+    () =>
+      departmentFilter === "All Departments"
+        ? rows
+        : rows.filter((row) => row.department === departmentFilter),
+    [departmentFilter, rows],
+  );
+  const visibleRows = filteredRows.slice(0, 10);
+  const winner = visibleRows[0] || rows[0];
   const selectedEmployee = rows.find((row) => row.userId === selectedEmployeeId) || winner;
   const totals = useMemo(
     () => ({
-      taskProgress: Math.round(rows.reduce((sum, row) => sum + row.taskProgress, 0) / Math.max(1, rows.length)),
-      completedTasks: rows.reduce((sum, row) => sum + row.completedTasks, 0),
-      activeTasks: rows.reduce((sum, row) => sum + row.activeTasks, 0),
-      attendance: Math.round(rows.reduce((sum, row) => sum + row.attendancePct, 0) / Math.max(1, rows.length)),
-      streak: Math.max(0, ...rows.map((row) => row.streak)),
-      overdue: rows.reduce((sum, row) => sum + row.overdueTasks, 0),
-      score: Math.round(rows.reduce((sum, row) => sum + row.score, 0) / Math.max(1, rows.length)),
+      taskProgress: Math.round(visibleRows.reduce((sum, row) => sum + row.taskProgress, 0) / Math.max(1, visibleRows.length)),
+      effortPoints: Number(visibleRows.reduce((sum, row) => sum + row.earnedEffortPoints, 0).toFixed(1)),
+      completedTasks: visibleRows.reduce((sum, row) => sum + row.completedTasks, 0),
+      activeTasks: visibleRows.reduce((sum, row) => sum + row.activeTasks, 0),
+      attendance: Math.round(visibleRows.reduce((sum, row) => sum + row.attendancePct, 0) / Math.max(1, visibleRows.length)),
+      streak: Math.max(0, ...visibleRows.map((row) => row.streak)),
+      overdue: visibleRows.reduce((sum, row) => sum + row.overdueTasks, 0),
+      score: Math.round(visibleRows.reduce((sum, row) => sum + row.score, 0) / Math.max(1, visibleRows.length)),
     }),
-    [rows],
+    [visibleRows],
   );
 
   const submitFeedback = async () => {
@@ -521,7 +582,7 @@ function EmployeeOfMonthPage() {
     <>
       <PageHeader
         title="Employee of the Month"
-        subtitle="Premium monthly performance, recognition, and achievement analytics"
+        subtitle="Fair monthly scoring by department, task effort, attendance, HR reviews, and normalized performance"
       />
 
       {!winner ? (
@@ -531,23 +592,29 @@ function EmployeeOfMonthPage() {
       ) : (
         <div className="eom-page space-y-6">
           <section className="grid grid-cols-1 gap-4 md:grid-cols-6">
-            <StatTile label="Task progress" value={`${totals.taskProgress}%`} icon={CheckCircle2} />
-            <StatTile label="Completed tasks" value={totals.completedTasks} icon={BadgeCheck} />
+            <StatTile label="Effort progress" value={`${totals.taskProgress}%`} icon={CheckCircle2} />
+            <StatTile label="Effort points" value={totals.effortPoints} icon={BadgeCheck} />
             <StatTile label="Active tasks" value={totals.activeTasks} icon={Target} />
             <StatTile label="Attendance" value={`${totals.attendance}%`} icon={BadgeCheck} />
             <StatTile label="HR reviews" value={rows.reduce((sum, row) => sum + row.reviewCount, 0)} icon={MessageSquare} />
-            <StatTile label="Avg score" value={totals.score} icon={Zap} />
+            <StatTile label="Normalized score" value={totals.score} icon={Zap} />
           </section>
+
+          <DepartmentFilterBar
+            value={departmentFilter}
+            onValueChange={setDepartmentFilter}
+            rows={rows}
+          />
 
           <EligibilitySummary eligibleCount={rows.length} excludedRows={excludedRows} />
 
           <section className="eom-top-row grid grid-cols-1 items-stretch gap-6 xl:grid-cols-[1.15fr_.85fr]">
-            <TopContenders rows={rows} />
-            <Leaderboard rows={rows} />
+            <TopContenders rows={visibleRows} />
+            <Leaderboard rows={visibleRows} departmentFilter={departmentFilter} />
           </section>
 
           <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-            <AnalyticsPanel weekly={weekly} rows={rows} />
+            <AnalyticsPanel weekly={weekly} rows={visibleRows} />
             <FeedbackPanel
               rows={rows}
               selectedEmployeeId={selectedEmployeeId}
@@ -601,7 +668,7 @@ function TopContenders({ rows }: { rows: EmployeeRank[] }) {
           </div>
           <h2 className="text-3xl font-bold md:text-4xl">Employee of the Month race</h2>
           <p className="mt-1 text-sm text-white/65">
-            Live ranking from task progression, attendance, HR reviews, bonuses, and overdue penalties.
+            Live ranking from effort-weighted task progress, attendance, HR reviews, bonuses, and overdue penalties.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -701,12 +768,12 @@ function ContenderCard({
       </div>
 
       <div className="eom-contender-metrics-grid mt-5 grid gap-3">
-        <ContenderMetric label="Task progress" value={`${employee.taskProgress}%`} icon={CheckCircle2} />
+        <ContenderMetric label="Effort progress" value={`${employee.effortProgress}%`} icon={CheckCircle2} />
         <ContenderMetric label="Attendance" value={`${employee.attendancePct}%`} icon={BadgeCheck} />
-        <ContenderMetric label="Completed tasks" value={employee.completedTasks} icon={BadgeCheck} />
+        <ContenderMetric label="Effort points" value={`${employee.earnedEffortPoints}/${employee.effortPoints}`} icon={BadgeCheck} />
         <ContenderMetric label="Active tasks" value={employee.activeTasks} icon={Target} />
         <ContenderMetric label="HR review" value={`${employee.reviewAverage}/10`} icon={MessageSquare} />
-        <ContenderMetric label="Daily improvement" value={`${employee.dailyImprovement}%`} icon={TrendingUp} />
+        <ContenderMetric label="Normalized score" value={employee.normalizedPerformanceScore} icon={TrendingUp} />
         <ContenderMetric
           label="Weekly trend"
           value={<span className="inline-flex items-center gap-1"><TrendIcon trend={employee.reviewTrend} />{contenderTrendLabel(employee.reviewTrend)}</span>}
@@ -715,9 +782,9 @@ function ContenderCard({
       </div>
 
       <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
-        <AnalyticsBar label="Task progression" value={employee.taskProgress} />
-        <AnalyticsBar label="Completed tasks" value={employee.completedTaskContribution} />
-        <AnalyticsBar label="Productivity" value={employee.productivityContribution} />
+        <AnalyticsBar label="Effort progression" value={employee.effortProgress} />
+        <AnalyticsBar label="Completed effort" value={employee.completedTaskContribution} />
+        <AnalyticsBar label="Normalized performance" value={employee.normalizedPerformanceScore} />
         <AnalyticsBar label="Attendance" value={employee.attendancePct} />
         <AnalyticsBar label="HR review score" value={employee.reviewAverage * 10} />
       </div>
@@ -749,16 +816,72 @@ function contenderTrendLabel(trend: EmployeeRank["reviewTrend"]) {
   return "Stable";
 }
 
-function Leaderboard({ rows }: { rows: EmployeeRank[] }) {
+function DepartmentFilterBar({
+  value,
+  onValueChange,
+  rows,
+}: {
+  value: DepartmentFilter;
+  onValueChange: (value: DepartmentFilter) => void;
+  rows: EmployeeRank[];
+}) {
+  return (
+    <GlassCard className="eom-department-filter">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h3 className="flex items-center gap-2 font-semibold">
+            <BarChart3 size={16} className="text-primary" />
+            Department leaderboards
+          </h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Compare employees inside their role area before choosing an overall winner.
+          </p>
+        </div>
+        <Select value={value} onValueChange={(next) => onValueChange(next as DepartmentFilter)}>
+          <SelectTrigger className="w-full lg:w-60">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {DEPARTMENT_FILTERS.map((department) => (
+              <SelectItem key={department} value={department}>
+                {department}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-5">
+        {EOM_DEPARTMENTS.map((department) => {
+          const departmentRows = rows.filter((row) => row.department === department);
+          const leader = departmentRows.find((row) => row.departmentRank === 1);
+          return (
+            <ReviewSummaryTile
+              key={department}
+              label={department}
+              value={leader ? `#1 ${leader.name.split(" ")[0]} · ${leader.normalizedPerformanceScore}` : "No ranking"}
+            />
+          );
+        })}
+      </div>
+    </GlassCard>
+  );
+}
+
+function Leaderboard({ rows, departmentFilter }: { rows: EmployeeRank[]; departmentFilter: DepartmentFilter }) {
   return (
     <GlassCard className="eom-leaderboard overflow-hidden p-0">
       <div className="border-b border-border px-5 py-4">
         <h3 className="flex items-center gap-2 font-semibold">
           <Trophy size={17} className="text-primary" />
-          Top employee leaderboard
+          {departmentFilter === "All Departments" ? "Overall leaderboard" : `${departmentFilter} leaderboard`}
         </h3>
       </div>
       <div className="eom-leaderboard-list divide-y divide-border/50">
+        {!rows.length && (
+          <div className="p-6 text-sm text-muted-foreground">
+            No EOM-eligible employees found for this department.
+          </div>
+        )}
         {rows.map((row, index) => (
           <div key={row.userId} className="eom-rank-row">
             <div className={`eom-rank-number ${index === 0 ? "eom-rank-first" : ""}`}>
@@ -771,13 +894,17 @@ function Leaderboard({ rows }: { rows: EmployeeRank[] }) {
                 <span className="rounded-full bg-white/6 px-2 py-0.5 text-[10px] text-white/70">
                   {row.level}
                 </span>
+                <span className="rounded-full bg-cyan-400/10 px-2 py-0.5 text-[10px] text-cyan-100">
+                  Dept #{row.departmentRank}
+                </span>
                 <EligibilityBadge eligible={row.isEomEligible} />
               </div>
               <div className="mt-1 text-xs text-muted-foreground">{row.department} · {row.position}</div>
               <div className="eom-leader-metrics mt-3 grid gap-3">
-                <MiniBar label="Task progress" value={row.taskProgress} detail={`${row.taskProgress}%`} />
-                <MiniBar label="Completed tasks" value={row.completedTaskContribution} detail={`${row.completedTasks}`} />
-                <MiniBar label="Productivity" value={row.productivityContribution} detail={`${row.productivityContribution}%`} />
+                <MiniBar label="Effort progress" value={row.effortProgress} detail={`${row.effortProgress}%`} />
+                <MiniBar label="Effort points" value={Math.min(100, row.earnedEffortPoints)} detail={`${row.earnedEffortPoints}/${row.effortPoints}`} />
+                <MiniBar label="Completed effort" value={row.completedTaskContribution} detail={`${row.completedEffortPoints} pts`} />
+                <MiniBar label="Normalized" value={row.normalizedPerformanceScore} detail={`${row.normalizedPerformanceScore}/100`} />
                 <MiniBar label="Active tasks" value={Math.min(100, row.activeTasks * 10)} detail={`${row.activeTasks}`} />
                 <MiniBar label="Attendance" value={row.attendancePct} detail={`${row.attendancePct}%`} />
                 <MiniBar label="HR avg" value={row.reviewAverage * 10} detail={row.reviewAverage ? `${row.reviewAverage}/10` : "0"} />
@@ -787,7 +914,7 @@ function Leaderboard({ rows }: { rows: EmployeeRank[] }) {
                   {ratingLabelFromAverage(row.reviewAverage)} · {row.reviewCount} reviews
                 </span>
                 <span className="eom-review-pill">
-                  Completed {row.completedTaskContribution}% · +{row.dailyImprovement}%/day
+                  {complexitySummary(row.complexityBreakdown)} · +{row.dailyImprovement}%/day
                 </span>
                 {row.overduePenalty > 0 && (
                   <span className="eom-review-pill">
@@ -901,7 +1028,7 @@ function AnalyticsPanel({ weekly, rows }: { weekly: any[]; rows: EmployeeRank[] 
         <div className="eom-productivity-header">
           <h3 className="flex items-center gap-2 font-semibold">
             <BarChart3 size={16} className="text-primary" />
-            Productivity graph
+            Effort productivity graph
           </h3>
           <div className="eom-productivity-average">
             <span>Monthly avg</span>
@@ -1028,7 +1155,7 @@ function AnalyticsPanel({ weekly, rows }: { weekly: any[]; rows: EmployeeRank[] 
               <div key={row.userId} className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
                 <div className="text-sm font-semibold">{row.name}</div>
                 <div className="mt-1 text-xs text-muted-foreground">{row.department}</div>
-                <AnalyticsBar label="Task progress" value={row.taskProgress} />
+                <AnalyticsBar label="Effort progress" value={row.effortProgress} />
               </div>
             ))}
           </div>
@@ -1046,11 +1173,11 @@ function EomProductivityTooltip({ active, payload }: any) {
     <div className="eom-productivity-tooltip">
       <div className="eom-productivity-tooltip-week">{row.week}</div>
       <div className="eom-productivity-tooltip-row">
-        <span>Productivity Score</span>
+        <span>Normalized Score</span>
         <b>{Math.round(row.productivity || 0)}</b>
       </div>
       <div className="eom-productivity-tooltip-row">
-        <span>Tasks Completed</span>
+        <span>Effort Completed</span>
         <b>{row.tasksCompleted || 0}</b>
       </div>
       <div className="eom-productivity-tooltip-row">
@@ -1109,7 +1236,7 @@ function makeEomProductivityInsight({
     return `${firstName} is performing at an excellent level with strong monthly productivity and ${targetWeeks} target week${targetWeeks === 1 ? "" : "s"}. Keep assigning high-impact tasks.`;
   }
   if (growthPct >= 15) {
-    return `${firstName} shows strong upward momentum with ${growthPct}% growth. Strength is consistency, while the next focus is sustaining task progress above ${Math.max(80, Math.round(taskProgress))}%.`;
+    return `${firstName} shows strong upward momentum with ${growthPct}% growth. Strength is consistency, while the next focus is sustaining effort progress above ${Math.max(80, Math.round(taskProgress))}%.`;
   }
   if (attendance < 75) {
     return `${firstName}'s productivity is being limited by attendance consistency. Improving attendance should lift monthly performance quickly.`;
@@ -1146,7 +1273,7 @@ function EomAttendanceTooltip({ active, payload, target }: any) {
         <b>{target}%</b>
       </div>
       <div className="eom-attendance-tooltip-row">
-        <span>Task Progress</span>
+        <span>Effort Progress</span>
         <b>{Math.round(Number(row.taskProgress || 0))}%</b>
       </div>
       <div className={`eom-attendance-tooltip-status ${attendance >= target ? "met" : ""}`}>
@@ -1486,7 +1613,7 @@ function BadgeSection({ winner }: { winner: EmployeeRank }) {
   const badgeRows = [
     { title: "Productivity Hero", icon: Trophy, progress: winner.score, unlocked: winner.score >= 80 },
     { title: "Elite Performer", icon: Crown, progress: winner.score, unlocked: winner.score >= 95 },
-    { title: "Progress Champion", icon: Award, progress: winner.taskProgress, unlocked: winner.taskProgress >= 80 },
+    { title: "Effort Champion", icon: Award, progress: winner.effortProgress, unlocked: winner.effortProgress >= 80 },
     { title: "Attendance Pro", icon: ShieldCheck, progress: winner.attendancePct, unlocked: winner.attendancePct >= 90 },
     { title: "Streak Master", icon: Flame, progress: Math.min(100, (winner.streak / 30) * 100), unlocked: winner.streak >= 30 },
     { title: "Diamond Legend", icon: Gem, progress: Math.min(100, winner.score), unlocked: winner.score >= 98 },
@@ -1637,6 +1764,13 @@ function trendLabel(trend: EmployeeRank["reviewTrend"]) {
   if (trend === "down") return "Needs focus";
   if (trend === "new") return "New";
   return "Steady";
+}
+
+function complexitySummary(breakdown: Record<TaskComplexity, number>) {
+  const parts = (Object.keys(TASK_COMPLEXITY_LABELS) as TaskComplexity[])
+    .filter((complexity) => breakdown[complexity] > 0)
+    .map((complexity) => `${TASK_COMPLEXITY_LABELS[complexity][0]}:${breakdown[complexity]}`);
+  return parts.length ? parts.join(" ") : "No effort mix";
 }
 
 function isMissingReviewScoreError(error: { message?: string; details?: string; code?: string }) {
