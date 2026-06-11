@@ -136,6 +136,10 @@ function StandupPage() {
     () => getAiSuggestions(yesterday, today, blockers, hoursSource, isSubmitted),
     [yesterday, today, blockers, hoursSource, isSubmitted],
   );
+  const writingSignals = useMemo(
+    () => getWritingSignals(yesterday, today, blockers, hoursSource),
+    [yesterday, today, blockers, hoursSource],
+  );
 
   return (
     <>
@@ -307,17 +311,46 @@ function StandupPage() {
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
               <h3 className="text-lg font-semibold text-white">AI writing helper</h3>
-              <p className="text-xs text-muted-foreground">Quick guidance before you save</p>
+              <p className="text-xs text-muted-foreground">Limited guidance before you save</p>
             </div>
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-300/10 text-cyan-200">
               <WandSparkles size={18} />
             </div>
           </div>
+          <div className="mb-4 rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.055] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100/75">Readiness</div>
+                <div className="mt-1 text-2xl font-black text-white">{quality.score}%</div>
+              </div>
+              <div className="text-right text-xs text-muted-foreground">
+                {quality.label}
+              </div>
+            </div>
+            <div className="mt-3 h-2 rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-blue-400 to-fuchsia-400"
+                style={{ width: `${quality.score}%` }}
+              />
+            </div>
+          </div>
+          <div className="mb-4 grid grid-cols-2 gap-2">
+            {writingSignals.map((signal) => (
+              <WritingSignal key={signal.label} {...signal} />
+            ))}
+          </div>
           <div className="space-y-3">
             {suggestions.map((suggestion) => (
-              <div key={suggestion} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-black/20 p-3 text-sm text-slate-300">
-                <Lightbulb size={15} className="mt-0.5 shrink-0 text-amber-200" />
-                <span>{suggestion}</span>
+              <div key={suggestion.title} className={`flex items-start gap-3 rounded-2xl border p-3 text-sm ${suggestion.tone === "good" ? "border-success/20 bg-success/10 text-success" : suggestion.tone === "warn" ? "border-warning/20 bg-warning/10 text-warning" : "border-white/10 bg-black/20 text-slate-300"}`}>
+                {suggestion.tone === "good" ? (
+                  <CheckCircle2 size={15} className="mt-0.5 shrink-0" />
+                ) : (
+                  <Lightbulb size={15} className="mt-0.5 shrink-0" />
+                )}
+                <span>
+                  <span className="block font-semibold text-white">{suggestion.title}</span>
+                  <span className="mt-0.5 block leading-relaxed">{suggestion.text}</span>
+                </span>
               </div>
             ))}
           </div>
@@ -442,6 +475,26 @@ function HistorySignal({ label, active, warning = false }: { label: string; acti
   );
 }
 
+function WritingSignal({
+  label,
+  value,
+  active,
+}: {
+  label: string;
+  value: string;
+  active: boolean;
+}) {
+  return (
+    <div className={`rounded-2xl border p-3 ${active ? "border-cyan-300/20 bg-cyan-300/10" : "border-white/10 bg-black/20"}`}>
+      <div className="flex items-center gap-2">
+        <span className={`h-2 w-2 rounded-full ${active ? "bg-success" : "bg-warning"}`} />
+        <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</span>
+      </div>
+      <div className="mt-1 text-sm font-bold text-white">{value}</div>
+    </div>
+  );
+}
+
 function StandupField({
   icon: Icon,
   label,
@@ -535,15 +588,95 @@ function getAiSuggestions(
   hoursSource: "attendance" | "standup" | "none",
   isSubmitted: boolean,
 ) {
-  const suggestions = [];
-  if (!isSubmitted) suggestions.push("Start with one sentence about the most important thing you completed today.");
-  if (wordCount(yesterday) < 5) suggestions.push("For today's work, include a deliverable, fix, meeting outcome, or measurable progress.");
-  if (wordCount(today) < 5) suggestions.push("For tomorrow, name the exact task you will move forward first.");
-  if (blockers.trim() && wordCount(blockers) < 4) suggestions.push("Your blocker is short. Add who or what you are waiting for.");
-  if (!blockers.trim()) suggestions.push("If you have no blocker, leaving the blocker field blank is perfect.");
-  if (hoursSource === "none") suggestions.push("Your work hours will become stronger once attendance has both check-in and check-out.");
-  if (suggestions.length === 0) suggestions.push("This standup is clear. Save it so your manager sees the latest execution signal.");
+  const yesterdayWords = wordCount(yesterday);
+  const todayWords = wordCount(today);
+  const blockerWords = wordCount(blockers);
+  const suggestions: Array<{ title: string; text: string; tone: "info" | "warn" | "good" }> = [];
+
+  if (!isSubmitted) {
+    suggestions.push({
+      title: "Start the update",
+      text: "Write one concrete outcome you completed today, then one priority for tomorrow.",
+      tone: "warn",
+    });
+  }
+  if (yesterdayWords > 0 && yesterdayWords < 8) {
+    suggestions.push({
+      title: "Add proof of progress",
+      text: "Mention the deliverable, fix, campaign, meeting outcome, or measurable result.",
+      tone: "info",
+    });
+  }
+  if (todayWords > 0 && todayWords < 8) {
+    suggestions.push({
+      title: "Make tomorrow specific",
+      text: "Name the exact task you will move first, not only the project name.",
+      tone: "info",
+    });
+  }
+  if (blockers.trim() && blockerWords < 4) {
+    suggestions.push({
+      title: "Clarify the blocker",
+      text: "Add what is blocked, who can help, and what decision or resource is needed.",
+      tone: "warn",
+    });
+  }
+  if (!blockers.trim()) {
+    suggestions.push({
+      title: "Blocker status is clear",
+      text: "Leaving blockers blank is fine when nothing needs manager help.",
+      tone: "good",
+    });
+  }
+  if (hoursSource === "none") {
+    suggestions.push({
+      title: "Hours are missing",
+      text: "Check in and check out so work hours can attach automatically.",
+      tone: "warn",
+    });
+  }
+  if (yesterdayWords >= 8 && todayWords >= 8 && (blockerWords === 0 || blockerWords >= 4) && hoursSource !== "none") {
+    suggestions.unshift({
+      title: "Ready to save",
+      text: "This standup has enough detail for progress, plan, blocker status, and hours.",
+      tone: "good",
+    });
+  }
   return suggestions.slice(0, 4);
+}
+
+function getWritingSignals(
+  yesterday: string,
+  today: string,
+  blockers: string,
+  hoursSource: "attendance" | "standup" | "none",
+) {
+  const doneWords = wordCount(yesterday);
+  const planWords = wordCount(today);
+  const blockerWords = wordCount(blockers);
+
+  return [
+    {
+      label: "Done",
+      value: doneWords >= 8 ? "Clear" : doneWords > 0 ? "Needs detail" : "Missing",
+      active: doneWords >= 8,
+    },
+    {
+      label: "Plan",
+      value: planWords >= 8 ? "Clear" : planWords > 0 ? "Needs detail" : "Missing",
+      active: planWords >= 8,
+    },
+    {
+      label: "Blocker",
+      value: blockerWords === 0 ? "None" : blockerWords >= 4 ? "Clear" : "Too short",
+      active: blockerWords === 0 || blockerWords >= 4,
+    },
+    {
+      label: "Hours",
+      value: hoursSource === "attendance" ? "Auto" : hoursSource === "standup" ? "Saved" : "Waiting",
+      active: hoursSource !== "none",
+    },
+  ];
 }
 
 function wordCount(value: string) {
