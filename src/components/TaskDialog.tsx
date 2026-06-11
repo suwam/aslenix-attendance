@@ -28,7 +28,6 @@ import {
 import {
   TASK_COMPLEXITY_DESCRIPTIONS,
   TASK_COMPLEXITY_LABELS,
-  TASK_COMPLEXITY_POINTS,
   type TaskComplexity,
 } from "@/lib/employee-scoring";
 import { isMissingSupabaseColumnError, isMissingSupabaseTableError } from "@/lib/supabase-errors";
@@ -573,8 +572,6 @@ export function TaskDialog({
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
   const complexityKeys = Object.keys(TASK_COMPLEXITY_LABELS) as TaskComplexity[];
-  const selectedComplexityPoints = TASK_COMPLEXITY_POINTS[taskComplexity];
-  const earnedEffortPoints = Number(((selectedComplexityPoints * progress) / 100).toFixed(1));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -641,7 +638,7 @@ export function TaskDialog({
                 <SelectContent>
                   {(Object.keys(TASK_COMPLEXITY_LABELS) as TaskComplexity[]).map((complexity) => (
                     <SelectItem key={complexity} value={complexity}>
-                      {TASK_COMPLEXITY_LABELS[complexity]} · {TASK_COMPLEXITY_POINTS[complexity]} pts
+                      {TASK_COMPLEXITY_LABELS[complexity]}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -668,26 +665,17 @@ export function TaskDialog({
             </div>
           </div>
 
+          {canEditTaskFields && (
           <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 text-sm font-semibold">
                   <Info size={15} className="text-primary" />
-                  Effort scoring
+                  Complexity guide
                 </div>
                 <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  Complexity estimates the size of work so long campaigns, audits, designs, or QA cycles earn fair credit against many short tasks.
+                  Complexity estimates the size of work so long campaigns, audits, designs, or QA cycles can be evaluated fairly.
                 </p>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-right text-xs sm:min-w-44">
-                <div className="rounded-xl border border-white/10 bg-background/50 p-2">
-                  <div className="text-muted-foreground">Total effort</div>
-                  <div className="text-lg font-bold text-white">{selectedComplexityPoints} pts</div>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-background/50 p-2">
-                  <div className="text-muted-foreground">Earned now</div>
-                  <div className="text-lg font-bold text-white">{earnedEffortPoints} pts</div>
-                </div>
               </div>
             </div>
 
@@ -706,9 +694,6 @@ export function TaskDialog({
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-semibold">{TASK_COMPLEXITY_LABELS[complexity]}</span>
-                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white">
-                      {TASK_COMPLEXITY_POINTS[complexity]} pts
-                    </span>
                   </div>
                   <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                     {TASK_COMPLEXITY_DESCRIPTIONS[complexity]}
@@ -723,6 +708,7 @@ export function TaskDialog({
               </div>
             )}
           </div>
+          )}
 
           <div>
             <Label>Progress: {progress}%</Label>
