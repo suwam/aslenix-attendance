@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,8 +31,8 @@ import {
   TASK_COMPLEXITY_POINTS,
   type TaskComplexity,
 } from "@/lib/employee-scoring";
-import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
-import { Check, Download, Pencil, Paperclip, Send, Trash2, TrendingUp, X } from "lucide-react";
+import { isMissingSupabaseColumnError, isMissingSupabaseTableError } from "@/lib/supabase-errors";
+import { Check, Download, Pencil, Paperclip, Send, Trash2, TrendingUp, X, Info } from "lucide-react";
 import { format } from "date-fns";
 import { bsInputToAdDateString, formatBsInput, formatNepaliDate } from "@/lib/nepali-calendar";
 
@@ -88,6 +88,7 @@ export function TaskDialog({
   const [newComment, setNewComment] = useState("");
   const [attachments, setAttachments] = useState<any[]>([]);
   const [progressUpdatesUnavailable, setProgressUpdatesUnavailable] = useState(false);
+  const [taskComplexityUnavailable, setTaskComplexityUnavailable] = useState(false);
 
   const resetForm = useCallback(() => {
     setTitle("");
@@ -102,6 +103,7 @@ export function TaskDialog({
     setEditingProgressNote("");
     setSavingProgressUpdateId(null);
     setProgressUpdatesUnavailable(false);
+    setTaskComplexityUnavailable(false);
     setDeadlineDateBs("");
     setDeadlineTime("");
     setAssignedTo(isAdmin ? "" : user?.id || "");
@@ -262,7 +264,7 @@ export function TaskDialog({
       return toast.error("Select at least one assignee");
     }
     const deadlineIso = getDeadlineIso(deadlineDateBs, deadlineTime);
-    const payload = {
+    const payload: Record<string, unknown> = {
       title,
       description: description || null,
       status: nextStatus,
@@ -276,14 +278,33 @@ export function TaskDialog({
     };
     let error;
     let savedTaskId = taskId;
+    let complexityNotSaved = false;
     if (taskId) {
       ({ error } = await supabase.from("tasks").update(payload).eq("id", taskId));
+      if (isMissingSupabaseColumnError(error, "tasks", "task_complexity")) {
+        complexityNotSaved = true;
+        setTaskComplexityUnavailable(true);
+        const legacyPayload = { ...payload };
+        delete legacyPayload.task_complexity;
+        ({ error } = await supabase.from("tasks").update(legacyPayload).eq("id", taskId));
+      }
     } else {
-      const result = await supabase
+      let result = await supabase
         .from("tasks")
         .insert({ ...payload, created_by: user.id })
-        .select("id")
-        .single();
+          .select("id")
+          .single();
+      if (isMissingSupabaseColumnError(result.error, "tasks", "task_complexity")) {
+        complexityNotSaved = true;
+        setTaskComplexityUnavailable(true);
+        const legacyPayload = { ...payload };
+        delete legacyPayload.task_complexity;
+        result = await supabase
+          .from("tasks")
+          .insert({ ...legacyPayload, created_by: user.id })
+          .select("id")
+          .single();
+      }
       error = result.error;
       savedTaskId = result.data?.id ?? null;
     }
@@ -336,7 +357,9 @@ export function TaskDialog({
     }
     setLoading(false);
     if (error) return toast.error(error.message);
-    if (progressNoteNotSaved) {
+    if (complexityNotSaved) {
+      toast.warning("Task saved without complexity. Apply the task_complexity migration to enable effort scoring.");
+    } else if (progressNoteNotSaved) {
       toast.warning("Task saved. Apply the task_progress_updates migration to save progress notes.");
     } else if (usedLegacyAssignment && selectedAssignees.length > 1) {
       toast.warning(
@@ -549,12 +572,18 @@ export function TaskDialog({
   const employeeProgressHistory = [...progressUpdates].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
+  const complexityKeys = Object.keys(TASK_COMPLEXITY_LABELS) as TaskComplexity[];
+  const selectedComplexityPoints = TASK_COMPLEXITY_POINTS[taskComplexity];
+  const earnedEffortPoints = Number(((selectedComplexityPoints * progress) / 100).toFixed(1));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto glass border-border">
+      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto glass border-border">
         <DialogHeader>
           <DialogTitle>{taskId ? "Edit Task" : "Create Task"}</DialogTitle>
+          <DialogDescription>
+            Assign work, set complexity, and track effort-based progress for fair leaderboard scoring.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -617,9 +646,6 @@ export function TaskDialog({
                   ))}
                 </SelectContent>
               </Select>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {TASK_COMPLEXITY_DESCRIPTIONS[taskComplexity]}
-              </p>
             </div>
             <div>
               <Label>Priority</Label>
@@ -640,6 +666,62 @@ export function TaskDialog({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <Info size={15} className="text-primary" />
+                  Effort scoring
+                </div>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  Complexity estimates the size of work so long campaigns, audits, designs, or QA cycles earn fair credit against many short tasks.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-right text-xs sm:min-w-44">
+                <div className="rounded-xl border border-white/10 bg-background/50 p-2">
+                  <div className="text-muted-foreground">Total effort</div>
+                  <div className="text-lg font-bold text-white">{selectedComplexityPoints} pts</div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-background/50 p-2">
+                  <div className="text-muted-foreground">Earned now</div>
+                  <div className="text-lg font-bold text-white">{earnedEffortPoints} pts</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {complexityKeys.map((complexity) => (
+                <button
+                  key={complexity}
+                  type="button"
+                  disabled={!canEditTaskFields}
+                  onClick={() => setTaskComplexity(complexity)}
+                  className={`rounded-xl border p-3 text-left transition-colors ${
+                    taskComplexity === complexity
+                      ? "border-primary/60 bg-primary/15"
+                      : "border-white/10 bg-background/40 hover:border-primary/35"
+                  } ${!canEditTaskFields ? "cursor-default opacity-70" : ""}`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-semibold">{TASK_COMPLEXITY_LABELS[complexity]}</span>
+                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white">
+                      {TASK_COMPLEXITY_POINTS[complexity]} pts
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    {TASK_COMPLEXITY_DESCRIPTIONS[complexity]}
+                  </p>
+                </button>
+              ))}
+            </div>
+
+            {taskComplexityUnavailable && (
+              <div className="mt-3 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+                Complexity is visible here, but the database migration is not applied yet. Saves will continue without effort complexity until the migration runs.
+              </div>
+            )}
           </div>
 
           <div>
