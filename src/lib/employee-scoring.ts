@@ -23,6 +23,13 @@ export const TASK_COMPLEXITY_LABELS: Record<TaskComplexity, string> = {
   epic: "Epic",
 };
 
+export const TASK_COMPLEXITY_DESCRIPTIONS: Record<TaskComplexity, string> = {
+  small: "Quick, low-risk work that can usually finish in a few hours, such as a small fix, caption, asset resize, or simple QA pass.",
+  medium: "A normal deliverable that takes focused work, such as a feature slice, blog post, email campaign, SEO update, or test plan.",
+  large: "Multi-step work with planning or coordination, such as a landing page, ad campaign setup, full QA cycle, or HR policy rollout.",
+  epic: "Long-term, high-impact work across days or weeks, such as a product launch, major campaign, architecture change, or full SEO strategy.",
+};
+
 type ReviewLike = {
   rating?: string | null;
   review_score?: number | null;

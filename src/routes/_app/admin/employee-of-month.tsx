@@ -72,6 +72,7 @@ import {
   calculateTaskProgressMetrics,
   ratingLabelFromAverage,
   resolvedReviewScore,
+  TASK_COMPLEXITY_DESCRIPTIONS,
   TASK_COMPLEXITY_LABELS,
   TASK_COMPLEXITY_POINTS,
   normalizedTaskComplexity,
@@ -862,6 +863,18 @@ function DepartmentFilterBar({
             />
           );
         })}
+      </div>
+      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-4">
+        {(Object.keys(TASK_COMPLEXITY_LABELS) as TaskComplexity[]).map((complexity) => (
+          <div key={complexity} className="rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+            <div className="text-xs font-semibold text-white">
+              {TASK_COMPLEXITY_LABELS[complexity]} · {TASK_COMPLEXITY_POINTS[complexity]} pts
+            </div>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              {TASK_COMPLEXITY_DESCRIPTIONS[complexity]}
+            </p>
+          </div>
+        ))}
       </div>
     </GlassCard>
   );

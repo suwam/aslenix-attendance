@@ -26,6 +26,7 @@ import {
   type WorkflowTransition,
 } from "@/lib/tasks-utils";
 import {
+  TASK_COMPLEXITY_DESCRIPTIONS,
   TASK_COMPLEXITY_LABELS,
   TASK_COMPLEXITY_POINTS,
   type TaskComplexity,
@@ -616,6 +617,9 @@ export function TaskDialog({
                   ))}
                 </SelectContent>
               </Select>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {TASK_COMPLEXITY_DESCRIPTIONS[taskComplexity]}
+              </p>
             </div>
             <div>
               <Label>Priority</Label>
