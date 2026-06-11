@@ -100,8 +100,14 @@ function StandupPage() {
     load();
   }, [load]);
 
+  const hasStandupContent = Boolean(yesterday.trim() || today.trim() || blockers.trim());
+
   const save = async () => {
     if (!user) return;
+    if (!hasStandupContent) {
+      toast.error("Add today's work, tomorrow's plan, or a blocker before saving.");
+      return;
+    }
     setBusy(true);
     const { data: attendance } = await supabase
       .from("attendance")
@@ -127,7 +133,8 @@ function StandupPage() {
     load();
   };
 
-  const isSubmitted = Boolean(yesterday.trim() || today.trim() || blockers.trim());
+  const isSubmitted = hasStandupContent;
+  const recentStandups = history.filter((item) => item.yesterday?.trim() || item.today?.trim() || item.blockers?.trim());
   const avgHistoryHours =
     history.reduce((a, h) => a + Number(h.work_hours || 0), 0) / Math.max(1, history.length);
   const blockerHistoryCount = history.filter((h) => h.blockers && h.blockers.trim()).length;
@@ -297,9 +304,9 @@ function StandupPage() {
                 </div>
               </div>
               <div className="flex items-end">
-                <Button onClick={save} disabled={busy} className="neon-button h-12 w-full rounded-xl text-base">
+                <Button onClick={save} disabled={busy || !hasStandupContent} className="neon-button h-12 w-full rounded-xl text-base disabled:cursor-not-allowed disabled:opacity-45">
                   <Save size={15} className="mr-2" />
-                  {busy ? "Saving..." : "Save standup"}
+                  {busy ? "Saving..." : hasStandupContent ? "Save standup" : "Add update first"}
                 </Button>
               </div>
             </div>
@@ -366,9 +373,13 @@ function StandupPage() {
               <History size={18} />
             </div>
           </div>
-          <ul className="max-h-[520px] space-y-3 overflow-y-auto pr-1">
-            {history.map((h) => (
-              <li key={h.id} className="group rounded-2xl border border-white/10 bg-black/20 p-4 text-sm transition-all duration-300 hover:border-cyan-300/25 hover:bg-cyan-300/[0.055]">
+          <ul className="max-h-[520px] overflow-y-auto pr-1 pt-1">
+            {recentStandups.map((h, index) => (
+              <li
+                key={h.id}
+                className="group relative -mt-2 first:mt-0 rounded-[1.35rem] border border-white/10 bg-[#07111f]/90 p-4 text-sm shadow-[0_14px_34px_rgba(0,0,0,0.22)] transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/25 hover:bg-cyan-300/[0.055]"
+                style={{ zIndex: recentStandups.length - index }}
+              >
                 <div className="mb-2 flex items-center justify-between gap-3">
                   <div className="font-semibold text-white">
                     {formatNepaliDate(h.date, "ddd DD, MMMM YYYY")} BS
@@ -378,9 +389,7 @@ function StandupPage() {
                   </span>
                 </div>
                 <div className="line-clamp-2 text-muted-foreground">
-                  {h.today || h.yesterday || (
-                    <span>No notes</span>
-                  )}
+                  {standupPreview(h)}
                 </div>
                 <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
                   <HistorySignal label="Today" active={Boolean(h.yesterday?.trim())} />
@@ -389,7 +398,7 @@ function StandupPage() {
                 </div>
               </li>
             ))}
-            {history.length === 0 && (
+            {recentStandups.length === 0 && (
               <li className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-muted-foreground">
                 <Sparkles size={20} className="mx-auto mb-2 text-primary" />
                 No standups yet
@@ -473,6 +482,10 @@ function HistorySignal({ label, active, warning = false }: { label: string; acti
       {label}
     </div>
   );
+}
+
+function standupPreview(row: { yesterday?: string | null; today?: string | null; blockers?: string | null }) {
+  return row.today?.trim() || row.yesterday?.trim() || row.blockers?.trim() || "No notes";
 }
 
 function WritingSignal({
