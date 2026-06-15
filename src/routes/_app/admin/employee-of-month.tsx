@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Award,
   BadgeCheck,
@@ -581,6 +581,7 @@ function EmployeeOfMonthPage() {
   const generatedFeedback = selectedEmployee
     ? getGeneratedRecognitionMessage(recognitionType, selectedEmployee.name)
     : "";
+  const previousGeneratedFeedback = useRef("");
   const totals = useMemo(
     () => ({
       taskProgress: Math.round(visibleRows.reduce((sum, row) => sum + row.taskProgress, 0) / Math.max(1, visibleRows.length)),
@@ -599,6 +600,15 @@ function EmployeeOfMonthPage() {
   const submitFeedback = async (awardType: RecognitionType = recognitionType) => {
     if (!user || !selectedEmployee) return;
     const badgeLabel = getRecognitionConfig(awardType).title;
+    const employeeAlreadyAwarded = officialAwards.some((award) => award.employee_id === selectedEmployee.userId);
+    const badgeAlreadyAwarded = officialAwards.some((award) => award.rating === badgeLabel);
+    if (employeeAlreadyAwarded) {
+      return toast.error(`${selectedEmployee.name} already has an official award for ${nepaliMonth.label} BS`);
+    }
+    if (badgeAlreadyAwarded) {
+      return toast.error(`${badgeLabel} has already been assigned for ${nepaliMonth.label} BS`);
+    }
+
     setSavingAward(true);
     const resetResult = await (supabase as any)
       .from("employee_month_awards")
@@ -647,9 +657,22 @@ function EmployeeOfMonthPage() {
   };
 
   useEffect(() => {
-    if (!selectedEmployee || (feedback && feedback !== getGeneratedRecognitionMessage(recognitionType, selectedEmployee.name))) return;
-    setFeedback(generatedFeedback);
-  }, [generatedFeedback, recognitionType, selectedEmployee?.userId]);
+    if (!selectedEmployee) return;
+
+    const generatedMessages = rows.flatMap((row) =>
+      (["employee_of_month", "emerging_employee"] as RecognitionType[]).map((type) =>
+        getGeneratedRecognitionMessage(type, row.name),
+      ),
+    );
+    setFeedback((current) => {
+      const shouldRegenerate =
+        !current.trim() ||
+        current === previousGeneratedFeedback.current ||
+        generatedMessages.includes(current);
+      previousGeneratedFeedback.current = generatedFeedback;
+      return shouldRegenerate ? generatedFeedback : current;
+    });
+  }, [generatedFeedback, rows, selectedEmployee?.userId]);
 
   const resetOfficialAward = async () => {
     if (!officialAwards.length) return;
@@ -1543,6 +1566,15 @@ function FeedbackPanel({
   const [employeeSearch, setEmployeeSearch] = useState("");
   const selectedConfig = getRecognitionConfig(recognitionType);
   const SelectedIcon = selectedConfig.icon;
+  const selectedEmployeeAward = selectedEmployee
+    ? officialAwards.find((award) => award.employee_id === selectedEmployee.userId)
+    : undefined;
+  const selectedBadgeAward = officialAwards.find((award) => award.rating === selectedConfig.title);
+  const awardLockReason = selectedEmployeeAward
+    ? `${selectedEmployee?.name} already received ${selectedEmployeeAward.rating} for ${monthLabel} BS.`
+    : selectedBadgeAward
+      ? `${selectedConfig.title} is already assigned to ${selectedBadgeAward.profiles?.full_name || "another employee"} for ${monthLabel} BS.`
+      : "";
   const filteredEmployees = rows.filter((row) => {
     const query = employeeSearch.trim().toLowerCase();
     return (
@@ -1557,7 +1589,8 @@ function FeedbackPanel({
     { label: "Badge Selected", done: Boolean(recognitionType) },
     { label: "Employee Selected", done: Boolean(selectedEmployee) },
     { label: "Message Added", done: feedback.trim().length > 0 },
-    { label: "Ready to Assign", done: Boolean(recognitionType && selectedEmployee && feedback.trim()) },
+    { label: "Award Available", done: !awardLockReason },
+    { label: "Ready to Assign", done: Boolean(recognitionType && selectedEmployee && feedback.trim() && !awardLockReason) },
   ];
   const noteTags = ["Leadership", "High impact", "Growth", "Ownership", "Consistency"];
 
@@ -1683,11 +1716,12 @@ function FeedbackPanel({
                     {filteredEmployees.slice(0, 6).map((row) => {
                       const rank = rows.findIndex((item) => item.userId === row.userId) + 1;
                       const selected = selectedEmployeeId === row.userId;
+                      const employeeAward = officialAwards.find((award) => award.employee_id === row.userId);
                       return (
                         <button
                           key={row.userId}
                           type="button"
-                          className={`recognition-employee-row ${selected ? "selected" : ""}`}
+                          className={`recognition-employee-row ${selected ? "selected" : ""} ${employeeAward ? "awarded" : ""}`}
                           onClick={() => setSelectedEmployeeId(row.userId)}
                         >
                           <Avatar employee={row} />
@@ -1699,6 +1733,7 @@ function FeedbackPanel({
                             <b>{row.score}</b>
                             Score
                           </span>
+                          {employeeAward && <span className="recognition-awarded-pill">Awarded</span>}
                           <span className="recognition-rank">#{rank}</span>
                         </button>
                       );
@@ -1787,12 +1822,23 @@ function FeedbackPanel({
                   ))}
                 </div>
 
+                {awardLockReason && (
+                  <div className="recognition-lock-note">
+                    <Lock size={15} />
+                    <span>{awardLockReason}</span>
+                  </div>
+                )}
+
                 <Button
                   onClick={() => onSubmit(recognitionType)}
-                  disabled={saving || !selectedEmployee || !feedback.trim()}
+                  disabled={saving || !selectedEmployee || !feedback.trim() || Boolean(awardLockReason)}
                   className={`recognition-cta ${selectedConfig.theme}`}
                 >
-                  {saving ? "Assigning recognition..." : `${selectedConfig.symbol} ${selectedConfig.cta}`}
+                  {awardLockReason
+                    ? "Award already assigned"
+                    : saving
+                      ? "Assigning recognition..."
+                      : `${selectedConfig.symbol} ${selectedConfig.cta}`}
                 </Button>
               </aside>
             </div>

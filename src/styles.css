@@ -4016,6 +4016,7 @@
 
   .recognition-employee-row {
     width: 100%;
+    grid-template-columns: auto minmax(0, 1fr) auto auto auto;
     text-align: left;
     transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
   }
@@ -4025,6 +4026,23 @@
     transform: translateX(3px);
     border-color: rgba(33, 212, 253, 0.32);
     background: rgba(33, 212, 253, 0.08);
+  }
+
+  .recognition-employee-row.awarded {
+    border-color: rgba(246, 196, 83, 0.24);
+    background: rgba(246, 196, 83, 0.08);
+  }
+
+  .recognition-awarded-pill {
+    border-radius: 999px;
+    border: 1px solid rgba(246, 196, 83, 0.28);
+    background: rgba(246, 196, 83, 0.12);
+    padding: 5px 8px;
+    color: rgba(255, 244, 199, 0.84);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
   .recognition-score {
@@ -4158,6 +4176,25 @@
 
   .recognition-progress .done {
     color: #69f0ae;
+  }
+
+  .recognition-lock-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    border-radius: 16px;
+    border: 1px solid rgba(246, 196, 83, 0.2);
+    background: rgba(246, 196, 83, 0.09);
+    padding: 11px 12px;
+    color: rgba(255, 244, 199, 0.84);
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
+  .recognition-lock-note svg {
+    flex: 0 0 auto;
+    margin-top: 1px;
   }
 
   .recognition-cta {
