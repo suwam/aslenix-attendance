@@ -62,6 +62,38 @@ function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+(function () {
+  var reloadKey = "aslenix:chunk-reload-attempted";
+  function isChunkLoadError(value) {
+    var text = "";
+    if (typeof value === "string") text = value;
+    else if (value && value.message) text = value.message;
+    else if (value && value.reason && value.reason.message) text = value.reason.message;
+    return /Failed to fetch dynamically imported module|Importing a module script failed|Expected a JavaScript-or-Wasm module script|Loading chunk|module script/i.test(text);
+  }
+  function reloadWithFreshShell() {
+    if (sessionStorage.getItem(reloadKey)) return;
+    sessionStorage.setItem(reloadKey, String(Date.now()));
+    var url = new URL(window.location.href);
+    url.searchParams.set("__fresh", String(Date.now()));
+    window.location.replace(url.toString());
+  }
+  window.addEventListener("error", function (event) {
+    var target = event.target;
+    var scriptSrc = target && target.tagName === "SCRIPT" ? target.src : "";
+    if ((scriptSrc && scriptSrc.indexOf("/assets/") !== -1) || isChunkLoadError(event.error || event.message)) {
+      reloadWithFreshShell();
+    }
+  }, true);
+  window.addEventListener("unhandledrejection", function (event) {
+    if (isChunkLoadError(event.reason)) reloadWithFreshShell();
+  });
+})();`,
+          }}
+        />
         <HeadContent />
       </head>
       <body>
