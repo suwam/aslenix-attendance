@@ -171,6 +171,20 @@ const EOM_DEPARTMENTS = ["Development", "UI/UX", "Marketing", "HR", "QA"] as con
 const DEPARTMENT_FILTERS = ["All Departments", ...EOM_DEPARTMENTS] as const;
 type DepartmentFilter = (typeof DEPARTMENT_FILTERS)[number];
 type RecognitionType = "employee_of_month" | "emerging_employee";
+type OfficialAward = {
+  employee_id: string;
+  month_start: string;
+  score: number;
+  rating: string;
+  public_message: string | null;
+  internal_notes: string | null;
+  profiles?: {
+    user_id: string;
+    full_name: string;
+    department: string | null;
+    avatar_url: string | null;
+  } | null;
+};
 
 function isDateInRange(value: string | null | undefined, startIso: string, endIso: string) {
   if (!value) return false;
@@ -227,7 +241,7 @@ function EmployeeOfMonthPage() {
   const [successAward, setSuccessAward] = useState<{ employee: string; badge: string; type: RecognitionType } | null>(null);
   const [recognitionDialogOpen, setRecognitionDialogOpen] = useState(false);
   const [departmentFilter, setDepartmentFilter] = useState<DepartmentFilter>("All Departments");
-  const [officialAward, setOfficialAward] = useState<any>(null);
+  const [officialAwards, setOfficialAwards] = useState<OfficialAward[]>([]);
   const [savingAward, setSavingAward] = useState(false);
   const [resettingAward, setResettingAward] = useState(false);
 
@@ -501,10 +515,8 @@ function EmployeeOfMonthPage() {
         .from("employee_month_awards")
         .select("*, profiles:employee_id(user_id, full_name, department, avatar_url)")
         .eq("month_start", monthStart)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      setOfficialAward(awardResult.error ? null : awardResult.data);
+        .order("created_at", { ascending: false });
+      setOfficialAwards(awardResult.error ? [] : awardResult.data || []);
       setLoading(false);
   }, [monthEnd, monthStart]);
 
@@ -566,7 +578,8 @@ function EmployeeOfMonthPage() {
     const resetResult = await (supabase as any)
       .from("employee_month_awards")
       .delete()
-      .eq("month_start", monthStart);
+      .eq("month_start", monthStart)
+      .eq("rating", badgeLabel);
     if (resetResult.error) {
       setSavingAward(false);
       return toast.error(resetResult.error.message);
@@ -584,7 +597,7 @@ function EmployeeOfMonthPage() {
     setSavingAward(false);
     if (error) return toast.error(error.message);
     toast.success(`${selectedEmployee.name} was awarded ${badgeLabel}`);
-    setOfficialAward({
+    const nextOfficialAward: OfficialAward = {
       employee_id: selectedEmployee.userId,
       month_start: monthStart,
       score: selectedEmployee.score,
@@ -597,7 +610,11 @@ function EmployeeOfMonthPage() {
         department: selectedEmployee.department,
         avatar_url: selectedEmployee.avatarUrl,
       },
-    });
+    };
+    setOfficialAwards((current) => [
+      nextOfficialAward,
+      ...current.filter((award) => award.rating !== badgeLabel),
+    ]);
     setSuccessAward({ employee: selectedEmployee.name, badge: badgeLabel, type: awardType });
     setRecognitionDialogOpen(false);
     setFeedback("");
@@ -610,7 +627,7 @@ function EmployeeOfMonthPage() {
   }, [generatedFeedback, recognitionType, selectedEmployee?.userId]);
 
   const resetOfficialAward = async () => {
-    if (!officialAward) return;
+    if (!officialAwards.length) return;
     const confirmed = window.confirm("Reset Employee of the Month for the previous month?");
     if (!confirmed) return;
 
@@ -624,7 +641,7 @@ function EmployeeOfMonthPage() {
     if (error) return toast.error(error.message);
 
     toast.success("Employee of the Month has been reset for the previous month");
-    setOfficialAward(null);
+    setOfficialAwards([]);
     void loadEomData({ silent: true });
   };
 
@@ -679,7 +696,7 @@ function EmployeeOfMonthPage() {
               selectedEmployeeId={selectedEmployeeId}
               setSelectedEmployeeId={setSelectedEmployeeId}
               selectedEmployee={selectedEmployee}
-              officialAward={officialAward}
+              officialAwards={officialAwards}
               recognitionType={recognitionType}
               setRecognitionType={setRecognitionType}
               rating={rating}
@@ -1448,7 +1465,7 @@ function FeedbackPanel({
   selectedEmployeeId,
   setSelectedEmployeeId,
   selectedEmployee,
-  officialAward,
+  officialAwards,
   recognitionType,
   setRecognitionType,
   rating,
@@ -1469,7 +1486,7 @@ function FeedbackPanel({
   selectedEmployeeId: string;
   setSelectedEmployeeId: (value: string) => void;
   selectedEmployee?: EmployeeRank;
-  officialAward: any;
+  officialAwards: OfficialAward[];
   recognitionType: RecognitionType;
   setRecognitionType: (value: RecognitionType) => void;
   rating: string;
@@ -1486,7 +1503,18 @@ function FeedbackPanel({
   successAward: { employee: string; badge: string; type: RecognitionType } | null;
   onClearSuccess: () => void;
 }) {
-  const awardedName = officialAward?.profiles?.full_name;
+  const officialWinnerItems = (["employee_of_month", "emerging_employee"] as RecognitionType[])
+    .map((type) => {
+      const config = getRecognitionConfig(type);
+      const award = officialAwards.find((item) => item.rating === config.title);
+      return {
+        type,
+        config,
+        award,
+        name: award?.profiles?.full_name,
+      };
+    })
+    .filter((item) => item.award);
   const [employeeSearch, setEmployeeSearch] = useState("");
   const selectedConfig = getRecognitionConfig(recognitionType);
   const SelectedIcon = selectedConfig.icon;
@@ -1527,9 +1555,16 @@ function FeedbackPanel({
             Assign official badge
           </Button>
         </div>
-        {awardedName && (
-          <div className="mt-4 rounded-2xl border border-amber-200/20 bg-amber-300/10 p-3 text-sm text-amber-100">
-            Current official winner for the previous month: <span className="font-semibold">{awardedName}</span>
+        {officialWinnerItems.length > 0 && (
+          <div className="mt-4 space-y-2 rounded-2xl border border-amber-200/20 bg-amber-300/10 p-3 text-sm text-amber-100">
+            {officialWinnerItems.map(({ type, config, name }) => (
+              <div key={type} className="flex items-center justify-between gap-3">
+                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-100/70">
+                  {config.title}
+                </span>
+                <span className="text-right font-semibold text-amber-50">{name}</span>
+              </div>
+            ))}
           </div>
         )}
       </GlassCard>
