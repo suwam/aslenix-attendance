@@ -1556,15 +1556,32 @@ function FeedbackPanel({
           </Button>
         </div>
         {officialWinnerItems.length > 0 && (
-          <div className="mt-4 space-y-2 rounded-2xl border border-amber-200/20 bg-amber-300/10 p-3 text-sm text-amber-100">
-            {officialWinnerItems.map(({ type, config, name }) => (
-              <div key={type} className="flex items-center justify-between gap-3">
-                <span className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-100/70">
-                  {config.title}
-                </span>
-                <span className="text-right font-semibold text-amber-50">{name}</span>
-              </div>
-            ))}
+          <div className="eom-recognition-winners">
+            <div className="eom-recognition-winners-header">
+              <span>
+                <Trophy size={14} />
+                Official winners
+              </span>
+              <span>
+                <CalendarDays size={14} />
+                {monthLabel} BS
+              </span>
+            </div>
+            <div className="eom-recognition-winner-stack">
+              {officialWinnerItems.map(({ type, config, name }) => {
+                const Icon = config.icon;
+
+                return (
+                  <div key={type} className={`eom-recognition-winner-row ${config.theme}`}>
+                    <span className="eom-recognition-winner-badge">
+                      <Icon size={15} />
+                      {config.title}
+                    </span>
+                    <span className="eom-recognition-winner-name">{name || "Unknown employee"}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </GlassCard>
