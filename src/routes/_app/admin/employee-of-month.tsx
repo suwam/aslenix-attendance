@@ -228,7 +228,7 @@ async function fetchWeeklyReviews() {
 }
 
 function EmployeeOfMonthPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<EmployeeRank[]>([]);
   const [excludedRows, setExcludedRows] = useState<ExcludedEmployee[]>([]);
@@ -513,10 +513,29 @@ function EmployeeOfMonthPage() {
 
       const awardResult = await (supabase as any)
         .from("employee_month_awards")
-        .select("*, profiles:employee_id(user_id, full_name, department, avatar_url)")
+        .select("*")
         .eq("month_start", monthStart)
         .order("created_at", { ascending: false });
-      setOfficialAwards(awardResult.error ? [] : awardResult.data || []);
+      const profileByUserId = new Map(profileRows.map((profile) => [profile.user_id, profile]));
+      setOfficialAwards(
+        awardResult.error
+          ? []
+          : ((awardResult.data || []) as OfficialAward[]).map((award) => {
+              const awardProfile = profileByUserId.get(award.employee_id);
+
+              return {
+                ...award,
+                profiles: awardProfile
+                  ? {
+                      user_id: awardProfile.user_id,
+                      full_name: awardProfile.full_name,
+                      department: awardProfile.department,
+                      avatar_url: awardProfile.avatar_url,
+                    }
+                  : award.profiles,
+              };
+            }),
+      );
       setLoading(false);
   }, [monthEnd, monthStart]);
 
@@ -525,6 +544,12 @@ function EmployeeOfMonthPage() {
   }, [loadEomData]);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     loadEomData();
 
     const channel = supabase
@@ -541,7 +566,7 @@ function EmployeeOfMonthPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [loadEomData, refreshEomData]);
+  }, [authLoading, loadEomData, refreshEomData, user?.id]);
 
   const filteredRows = useMemo(
     () =>
