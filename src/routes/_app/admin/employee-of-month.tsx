@@ -224,6 +224,7 @@ function EmployeeOfMonthPage() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
   const [recognitionType, setRecognitionType] = useState<RecognitionType>("employee_of_month");
   const [successAward, setSuccessAward] = useState<{ employee: string; badge: string; type: RecognitionType } | null>(null);
+  const [recognitionDialogOpen, setRecognitionDialogOpen] = useState(false);
   const [departmentFilter, setDepartmentFilter] = useState<DepartmentFilter>("All Departments");
   const [officialAward, setOfficialAward] = useState<any>(null);
   const [savingAward, setSavingAward] = useState(false);
@@ -539,6 +540,9 @@ function EmployeeOfMonthPage() {
   const visibleRows = filteredRows.slice(0, 10);
   const winner = visibleRows[0] || rows[0];
   const selectedEmployee = rows.find((row) => row.userId === selectedEmployeeId) || winner;
+  const generatedFeedback = selectedEmployee
+    ? getGeneratedRecognitionMessage(recognitionType, selectedEmployee.name)
+    : "";
   const totals = useMemo(
     () => ({
       taskProgress: Math.round(visibleRows.reduce((sum, row) => sum + row.taskProgress, 0) / Math.max(1, visibleRows.length)),
@@ -594,9 +598,15 @@ function EmployeeOfMonthPage() {
       },
     });
     setSuccessAward({ employee: selectedEmployee.name, badge: badgeLabel, type: awardType });
+    setRecognitionDialogOpen(false);
     setFeedback("");
     setNotes("");
   };
+
+  useEffect(() => {
+    if (!selectedEmployee || (feedback && feedback !== getGeneratedRecognitionMessage(recognitionType, selectedEmployee.name))) return;
+    setFeedback(generatedFeedback);
+  }, [generatedFeedback, recognitionType, selectedEmployee?.userId]);
 
   const resetOfficialAward = async () => {
     if (!officialAward) return;
@@ -669,14 +679,21 @@ function EmployeeOfMonthPage() {
               setSelectedEmployeeId={setSelectedEmployeeId}
               selectedEmployee={selectedEmployee}
               officialAward={officialAward}
+              recognitionType={recognitionType}
+              setRecognitionType={setRecognitionType}
               rating={rating}
               setRating={setRating}
               feedback={feedback}
               setFeedback={setFeedback}
               notes={notes}
               setNotes={setNotes}
+              recognitionDialogOpen={recognitionDialogOpen}
+              setRecognitionDialogOpen={setRecognitionDialogOpen}
               onSubmit={submitFeedback}
               saving={savingAward}
+              monthLabel={nepaliMonth.label}
+              successAward={successAward}
+              onClearSuccess={() => setSuccessAward(null)}
             />
           </section>
 
@@ -1393,104 +1410,346 @@ function makeEomAttendanceInsight({
   return `Attendance is stable at ${overallAttendance}%. Best performance was ${bestWeek}; focus on crossing the 90% benchmark consistently.`;
 }
 
+function getRecognitionConfig(type: RecognitionType) {
+  if (type === "emerging_employee") {
+    return {
+      title: "Emerging Employee",
+      shortTitle: "Emerging",
+      icon: Rocket,
+      theme: "emerging",
+      symbol: "🚀",
+      cta: "Award Emerging Employee",
+      description: "Recognizes rapid growth, outstanding potential, and continuous improvement.",
+    };
+  }
+
+  return {
+    title: "Employee of the Month",
+    shortTitle: "EOM",
+    icon: Trophy,
+    theme: "month",
+    symbol: "🏆",
+    cta: "Award Employee of the Month",
+    description: "Recognizes exceptional performance, leadership, and consistent excellence.",
+  };
+}
+
+function getGeneratedRecognitionMessage(type: RecognitionType, name: string) {
+  if (type === "emerging_employee") {
+    return `Congratulations ${name}! Your remarkable growth, commitment, and potential have earned you the Emerging Employee recognition.`;
+  }
+
+  return `Congratulations ${name}! Your exceptional dedication, leadership, and contribution have earned you the Employee of the Month award.`;
+}
+
 function FeedbackPanel({
   rows,
   selectedEmployeeId,
   setSelectedEmployeeId,
   selectedEmployee,
   officialAward,
+  recognitionType,
+  setRecognitionType,
   rating,
   setRating,
   feedback,
   setFeedback,
   notes,
   setNotes,
+  recognitionDialogOpen,
+  setRecognitionDialogOpen,
   onSubmit,
   saving,
+  monthLabel,
+  successAward,
+  onClearSuccess,
 }: {
   rows: EmployeeRank[];
   selectedEmployeeId: string;
   setSelectedEmployeeId: (value: string) => void;
   selectedEmployee?: EmployeeRank;
   officialAward: any;
+  recognitionType: RecognitionType;
+  setRecognitionType: (value: RecognitionType) => void;
   rating: string;
   setRating: (value: string) => void;
   feedback: string;
   setFeedback: (value: string) => void;
   notes: string;
   setNotes: (value: string) => void;
-  onSubmit: () => Promise<void>;
+  recognitionDialogOpen: boolean;
+  setRecognitionDialogOpen: (value: boolean) => void;
+  onSubmit: (awardType?: RecognitionType) => Promise<void>;
   saving: boolean;
+  monthLabel: string;
+  successAward: { employee: string; badge: string; type: RecognitionType } | null;
+  onClearSuccess: () => void;
 }) {
   const awardedName = officialAward?.profiles?.full_name;
+  const [employeeSearch, setEmployeeSearch] = useState("");
+  const selectedConfig = getRecognitionConfig(recognitionType);
+  const SelectedIcon = selectedConfig.icon;
+  const filteredEmployees = rows.filter((row) => {
+    const query = employeeSearch.trim().toLowerCase();
+    return (
+      !query ||
+      row.name.toLowerCase().includes(query) ||
+      row.department.toLowerCase().includes(query) ||
+      String(row.score).includes(query)
+    );
+  });
+  const selectedRank = selectedEmployee ? rows.findIndex((row) => row.userId === selectedEmployee.userId) + 1 : 0;
+  const completionSteps = [
+    { label: "Badge Selected", done: Boolean(recognitionType) },
+    { label: "Employee Selected", done: Boolean(selectedEmployee) },
+    { label: "Message Added", done: feedback.trim().length > 0 },
+    { label: "Ready to Assign", done: Boolean(recognitionType && selectedEmployee && feedback.trim()) },
+  ];
+  const noteTags = ["Leadership", "High impact", "Growth", "Ownership", "Consistency"];
 
   return (
-    <GlassCard className="eom-feedback">
-      <h3 className="mb-4 flex items-center gap-2 font-semibold">
-        <Medal size={16} className="text-primary" />
-        Assign official badge
-      </h3>
-      <div className="space-y-4">
+    <>
+      <GlassCard className="eom-feedback eom-recognition-launcher">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-cyan-100">
+              <Medal size={13} />
+              Recognition console
+            </div>
+            <h3 className="text-2xl font-bold text-white">Employee Recognition</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Celebrate achievements and recognize outstanding talent.
+            </p>
+          </div>
+          <Button className="neon-button rounded-2xl px-5" onClick={() => setRecognitionDialogOpen(true)}>
+            <Sparkles size={15} className="mr-2" />
+            Assign official badge
+          </Button>
+        </div>
         {awardedName && (
-          <div className="rounded-2xl border border-amber-200/20 bg-amber-300/10 p-3 text-sm text-amber-100">
+          <div className="mt-4 rounded-2xl border border-amber-200/20 bg-amber-300/10 p-3 text-sm text-amber-100">
             Current official winner for this month: <span className="font-semibold">{awardedName}</span>
           </div>
         )}
-        <div>
-          <Label>Employee</Label>
-          <Select value={selectedEmployeeId} onValueChange={setSelectedEmployeeId}>
-            <SelectTrigger className="mt-1">
-              <SelectValue placeholder="Select employee" />
-            </SelectTrigger>
-            <SelectContent>
-              {rows.map((row) => (
-                <SelectItem key={row.userId} value={row.userId}>
-                  #{rows.findIndex((item) => item.userId === row.userId) + 1} {row.name} · {row.score}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label>Rating</Label>
-          <Select value={rating} onValueChange={setRating}>
-            <SelectTrigger className="mt-1">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="excellent">Excellent</SelectItem>
-              <SelectItem value="good">Good</SelectItem>
-              <SelectItem value="average">Average</SelectItem>
-              <SelectItem value="poor">Poor</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label>Public employee message</Label>
-          <Textarea
-            value={feedback}
-            onChange={(event) => setFeedback(event.target.value)}
-            rows={4}
-            placeholder={`Congratulations message for ${selectedEmployee?.name || "the employee"}...`}
-            className="mt-1"
-          />
-        </div>
-        <div>
-          <Label>Performance notes</Label>
-          <Textarea
-            value={notes}
-            onChange={(event) => setNotes(event.target.value)}
-            rows={4}
-            placeholder="Add internal notes for monthly review..."
-            className="mt-1"
-          />
-        </div>
-        <Button onClick={onSubmit} disabled={saving || !selectedEmployee} className="neon-button w-full rounded-xl">
-          <Send size={14} className="mr-1.5" />
-          {saving ? "Assigning..." : "Assign Employee of the Month"}
-        </Button>
-      </div>
-    </GlassCard>
+      </GlassCard>
+
+      <Dialog open={recognitionDialogOpen} onOpenChange={setRecognitionDialogOpen}>
+        <DialogContent className="recognition-modal max-h-[92vh] w-[calc(100vw-1.25rem)] max-w-6xl overflow-hidden border-white/10 p-0">
+          <div className="recognition-particles" />
+          <div className="recognition-modal-shell">
+            <DialogHeader className="recognition-modal-header">
+              <div className="recognition-header-icon">
+                <Trophy size={24} />
+              </div>
+              <div>
+                <DialogTitle className="text-2xl font-bold md:text-3xl">Employee Recognition</DialogTitle>
+                <DialogDescription>
+                  Celebrate achievements and recognize outstanding talent
+                </DialogDescription>
+              </div>
+            </DialogHeader>
+
+            <div className="recognition-modal-body">
+              <section className="recognition-main">
+                <div className="recognition-badge-grid">
+                  {(["employee_of_month", "emerging_employee"] as RecognitionType[]).map((type) => {
+                    const config = getRecognitionConfig(type);
+                    const Icon = config.icon;
+                    const selected = recognitionType === type;
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        className={`recognition-badge-card ${config.theme} ${selected ? "selected" : ""}`}
+                        onClick={() => setRecognitionType(type)}
+                      >
+                        <span className="recognition-card-glow" />
+                        <span className="recognition-card-check">
+                          <CheckCircle2 size={16} />
+                        </span>
+                        <span className="recognition-card-icon">
+                          <Icon size={28} />
+                        </span>
+                        <span className="recognition-card-title">{config.title}</span>
+                        <span className="recognition-card-copy">{config.description}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="recognition-field-panel recognition-employee-picker">
+                  <div className="recognition-floating-label">Employee Selection</div>
+                  {selectedEmployee && (
+                    <div className="recognition-selected-employee">
+                      <Avatar employee={selectedEmployee} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold text-white">{selectedEmployee.name}</span>
+                        <span className="block truncate text-xs text-white/55">{selectedEmployee.department} Department</span>
+                      </span>
+                      <span className="recognition-score">
+                        <b>{selectedEmployee.score}</b>
+                        Score
+                      </span>
+                      <span className="recognition-rank">#{selectedRank}</span>
+                    </div>
+                  )}
+                  <div className="recognition-search">
+                    <Search size={16} />
+                    <Input
+                      value={employeeSearch}
+                      onChange={(event) => setEmployeeSearch(event.target.value)}
+                      placeholder="Search employees by name, department, or score"
+                    />
+                  </div>
+                  <div className="recognition-employee-list">
+                    {filteredEmployees.slice(0, 6).map((row) => {
+                      const rank = rows.findIndex((item) => item.userId === row.userId) + 1;
+                      const selected = selectedEmployeeId === row.userId;
+                      return (
+                        <button
+                          key={row.userId}
+                          type="button"
+                          className={`recognition-employee-row ${selected ? "selected" : ""}`}
+                          onClick={() => setSelectedEmployeeId(row.userId)}
+                        >
+                          <Avatar employee={row} />
+                          <span className="min-w-0 flex-1 text-left">
+                            <span className="block truncate font-semibold text-white">{row.name}</span>
+                            <span className="block truncate text-xs text-white/55">{row.department} Department</span>
+                          </span>
+                          <span className="recognition-score">
+                            <b>{row.score}</b>
+                            Score
+                          </span>
+                          <span className="recognition-rank">#{rank}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-[1fr_.8fr]">
+                  <div className="recognition-field-panel">
+                    <div className="recognition-field-heading">
+                      <Label>Recognition Message</Label>
+                      <span>{feedback.length} chars</span>
+                    </div>
+                    <Textarea
+                      value={feedback}
+                      onChange={(event) => setFeedback(event.target.value)}
+                      rows={4}
+                      className="recognition-textarea mt-2"
+                      placeholder={`Congratulations message for ${selectedEmployee?.name || "the employee"}...`}
+                    />
+                  </div>
+                  <div className="recognition-field-panel">
+                    <div className="recognition-field-heading">
+                      <Label>Recognition Rating</Label>
+                      <span>Internal score</span>
+                    </div>
+                    <Select value={rating} onValueChange={setRating}>
+                      <SelectTrigger className="mt-2">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="excellent">Excellent</SelectItem>
+                        <SelectItem value="good">Good</SelectItem>
+                        <SelectItem value="average">Average</SelectItem>
+                        <SelectItem value="poor">Poor</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="recognition-field-panel">
+                  <div className="recognition-field-heading">
+                    <Label>Internal Performance Notes</Label>
+                    <span>{notes.length}/500</span>
+                  </div>
+                  <Textarea
+                    value={notes}
+                    onChange={(event) => setNotes(event.target.value.slice(0, 500))}
+                    rows={5}
+                    className="recognition-textarea mt-2"
+                    placeholder="Add internal notes for monthly review..."
+                  />
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {noteTags.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        className="recognition-tag"
+                        onClick={() => setNotes(notes ? `${notes}, ${tag}` : tag)}
+                      >
+                        {tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              <aside className="recognition-side">
+                <div className={`recognition-preview ${selectedConfig.theme}`}>
+                  <div className="recognition-preview-particles" />
+                  <div className="recognition-preview-icon">
+                    <SelectedIcon size={34} />
+                  </div>
+                  <div className="text-xs font-bold uppercase tracking-[0.24em] text-white/55">Award Certificate</div>
+                  <h3>{selectedEmployee?.name || "Select Employee"}</h3>
+                  <p>{selectedConfig.title}</p>
+                  <span>{monthLabel} BS</span>
+                </div>
+
+                <div className="recognition-progress">
+                  {completionSteps.map((step) => (
+                    <div key={step.label} className={step.done ? "done" : ""}>
+                      <CheckCircle2 size={15} />
+                      {step.label}
+                    </div>
+                  ))}
+                </div>
+
+                <Button
+                  onClick={() => onSubmit(recognitionType)}
+                  disabled={saving || !selectedEmployee || !feedback.trim()}
+                  className={`recognition-cta ${selectedConfig.theme}`}
+                >
+                  {saving ? "Assigning recognition..." : `${selectedConfig.symbol} ${selectedConfig.cta}`}
+                </Button>
+              </aside>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(successAward)} onOpenChange={(open) => !open && onClearSuccess()}>
+        <DialogContent className="recognition-success-modal border-white/10 p-0">
+          {successAward && (
+            <div className="recognition-success-shell">
+              <div className="eom-confetti" />
+              <div className={`recognition-preview ${getRecognitionConfig(successAward.type).theme}`}>
+                <div className="recognition-preview-particles" />
+                <div className="recognition-preview-icon">
+                  {successAward.type === "employee_of_month" ? <Trophy size={34} /> : <Rocket size={34} />}
+                </div>
+                <h3>{successAward.employee}</h3>
+                <p>{successAward.badge}</p>
+                <span>{monthLabel} BS</span>
+              </div>
+              <div className="px-6 pb-6 text-center">
+                <h3 className="text-2xl font-bold text-white">Recognition Successfully Assigned</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {successAward.employee} has been awarded {successAward.badge}.
+                </p>
+                <Button className="neon-button mt-5 rounded-2xl px-6" onClick={onClearSuccess}>
+                  Done
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

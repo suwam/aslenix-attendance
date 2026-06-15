@@ -3685,6 +3685,438 @@
     background-size: 130px 130px, 115px 115px, 150px 150px, 100px 100px;
     animation: eom-confetti 7s linear infinite;
   }
+
+  .recognition-modal {
+    border-radius: 28px;
+    background:
+      radial-gradient(circle at 12% 0%, rgba(246, 196, 83, 0.18), transparent 32%),
+      radial-gradient(circle at 90% 10%, rgba(33, 212, 253, 0.18), transparent 30%),
+      linear-gradient(145deg, rgba(6, 10, 24, 0.96), rgba(11, 16, 34, 0.94));
+    box-shadow: 0 32px 120px rgba(0, 0, 0, 0.72), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+
+  .recognition-particles,
+  .recognition-preview-particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.8;
+    background-image:
+      radial-gradient(circle, rgba(255, 255, 255, 0.55) 0 1px, transparent 1.8px),
+      radial-gradient(circle, rgba(33, 212, 253, 0.7) 0 1px, transparent 2px),
+      radial-gradient(circle, rgba(246, 196, 83, 0.65) 0 1.2px, transparent 2px);
+    background-size: 110px 110px, 160px 160px, 210px 210px;
+    animation: recognition-float 12s linear infinite;
+  }
+
+  .recognition-modal-shell {
+    position: relative;
+    z-index: 1;
+    max-height: 92vh;
+    overflow: auto;
+    padding: 26px;
+    backdrop-filter: blur(24px);
+  }
+
+  .recognition-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 20px;
+  }
+
+  .recognition-header-icon {
+    display: grid;
+    height: 58px;
+    width: 58px;
+    place-items: center;
+    border-radius: 20px;
+    color: #fff4c7;
+    background: linear-gradient(135deg, rgba(246, 196, 83, 0.9), rgba(255, 122, 69, 0.7));
+    box-shadow: 0 0 36px rgba(246, 196, 83, 0.42);
+  }
+
+  .recognition-modal-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 20px;
+    padding-top: 22px;
+  }
+
+  .recognition-main,
+  .recognition-side {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .recognition-badge-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .recognition-badge-card {
+    position: relative;
+    min-height: 188px;
+    overflow: hidden;
+    border-radius: 22px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    text-align: left;
+    color: white;
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  }
+
+  .recognition-badge-card.month {
+    background: linear-gradient(145deg, rgba(83, 57, 15, 0.84), rgba(16, 19, 32, 0.9)), linear-gradient(135deg, #f6c453, #ff7a45);
+  }
+
+  .recognition-badge-card.emerging {
+    background: linear-gradient(145deg, rgba(25, 22, 80, 0.88), rgba(8, 17, 36, 0.92)), linear-gradient(135deg, #8b5cf6, #21d4fd);
+  }
+
+  .recognition-badge-card:hover,
+  .recognition-badge-card.selected {
+    transform: translateY(-3px) scale(1.015);
+    border-color: rgba(255, 255, 255, 0.28);
+  }
+
+  .recognition-badge-card.selected.month { box-shadow: 0 20px 60px rgba(246, 196, 83, 0.24), inset 0 0 0 1px rgba(246, 196, 83, 0.32); }
+  .recognition-badge-card.selected.emerging { box-shadow: 0 20px 60px rgba(139, 92, 246, 0.28), inset 0 0 0 1px rgba(33, 212, 253, 0.28); }
+
+  .recognition-card-glow {
+    position: absolute;
+    inset: -40% -20% auto auto;
+    height: 150px;
+    width: 180px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+    filter: blur(34px);
+  }
+
+  .recognition-card-check {
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    display: grid;
+    height: 30px;
+    width: 30px;
+    place-items: center;
+    border-radius: 999px;
+    background: rgba(16, 185, 129, 0.16);
+    color: #69f0ae;
+    opacity: 0;
+    transform: scale(0.7);
+    transition: opacity 180ms ease, transform 180ms ease;
+  }
+
+  .recognition-badge-card.selected .recognition-card-check {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .recognition-card-icon {
+    display: grid;
+    height: 54px;
+    width: 54px;
+    place-items: center;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+
+  .recognition-card-title,
+  .recognition-card-copy {
+    position: relative;
+    display: block;
+  }
+
+  .recognition-card-title {
+    margin-top: 18px;
+    font-size: 1.15rem;
+    font-weight: 800;
+  }
+
+  .recognition-card-copy {
+    margin-top: 8px;
+    color: rgba(255, 255, 255, 0.66);
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+
+  .recognition-field-panel {
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    background: rgba(255, 255, 255, 0.045);
+    padding: 14px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  .recognition-floating-label,
+  .recognition-field-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 0.74rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+
+  .recognition-field-heading span {
+    color: rgba(255, 255, 255, 0.42);
+    font-size: 0.72rem;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .recognition-selected-employee,
+  .recognition-employee-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 12px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(6, 12, 26, 0.6);
+    padding: 10px;
+  }
+
+  .recognition-selected-employee {
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, rgba(33, 212, 253, 0.1), rgba(246, 196, 83, 0.08));
+  }
+
+  .recognition-search {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .recognition-search svg {
+    position: absolute;
+    left: 12px;
+    color: rgba(255, 255, 255, 0.45);
+  }
+
+  .recognition-search input {
+    padding-left: 38px;
+    border-radius: 16px;
+    border-color: rgba(255, 255, 255, 0.09);
+    background: rgba(0, 0, 0, 0.22);
+  }
+
+  .recognition-employee-list {
+    margin-top: 10px;
+    display: grid;
+    gap: 8px;
+    max-height: 275px;
+    overflow: auto;
+  }
+
+  .recognition-employee-row {
+    width: 100%;
+    text-align: left;
+    transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+  }
+
+  .recognition-employee-row:hover,
+  .recognition-employee-row.selected {
+    transform: translateX(3px);
+    border-color: rgba(33, 212, 253, 0.32);
+    background: rgba(33, 212, 253, 0.08);
+  }
+
+  .recognition-score {
+    display: grid;
+    min-width: 58px;
+    justify-items: center;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.64rem;
+    text-transform: uppercase;
+  }
+
+  .recognition-score b {
+    color: white;
+    font-size: 1rem;
+  }
+
+  .recognition-rank {
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.09);
+    padding: 6px 9px;
+    color: rgba(255, 255, 255, 0.72);
+    font-weight: 800;
+  }
+
+  .recognition-textarea {
+    min-height: 120px;
+    resize: vertical;
+    border-radius: 18px;
+    border-color: rgba(255, 255, 255, 0.09);
+    background: rgba(0, 0, 0, 0.22);
+  }
+
+  .recognition-tag {
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.055);
+    padding: 7px 10px;
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 0.78rem;
+    transition: transform 160ms ease, border-color 160ms ease;
+  }
+
+  .recognition-tag:hover {
+    transform: translateY(-1px);
+    border-color: rgba(33, 212, 253, 0.35);
+  }
+
+  .recognition-preview {
+    position: relative;
+    overflow: hidden;
+    min-height: 315px;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 24px;
+    text-align: center;
+    color: white;
+    box-shadow: 0 20px 70px rgba(0, 0, 0, 0.32);
+  }
+
+  .recognition-preview.month {
+    background:
+      radial-gradient(circle at 50% 0%, rgba(246, 196, 83, 0.32), transparent 36%),
+      linear-gradient(145deg, rgba(58, 39, 8, 0.9), rgba(8, 12, 24, 0.92));
+  }
+
+  .recognition-preview.emerging {
+    background:
+      radial-gradient(circle at 50% 0%, rgba(33, 212, 253, 0.26), transparent 36%),
+      linear-gradient(145deg, rgba(42, 27, 100, 0.92), rgba(5, 13, 31, 0.92));
+  }
+
+  .recognition-preview-icon {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    height: 76px;
+    width: 76px;
+    place-items: center;
+    margin: 18px auto;
+    border-radius: 25px;
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0 42px rgba(255, 255, 255, 0.16);
+  }
+
+  .recognition-preview h3 {
+    position: relative;
+    z-index: 1;
+    margin-top: 18px;
+    font-size: 1.65rem;
+    font-weight: 900;
+  }
+
+  .recognition-preview p {
+    position: relative;
+    z-index: 1;
+    margin-top: 8px;
+    color: rgba(255, 255, 255, 0.72);
+    font-weight: 700;
+  }
+
+  .recognition-preview span {
+    position: relative;
+    z-index: 1;
+    margin-top: 14px;
+    display: inline-flex;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 7px 12px;
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .recognition-progress {
+    display: grid;
+    gap: 9px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    padding: 14px;
+  }
+
+  .recognition-progress div {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: rgba(255, 255, 255, 0.42);
+    font-size: 0.86rem;
+    font-weight: 700;
+  }
+
+  .recognition-progress .done {
+    color: #69f0ae;
+  }
+
+  .recognition-cta {
+    width: 100%;
+    min-height: 54px;
+    border-radius: 18px;
+    color: white;
+    font-weight: 900;
+    box-shadow: 0 16px 46px rgba(0, 0, 0, 0.28);
+    transition: transform 160ms ease, box-shadow 160ms ease;
+  }
+
+  .recognition-cta.month {
+    background: linear-gradient(135deg, #f6c453, #ff7a45, #f6c453);
+  }
+
+  .recognition-cta.emerging {
+    background: linear-gradient(135deg, #8b5cf6, #21d4fd, #8b5cf6);
+  }
+
+  .recognition-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 60px rgba(33, 212, 253, 0.22);
+  }
+
+  .recognition-success-modal {
+    max-width: 520px;
+    overflow: hidden;
+    border-radius: 28px;
+    background: linear-gradient(145deg, rgba(8, 13, 28, 0.98), rgba(16, 12, 35, 0.96));
+  }
+
+  .recognition-success-shell {
+    position: relative;
+    display: grid;
+    gap: 18px;
+    padding: 24px;
+    text-align: center;
+  }
+
+  .recognition-success-shell .recognition-preview {
+    min-height: 260px;
+    animation: recognition-reveal 520ms ease both;
+  }
+
+  @media (max-width: 980px) {
+    .recognition-modal-body {
+      grid-template-columns: 1fr;
+    }
+
+    .recognition-badge-grid {
+      grid-template-columns: 1fr;
+    }
+  }
   .eom-page {
     position: relative;
   }
@@ -5205,6 +5637,23 @@
 @keyframes eom-confetti {
   0% { transform: translateY(-10px); }
   100% { transform: translateY(18px); }
+}
+
+@keyframes recognition-float {
+  0% { transform: translate3d(0, -10px, 0); }
+  50% { transform: translate3d(10px, 8px, 0); }
+  100% { transform: translate3d(0, -10px, 0); }
+}
+
+@keyframes recognition-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes eom-crown-float {
