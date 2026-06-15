@@ -60,7 +60,7 @@ import { useAuth } from "@/lib/auth-context";
 import { productivityScore } from "@/lib/tasks-utils";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
 import { calculateWeightedAttendancePct, resolvedReviewScore, reviewScoreFromRating } from "@/lib/employee-scoring";
-import { formatNepaliDate } from "@/lib/nepali-calendar";
+import { formatNepaliDate, getCurrentNepaliMonthRange } from "@/lib/nepali-calendar";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/admin/weekly-feedback")({
@@ -103,8 +103,6 @@ type EmployeeWeek = {
 };
 
 const ratingOptions: Rating[] = ["Excellent", "Good", "Average", "Poor"];
-const REVIEW_WEEK_START_DAY = 3;
-const REVIEW_CYCLE_WEEK_ONE_START = "2026-05-20";
 
 function WeeklyFeedbackPage() {
   const { user } = useAuth();
@@ -307,7 +305,12 @@ function WeeklyFeedbackPage() {
   const aiInsight = selected
     ? makeWeeklyProgressInsight(selected.name, currentTrendRow.score, weeklyGrowth, selected.attendancePct, selectedTaskCompletion)
     : "Select an employee to view weekly progress insight.";
-  const reviewedThisWeek = feedbackRows.filter((row) => getFeedbackWeekNumber(row) === currentWeekNumber).length;
+  const currentReviewWeek = reviewWeeks.find((week) => week.weekNumber === currentWeekNumber);
+  const reviewedThisWeek = feedbackRows.filter(
+    (row) =>
+      getFeedbackWeekNumber(row) === currentWeekNumber &&
+      isSameReviewCycle(row.week_start, currentReviewWeek?.startDate),
+  ).length;
   const totalReviews = feedbackRows.length;
   const avgHrRating = average(
     feedbackRows.map((row) => resolvedReviewScore(row)),
@@ -1077,22 +1080,17 @@ function makeWeeklyProgressInsight(name: string, score: number, growth: number, 
 }
 
 function getReviewWeekNumber(date: Date) {
-  const cycleWeekOneStart = startOfWeek(new Date(`${REVIEW_CYCLE_WEEK_ONE_START}T00:00:00`), {
-    weekStartsOn: REVIEW_WEEK_START_DAY,
-  }).getTime();
-  const reviewWeekStart = startOfWeek(date, { weekStartsOn: REVIEW_WEEK_START_DAY }).getTime();
-  const weekOffset = Math.floor((reviewWeekStart - cycleWeekOneStart) / 604800000);
+  const cycleStart = getReviewCycleStart(date).getTime();
+  const weekOffset = Math.floor((startOfDay(date).getTime() - cycleStart) / 604800000);
   return Math.min(4, Math.max(1, weekOffset + 1));
 }
 
 function getReviewWeeks(date: Date) {
-  const currentWeekNumber = getReviewWeekNumber(date);
-  const currentWeekStart = startOfWeek(date, { weekStartsOn: REVIEW_WEEK_START_DAY });
+  const cycleStart = getReviewCycleStart(date);
   return Array.from({ length: 4 }).map((_, index) => {
     const weekNumber = index + 1;
-    const offsetFromCurrentWeek = weekNumber - currentWeekNumber;
-    const startDate = new Date(currentWeekStart);
-    startDate.setDate(currentWeekStart.getDate() + offsetFromCurrentWeek * 7);
+    const startDate = new Date(cycleStart);
+    startDate.setDate(cycleStart.getDate() + index * 7);
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + 6);
     return {
@@ -1101,6 +1099,15 @@ function getReviewWeeks(date: Date) {
       endDate: toDateKey(endDate),
     };
   });
+}
+
+function getReviewCycleStart(date: Date) {
+  const monthStart = getCurrentNepaliMonthRange(date).startAd;
+  return startOfDay(new Date(`${monthStart}T00:00:00`));
+}
+
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
 function toDateKey(date: Date) {
