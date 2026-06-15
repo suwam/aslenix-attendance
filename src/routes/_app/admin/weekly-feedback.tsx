@@ -103,6 +103,7 @@ type EmployeeWeek = {
 };
 
 const ratingOptions: Rating[] = ["Excellent", "Good", "Average", "Poor"];
+const REVIEW_UNLOCK_DAY = 2;
 
 function WeeklyFeedbackPage() {
   const { user } = useAuth();
@@ -1080,19 +1081,19 @@ function makeWeeklyProgressInsight(name: string, score: number, growth: number, 
 }
 
 function getReviewWeekNumber(date: Date) {
-  const cycleStart = getReviewCycleStart(date).getTime();
-  const weekOffset = Math.floor((startOfDay(date).getTime() - cycleStart) / 604800000);
-  return Math.min(4, Math.max(1, weekOffset + 1));
+  const today = startOfDay(date).getTime();
+  const weekStarts = getReviewWeekStarts(date);
+  const currentWeekIndex = weekStarts.findLastIndex((weekStart) => weekStart.getTime() <= today);
+  return Math.min(4, Math.max(1, currentWeekIndex + 1));
 }
 
 function getReviewWeeks(date: Date) {
-  const cycleStart = getReviewCycleStart(date);
+  const weekStarts = getReviewWeekStarts(date);
   return Array.from({ length: 4 }).map((_, index) => {
     const weekNumber = index + 1;
-    const startDate = new Date(cycleStart);
-    startDate.setDate(cycleStart.getDate() + index * 7);
-    const endDate = new Date(startDate);
-    endDate.setDate(startDate.getDate() + 6);
+    const startDate = weekStarts[index];
+    const endDate = weekStarts[index + 1] ? new Date(weekStarts[index + 1]) : new Date(startDate);
+    endDate.setDate(endDate.getDate() + (weekStarts[index + 1] ? -1 : 6));
     return {
       weekNumber,
       startDate: toDateKey(startDate),
@@ -1101,9 +1102,27 @@ function getReviewWeeks(date: Date) {
   });
 }
 
+function getReviewWeekStarts(date: Date) {
+  const cycleStart = getReviewCycleStart(date);
+  const secondWeekStart = nextWeekdayAfter(cycleStart, REVIEW_UNLOCK_DAY);
+  return Array.from({ length: 4 }).map((_, index) => {
+    if (index === 0) return new Date(cycleStart);
+    const startDate = new Date(secondWeekStart);
+    startDate.setDate(secondWeekStart.getDate() + (index - 1) * 7);
+    return startDate;
+  });
+}
+
 function getReviewCycleStart(date: Date) {
   const monthStart = getCurrentNepaliMonthRange(date).startAd;
   return startOfDay(new Date(`${monthStart}T00:00:00`));
+}
+
+function nextWeekdayAfter(date: Date, weekday: number) {
+  const next = new Date(date);
+  const daysUntilWeekday = (weekday - next.getDay() + 7) % 7 || 7;
+  next.setDate(next.getDate() + daysUntilWeekday);
+  return next;
 }
 
 function startOfDay(date: Date) {
@@ -1120,7 +1139,9 @@ function getFeedbackWeekNumber(review: Pick<WeeklyFeedbackRow, "week_number" | "
 
 function isSameReviewCycle(reviewDate: string, weekStart?: string) {
   if (!weekStart) return false;
-  return reviewDate.slice(0, 7) === weekStart.slice(0, 7);
+  const reviewCycleStart = toDateKey(getReviewCycleStart(new Date(`${reviewDate}T00:00:00`)));
+  const weekCycleStart = toDateKey(getReviewCycleStart(new Date(`${weekStart}T00:00:00`)));
+  return reviewCycleStart === weekCycleStart;
 }
 
 function isHrProfile(profile: { department?: string | null; position?: string | null }) {
