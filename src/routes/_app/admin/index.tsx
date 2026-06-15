@@ -13,7 +13,8 @@ import {
   BellDot,
   Activity,
 } from "lucide-react";
-import { format, subDays } from "date-fns";
+import { addDays, format, subDays } from "date-fns";
+import { getCurrentNepaliMonthRange } from "@/lib/nepali-calendar";
 
 const AdminCharts = lazy(() => import("@/components/AdminCharts"));
 
@@ -71,11 +72,14 @@ function AdminDashboard() {
         pct,
       });
 
-      // Weekly attendance
+      // Weekly attendance, reset at the current Nepali month boundary.
       const days: any[] = [];
-      for (let i = 6; i >= 0; i--) {
-        const d = subDays(new Date(), i);
-        const ds = d.toISOString().slice(0, 10);
+      const nepaliMonthStart = new Date(`${getCurrentNepaliMonthRange().startAd}T00:00:00`);
+      const todayDate = new Date(`${today}T00:00:00`);
+      const chartStart = subDays(todayDate, 6);
+      const firstChartDate = chartStart < nepaliMonthStart ? nepaliMonthStart : chartStart;
+      for (let d = firstChartDate; d <= todayDate; d = addDays(d, 1)) {
+        const ds = format(d, "yyyy-MM-dd");
         const { data } = await supabase.from("attendance").select("user_id,status,is_late").eq("date", ds);
         const employeeRows = (data ?? []).filter((row) => employeeIds.has(row.user_id));
         const presentCount = employeeRows.filter((x: any) => x.status === "present" && !x.is_late).length;

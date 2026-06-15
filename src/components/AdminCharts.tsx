@@ -143,7 +143,7 @@ export default function AdminCharts({
           <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="text-lg font-semibold">Weekly attendance</h3>
-              <p className="mt-1 text-xs text-muted-foreground">Last 7 days by attendance status</p>
+              <p className="mt-1 text-xs text-muted-foreground">Current BS month, up to the last 7 days</p>
             </div>
             <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-100">
               Live HRMS

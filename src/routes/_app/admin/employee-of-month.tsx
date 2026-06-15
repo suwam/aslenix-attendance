@@ -6,6 +6,7 @@ import {
   BadgeCheck,
   BarChart3,
   CalendarDays,
+  Check,
   CheckCircle2,
   ClipboardList,
   Crown,
@@ -17,6 +18,9 @@ import {
   Medal,
   MessageSquare,
   Minus,
+  PartyPopper,
+  Rocket,
+  Search,
   Send,
   ShieldOff,
   ShieldCheck,
@@ -165,11 +169,20 @@ const chartColors = ["#21d4fd", "#8b5cf6", "#ff2d6f", "#f6c453", "#22c55e"];
 const EOM_DEPARTMENTS = ["Development", "UI/UX", "Marketing", "HR", "QA"] as const;
 const DEPARTMENT_FILTERS = ["All Departments", ...EOM_DEPARTMENTS] as const;
 type DepartmentFilter = (typeof DEPARTMENT_FILTERS)[number];
+type RecognitionType = "employee_of_month" | "emerging_employee";
 
 function isDateInRange(value: string | null | undefined, startIso: string, endIso: string) {
   if (!value) return false;
   const time = new Date(value).getTime();
   return time >= new Date(startIso).getTime() && time <= new Date(endIso).getTime();
+}
+
+function formatDateKey(date: Date) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
 }
 
 function isTaskRelevantForMonth(task: any, startIso: string, endIso: string) {
@@ -209,6 +222,8 @@ function EmployeeOfMonthPage() {
   const [feedback, setFeedback] = useState("");
   const [notes, setNotes] = useState("");
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
+  const [recognitionType, setRecognitionType] = useState<RecognitionType>("employee_of_month");
+  const [successAward, setSuccessAward] = useState<{ employee: string; badge: string; type: RecognitionType } | null>(null);
   const [departmentFilter, setDepartmentFilter] = useState<DepartmentFilter>("All Departments");
   const [officialAward, setOfficialAward] = useState<any>(null);
   const [savingAward, setSavingAward] = useState(false);
@@ -440,12 +455,24 @@ function EmployeeOfMonthPage() {
         row.departmentRank = departmentRanks.get(row.userId) || index + 1;
       });
 
-      const weeklyRows = Array.from({ length: 4 }).map((_, index) => {
+      const winner = ranked[0];
+      const visibleWeekCount = Math.max(1, Math.min(4, Math.ceil(elapsedDays / 7)));
+      const winnerAttendanceRows = (attendance || []).filter((row) => row.user_id === winner?.userId);
+      const weeklyRows = Array.from({ length: visibleWeekCount }).map((_, index) => {
+        const weekStartDate = new Date(monthStartDate);
+        weekStartDate.setDate(monthStartDate.getDate() + index * 7);
+        const weekEndDate = new Date(weekStartDate);
+        weekEndDate.setDate(weekStartDate.getDate() + 6);
+        const effectiveWeekEndDate = weekEndDate > effectiveEndDate ? effectiveEndDate : weekEndDate;
+        const weekStart = formatDateKey(weekStartDate);
+        const weekEnd = formatDateKey(effectiveWeekEndDate);
+        const weekElapsedDays = Math.max(1, differenceInCalendarDays(effectiveWeekEndDate, weekStartDate) + 1);
+        const weekAttendanceRows = winnerAttendanceRows.filter((row) => row.date >= weekStart && row.date <= weekEnd);
         const base = ranked[0]?.score || 0;
         return {
           week: `W${index + 1}`,
           productivity: Math.max(8, Math.min(100, base - (3 - index) * 7 + index * 3)),
-          attendance: Math.max(8, Math.min(100, (ranked[0]?.attendancePct || 0) - (3 - index) * 4)),
+          attendance: calculateWeightedAttendancePct(weekAttendanceRows, weekElapsedDays),
           standup: Math.max(8, Math.min(100, (ranked[0]?.standupScore || 0) - (3 - index) * 3)),
           taskProgress: Math.max(0, Math.round((ranked[0]?.effortProgress || 0) * ((index + 1) / 4))),
           tasksCompleted: Math.max(0, Math.round((ranked[0]?.completedEffortPoints || 0) * ((index + 1) / 4))),
@@ -527,8 +554,9 @@ function EmployeeOfMonthPage() {
     [visibleRows],
   );
 
-  const submitFeedback = async () => {
+  const submitFeedback = async (awardType: RecognitionType = recognitionType) => {
     if (!user || !selectedEmployee) return;
+    const badgeLabel = getRecognitionConfig(awardType).title;
     setSavingAward(true);
     const resetResult = await (supabase as any)
       .from("employee_month_awards")
@@ -544,18 +572,18 @@ function EmployeeOfMonthPage() {
       admin_id: user.id,
       month_start: monthStart,
       score: selectedEmployee.score,
-      rating,
+      rating: badgeLabel,
       public_message: feedback || null,
       internal_notes: notes || null,
     });
     setSavingAward(false);
     if (error) return toast.error(error.message);
-    toast.success(`${selectedEmployee.name} was assigned Employee of the Month`);
+    toast.success(`${selectedEmployee.name} was awarded ${badgeLabel}`);
     setOfficialAward({
       employee_id: selectedEmployee.userId,
       month_start: monthStart,
       score: selectedEmployee.score,
-      rating,
+      rating: badgeLabel,
       public_message: feedback,
       internal_notes: notes,
       profiles: {
@@ -565,6 +593,7 @@ function EmployeeOfMonthPage() {
         avatar_url: selectedEmployee.avatarUrl,
       },
     });
+    setSuccessAward({ employee: selectedEmployee.name, badge: badgeLabel, type: awardType });
     setFeedback("");
     setNotes("");
   };
