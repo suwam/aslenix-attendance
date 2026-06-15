@@ -10,9 +10,14 @@ export function formatNepaliDate(date: Date | string = new Date(), pattern = "dd
 }
 
 export function getCurrentNepaliMonthRange(date: Date | string = new Date()) {
+  return getNepaliMonthRange(0, date);
+}
+
+export function getNepaliMonthRange(offset = 0, date: Date | string = new Date()) {
   const bsDate = getNepaliDate(date);
-  const year = bsDate.getYear();
-  const month = bsDate.getMonth();
+  const absoluteMonth = bsDate.getYear() * 12 + bsDate.getMonth() + offset;
+  const year = Math.floor(absoluteMonth / 12);
+  const month = ((absoluteMonth % 12) + 12) % 12;
   const start = new NepaliDate(year, month, 1).toJsDate();
   const nextMonthYear = month === 11 ? year + 1 : year;
   const nextMonth = month === 11 ? 0 : month + 1;
@@ -24,7 +29,7 @@ export function getCurrentNepaliMonthRange(date: Date | string = new Date()) {
     bsMonth: month,
     startAd: format(start, "yyyy-MM-dd"),
     endAd: format(end, "yyyy-MM-dd"),
-    label: bsDate.format("MMMM YYYY"),
+    label: new NepaliDate(year, month, 1).format("MMMM YYYY"),
   };
 }
 

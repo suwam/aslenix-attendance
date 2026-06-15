@@ -48,7 +48,7 @@ import {
   YAxis,
 } from "recharts";
 import { differenceInCalendarDays } from "date-fns";
-import { getCurrentNepaliMonthRange, getNepaliMonthLabel, formatNepaliDate } from "@/lib/nepali-calendar";
+import { getNepaliMonthRange, getNepaliMonthLabel, formatNepaliDate } from "@/lib/nepali-calendar";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
@@ -231,7 +231,7 @@ function EmployeeOfMonthPage() {
   const [savingAward, setSavingAward] = useState(false);
   const [resettingAward, setResettingAward] = useState(false);
 
-  const nepaliMonth = getCurrentNepaliMonthRange();
+  const nepaliMonth = getNepaliMonthRange(-1);
   const monthStart = nepaliMonth.startAd;
   const monthEnd = nepaliMonth.endAd;
 
@@ -611,7 +611,7 @@ function EmployeeOfMonthPage() {
 
   const resetOfficialAward = async () => {
     if (!officialAward) return;
-    const confirmed = window.confirm("Reset Employee of the Month for this month?");
+    const confirmed = window.confirm("Reset Employee of the Month for the previous month?");
     if (!confirmed) return;
 
     setResettingAward(true);
@@ -623,7 +623,7 @@ function EmployeeOfMonthPage() {
 
     if (error) return toast.error(error.message);
 
-    toast.success("Employee of the Month has been reset for this month");
+    toast.success("Employee of the Month has been reset for the previous month");
     setOfficialAward(null);
     void loadEomData({ silent: true });
   };
@@ -1077,7 +1077,7 @@ function AnalyticsPanel({ weekly, rows }: { weekly: any[]; rows: EmployeeRank[] 
   const lowWeek = weekly.reduce((worst, row) => (Number(row.productivity || 0) < Number(worst.productivity || 0) ? row : worst), weekly[0] || {});
   const targetWeeks = weekly.filter((row) => Number(row.productivity || 0) >= productivityTarget).length;
   const excellentWeeks = weekly.filter((row) => Number(row.productivity || 0) >= 90).length;
-  const trendSummary = `Productivity ${growthPct >= 0 ? "increased" : "decreased"} by ${Math.abs(growthPct)}% during this month.`;
+  const trendSummary = `Productivity ${growthPct >= 0 ? "increased" : "decreased"} by ${Math.abs(growthPct)}% during the previous month.`;
   const productivityInsight = makeEomProductivityInsight({
     name: winner?.name || "Top employee",
     monthlyAverage,
@@ -1330,7 +1330,7 @@ function makeEomProductivityInsight({
     return `${firstName}'s productivity is being limited by attendance consistency. Improving attendance should lift monthly performance quickly.`;
   }
   if (monthlyAverage < 60) {
-    return `${firstName} needs support this month. Review blockers, reduce context switching, and set smaller weekly productivity targets.`;
+    return `${firstName} needed support in the previous month. Review blockers, reduce context switching, and set smaller weekly productivity targets.`;
   }
   return `${firstName} has stable productivity with a ${monthlyAverage}/100 monthly average. Focus on one more target-level week to strengthen EOM readiness.`;
 }
@@ -1406,7 +1406,7 @@ function makeEomAttendanceInsight({
     return `Attendance improved by ${growth}% across the month. The trend is positive, and one more target-level week will strengthen EOM confidence.`;
   }
   if (growth < 0) {
-    return `Attendance declined by ${Math.abs(growth)}% this month. Review late or missed days and reinforce weekly consistency before the next evaluation cycle.`;
+    return `Attendance declined by ${Math.abs(growth)}% in the previous month. Review late or missed days and reinforce weekly consistency before the next evaluation cycle.`;
   }
   return `Attendance is stable at ${overallAttendance}%. Best performance was ${bestWeek}; focus on crossing the 90% benchmark consistently.`;
 }
@@ -1529,7 +1529,7 @@ function FeedbackPanel({
         </div>
         {awardedName && (
           <div className="mt-4 rounded-2xl border border-amber-200/20 bg-amber-300/10 p-3 text-sm text-amber-100">
-            Current official winner for this month: <span className="font-semibold">{awardedName}</span>
+            Current official winner for the previous month: <span className="font-semibold">{awardedName}</span>
           </div>
         )}
       </GlassCard>
