@@ -26,6 +26,13 @@ import {
   Sector,
 } from "recharts";
 import { GlassCard } from "@/components/GlassCard";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { formatNepaliDate } from "@/lib/nepali-calendar";
 
 const COLORS = [
@@ -111,6 +118,7 @@ export default function AdminCharts({
 }) {
   const [activeDepartmentIndex, setActiveDepartmentIndex] = useState<number | null>(null);
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>("all");
+  const [selectedActivity, setSelectedActivity] = useState<ActivityFeedItem | null>(null);
   const weeklyRows = weekly.map((row) => {
     const present = Number(row.present ?? 0);
     const late = Number(row.late ?? 0);
@@ -398,6 +406,7 @@ export default function AdminCharts({
                     key={item.id}
                     item={item}
                     newest={index < 2}
+                    onViewDetails={setSelectedActivity}
                   />
                 ))
               ) : (
@@ -409,6 +418,12 @@ export default function AdminCharts({
           </div>
         )}
       </GlassCard>
+      <ActivityDetailDialog
+        item={selectedActivity}
+        onOpenChange={(open) => {
+          if (!open) setSelectedActivity(null);
+        }}
+      />
     </div>
   );
 }
@@ -497,7 +512,15 @@ function ActivitySummaryPill({ label, value, className = "" }: { label: string; 
   );
 }
 
-function ActivityTimelineItem({ item, newest }: { item: ActivityFeedItem; newest: boolean }) {
+function ActivityTimelineItem({
+  item,
+  newest,
+  onViewDetails,
+}: {
+  item: ActivityFeedItem;
+  newest: boolean;
+  onViewDetails: (item: ActivityFeedItem) => void;
+}) {
   const meta = ACTIVITY_META[item.kind];
   const Icon = meta.icon;
   const absoluteTime = `${formatNepaliDate(item.createdAt, "DD MMM YYYY")} BS, ${format(new Date(item.createdAt), "HH:mm")}`;
@@ -559,7 +582,7 @@ function ActivityTimelineItem({ item, newest }: { item: ActivityFeedItem; newest
           </div>
         </div>
         <div className="mt-3 flex flex-wrap gap-2 opacity-100 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
-          <ActivityAction label="View Details" />
+          <ActivityAction label="View Details" onClick={() => onViewDetails(item)} />
           <ActivityAction label="Open Employee" />
           {item.category === "task" && <ActivityAction label="Open Task" />}
         </div>
@@ -568,14 +591,98 @@ function ActivityTimelineItem({ item, newest }: { item: ActivityFeedItem; newest
   );
 }
 
-function ActivityAction({ label }: { label: string }) {
+function ActivityAction({ label, onClick }: { label: string; onClick?: () => void }) {
   return (
     <button
       type="button"
+      onClick={onClick}
       className="rounded-full border border-white/10 bg-white/[0.035] px-2.5 py-1 text-[11px] font-semibold text-white/62 transition-colors hover:border-white/18 hover:bg-white/[0.07] hover:text-white"
     >
       {label}
     </button>
+  );
+}
+
+function ActivityDetailDialog({
+  item,
+  onOpenChange,
+}: {
+  item: ActivityFeedItem | null;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const meta = item ? ACTIVITY_META[item.kind] : null;
+  const Icon = meta?.icon ?? BellDot;
+  const priority = item ? priorityStyle(item.priority) : null;
+  const createdAt = item
+    ? `${formatNepaliDate(item.createdAt, "DD MMM YYYY")} BS, ${format(new Date(item.createdAt), "HH:mm")}`
+    : "";
+
+  return (
+    <Dialog open={Boolean(item)} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-hidden border-white/10 bg-background/95 p-0 sm:max-w-xl">
+        {item && meta && priority && (
+          <div className="relative">
+            <div
+              className="absolute inset-x-0 top-0 h-28 opacity-20"
+              style={{ background: `linear-gradient(135deg, ${meta.color}, transparent 68%)` }}
+            />
+            <div className="relative p-6">
+              <DialogHeader className="text-left">
+                <div className="mb-4 flex items-start gap-3">
+                  <div
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border shadow-[0_0_22px_currentColor]"
+                    style={{ color: meta.color, backgroundColor: meta.bg, borderColor: `${meta.color}42` }}
+                  >
+                    <Icon size={20} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span
+                        className="rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]"
+                        style={{ color: meta.color, backgroundColor: meta.bg, borderColor: `${meta.color}38` }}
+                      >
+                        {item.badge}
+                      </span>
+                      <span
+                        className="rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]"
+                        style={{ color: priority.color, borderColor: `${priority.color}38`, backgroundColor: `${priority.color}18` }}
+                      >
+                        {priority.label} priority
+                      </span>
+                    </div>
+                    <DialogTitle className="mt-2 text-xl font-bold text-white">{item.groupedTitle || item.title}</DialogTitle>
+                    <DialogDescription className="mt-1 text-sm text-muted-foreground">
+                      {meta.label} from {item.employeeName}
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="rounded-xl border border-white/10 bg-white/[0.035] p-4">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/42">Details</div>
+                  <p className="mt-2 text-sm leading-6 text-white/78">{item.message || "No extra details were provided."}</p>
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <ActivityDetailField label="Employee" value={item.employeeName} />
+                  <ActivityDetailField label="Time" value={createdAt} />
+                  <ActivityDetailField label="Updates" value={item.groupedCount > 1 ? `${item.groupedCount} updates` : "Single update"} />
+                  <ActivityDetailField label="Category" value={item.badge} />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ActivityDetailField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.025] p-3">
+      <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/38">{label}</div>
+      <div className="mt-1 text-sm font-semibold text-white/82">{value}</div>
+    </div>
   );
 }
 
