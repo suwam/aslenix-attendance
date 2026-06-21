@@ -39,11 +39,13 @@ function NotifPage() {
       .update({ is_read: true })
       .eq("user_id", user.id)
       .eq("is_read", false);
+    notifyUnreadCountChanged();
     toast.success("All marked as read");
     load();
   };
   const markOne = async (id: string) => {
     await supabase.from("notifications").update({ is_read: true }).eq("id", id);
+    notifyUnreadCountChanged();
     load();
   };
 
@@ -101,4 +103,8 @@ function NotifPage() {
       )}
     </>
   );
+}
+
+function notifyUnreadCountChanged() {
+  window.dispatchEvent(new Event("notifications:changed"));
 }

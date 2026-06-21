@@ -75,13 +75,23 @@ export function AppShell({ children }: { children: ReactNode }) {
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
-    if (!profile) return;
-    supabase
+    if (!profile) {
+      setUnread(0);
+      return;
+    }
+
+    const refreshUnread = () => {
+      supabase
       .from("notifications")
       .select("id", { count: "exact", head: true })
       .eq("user_id", profile.user_id)
       .eq("is_read", false)
       .then(({ count }) => setUnread(count ?? 0));
+    };
+
+    refreshUnread();
+    window.addEventListener("notifications:changed", refreshUnread);
+
     const ch = supabase
       .channel("notif-" + profile.user_id)
       .on(
@@ -92,17 +102,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           table: "notifications",
           filter: `user_id=eq.${profile.user_id}`,
         },
-        () => {
-          supabase
-            .from("notifications")
-            .select("id", { count: "exact", head: true })
-            .eq("user_id", profile.user_id)
-            .eq("is_read", false)
-            .then(({ count }) => setUnread(count ?? 0));
-        },
+        refreshUnread,
       )
       .subscribe();
     return () => {
+      window.removeEventListener("notifications:changed", refreshUnread);
       supabase.removeChannel(ch);
     };
   }, [profile]);

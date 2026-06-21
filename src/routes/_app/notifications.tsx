@@ -110,6 +110,7 @@ function NotifPage() {
       .update({ is_read: true })
       .eq("user_id", user.id)
       .eq("is_read", false);
+    notifyUnreadCountChanged();
     toast.success("Marked all as read");
     load();
   };
@@ -119,7 +120,11 @@ function NotifPage() {
     setRows((current) =>
       current.map((row) => (row.id === notification.id ? { ...row, is_read: true } : row)),
     );
+    setSelectedNotification((current) =>
+      current?.id === notification.id ? { ...current, is_read: true } : current,
+    );
     await supabase.from("notifications").update({ is_read: true }).eq("id", notification.id);
+    notifyUnreadCountChanged();
   };
 
   const unreadCount = rows.filter((row) => !row.is_read).length;
@@ -454,4 +459,8 @@ function detectNotificationKind(notification: NotificationRow): NotificationKind
   if (text.includes("employee") || text.includes("profile")) return "employee";
   if (text.includes("announcement") || text.includes("notice") || text.includes("meeting")) return "announcement";
   return "system";
+}
+
+function notifyUnreadCountChanged() {
+  window.dispatchEvent(new Event("notifications:changed"));
 }

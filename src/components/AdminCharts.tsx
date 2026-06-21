@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import {
   BellDot,
   CheckCircle2,
@@ -116,6 +117,7 @@ export default function AdminCharts({
   deptData: any[];
   activity: any[];
 }) {
+  const navigate = useNavigate();
   const [activeDepartmentIndex, setActiveDepartmentIndex] = useState<number | null>(null);
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>("all");
   const [selectedActivity, setSelectedActivity] = useState<ActivityFeedItem | null>(null);
@@ -407,6 +409,8 @@ export default function AdminCharts({
                     item={item}
                     newest={index < 2}
                     onViewDetails={setSelectedActivity}
+                    onOpenEmployee={() => navigate({ to: "/admin/employees" })}
+                    onOpenTask={() => navigate({ to: "/admin/tasks" })}
                   />
                 ))
               ) : (
@@ -516,10 +520,14 @@ function ActivityTimelineItem({
   item,
   newest,
   onViewDetails,
+  onOpenEmployee,
+  onOpenTask,
 }: {
   item: ActivityFeedItem;
   newest: boolean;
   onViewDetails: (item: ActivityFeedItem) => void;
+  onOpenEmployee: () => void;
+  onOpenTask: () => void;
 }) {
   const meta = ACTIVITY_META[item.kind];
   const Icon = meta.icon;
@@ -583,8 +591,8 @@ function ActivityTimelineItem({
         </div>
         <div className="mt-3 flex flex-wrap gap-2 opacity-100 transition-opacity duration-200 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
           <ActivityAction label="View Details" onClick={() => onViewDetails(item)} />
-          <ActivityAction label="Open Employee" />
-          {item.category === "task" && <ActivityAction label="Open Task" />}
+          <ActivityAction label="Open Employee" onClick={onOpenEmployee} />
+          {item.category === "task" && <ActivityAction label="Open Task" onClick={onOpenTask} />}
         </div>
       </div>
     </li>
