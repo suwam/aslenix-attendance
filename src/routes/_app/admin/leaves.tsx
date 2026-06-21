@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Check, X } from "lucide-react";
 import { toast } from "sonner";
-import { differenceInDays, format, formatDistanceToNowStrict } from "date-fns";
+import { differenceInDays, formatDistanceToNowStrict } from "date-fns";
+import { formatNepaliDate } from "@/lib/nepali-calendar";
 
 export const Route = createFileRoute("/_app/admin/leaves")({ component: LeavesPage });
 
@@ -134,6 +135,8 @@ function LeavesPage() {
   const requestedAgo = (date: string) =>
     formatDistanceToNowStrict(new Date(date), { addSuffix: true });
 
+  const formatBsDate = (date: string) => `${formatNepaliDate(date, "DD MMM YYYY")} BS`;
+
   return (
     <>
       <PageHeader title="Leave Requests" subtitle="Review and approve employee time-off requests" />
@@ -201,7 +204,7 @@ function LeavesPage() {
                         {r.status}
                       </span>
                       <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase text-muted-foreground">
-                        {format(new Date(r.created_at), "MMM d, yyyy")}
+                        {formatBsDate(r.created_at)}
                       </span>
                     </div>
                   </div>
@@ -214,7 +217,7 @@ function LeavesPage() {
                     <div className="rounded-3xl bg-white/5 p-4">
                       <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Dates</div>
                       <div className="mt-2 text-sm font-semibold">
-                        {format(new Date(r.start_date), "MMM d")} → {format(new Date(r.end_date), "MMM d, yyyy")}
+                        {formatNepaliDate(r.start_date, "DD MMM")} → {formatBsDate(r.end_date)}
                       </div>
                     </div>
                     <div className="rounded-3xl bg-white/5 p-4">
@@ -291,7 +294,7 @@ function LeavesPage() {
                         </div>
                         <div className="flex items-center justify-between gap-3">
                           <span>Date updated</span>
-                          <span className="font-semibold text-white">{format(new Date(r.updated_at || r.created_at), "MMM d, yyyy")}</span>
+                          <span className="font-semibold text-white">{formatBsDate(r.updated_at || r.created_at)}</span>
                         </div>
                       </div>
                     </div>

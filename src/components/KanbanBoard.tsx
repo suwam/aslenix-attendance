@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, type CSSProperties } from "react";
 import { AnimatePresence } from "framer-motion";
 import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -137,7 +137,17 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div
+        className="kanban-board-grid grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4"
+        style={
+          {
+            "--kanban-board-height":
+              scope === "all"
+                ? "max(30rem, calc(100dvh - 22rem))"
+                : "max(30rem, calc(100dvh - 14rem))",
+          } as CSSProperties
+        }
+      >
         {TASK_STATUSES.map((status) => {
           const colTasks = tasks.filter((t) => t.status === status);
           return (
@@ -153,7 +163,7 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
                 setDragId(null);
                 setDragOver(null);
               }}
-              className={`glass rounded-2xl p-3 flex flex-col min-h-[60vh] transition-colors ${dragOver === status ? "ring-2 ring-primary" : ""}`}
+              className={`kanban-board-column glass flex flex-col rounded-2xl p-3 transition-colors ${dragOver === status ? "ring-2 ring-primary" : ""}`}
             >
               <div className="flex items-center justify-between mb-3 px-1">
                 <div className="flex items-center gap-2">
@@ -180,7 +190,7 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
                   </button>
                 )}
               </div>
-              <div className="flex-1 space-y-2 overflow-y-auto">
+              <div className="kanban-board-list flex-1 space-y-2 overflow-y-auto pr-1">
                 <AnimatePresence>
                   {colTasks.map((t) => (
                     <TaskCard

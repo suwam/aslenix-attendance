@@ -198,6 +198,37 @@
     will-change: transform, box-shadow, border-color;
   }
 
+  .kanban-board-grid {
+    height: auto;
+    min-height: 30rem;
+    min-width: 0;
+    overflow: visible;
+  }
+
+  .kanban-board-column {
+    height: min(34rem, calc(100dvh - 10rem));
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .kanban-board-list {
+    min-height: 0;
+    overscroll-behavior: contain;
+    scrollbar-color: oklch(0.6 0.25 260 / 0.45) oklch(1 0 0 / 0.06);
+    scrollbar-width: thin;
+  }
+
+  @media (min-width: 1280px) {
+    .kanban-board-grid {
+      height: var(--kanban-board-height);
+      overflow: hidden;
+    }
+
+    .kanban-board-column {
+      height: 100%;
+    }
+  }
+
   .kanban-task-card-auto-moved {
     animation: kanban-auto-moved-highlight 1.8s ease-out;
   }
