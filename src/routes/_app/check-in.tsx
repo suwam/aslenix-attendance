@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { LiveClock } from "@/components/LiveClock";
 import { Button } from "@/components/ui/button";
-import { getVerifiedAttendanceLocation } from "@/lib/attendance-location";
+import { getVerifiedAttendanceLocation, preloadAttendanceLocationSettings } from "@/lib/attendance-location";
 import { formatWorkHours } from "@/lib/work-hours";
 import {
   CalendarCheck2,
@@ -68,6 +68,13 @@ function CheckInPage() {
   useEffect(() => {
     load();
   }, [user]);
+
+  useEffect(() => {
+    if (!user || isAdmin) return;
+    preloadAttendanceLocationSettings().catch(() => {
+      // The button action will show the exact settings/location error if needed.
+    });
+  }, [user, isAdmin]);
 
   const checkIn = async () => {
     if (!user) return;

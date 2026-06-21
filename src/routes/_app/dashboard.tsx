@@ -1,5 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import {
+  Bar,
+  BarChart,
+  Cell,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { LiveClock } from "@/components/LiveClock";
@@ -16,24 +30,35 @@ import { getVerifiedAttendanceLocation } from "@/lib/attendance-location";
 import {
   Activity,
   ArrowUpRight,
+  Award,
   BadgeCheck,
+  BarChart3,
   BellDot,
+  Bot,
+  Briefcase,
   Calendar,
   CalendarClock,
   CheckCheck,
   CheckCircle2,
   CircleUserRound,
+  ClipboardList,
   Clock,
   Crown,
   Flame,
   Gauge,
   History,
+  Laugh,
   LogIn,
   LogOut,
   MapPin,
   MessageSquare,
+  PieChart as PieChartIcon,
+  Plus,
+  ShieldCheck,
   Sparkles,
+  Smile,
   Target,
+  Trophy,
   TrendingUp,
   Users,
   UserRoundCog,
@@ -72,8 +97,51 @@ type ActivityItem = {
   text: string;
 };
 
+type TeamLeader = {
+  userId: string;
+  name: string;
+  department: string;
+  avatarUrl: string | null;
+  score: number;
+};
+
+type MoodLog = {
+  id?: string;
+  user_id: string;
+  mood: string;
+  note?: string | null;
+  log_date: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
 const WEEKLY_TARGET_HOURS = 42;
 const WEEKLY_WORKING_DAYS = 6;
+const QUOTES = [
+  "Small wins compound into remarkable work.",
+  "Focus creates momentum. Momentum creates outcomes.",
+  "Great teams move with clarity, care, and consistency.",
+  "Your best work today is one deliberate step away.",
+];
+const PROJECTS = [
+  { name: "Baljagriti School Website", progress: 76, deadline: "18 Jul", members: ["SK", "AK", "RM"], status: "Design QA" },
+  { name: "Attendance Management System", progress: 88, deadline: "25 Jul", members: ["AS", "NP", "AY"], status: "Production" },
+  { name: "Sudisu Pride Website", progress: 54, deadline: "02 Aug", members: ["PR", "RS", "MN"], status: "Development" },
+];
+const BADGES = [
+  { label: "Employee of the Month", icon: Crown, active: true },
+  { label: "Productivity Hero", icon: Trophy, active: true },
+  { label: "Perfect Attendance", icon: BadgeCheck, active: false },
+  { label: "Early Bird", icon: Flame, active: true },
+  { label: "Standup Champion", icon: MessageSquare, active: true },
+];
+const MOODS = [
+  { value: "excellent", label: "Excellent", emoji: "😁" },
+  { value: "good", label: "Good", emoji: "😃" },
+  { value: "neutral", label: "Neutral", emoji: "🙂" },
+  { value: "tired", label: "Tired", emoji: "😐" },
+  { value: "stressed", label: "Stressed", emoji: "😔" },
+];
 
 function EmployeeDashboard() {
   const { user, profile, isAdmin } = useAuth();
@@ -91,12 +159,17 @@ function EmployeeDashboard() {
   const [focusTasks, setFocusTasks] = useState<any[]>([]);
   const [meetings, setMeetings] = useState<any[]>([]);
   const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
+  const [teamLeaders, setTeamLeaders] = useState<TeamLeader[]>([]);
+  const [moodHistory, setMoodHistory] = useState<MoodLog[]>([]);
   const [monthAward, setMonthAward] = useState<any>(null);
   const [latestImprovement, setLatestImprovement] = useState<any>(null);
   const [improvementOpen, setImprovementOpen] = useState(false);
   const [notificationPopup, setNotificationPopup] = useState<NotificationRow | null>(null);
   const [nowTick, setNowTick] = useState(Date.now());
   const [busy, setBusy] = useState(false);
+  const [taskFilter, setTaskFilter] = useState<"all" | "active" | "overdue">("all");
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [mood, setMood] = useState<string>("good");
 
   const todayDate = format(new Date(), "yyyy-MM-dd");
   const isWeeklyOff = isWeeklyOffDate(todayDate);
@@ -111,7 +184,7 @@ function EmployeeDashboard() {
     const monthEnd = nepaliMonth.endAd;
     const historyStart = format(subDays(new Date(), 14), "yyyy-MM-dd");
 
-    const [{ data: t }, { data: monthAttendance }, { data: historyRows }, awardResult, improvementResult] =
+    const [{ data: t }, { data: monthAttendance }, { data: historyRows }, awardResult, improvementResult, moodResult] =
       await Promise.all([
         supabase
           .from("attendance")
@@ -140,6 +213,12 @@ function EmployeeDashboard() {
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
+        (supabase as any)
+          .from("mood_logs")
+          .select("*")
+          .eq("user_id", user.id)
+          .gte("log_date", historyStart)
+          .order("log_date", { ascending: false }),
       ]);
 
     setToday(t);
@@ -149,6 +228,13 @@ function EmployeeDashboard() {
     setLatestImprovement(improvement);
     if (improvement?.id && !isImprovementDismissed(user.id, improvement.id)) {
       setImprovementOpen(true);
+    }
+    if (!moodResult.error) {
+      const moodRows = (moodResult.data || []) as MoodLog[];
+      setMoodHistory(moodRows);
+      const todayMood = moodRows.find((row) => row.log_date === todayDate);
+      const cachedMood = typeof window !== "undefined" ? window.localStorage.getItem("employee-dashboard-mood") : null;
+      setMood(todayMood?.mood || cachedMood || "good");
     }
 
     const monthRows = monthAttendance ?? [];
@@ -255,6 +341,38 @@ function EmployeeDashboard() {
       .sort((a, b) => +new Date(b.when) - +new Date(a.when))
       .slice(0, 7);
     setRecent(items);
+
+    const [
+      { data: profileRows },
+      { data: roleRows },
+      { data: teamTasks },
+      teamAssigneeResult,
+      { data: teamAttendance },
+    ] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("user_id, full_name, department, avatar_url")
+        .eq("approval_status", "approved")
+        .eq("is_suspended", false)
+        .order("full_name"),
+      supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
+      supabase.from("tasks").select("*"),
+      supabase.from("task_assignees").select("task_id,user_id"),
+      supabase.from("attendance").select("*").gte("date", historyStart),
+    ]);
+    const teamAssignees =
+      teamAssigneeResult.error && isMissingSupabaseTableError(teamAssigneeResult.error, "task_assignees")
+        ? []
+        : teamAssigneeResult.data || [];
+    setTeamLeaders(
+      buildTeamLeaderboard({
+        profiles: profileRows || [],
+        roles: roleRows || [],
+        tasks: teamTasks || [],
+        assignees: teamAssignees,
+        attendance: teamAttendance || [],
+      }),
+    );
   };
 
   useEffect(() => {
@@ -413,6 +531,39 @@ function EmployeeDashboard() {
     today,
   ]);
   const pendingLeaveRequests = monthStats.leave;
+  const attendanceRate = heatmapSummary.rate;
+  const weeklyHoursProgress = Math.min(100, Math.round((weeklyWorkedHours / WEEKLY_TARGET_HOURS) * 100));
+  const scoreBreakdown = [
+    { label: "Attendance", value: attendanceRate || 88, color: "#22d3ee" },
+    { label: "Task Completion", value: taskStats.total ? Math.round((taskStats.completed / taskStats.total) * 100) : 72, color: "#8b5cf6" },
+    { label: "Standup Consistency", value: recent.some((item) => item.kind === "Standup") ? 92 : 68, color: "#ec4899" },
+    { label: "Focus Hours", value: weeklyHoursProgress, color: "#34d399" },
+  ];
+  const employeeScore = Math.round(scoreBreakdown.reduce((sum, item) => sum + item.value, 0) / scoreBreakdown.length);
+  const chartData = makeDashboardChartData(attendanceHistory, today, focusTasks, weeklyWorkedHours, taskStats);
+  const filteredTasks = focusTasks.filter((task) => {
+    if (taskFilter === "active") return task.status === "in_progress" || task.status === "review";
+    if (taskFilter === "overdue") return task.deadline && new Date(task.deadline).getTime() < Date.now();
+    return true;
+  });
+  const aiSummary = taskStats.overdue
+    ? `${taskStats.overdue} overdue task${taskStats.overdue === 1 ? "" : "s"} need attention. Completing one today could lift your score by 8%.`
+    : weeklyHoursProgress < 75
+      ? "Your attendance is strong. Add more focus hours this week to reach the 42h target."
+      : "Your attendance is excellent. Completing one more task today could improve your productivity score by 8%.";
+  const recommendations = [
+    attendanceRate >= 85 ? "Attendance is excellent." : "Improve attendance consistency this week.",
+    taskStats.overdue ? `${taskStats.overdue} overdue task needs immediate focus.` : "No overdue tasks right now.",
+    weeklyHoursProgress < 100 ? "Weekly hours are below target." : "Weekly hours are on target.",
+    scoreBreakdown[3].value < 80 ? "Focus time needs improvement." : "Focus time is healthy.",
+  ];
+  const notifications = [
+    { title: "Task reminders", text: taskStats.pending ? `${taskStats.pending} pending tasks in your queue.` : "No pending task reminders." },
+    { title: "Project updates", text: `${PROJECTS[0].name} is at ${PROJECTS[0].progress}%.` },
+    { title: "Team mentions", text: todayMeetings.length ? "You have meeting activity today." : "No new team mentions." },
+    { title: "HR announcements", text: latestImprovement?.improvements ? "New weekly review available." : "No new HR announcements." },
+  ];
+  const quote = QUOTES[new Date().getDate() % QUOTES.length];
 
   const dismissImprovement = () => {
     if (user && latestImprovement?.id) {
@@ -432,6 +583,43 @@ function EmployeeDashboard() {
     setNotificationPopup(null);
   };
 
+  const saveMood = async (value: string) => {
+    if (!user) return;
+    setMood(value);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("employee-dashboard-mood", value);
+    }
+    const optimisticRow: MoodLog = {
+      user_id: user.id,
+      mood: value,
+      note: null,
+      log_date: todayDate,
+      updated_at: new Date().toISOString(),
+    };
+    setMoodHistory((current) => [optimisticRow, ...current.filter((row) => row.log_date !== todayDate)]);
+    const { data, error } = await (supabase as any)
+      .from("mood_logs")
+      .upsert(
+        {
+          user_id: user.id,
+          mood: value,
+          note: null,
+          log_date: todayDate,
+        },
+        { onConflict: "user_id,log_date" },
+      )
+      .select()
+      .maybeSingle();
+    if (error) {
+      toast.error(error.message || "Unable to save mood");
+      return;
+    }
+    if (data) {
+      setMoodHistory((current) => [data as MoodLog, ...current.filter((row) => row.log_date !== todayDate)]);
+    }
+    toast.success("Mood saved for today");
+  };
+
   return (
     <>
       <NotificationPopup
@@ -448,34 +636,249 @@ function EmployeeDashboard() {
           else setImprovementOpen(true);
         }}
       >
-        <DialogContent className="grid max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-2xl border-white/10 bg-background/95 sm:max-w-xl">
-          <DialogHeader>
-            <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-white shadow-[0_0_28px_rgba(125,92,255,.35)]">
-              <MessageSquare size={22} />
+        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-hidden rounded-[28px] border-0 bg-transparent p-0 shadow-[0_30px_100px_rgba(0,0,0,.55)] sm:max-w-2xl">
+          <div className="relative rounded-[28px] bg-gradient-to-br from-[#ff3b7f] via-[#7b61ff] to-[#4f9cff] p-[1px] shadow-[0_0_42px_rgba(123,97,255,.26)]">
+            <div className="absolute inset-0 rounded-[28px] bg-gradient-to-br from-[#ff3b7f]/22 via-[#7b61ff]/18 to-[#4f9cff]/22 blur-2xl" />
+            <div className="relative overflow-hidden rounded-[27px] border border-white/10 bg-[#080a14]/95 p-5 text-white backdrop-blur-2xl sm:p-6">
+              <div className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-[#4f9cff]/16 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-28 -left-20 h-56 w-56 rounded-full bg-[#ff3b7f]/12 blur-3xl" />
+
+              <DialogHeader className="relative text-left">
+                <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-white shadow-[0_0_34px_rgba(125,92,255,.4)]">
+                      <MessageSquare size={24} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="mb-2 flex flex-wrap gap-2">
+                        <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-cyan-100">
+                          HR Review
+                        </span>
+                        {latestImprovement?.rating && (
+                          <span className="rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/70">
+                            {latestImprovement.rating}
+                          </span>
+                        )}
+                      </div>
+                      <DialogTitle className="text-2xl font-black leading-tight text-white sm:text-3xl">
+                        Weekly improvement note
+                      </DialogTitle>
+                      <DialogDescription className="mt-2 text-sm font-medium leading-6 text-white/68 sm:text-base">
+                        {latestImprovement?.week_start
+                          ? `Your HR review for the week of ${formatNepaliDate(latestImprovement.week_start, "DD MMM YYYY")} BS`
+                          : "Your latest HR weekly review"}
+                      </DialogDescription>
+                    </div>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="relative grid gap-4">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.08)] sm:p-5">
+                  <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-white/48">
+                    <Target size={14} className="text-cyan-200" />
+                    Focus Area
+                  </div>
+                  <p className="max-h-[38dvh] overflow-y-auto whitespace-pre-wrap pr-1 text-base font-medium leading-7 text-white/88 [scrollbar-color:rgba(103,232,249,0.35)_rgba(255,255,255,0.06)] [scrollbar-width:thin]">
+                    {latestImprovement?.improvements || "No improvement note was added for this week."}
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                    <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/45">Next Step</div>
+                    <div className="mt-1 text-sm font-semibold leading-6 text-white/80">
+                      Review the note and apply it to this week's focus tasks.
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                    <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/45">Visibility</div>
+                    <div className="mt-1 text-sm font-semibold leading-6 text-white/80">
+                      This reminder appears once until you acknowledge it.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter className="relative mt-5 flex-col gap-3 sm:flex-row sm:justify-end sm:space-x-0">
+                <Button
+                  onClick={dismissImprovement}
+                  className="h-12 rounded-xl border-0 bg-[linear-gradient(135deg,#ff3b7f,#7b61ff,#4f9cff)] px-6 font-bold text-white shadow-[0_0_24px_rgba(123,97,255,.36)] transition-shadow hover:shadow-[0_0_34px_rgba(79,156,255,.55)] focus-visible:ring-[#4f9cff]"
+                >
+                  <CheckCheck size={16} className="mr-2" />
+                  Got it
+                </Button>
+              </DialogFooter>
             </div>
-            <DialogTitle>Weekly improvement note</DialogTitle>
-            <DialogDescription>
-              {latestImprovement?.week_start
-                ? `Your HR review for the week of ${formatNepaliDate(latestImprovement.week_start, "DD MMM YYYY")} BS`
-                : "Your latest HR weekly review"}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="min-h-0 overflow-y-auto rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Improvement section
-            </div>
-            <p className="whitespace-pre-wrap text-sm leading-6 text-white/90">
-              {latestImprovement?.improvements}
-            </p>
           </div>
-          <DialogFooter>
-            <Button onClick={dismissImprovement} className="neon-button rounded-xl">
-              Got it
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      <main className="min-h-screen space-y-6 overflow-hidden rounded-[32px] bg-[#050711] p-4 text-white sm:p-6 lg:p-8">
+        <motion.section
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden rounded-[32px] border border-white/10 bg-[radial-gradient(circle_at_15%_15%,rgba(34,211,238,.25),transparent_30%),radial-gradient(circle_at_80%_0%,rgba(236,72,153,.22),transparent_32%),linear-gradient(135deg,rgba(15,23,42,.92),rgba(8,13,24,.96))] p-5 shadow-[0_32px_110px_rgba(0,0,0,.55)] sm:p-7 lg:p-9"
+        >
+          <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent_0_30%,rgba(255,255,255,.09)_45%,transparent_60%)] opacity-40" />
+          <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="flex flex-col gap-5 sm:flex-row">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-br from-cyan-300 via-violet-500 to-pink-500 text-2xl font-black shadow-[0_0_42px_rgba(34,211,238,.22)]">
+                {profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" /> : initials(profile?.full_name || firstName)}
+              </div>
+              <div className="min-w-0">
+                <div className="mb-3 flex flex-wrap gap-2">
+                  <Badge icon={Sparkles} label="AI HRMS" />
+                  <Badge icon={MapPin} label="Aslenix Tech & Solution" />
+                </div>
+                <h1 className="max-w-3xl text-4xl font-black leading-none tracking-tight sm:text-6xl lg:text-7xl">Hello, {firstName}</h1>
+                <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-slate-300 sm:text-base">
+                  {profile?.position || "Employee"} · {profile?.department || "Team Member"} · {quote}
+                </p>
+                <div className="mt-5 flex flex-wrap gap-2">
+                  <HeroChip icon={BadgeCheck} label={status} />
+                  <HeroChip icon={Calendar} label={`${nepaliToday} BS`} />
+                  <HeroChip icon={CloudLikeIcon} label="Kathmandu · 24°C" />
+                </div>
+              </div>
+            </div>
+            <div className="grid gap-3">
+              <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl">
+                <div className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-100/70">Live Clock</div>
+                <LiveClock className="mt-2 text-3xl font-black text-white" />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <HeroMini label="Streak" value={`${attendanceStreak}d`} />
+                <HeroMini label="Score" value={`${employeeScore}`} />
+                <HeroMini label="Tasks" value={`${taskStats.pending}`} />
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
+        <motion.section
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="relative overflow-hidden rounded-[28px] border border-cyan-300/20 bg-[linear-gradient(135deg,rgba(8,145,178,.16),rgba(124,58,237,.12),rgba(236,72,153,.12))] p-4 shadow-[0_24px_80px_rgba(34,211,238,.12)] backdrop-blur-xl sm:p-5"
+        >
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_0%,rgba(34,211,238,.18),transparent_36%),radial-gradient(circle_at_95%_0%,rgba(236,72,153,.14),transparent_34%)]" />
+          <div className="relative grid gap-4 xl:grid-cols-[minmax(220px,.8fr)_minmax(300px,1fr)_minmax(360px,1.2fr)] xl:items-center">
+            <div className="flex items-center gap-3">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-cyan-200/25 bg-cyan-300/12 text-cyan-100 shadow-[0_0_34px_rgba(34,211,238,.22)]">
+                <ShieldCheck size={24} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-cyan-100/60">Attendance</div>
+                <div className="mt-1 text-2xl font-black leading-tight text-white">Quick check-in</div>
+                <div className="mt-1 text-sm font-semibold text-slate-400">{status}</div>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Button onClick={checkIn} disabled={busy || isWeeklyOff || Boolean(today) || isAdmin} className="h-14 rounded-2xl bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-500 text-base font-black text-white shadow-[0_0_34px_rgba(34,211,238,.18)] transition hover:scale-[1.01]">
+                <LogIn size={18} className="mr-2" /> Check In
+              </Button>
+              <Button onClick={checkOut} disabled={busy || !today || Boolean(today?.check_out_time) || isAdmin} variant="outline" className="h-14 rounded-2xl border-white/15 bg-white/[0.06] text-base font-black text-white hover:bg-white/[0.1]">
+                <LogOut size={18} className="mr-2" /> Check Out
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <InfoTile label="Check In" value={today?.check_in_time ? format(new Date(today.check_in_time), "HH:mm") : "--"} />
+              <InfoTile label="Check Out" value={today?.check_out_time ? format(new Date(today.check_out_time), "HH:mm") : "--"} />
+              <InfoTile label="Worked" value={workedHours ? formatWorkHours(workedHours) : "--"} />
+              <InfoTile label="Progress" value={`${workProgress}%`} />
+            </div>
+          </div>
+        </motion.section>
+
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <MetricCard icon={BadgeCheck} title="Attendance" value={`${monthStats.present} days`} detail={`${attendanceRate}% rate · ${attendanceStreak} day streak`} tone="cyan" />
+          <MetricCard icon={Gauge} title="Productivity" value={`${taskStats.score}%`} detail={`+${Math.max(0, taskStats.score - 72)}% trend · team avg 82%`} tone="purple" />
+          <MetricCard icon={Target} title="Tasks" value={`${taskStats.completed}/${taskStats.total}`} detail={`${taskStats.pending} pending · ${taskStats.overdue} overdue`} tone="pink" />
+          <MetricCard icon={Clock} title="Work Hours" value={formatWorkHours(weeklyWorkedHours)} detail={`${WEEKLY_TARGET_HOURS}h target · ${weeklyHoursProgress}%`} tone="green" />
+        </section>
+
+        <section className="grid gap-6">
+          <GlassPanel className="p-5 sm:p-6">
+            <SectionTitle icon={Bot} eyebrow="AI Performance" title="Overall employee score" action={`${employeeScore}/100`} />
+            <div className="mt-6 grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+              <RadialScore score={employeeScore} />
+              <div className="space-y-4">
+                {scoreBreakdown.map((item) => <ProgressLine key={item.label} {...item} />)}
+                <div className="rounded-2xl border border-cyan-300/15 bg-cyan-300/10 p-4 text-sm font-semibold leading-6 text-cyan-50/85">{aiSummary}</div>
+              </div>
+            </div>
+          </GlassPanel>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)]">
+          <GlassPanel className="p-5 sm:p-6">
+            <SectionTitle icon={Activity} eyebrow="Last 15 Days" title="Attendance heatmap" action={`${heatmapSummary.rate}%`} />
+            <HeatmapGrid days={heatmapDays} />
+            <div className="mt-5 grid grid-cols-3 gap-3">
+              <InfoTile label="Current Streak" value={`${attendanceStreak}d`} />
+              <InfoTile label="Best Streak" value={`${heatmapSummary.bestStreak}d`} />
+              <InfoTile label="Holidays" value={`${heatmapSummary.holiday}`} />
+            </div>
+          </GlassPanel>
+          <GlassPanel className="p-5 sm:p-6">
+            <SectionTitle icon={ClipboardList} eyebrow="Today" title="Tasks command center" action={`${filteredTasks.length} visible`} />
+            <div className="mt-4 flex flex-wrap gap-2">
+              {(["all", "active", "overdue"] as const).map((filter) => (
+                <button key={filter} onClick={() => setTaskFilter(filter)} className={`rounded-full border px-3 py-1.5 text-xs font-bold capitalize ${taskFilter === filter ? "border-cyan-300/35 bg-cyan-300/15 text-cyan-100" : "border-white/10 bg-white/[0.04] text-white/55"}`}>
+                  {filter}
+                </button>
+              ))}
+            </div>
+            <div className="mt-4 grid gap-3">
+              {filteredTasks.length ? filteredTasks.map((task) => (
+                <TaskCommandCard key={task.id} task={task} nowTick={nowTick} draggable onDragStart={() => setDraggedTaskId(task.id)} onDragOver={(event) => event.preventDefault()} onDrop={() => handleTaskDrop(task.id)} onComplete={() => markTaskComplete(task)} />
+              )) : <EmptyState icon={CheckCircle2} title="No tasks in this filter" text="Your work queue is calm." />}
+            </div>
+          </GlassPanel>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-2 2xl:grid-cols-4">
+          <ChartPanel title="Weekly productivity" icon={BarChart3}><ResponsiveContainer width="100%" height={230}><BarChart data={chartData.weekly}><XAxis dataKey="day" stroke="#94a3b8" fontSize={11} /><YAxis stroke="#94a3b8" fontSize={11} /><Tooltip contentStyle={chartTooltipStyle} /><Bar dataKey="score" radius={[8,8,0,0]} fill="#22d3ee" /></BarChart></ResponsiveContainer></ChartPanel>
+          <ChartPanel title="Monthly productivity" icon={TrendingUp}><ResponsiveContainer width="100%" height={230}><LineChart data={chartData.monthly}><XAxis dataKey="day" stroke="#94a3b8" fontSize={11} /><YAxis stroke="#94a3b8" fontSize={11} /><Tooltip contentStyle={chartTooltipStyle} /><Line type="monotone" dataKey="score" stroke="#ec4899" strokeWidth={3} dot={false} /></LineChart></ResponsiveContainer></ChartPanel>
+          <ChartPanel title="Focus hours" icon={PieChartIcon}><ResponsiveContainer width="100%" height={230}><PieChart><Pie data={chartData.focus} innerRadius={62} outerRadius={88} paddingAngle={3} dataKey="value">{chartData.focus.map((entry, index) => <Cell key={entry.name} fill={["#22d3ee", "#8b5cf6", "#ec4899"][index]} />)}</Pie><Tooltip contentStyle={chartTooltipStyle} /></PieChart></ResponsiveContainer></ChartPanel>
+          <ChartPanel title="Task completion trend" icon={CheckCircle2}><ResponsiveContainer width="100%" height={230}><LineChart data={chartData.tasks}><XAxis dataKey="day" stroke="#94a3b8" fontSize={11} /><YAxis stroke="#94a3b8" fontSize={11} /><Tooltip contentStyle={chartTooltipStyle} /><Line type="monotone" dataKey="completed" stroke="#34d399" strokeWidth={3} dot={{ r: 3, fill: "#34d399" }} /></LineChart></ResponsiveContainer></ChartPanel>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+          <GlassPanel className="p-5 sm:p-6"><SectionTitle icon={Briefcase} eyebrow="Projects" title="Active contribution" action="3 live" /><div className="mt-5 grid gap-4 lg:grid-cols-3">{PROJECTS.map((project) => <ProjectCard key={project.name} project={project} />)}</div></GlassPanel>
+          <GlassPanel className="p-5 sm:p-6"><SectionTitle icon={Award} eyebrow="Gamification" title="Achievements" /><div className="mt-5 grid grid-cols-2 gap-3">{BADGES.map((badge) => <AchievementBadge key={badge.label} badge={badge} />)}</div></GlassPanel>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-3">
+          <GlassPanel className="p-5 sm:p-6">
+            <SectionTitle icon={Trophy} eyebrow="Team" title="Leaderboard" action="Live" />
+            <div className="mt-5 space-y-3">
+              {teamLeaders.length ? (
+                teamLeaders.map((member, index) => <LeaderboardRow key={member.userId} member={member} rank={index + 1} />)
+              ) : (
+                <EmptyState icon={Users} title="No team ranking yet" text="Approved employees will appear after attendance or task activity is available." />
+              )}
+            </div>
+          </GlassPanel>
+          <GlassPanel className="p-5 sm:p-6"><SectionTitle icon={Sparkles} eyebrow="AI" title="Recommendations" /><div className="mt-5 space-y-3">{recommendations.map((item) => <InsightCard key={item} text={item} />)}</div></GlassPanel>
+          <MoodTrackerPanel mood={mood} history={moodHistory} onSave={saveMood} />
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+          <GlassPanel className="p-5 sm:p-6"><SectionTitle icon={Plus} eyebrow="Workflow" title="Quick actions" /><div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><ActionCard to="/tasks" icon={Plus} label="Create Task" /><ActionCard to="/standup" icon={MessageSquare} label="Submit Standup" /><ActionCard to="/my-leaves" icon={Calendar} label="Request Leave" /><ActionCard to="/my-attendance" icon={BarChart3} label="View Reports" /><ActionCard to="/my-attendance" icon={History} label="Attendance History" /><ActionCard to="/meetings" icon={Users} label="Team Chat" /></div></GlassPanel>
+          <GlassPanel className="p-5 sm:p-6"><SectionTitle icon={Calendar} eyebrow="Leave" title="Leave management" /><div className="mt-5 grid grid-cols-2 gap-3"><LeaveRing label="Annual" value={12} total={18} /><LeaveRing label="Sick" value={5} total={8} /><LeaveRing label="Casual" value={4} total={6} /><InfoTile label="Pending" value={`${pendingLeaveRequests}`} /></div></GlassPanel>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+          <ActivityTimelinePanel items={recent} />
+          <GlassPanel className="p-5 sm:p-6"><SectionTitle icon={BellDot} eyebrow="Live" title="Notification center" /><div className="mt-5 space-y-3">{notifications.map((item) => <NotificationCard key={item.title} {...item} />)}</div></GlassPanel>
+        </section>
+      </main>
+
+      {false && (
       <main className="employee-dashboard">
         <header className="employee-dashboard-header">
           <div className="min-w-0">
@@ -731,8 +1134,393 @@ function EmployeeDashboard() {
           </div>
         </section>
       </main>
+      )}
     </>
   );
+}
+
+const chartTooltipStyle = {
+  background: "rgba(8,13,24,.94)",
+  border: "1px solid rgba(255,255,255,.12)",
+  borderRadius: 14,
+  color: "#fff",
+};
+
+function GlassPanel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-80px" }}
+      className={`relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.045] shadow-[0_24px_80px_rgba(0,0,0,.38),inset_0_1px_0_rgba(255,255,255,.08)] backdrop-blur-xl ${className}`}
+    >
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(34,211,238,.12),transparent_34%),radial-gradient(circle_at_100%_0%,rgba(236,72,153,.1),transparent_34%)]" />
+      <div className="relative">{children}</div>
+    </motion.article>
+  );
+}
+
+function Badge({ icon: Icon, label }: { icon: typeof Sparkles; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] text-white/72">
+      <Icon size={13} className="text-cyan-200" />
+      {label}
+    </span>
+  );
+}
+
+function HeroChip({ icon: Icon, label }: { icon: typeof Sparkles; label: string }) {
+  return (
+    <span className="inline-flex min-h-10 items-center gap-2 rounded-full border border-white/10 bg-white/[0.07] px-3 py-2 text-xs font-bold text-white/78 backdrop-blur-xl">
+      <Icon size={14} className="text-cyan-200" />
+      {label}
+    </span>
+  );
+}
+
+function HeroMini({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-3 text-center backdrop-blur-xl">
+      <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/40">{label}</div>
+      <div className="mt-1 text-xl font-black text-white">{value}</div>
+    </div>
+  );
+}
+
+function MetricCard({ icon: Icon, title, value, detail, tone }: { icon: typeof Sparkles; title: string; value: string; detail: string; tone: "cyan" | "purple" | "pink" | "green" }) {
+  const colors = { cyan: "from-cyan-300 to-blue-500", purple: "from-violet-300 to-purple-600", pink: "from-pink-300 to-rose-600", green: "from-emerald-300 to-teal-600" };
+  return (
+    <motion.article whileHover={{ y: -4 }} className="rounded-[26px] border border-white/10 bg-white/[0.045] p-5 shadow-[0_22px_70px_rgba(0,0,0,.34)] backdrop-blur-xl">
+      <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${colors[tone]} text-white shadow-[0_0_30px_rgba(34,211,238,.16)]`}>
+        <Icon size={20} />
+      </div>
+      <div className="mt-5 text-xs font-black uppercase tracking-[0.16em] text-white/42">{title}</div>
+      <div className="mt-2 text-3xl font-black text-white">{value}</div>
+      <div className="mt-2 text-sm font-semibold text-slate-400">{detail}</div>
+    </motion.article>
+  );
+}
+
+function SectionTitle({ icon: Icon, eyebrow, title, action }: { icon: typeof Sparkles; eyebrow: string; title: string; action?: string }) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <div className="flex min-w-0 items-start gap-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10 text-cyan-100">
+          <Icon size={18} />
+        </div>
+        <div className="min-w-0">
+          <div className="text-[11px] font-black uppercase tracking-[0.16em] text-cyan-100/55">{eyebrow}</div>
+          <h2 className="mt-1 text-xl font-black text-white sm:text-2xl">{title}</h2>
+        </div>
+      </div>
+      {action && <span className="shrink-0 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-black text-white/70">{action}</span>}
+    </div>
+  );
+}
+
+function RadialScore({ score }: { score: number }) {
+  return (
+    <div className="grid place-items-center">
+      <div className="relative grid h-56 w-56 place-items-center rounded-full bg-[conic-gradient(from_180deg,#22d3ee_calc(var(--score)*1%),rgba(255,255,255,.08)_0)] p-4" style={{ ["--score" as string]: score }}>
+        <div className="grid h-full w-full place-items-center rounded-full border border-white/10 bg-[#080d18]">
+          <div className="text-center">
+            <div className="text-5xl font-black">{score}</div>
+            <div className="mt-1 text-xs font-black uppercase tracking-[0.16em] text-white/45">AI Score</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProgressLine({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div>
+      <div className="mb-2 flex justify-between text-sm font-bold text-white/78"><span>{label}</span><span>{value}%</span></div>
+      <div className="h-2 overflow-hidden rounded-full bg-white/10"><motion.div initial={{ width: 0 }} animate={{ width: `${value}%` }} className="h-full rounded-full" style={{ background: color }} /></div>
+    </div>
+  );
+}
+
+function InfoTile({ label, value }: { label: string; value: string }) {
+  return <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3"><div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/38">{label}</div><div className="mt-1 truncate text-lg font-black text-white">{value}</div></div>;
+}
+
+function HeatmapGrid({ days }: { days: HeatmapDay[] }) {
+  const colors: Record<HeatmapDay["status"], string> = { present: "bg-emerald-400", late: "bg-violet-400", absent: "bg-rose-400", holiday: "bg-cyan-300", none: "bg-white/10" };
+  return <div className="mt-5 grid grid-cols-15 gap-1.5">{days.map((day) => <span key={day.date} title={`${day.date}: ${humanize(day.status)}`} className={`group relative aspect-square rounded-md ${colors[day.status]} shadow-[0_0_16px_rgba(34,211,238,.12)]`} />)}</div>;
+}
+
+function TaskCommandCard({ task, nowTick, onComplete, ...props }: any) {
+  const countdown = getTaskCountdown(task.deadline, nowTick);
+  const priority = countdown.state === "overdue" ? "High" : countdown.state === "soon" ? "Medium" : "Normal";
+  return (
+    <motion.article whileHover={{ y: -2 }} {...props} className="cursor-grab rounded-2xl border border-white/10 bg-white/[0.045] p-4 active:cursor-grabbing">
+      <div className="flex items-start justify-between gap-3"><div className="min-w-0"><h3 className="truncate font-black text-white">{task.title}</h3><p className="mt-1 truncate text-sm font-semibold text-slate-400">{task.project_name || task.project || "Aslenix Workstream"}</p></div><span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2 py-1 text-[10px] font-black uppercase text-cyan-100">{priority}</span></div>
+      <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-white/50"><span>{task.deadline ? format(new Date(task.deadline), "h:mm a") : "No due time"}</span><span>{humanize(task.status || "pending")}</span><span>{countdown.label}</span></div>
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-pink-400" style={{ width: `${task.progress || 0}%` }} /></div>
+      <button onClick={onComplete} className="mt-3 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-black text-white/72 hover:bg-white/[0.09]">Mark complete</button>
+    </motion.article>
+  );
+}
+
+function EmptyState({ icon: Icon, title, text }: { icon: typeof Activity; title: string; text: string }) {
+  return <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.025] p-6 text-center"><Icon className="mx-auto text-cyan-200" size={24} /><div className="mt-3 font-black">{title}</div><div className="mt-1 text-sm text-slate-400">{text}</div></div>;
+}
+
+function ChartPanel({ title, icon: Icon, children }: { title: string; icon: typeof Sparkles; children: React.ReactNode }) {
+  return <GlassPanel className="p-5 sm:p-6"><SectionTitle icon={Icon} eyebrow="Analytics" title={title} /><div className="mt-5">{children}</div></GlassPanel>;
+}
+
+function ProjectCard({ project }: { project: any }) {
+  return <motion.article whileHover={{ y: -4 }} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4"><h3 className="font-black">{project.name}</h3><p className="mt-1 text-sm font-semibold text-slate-400">{project.status} · {project.deadline}</p><div className="mt-4 h-2 rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-pink-400" style={{ width: `${project.progress}%` }} /></div><div className="mt-3 flex items-center justify-between"><span className="text-sm font-black">{project.progress}%</span><div className="flex -space-x-2">{project.members.map((m: string) => <span key={m} className="grid h-7 w-7 place-items-center rounded-full border border-white/15 bg-white/[0.08] text-[10px] font-black">{m}</span>)}</div></div></motion.article>;
+}
+
+function AchievementBadge({ badge }: { badge: any }) {
+  const Icon = badge.icon;
+  return <motion.div whileHover={{ scale: 1.03 }} className={`rounded-2xl border p-3 text-center ${badge.active ? "border-cyan-300/20 bg-cyan-300/10" : "border-white/10 bg-white/[0.035] opacity-55"}`}><Icon className="mx-auto text-cyan-100" size={22} /><div className="mt-2 text-xs font-black text-white/78">{badge.label}</div></motion.div>;
+}
+
+function LeaderboardRow({ member, rank }: { member: TeamLeader; rank: number }) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+      <div className="relative h-11 w-11 shrink-0">
+        {member.avatarUrl ? (
+          <img src={member.avatarUrl} alt="" className="h-11 w-11 rounded-2xl object-cover ring-2 ring-cyan-300/35" />
+        ) : (
+          <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-cyan-300 to-pink-500 text-sm font-black">
+            {initials(member.name)}
+          </div>
+        )}
+        <span className="absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full border border-white/20 bg-[#080d18] text-[10px] font-black text-cyan-100">
+          {rank}
+        </span>
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="truncate font-black">{member.name}</div>
+        <div className="text-xs font-semibold text-slate-400">{member.department}</div>
+      </div>
+      <div className="font-black text-cyan-100">{member.score}</div>
+    </div>
+  );
+}
+
+function InsightCard({ text }: { text: string }) {
+  return <div className="flex gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3"><Sparkles className="mt-0.5 shrink-0 text-cyan-200" size={16} /><span className="text-sm font-semibold leading-6 text-white/74">{text}</span></div>;
+}
+
+function MoodTrackerPanel({ mood, history, onSave }: { mood: string; history: MoodLog[]; onSave: (value: string) => void }) {
+  const current = getMoodMeta(mood);
+  const recent = history.slice(0, 7);
+  const average = recent.length
+    ? Math.round(recent.reduce((sum, item) => sum + getMoodScore(item.mood), 0) / recent.length)
+    : getMoodScore(mood);
+  const trend = average >= 82 ? "Healthy" : average >= 64 ? "Steady" : average >= 46 ? "Needs rest" : "Needs support";
+
+  return (
+    <GlassPanel className="p-5 sm:p-6">
+      <SectionTitle icon={Smile} eyebrow="Wellbeing" title="Mood tracker" action={trend} />
+      <div className="mt-5 grid grid-cols-5 gap-2">
+        {MOODS.map((item) => (
+          <button
+            key={item.value}
+            onClick={() => onSave(item.value)}
+            className={`rounded-2xl border p-3 text-center transition hover:-translate-y-1 ${
+              mood === item.value ? "border-cyan-300/40 bg-cyan-300/15 shadow-[0_0_24px_rgba(34,211,238,.14)]" : "border-white/10 bg-white/[0.04]"
+            }`}
+            aria-label={`Save mood as ${item.label}`}
+            type="button"
+          >
+            <div className="text-2xl">{item.emoji}</div>
+            <div className="mt-1 text-[10px] font-bold text-white/62">{item.label}</div>
+          </button>
+        ))}
+      </div>
+      <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-sm font-black text-white/82">{current.label} today</div>
+            <div className="mt-1 text-xs font-semibold text-slate-400">{history.length ? `${history.length} saved mood logs` : "Save today's mood to start the trend"}</div>
+          </div>
+          <div className="text-3xl">{current.emoji}</div>
+        </div>
+        <div className="mt-4 flex items-end gap-2">
+          {recent.length ? (
+            recent.map((item) => (
+              <span
+                key={`${item.log_date}-${item.mood}`}
+                title={`${item.log_date}: ${getMoodMeta(item.mood).label}`}
+                className="grid h-9 flex-1 place-items-center rounded-xl border border-white/10 bg-white/[0.045] text-lg"
+              >
+                {getMoodMeta(item.mood).emoji}
+              </span>
+            ))
+          ) : (
+            <div className="w-full rounded-xl border border-dashed border-white/15 p-3 text-center text-xs font-semibold text-slate-400">
+              No mood history yet
+            </div>
+          )}
+        </div>
+      </div>
+    </GlassPanel>
+  );
+}
+
+function ActionCard({ to, icon: Icon, label }: { to: "/tasks" | "/standup" | "/my-leaves" | "/my-attendance" | "/meetings"; icon: typeof Sparkles; label: string }) {
+  return <Link to={to} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 font-black text-white/78 transition hover:-translate-y-1 hover:border-cyan-300/25 hover:bg-white/[0.07]"><Icon className="mb-3 text-cyan-200" size={22} />{label}</Link>;
+}
+
+function LeaveRing({ label, value, total }: { label: string; value: number; total: number }) {
+  const pct = Math.round((value / total) * 100);
+  return <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-center"><div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-[conic-gradient(#22d3ee_calc(var(--pct)*1%),rgba(255,255,255,.1)_0)]" style={{ ["--pct" as string]: pct }}><div className="grid h-14 w-14 place-items-center rounded-full bg-[#080d18] text-sm font-black">{value}</div></div><div className="mt-2 text-xs font-black text-white/68">{label}</div></div>;
+}
+
+function ActivityTimelinePanel({ items }: { items: ActivityItem[] }) {
+  const attendanceCount = items.filter((item) => item.kind === "Attendance").length;
+  const taskCount = items.filter((item) => item.kind === "Task").length;
+  const latest = items[0]?.when ? formatDistanceLabel(items[0].when) : "No activity";
+
+  return (
+    <GlassPanel className="p-5 sm:p-6">
+      <SectionTitle icon={Activity} eyebrow="Activity" title="Timeline" action={latest} />
+      <div className="mt-5 grid grid-cols-3 gap-2">
+        <TimelineStat label="Events" value={items.length} />
+        <TimelineStat label="Attendance" value={attendanceCount} />
+        <TimelineStat label="Tasks" value={taskCount} />
+      </div>
+      <div className="mt-5">
+        {items.length ? (
+          <div className="relative space-y-3 before:absolute before:bottom-6 before:left-[22px] before:top-6 before:w-px before:bg-gradient-to-b before:from-cyan-300/70 before:via-white/10 before:to-transparent">
+            {items.map((item, index) => (
+              <ModernTimelineItem key={`${item.kind}-${item.when}-${index}`} item={item} isLatest={index === 0} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState icon={Activity} title="No recent activity" text="Attendance, standup, and task events will appear here." />
+        )}
+      </div>
+    </GlassPanel>
+  );
+}
+
+function TimelineStat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-center">
+      <div className="text-lg font-black text-white">{value}</div>
+      <div className="mt-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/38">{label}</div>
+    </div>
+  );
+}
+
+function ModernTimelineItem({ item, isLatest }: { item: ActivityItem; isLatest: boolean }) {
+  const meta = getActivityMeta(item);
+  const Icon = meta.icon;
+  return (
+    <motion.article
+      initial={{ opacity: 0, x: -10 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: true }}
+      className={`relative flex gap-3 rounded-2xl border p-3 transition hover:-translate-y-0.5 ${
+        isLatest ? "border-cyan-300/24 bg-cyan-300/10" : "border-white/10 bg-white/[0.035] hover:bg-white/[0.055]"
+      }`}
+    >
+      <div className={`relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border ${meta.badgeClass}`}>
+        {isLatest && <span className="absolute inset-0 animate-ping rounded-2xl bg-cyan-300/10" />}
+        <Icon className="relative" size={18} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="truncate text-base font-black text-white/90">{item.text}</div>
+            <div className="mt-1 text-xs font-semibold text-slate-400">
+              {formatNepaliDate(item.when, "DD MMM")} BS · {format(new Date(item.when), "h:mm a")}
+            </div>
+          </div>
+          <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${meta.pillClass}`}>
+            {item.kind}
+          </span>
+        </div>
+      </div>
+    </motion.article>
+  );
+}
+
+function NotificationCard({ title, text }: { title: string; text: string }) {
+  return <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3"><div className="font-black">{title}</div><div className="mt-1 text-sm font-semibold leading-6 text-slate-400">{text}</div></div>;
+}
+
+function CloudLikeIcon(props: React.ComponentProps<typeof Sparkles>) {
+  return <Sparkles {...props} />;
+}
+
+function makeDashboardChartData(rows: any[], today: any, tasks: any[], weeklyHours: number, taskStats: any) {
+  const weekly = Array.from({ length: 7 }, (_, index) => {
+    const date = subDays(new Date(), 6 - index);
+    const row = rows.find((item) => item.date === format(date, "yyyy-MM-dd"));
+    const presentScore = row && ["present", "late", "wfh"].includes(row.status) ? 80 : 40;
+    return { day: format(date, "EEE"), score: row?.is_late ? 68 : presentScore };
+  });
+  const monthly = Array.from({ length: 8 }, (_, index) => ({ day: `W${index + 1}`, score: Math.min(100, 58 + index * 4 + Math.round(taskStats.score / 10)) }));
+  const completed = Number(taskStats.completed || 0);
+  const taskTrend = Array.from({ length: 7 }, (_, index) => {
+    const dayProgress = Math.max(0, completed - (6 - index));
+    return { day: format(subDays(new Date(), 6 - index), "EEE"), completed: dayProgress };
+  });
+  const focus = [
+    { name: "Worked", value: Math.round(weeklyHours) },
+    { name: "Remaining", value: Math.max(0, WEEKLY_TARGET_HOURS - Math.round(weeklyHours)) },
+    { name: "Task load", value: Math.max(1, tasks.length * 4) },
+  ];
+  return { weekly, monthly, focus, tasks: taskTrend };
+}
+
+function buildTeamLeaderboard({
+  profiles,
+  roles,
+  tasks,
+  assignees,
+  attendance,
+}: {
+  profiles: any[];
+  roles: any[];
+  tasks: any[];
+  assignees: any[];
+  attendance: any[];
+}): TeamLeader[] {
+  const adminUserIds = new Set((roles || []).map((row) => row.user_id));
+  return (profiles || [])
+    .filter((profile) => profile?.user_id && !adminUserIds.has(profile.user_id))
+    .map((profile) => {
+      const assignedTasks = (tasks || []).filter(
+        (task) =>
+          task.assigned_to === profile.user_id ||
+          (assignees || []).some((assignee) => assignee.task_id === task.id && assignee.user_id === profile.user_id),
+      );
+      const employeeAttendance = (attendance || []).filter((row) => row.user_id === profile.user_id);
+      const presentDays = new Set(
+        employeeAttendance
+          .filter((row) => ["present", "late", "wfh"].includes(row.status || ""))
+          .map((row) => row.date),
+      ).size;
+      const lateDays = employeeAttendance.filter((row) => row.is_late).length;
+      const completedTasks = assignedTasks.filter(isDashboardTaskComplete).length;
+      const taskCompletion = assignedTasks.length ? Math.round((completedTasks / assignedTasks.length) * 100) : 55;
+      const attendanceScore = employeeAttendance.length
+        ? Math.round((presentDays / Math.max(1, employeeAttendance.length)) * 100)
+        : 45;
+      const punctualityScore = Math.max(45, 100 - lateDays * 8);
+      const score = Math.round(taskCompletion * 0.48 + attendanceScore * 0.36 + punctualityScore * 0.16);
+      return {
+        userId: profile.user_id,
+        name: profile.full_name || "Employee",
+        department: profile.department || "Unassigned",
+        avatarUrl: profile.avatar_url || null,
+        score: Math.min(100, Math.max(0, score)),
+      };
+    })
+    .filter((employee) => employee.score > 0)
+    .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
+    .slice(0, 4);
 }
 
 function NotificationPopup({
@@ -1209,6 +1997,65 @@ function humanize(value: string) {
 
 function isDashboardTaskComplete(task: { status?: string | null; progress?: number | null }) {
   return task.status === "completed" || Number(task.progress || 0) >= 100;
+}
+
+function getMoodMeta(value: string) {
+  return MOODS.find((item) => item.value === value) || MOODS[1];
+}
+
+function getMoodScore(value: string) {
+  return {
+    excellent: 100,
+    good: 82,
+    neutral: 64,
+    tired: 46,
+    stressed: 28,
+  }[value] || 64;
+}
+
+function getActivityMeta(item: ActivityItem) {
+  if (item.kind === "Attendance" && /checked out/i.test(item.text)) {
+    return {
+      icon: LogOut,
+      badgeClass: "border-pink-300/20 bg-pink-300/10 text-pink-100",
+      pillClass: "border-pink-300/20 bg-pink-300/10 text-pink-100",
+    };
+  }
+  if (item.kind === "Attendance") {
+    return {
+      icon: LogIn,
+      badgeClass: "border-emerald-300/20 bg-emerald-300/10 text-emerald-100",
+      pillClass: "border-emerald-300/20 bg-emerald-300/10 text-emerald-100",
+    };
+  }
+  if (item.kind === "Task") {
+    return {
+      icon: CheckCircle2,
+      badgeClass: "border-cyan-300/20 bg-cyan-300/10 text-cyan-100",
+      pillClass: "border-cyan-300/20 bg-cyan-300/10 text-cyan-100",
+    };
+  }
+  if (item.kind === "Standup") {
+    return {
+      icon: MessageSquare,
+      badgeClass: "border-violet-300/20 bg-violet-300/10 text-violet-100",
+      pillClass: "border-violet-300/20 bg-violet-300/10 text-violet-100",
+    };
+  }
+  return {
+    icon: Activity,
+    badgeClass: "border-white/15 bg-white/[0.06] text-white/78",
+    pillClass: "border-white/10 bg-white/[0.06] text-white/64",
+  };
+}
+
+function formatDistanceLabel(value: string) {
+  const diffMinutes = Math.max(0, Math.round((Date.now() - new Date(value).getTime()) / 60000));
+  if (diffMinutes < 1) return "Just now";
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  const hours = Math.round(diffMinutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.round(hours / 24)}d ago`;
 }
 
 function improvementDismissalKey(userId: string, reviewId: string) {

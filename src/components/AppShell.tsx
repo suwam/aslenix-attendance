@@ -27,8 +27,18 @@ import { useAuth } from "@/lib/auth-context";
 import { AslenixLogo } from "@/components/AslenixLogo";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { formatDistanceToNow } from "date-fns";
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
+
+type NotificationPreview = {
+  id: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+};
 
 const adminNav: NavItem[] = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -62,6 +72,7 @@ const empNav: NavItem[] = [
   { to: "/my-attendance", label: "My Attendance", icon: ClipboardList },
   { to: "/my-leaves", label: "My Leaves", icon: Calendar },
   { to: "/notifications", label: "Notifications", icon: BellDot },
+  { to: "/settings", label: "Settings", icon: Settings },
   { to: "/profile", label: "Profile", icon: UserIcon },
 ];
 
@@ -70,6 +81,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const nav = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unread, setUnread] = useState(0);
+  const [recentNotifications, setRecentNotifications] = useState<NotificationPreview[]>([]);
 
   const items = isAdmin ? adminNav : empNav;
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
@@ -77,20 +89,29 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!profile) {
       setUnread(0);
+      setRecentNotifications([]);
       return;
     }
 
-    const refreshUnread = () => {
+    const refreshNotifications = () => {
       supabase
-      .from("notifications")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", profile.user_id)
-      .eq("is_read", false)
-      .then(({ count }) => setUnread(count ?? 0));
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", profile.user_id)
+        .eq("is_read", false)
+        .then(({ count }) => setUnread(count ?? 0));
+
+      supabase
+        .from("notifications")
+        .select("id,title,message,is_read,created_at")
+        .eq("user_id", profile.user_id)
+        .order("created_at", { ascending: false })
+        .limit(5)
+        .then(({ data }) => setRecentNotifications((data ?? []) as NotificationPreview[]));
     };
 
-    refreshUnread();
-    window.addEventListener("notifications:changed", refreshUnread);
+    refreshNotifications();
+    window.addEventListener("notifications:changed", refreshNotifications);
 
     const ch = supabase
       .channel("notif-" + profile.user_id)
@@ -102,14 +123,23 @@ export function AppShell({ children }: { children: ReactNode }) {
           table: "notifications",
           filter: `user_id=eq.${profile.user_id}`,
         },
-        refreshUnread,
+        refreshNotifications,
       )
       .subscribe();
     return () => {
-      window.removeEventListener("notifications:changed", refreshUnread);
+      window.removeEventListener("notifications:changed", refreshNotifications);
       supabase.removeChannel(ch);
     };
   }, [profile]);
+
+  const markNotificationRead = async (id: string) => {
+    setRecentNotifications((current) =>
+      current.map((item) => (item.id === id ? { ...item, is_read: true } : item)),
+    );
+    setUnread((current) => Math.max(0, current - 1));
+    await supabase.from("notifications").update({ is_read: true }).eq("id", id);
+    window.dispatchEvent(new Event("notifications:changed"));
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -219,20 +249,96 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
           <div className="flex-1" />
-          <Link
-            to={isAdmin ? "/admin/notifications" : "/notifications"}
-            className="relative p-2 rounded-lg hover:bg-muted"
-          >
-            <Bell size={18} />
-            {unread > 0 && (
-              <span
-                className="absolute top-1 right-1 h-4 min-w-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
-                style={{ background: "var(--gradient-brand)" }}
-              >
-                {unread > 9 ? "9+" : unread}
-              </span>
-            )}
-          </Link>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button type="button" className="relative p-2 rounded-lg hover:bg-muted" aria-label="Open notifications">
+                <Bell size={18} />
+                {unread > 0 && (
+                  <span
+                    className="absolute top-1 right-1 h-4 min-w-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
+                    style={{ background: "var(--gradient-brand)" }}
+                  >
+                    {unread > 9 ? "9+" : unread}
+                  </span>
+                )}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              className="w-[calc(100vw-2rem)] max-w-sm overflow-hidden rounded-2xl border-white/10 bg-background/95 p-0 shadow-[0_24px_70px_rgba(0,0,0,0.45)]"
+            >
+              <div className="border-b border-white/10 bg-white/[0.035] px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-bold text-white">Notifications</div>
+                    <div className="text-xs text-muted-foreground">
+                      {unread ? `${unread} unread update${unread === 1 ? "" : "s"}` : "You're all caught up"}
+                    </div>
+                  </div>
+                  <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-cyan-100">
+                    Live
+                  </span>
+                </div>
+              </div>
+              <div className="max-h-80 overflow-y-auto p-2 [scrollbar-color:rgba(103,232,249,0.35)_rgba(255,255,255,0.06)] [scrollbar-width:thin]">
+                {recentNotifications.length ? (
+                  <div className="space-y-2">
+                    {recentNotifications.map((item) => (
+                      <div
+                        key={item.id}
+                        className={`rounded-xl border p-3 transition-colors ${
+                          item.is_read
+                            ? "border-white/8 bg-white/[0.025] opacity-75"
+                            : "border-white/14 bg-white/[0.045] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-300/25 bg-cyan-300/10 text-cyan-200 shadow-[0_0_18px_rgba(103,232,249,0.18)]">
+                            <BellDot size={16} />
+                            {!item.is_read && (
+                              <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border border-background bg-cyan-300" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="truncate text-sm font-bold text-white/90">{item.title}</div>
+                              <time className="shrink-0 text-[10px] font-semibold text-white/42">
+                                {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
+                              </time>
+                            </div>
+                            <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{item.message}</p>
+                            {!item.is_read && (
+                              <button
+                                type="button"
+                                onClick={() => markNotificationRead(item.id)}
+                                className="mt-2 rounded-full border border-white/10 bg-white/[0.035] px-2.5 py-1 text-[11px] font-semibold text-white/62 transition-colors hover:border-white/18 hover:bg-white/[0.07] hover:text-white"
+                              >
+                                Mark Read
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="px-4 py-10 text-center">
+                    <BellDot className="mx-auto mb-3 text-cyan-200" size={24} />
+                    <div className="text-sm font-semibold text-white">No notifications</div>
+                    <div className="mt-1 text-xs text-muted-foreground">New updates will appear here.</div>
+                  </div>
+                )}
+              </div>
+              <div className="border-t border-white/10 p-2">
+                <Link
+                  to={isAdmin ? "/admin/notifications" : "/notifications"}
+                  className="block rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2 text-center text-sm font-semibold text-white/78 transition-colors hover:border-white/18 hover:bg-white/[0.07] hover:text-white"
+                >
+                  View all notifications
+                </Link>
+              </div>
+            </PopoverContent>
+          </Popover>
           <div className="flex items-center gap-3 pl-2 border-l border-border">
             <div className="hidden sm:block text-right leading-tight">
               <div className="text-sm font-medium truncate max-w-[160px]">{profile?.full_name}</div>

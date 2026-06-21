@@ -20,6 +20,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as VerifyEmployeeQrTokenRouteImport } from './routes/verify-employee.$qrToken'
 import { Route as AppTasksRouteImport } from './routes/_app/tasks'
 import { Route as AppStandupRouteImport } from './routes/_app/standup'
+import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
 import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
 import { Route as AppMyLeavesRouteImport } from './routes/_app/my-leaves'
@@ -99,6 +100,11 @@ const AppTasksRoute = AppTasksRouteImport.update({
 const AppStandupRoute = AppStandupRouteImport.update({
   id: '/standup',
   path: '/standup',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProfileRoute = AppProfileRouteImport.update({
@@ -250,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/my-leaves': typeof AppMyLeavesRoute
   '/notifications': typeof AppNotificationsRoute
   '/profile': typeof AppProfileRoute
+  '/settings': typeof AppSettingsRoute
   '/standup': typeof AppStandupRoute
   '/tasks': typeof AppTasksRoute
   '/verify-employee/$qrToken': typeof VerifyEmployeeQrTokenRoute
@@ -288,6 +295,7 @@ export interface FileRoutesByTo {
   '/my-leaves': typeof AppMyLeavesRoute
   '/notifications': typeof AppNotificationsRoute
   '/profile': typeof AppProfileRoute
+  '/settings': typeof AppSettingsRoute
   '/standup': typeof AppStandupRoute
   '/tasks': typeof AppTasksRoute
   '/verify-employee/$qrToken': typeof VerifyEmployeeQrTokenRoute
@@ -328,6 +336,7 @@ export interface FileRoutesById {
   '/_app/my-leaves': typeof AppMyLeavesRoute
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/profile': typeof AppProfileRoute
+  '/_app/settings': typeof AppSettingsRoute
   '/_app/standup': typeof AppStandupRoute
   '/_app/tasks': typeof AppTasksRoute
   '/verify-employee/$qrToken': typeof VerifyEmployeeQrTokenRoute
@@ -368,6 +377,7 @@ export interface FileRouteTypes {
     | '/my-leaves'
     | '/notifications'
     | '/profile'
+    | '/settings'
     | '/standup'
     | '/tasks'
     | '/verify-employee/$qrToken'
@@ -406,6 +416,7 @@ export interface FileRouteTypes {
     | '/my-leaves'
     | '/notifications'
     | '/profile'
+    | '/settings'
     | '/standup'
     | '/tasks'
     | '/verify-employee/$qrToken'
@@ -445,6 +456,7 @@ export interface FileRouteTypes {
     | '/_app/my-leaves'
     | '/_app/notifications'
     | '/_app/profile'
+    | '/_app/settings'
     | '/_app/standup'
     | '/_app/tasks'
     | '/verify-employee/$qrToken'
@@ -556,6 +568,13 @@ declare module '@tanstack/react-router' {
       path: '/standup'
       fullPath: '/standup'
       preLoaderRoute: typeof AppStandupRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/profile': {
@@ -753,6 +772,7 @@ interface AppRouteChildren {
   AppMyLeavesRoute: typeof AppMyLeavesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppProfileRoute: typeof AppProfileRoute
+  AppSettingsRoute: typeof AppSettingsRoute
   AppStandupRoute: typeof AppStandupRoute
   AppTasksRoute: typeof AppTasksRoute
   AppAdminAchievementsRoute: typeof AppAdminAchievementsRoute
@@ -784,6 +804,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppMyLeavesRoute: AppMyLeavesRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppProfileRoute: AppProfileRoute,
+  AppSettingsRoute: AppSettingsRoute,
   AppStandupRoute: AppStandupRoute,
   AppTasksRoute: AppTasksRoute,
   AppAdminAchievementsRoute: AppAdminAchievementsRoute,

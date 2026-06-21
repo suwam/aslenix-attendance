@@ -14,29 +14,21 @@ type LocationSettings = {
   attendance_radius_meters: number | null;
 };
 
+let cachedSettings: { value: LocationSettings | null; expiresAt: number } | null = null;
+
+export async function preloadAttendanceLocationSettings() {
+  await loadLocationSettings();
+}
+
 export async function getVerifiedAttendanceLocation(): Promise<AttendanceLocation> {
   if (!("geolocation" in navigator)) {
     throw new Error("Location is not supported by this browser.");
   }
 
-  const settingsPromise = supabase
-    .from("settings")
-    .select("office_latitude,office_longitude,attendance_radius_meters")
-    .limit(1)
-    .maybeSingle();
+  const settingsPromise = loadLocationSettings();
   const positionPromise = getCurrentPosition();
 
-  const { data: settings, error } = await settingsPromise;
-
-  if (error) {
-    if (error.message.includes("office_latitude")) {
-      throw new Error("Attendance location database migration is not applied yet.");
-    }
-
-    throw new Error(error.message);
-  }
-
-  const locationSettings = settings as LocationSettings | null;
+  const locationSettings = await settingsPromise;
   const officeLatitude = locationSettings?.office_latitude;
   const officeLongitude = locationSettings?.office_longitude;
   const radiusMeters = locationSettings?.attendance_radius_meters ?? 20;
@@ -50,6 +42,13 @@ export async function getVerifiedAttendanceLocation(): Promise<AttendanceLocatio
   const longitude = position.coords.longitude;
   const accuracy = Number.isFinite(position.coords.accuracy) ? position.coords.accuracy : null;
   const distanceMeters = distanceBetweenMeters(officeLatitude, officeLongitude, latitude, longitude);
+  const maxAccuracyMeters = Math.max(50, radiusMeters * 2);
+
+  if (accuracy == null || accuracy > maxAccuracyMeters) {
+    throw new Error(
+      `Location accuracy is too low (${accuracy ? `${Math.round(accuracy)}m` : "unknown"}). Please enable precise GPS and try again near the office.`,
+    );
+  }
 
   if (distanceMeters > radiusMeters) {
     throw new Error(
@@ -60,12 +59,37 @@ export async function getVerifiedAttendanceLocation(): Promise<AttendanceLocatio
   return { latitude, longitude, accuracy, distanceMeters, radiusMeters };
 }
 
+async function loadLocationSettings(): Promise<LocationSettings | null> {
+  const now = Date.now();
+  if (cachedSettings && cachedSettings.expiresAt > now) return cachedSettings.value;
+
+  const { data: settings, error } = await supabase
+    .from("settings")
+    .select("office_latitude,office_longitude,attendance_radius_meters")
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    if (error.message.includes("office_latitude")) {
+      throw new Error("Attendance location database migration is not applied yet.");
+    }
+
+    throw new Error(error.message);
+  }
+
+  cachedSettings = {
+    value: settings as LocationSettings | null,
+    expiresAt: now + 5 * 60 * 1000,
+  };
+  return cachedSettings.value;
+}
+
 function getCurrentPosition(): Promise<GeolocationPosition> {
   return new Promise((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(resolve, (error) => reject(locationError(error)), {
       enableHighAccuracy: true,
-      maximumAge: 30000,
-      timeout: 10000,
+      maximumAge: 120000,
+      timeout: 7000,
     });
   });
 }
