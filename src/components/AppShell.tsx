@@ -400,6 +400,22 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
           <div key={currentPath}>{children}</div>
         </main>
+
+        {!isAdmin && currentPath !== "/messages" && (
+          <Link
+            to="/messages"
+            className="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-violet-500 to-cyan-400 text-white shadow-[0_16px_45px_rgba(124,58,237,0.45)] ring-1 ring-white/20 transition hover:-translate-y-1 hover:scale-105 sm:bottom-6 sm:right-6"
+            style={{ animation: "message-float 3.2s ease-in-out infinite" }}
+            aria-label="Open messages"
+          >
+            <MessageSquare size={24} />
+            {messageUnread > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-background bg-pink-500 px-1 text-[11px] font-black text-white shadow-lg">
+                {messageUnread > 99 ? "99+" : messageUnread}
+              </span>
+            )}
+          </Link>
+        )}
       </div>
     </div>
   );
