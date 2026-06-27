@@ -42,6 +42,7 @@ type NotificationPreview = {
 
 const adminNav: NavItem[] = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/messages", label: "Messages", icon: MessageSquare },
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/admin/productivity", label: "AI Productivity", icon: BrainCircuit },
   { to: "/admin/employee-of-month", label: "Employee of Month", icon: Crown },
@@ -63,6 +64,7 @@ const adminNav: NavItem[] = [
 
 const empNav: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/messages", label: "Messages", icon: MessageSquare },
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/achievements", label: "Achievements", icon: Trophy },
   { to: "/tasks", label: "My Tasks", icon: ClipboardList },
@@ -81,6 +83,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const nav = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unread, setUnread] = useState(0);
+  const [messageUnread, setMessageUnread] = useState(0);
   const [recentNotifications, setRecentNotifications] = useState<NotificationPreview[]>([]);
 
   const items = isAdmin ? adminNav : empNav;
@@ -90,6 +93,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (!profile) {
       setUnread(0);
       setRecentNotifications([]);
+      setMessageUnread(0);
       return;
     }
 
@@ -110,8 +114,21 @@ export function AppShell({ children }: { children: ReactNode }) {
         .then(({ data }) => setRecentNotifications((data ?? []) as NotificationPreview[]));
     };
 
+    const refreshMessages = () => {
+      (supabase as any)
+        .from("chat_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("sender_is_admin", !isAdmin)
+        .is("read_at", null)
+        .then(({ count, error }: { count: number | null; error: unknown }) => {
+          if (!error) setMessageUnread(count ?? 0);
+        });
+    };
+
     refreshNotifications();
+    refreshMessages();
     window.addEventListener("notifications:changed", refreshNotifications);
+    window.addEventListener("messages:changed", refreshMessages);
 
     const ch = supabase
       .channel("notif-" + profile.user_id)
@@ -126,11 +143,25 @@ export function AppShell({ children }: { children: ReactNode }) {
         refreshNotifications,
       )
       .subscribe();
+    const chatCh = supabase
+      .channel("chat-nav-" + profile.user_id)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "chat_messages",
+        },
+        refreshMessages,
+      )
+      .subscribe();
     return () => {
       window.removeEventListener("notifications:changed", refreshNotifications);
+      window.removeEventListener("messages:changed", refreshMessages);
       supabase.removeChannel(ch);
+      supabase.removeChannel(chatCh);
     };
-  }, [profile]);
+  }, [isAdmin, profile]);
 
   const markNotificationRead = async (id: string) => {
     setRecentNotifications((current) =>
@@ -179,6 +210,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                 )}
                 <Icon size={18} />
                 <span>{item.label}</span>
+                {item.to === "/messages" && messageUnread > 0 && (
+                  <span
+                    className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-black text-white"
+                    style={{ background: "var(--gradient-brand)" }}
+                  >
+                    {messageUnread > 99 ? "99+" : messageUnread}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -208,7 +247,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
             <nav className="flex-1 min-h-0 mt-2 space-y-1 overflow-y-auto overscroll-contain pr-1">
               {items.map((item) => {
-                const active = currentPath === item.to;
+                const active =
+                  currentPath === item.to ||
+                  (item.to !== "/admin" && item.to !== "/dashboard" && currentPath.startsWith(item.to));
                 const Icon = item.icon;
                 return (
                   <Link
@@ -218,7 +259,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium ${active ? "text-white" : "text-sidebar-foreground/75 hover:bg-sidebar-accent"}`}
                     style={active ? { background: "var(--gradient-brand)" } : undefined}
                   >
-                    <Icon size={18} /> {item.label}
+                    <Icon size={18} />
+                    <span>{item.label}</span>
+                    {item.to === "/messages" && messageUnread > 0 && (
+                      <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-white/20 px-1 text-[10px] font-black text-white">
+                        {messageUnread > 99 ? "99+" : messageUnread}
+                      </span>
+                    )}
                   </Link>
                 );
               })}

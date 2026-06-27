@@ -25,6 +25,7 @@ import { Route as AppProfileRouteImport } from './routes/_app/profile'
 import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
 import { Route as AppMyLeavesRouteImport } from './routes/_app/my-leaves'
 import { Route as AppMyAttendanceRouteImport } from './routes/_app/my-attendance'
+import { Route as AppMessagesRouteImport } from './routes/_app/messages'
 import { Route as AppMeetingsRouteImport } from './routes/_app/meetings'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppCheckInRouteImport } from './routes/_app/check-in'
@@ -125,6 +126,11 @@ const AppMyLeavesRoute = AppMyLeavesRouteImport.update({
 const AppMyAttendanceRoute = AppMyAttendanceRouteImport.update({
   id: '/my-attendance',
   path: '/my-attendance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMessagesRoute = AppMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
   getParentRoute: () => AppRoute,
 } as any)
 const AppMeetingsRoute = AppMeetingsRouteImport.update({
@@ -252,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/check-in': typeof AppCheckInRoute
   '/dashboard': typeof AppDashboardRoute
   '/meetings': typeof AppMeetingsRoute
+  '/messages': typeof AppMessagesRoute
   '/my-attendance': typeof AppMyAttendanceRoute
   '/my-leaves': typeof AppMyLeavesRoute
   '/notifications': typeof AppNotificationsRoute
@@ -291,6 +298,7 @@ export interface FileRoutesByTo {
   '/check-in': typeof AppCheckInRoute
   '/dashboard': typeof AppDashboardRoute
   '/meetings': typeof AppMeetingsRoute
+  '/messages': typeof AppMessagesRoute
   '/my-attendance': typeof AppMyAttendanceRoute
   '/my-leaves': typeof AppMyLeavesRoute
   '/notifications': typeof AppNotificationsRoute
@@ -332,6 +340,7 @@ export interface FileRoutesById {
   '/_app/check-in': typeof AppCheckInRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/meetings': typeof AppMeetingsRoute
+  '/_app/messages': typeof AppMessagesRoute
   '/_app/my-attendance': typeof AppMyAttendanceRoute
   '/_app/my-leaves': typeof AppMyLeavesRoute
   '/_app/notifications': typeof AppNotificationsRoute
@@ -373,6 +382,7 @@ export interface FileRouteTypes {
     | '/check-in'
     | '/dashboard'
     | '/meetings'
+    | '/messages'
     | '/my-attendance'
     | '/my-leaves'
     | '/notifications'
@@ -412,6 +422,7 @@ export interface FileRouteTypes {
     | '/check-in'
     | '/dashboard'
     | '/meetings'
+    | '/messages'
     | '/my-attendance'
     | '/my-leaves'
     | '/notifications'
@@ -452,6 +463,7 @@ export interface FileRouteTypes {
     | '/_app/check-in'
     | '/_app/dashboard'
     | '/_app/meetings'
+    | '/_app/messages'
     | '/_app/my-attendance'
     | '/_app/my-leaves'
     | '/_app/notifications'
@@ -603,6 +615,13 @@ declare module '@tanstack/react-router' {
       path: '/my-attendance'
       fullPath: '/my-attendance'
       preLoaderRoute: typeof AppMyAttendanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/messages': {
+      id: '/_app/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof AppMessagesRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/meetings': {
@@ -768,6 +787,7 @@ interface AppRouteChildren {
   AppCheckInRoute: typeof AppCheckInRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppMeetingsRoute: typeof AppMeetingsRoute
+  AppMessagesRoute: typeof AppMessagesRoute
   AppMyAttendanceRoute: typeof AppMyAttendanceRoute
   AppMyLeavesRoute: typeof AppMyLeavesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
@@ -800,6 +820,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCheckInRoute: AppCheckInRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppMeetingsRoute: AppMeetingsRoute,
+  AppMessagesRoute: AppMessagesRoute,
   AppMyAttendanceRoute: AppMyAttendanceRoute,
   AppMyLeavesRoute: AppMyLeavesRoute,
   AppNotificationsRoute: AppNotificationsRoute,
