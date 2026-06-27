@@ -1598,10 +1598,15 @@ function NotificationPopup({
                 </div>
               </div>
 
-              <p className="relative mt-5 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm leading-6 text-white/72">
-                The meeting schedule has been updated. Please be prepared with your weekly progress updates and
-                discussion points.
-              </p>
+              <div className="relative mt-5 rounded-2xl border border-white/10 bg-black/20 p-4">
+                <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/45">Agenda</div>
+                <p className="mt-2 max-h-[28dvh] overflow-y-auto whitespace-pre-wrap break-words pr-1 text-sm leading-6 text-white/72 [scrollbar-color:rgba(143,186,255,0.35)_transparent] [scrollbar-width:thin]">
+                  {meeting?.agenda?.trim() ||
+                    (isRescheduled
+                      ? "The meeting schedule has been updated. Please review the meeting details and come prepared."
+                      : "No agenda has been added for this meeting yet.")}
+                </p>
+              </div>
 
               <DialogFooter className="relative mt-5 flex-col gap-3 sm:flex-row sm:space-x-0">
                 <Button
