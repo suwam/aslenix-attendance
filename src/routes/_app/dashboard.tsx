@@ -714,7 +714,7 @@ function EmployeeDashboard() {
         </DialogContent>
       </Dialog>
 
-      <main className="min-h-screen space-y-6 overflow-hidden rounded-[32px] bg-[#050711] p-4 text-white sm:p-6 lg:p-8">
+      <main className="-mx-4 min-h-screen w-[calc(100%+2rem)] space-y-4 overflow-hidden rounded-none bg-[#050711] p-3 text-white sm:mx-0 sm:w-auto sm:space-y-6 sm:rounded-[32px] sm:p-6 lg:p-8">
         <motion.section
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
