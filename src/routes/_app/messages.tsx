@@ -23,7 +23,7 @@ import {
   Video,
   X,
 } from "lucide-react";
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { format, formatDistanceToNow, isSameDay } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -84,13 +84,15 @@ const ALLOWED_EXTENSIONS = [
   "png",
   "gif",
   "webp",
+  "heic",
+  "heif",
   "mp4",
   "mov",
   "webm",
   "m4v",
   "zip",
 ];
-const ACCEPTED_ATTACHMENT_TYPES = ".pdf,.docx,.xlsx,.jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.webm,.m4v,.zip";
+const ACCEPTED_ATTACHMENT_TYPES = ".pdf,.docx,.xlsx,.jpg,.jpeg,.png,.gif,.webp,.heic,.heif,.mp4,.mov,.webm,.m4v,.zip";
 const QUICK_EMOJIS = ["👍", "✅", "🙏", "🙂", "📌", "📄", "👏", "💡"];
 
 function MessagesPage() {
@@ -116,7 +118,10 @@ function MessagesPage() {
   const [presenceTick, setPresenceTick] = useState(0);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const messageScrollerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const pendingAutoScrollRef = useRef(false);
 
   const activeConversation = useMemo(
     () => conversations.find((item) => item.employee_id === selectedEmployeeId) ?? null,
@@ -269,9 +274,20 @@ function MessagesPage() {
     return () => window.clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages.length, currentConversation?.id]);
+  const scrollToLatestMessage = useCallback(() => {
+    const scroller = messageScrollerRef.current;
+    if (scroller) {
+      scroller.scrollTop = scroller.scrollHeight;
+      return;
+    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!messages.length && !pendingAutoScrollRef.current) return;
+    scrollToLatestMessage();
+    pendingAutoScrollRef.current = false;
+  }, [currentConversation?.id, messages.length, scrollToLatestMessage]);
 
   useEffect(() => {
     const attachmentMessages = messages.filter((item) => item.attachment_path && !signedUrls[item.id]);
@@ -364,6 +380,7 @@ function MessagesPage() {
   async function sendMessage(event?: FormEvent, file?: File) {
     event?.preventDefault();
     if (!user || sending || (!draft.trim() && !file)) return;
+    pendingAutoScrollRef.current = true;
     setSending(true);
     try {
       const conversation = await getOrCreateConversation();
@@ -374,12 +391,13 @@ function MessagesPage() {
         if (file.size > MAX_FILE_SIZE) throw new Error("Attachments must be 50 MB or smaller");
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
         const path = `${conversation.id}/${user.id}/${crypto.randomUUID()}-${safeName}`;
-        const { error: uploadError } = await db.storage.from("chat-attachments").upload(path, file, { contentType: file.type || undefined });
+        const attachmentType = getAttachmentContentType(file, extension);
+        const { error: uploadError } = await db.storage.from("chat-attachments").upload(path, file, { contentType: attachmentType });
         if (uploadError) throw uploadError;
         attachment = {
           attachment_name: file.name,
           attachment_path: path,
-          attachment_type: file.type || `application/${extension}`,
+          attachment_type: attachmentType,
           attachment_size: file.size,
         };
       }
@@ -394,7 +412,6 @@ function MessagesPage() {
       if (error) throw error;
       setDraft("");
       setShowEmoji(false);
-      setComposerFocused(false);
       await db.from("chat_presence").upsert({
         user_id: user.id,
         is_online: true,
@@ -402,6 +419,10 @@ function MessagesPage() {
         typing_conversation_id: null,
       });
       await Promise.all([loadMessages(conversation.id), loadOverview()]);
+      window.requestAnimationFrame(() => {
+        scrollToLatestMessage();
+        textareaRef.current?.focus({ preventScroll: true });
+      });
       window.dispatchEvent(new Event("messages:changed"));
     } catch (error: any) {
       toast.error(error?.message || "Message could not be sent");
@@ -529,7 +550,7 @@ function MessagesPage() {
                 <input type="date" value={dateSearch} onChange={(event) => setDateSearch(event.target.value)} className="h-8 w-10 rounded-lg border-0 bg-white/5 px-2 text-transparent outline-none [color-scheme:dark]" aria-label="Search messages by date" />
               </div>
 
-              <div className="flex-1 overflow-y-auto px-2 py-3 sm:px-5 sm:py-4 [scrollbar-width:thin]">
+              <div ref={messageScrollerRef} className="flex-1 overflow-y-auto overscroll-contain px-2 py-3 sm:px-5 sm:py-4 [scrollbar-width:thin]">
                 <div className="mx-auto max-w-4xl space-y-1">
                   <div className="mx-auto mb-4 flex max-w-md items-center gap-2 rounded-xl border border-cyan-300/10 bg-cyan-300/[0.055] px-3 py-2 text-left text-[10px] leading-5 text-cyan-100/55 sm:mb-5 sm:text-center sm:text-[11px]"><ShieldCheck size={15} className="shrink-0" />This secure workplace conversation cannot be edited or deleted.</div>
                   {loading ? <MessageSkeleton /> : visibleMessages.length ? visibleMessages.map((message, index) => {
@@ -553,7 +574,7 @@ function MessagesPage() {
                   <input ref={fileInputRef} type="file" accept={ACCEPTED_ATTACHMENT_TYPES} className="hidden" onChange={(event) => event.target.files?.[0] && sendMessage(undefined, event.target.files[0])} />
                   <button type="button" onClick={() => fileInputRef.current?.click()} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white/50 transition hover:bg-white/5 hover:text-cyan-200 sm:h-11 sm:w-11" aria-label="Attach file"><Paperclip size={20} /></button>
                   <div className="relative flex min-h-11 flex-1 items-end rounded-2xl border border-white/10 bg-white/[0.055] focus-within:border-cyan-300/30">
-                    <textarea value={draft} onFocus={() => setComposerFocused(true)} onBlur={() => { setComposerFocused(false); if (user) db.from("chat_presence").upsert({ user_id: user.id, is_online: true, last_seen_at: new Date().toISOString(), typing_conversation_id: null }); }} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendMessage(); } }} rows={1} placeholder="Type your message…" className="max-h-28 min-h-11 flex-1 resize-none bg-transparent px-3 py-3 text-sm leading-5 outline-none placeholder:text-white/25 sm:px-4" />
+                    <textarea ref={textareaRef} value={draft} onFocus={() => setComposerFocused(true)} onBlur={() => { setComposerFocused(false); if (user) db.from("chat_presence").upsert({ user_id: user.id, is_online: true, last_seen_at: new Date().toISOString(), typing_conversation_id: null }); }} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendMessage(); } }} rows={1} placeholder="Type your message…" className="max-h-28 min-h-11 flex-1 resize-none bg-transparent px-3 py-3 text-sm leading-5 outline-none placeholder:text-white/25 sm:px-4" />
                     <button type="button" onClick={() => setShowEmoji((value) => !value)} className="m-1.5 flex h-8 w-8 items-center justify-center rounded-lg text-white/45 hover:bg-white/5 hover:text-yellow-200" aria-label="Choose emoji"><Smile size={19} /></button>
                     {showEmoji && <div className="absolute bottom-12 right-0 grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-[#111525] p-2 shadow-2xl">{QUICK_EMOJIS.map((emoji) => <button type="button" key={emoji} onClick={() => { setDraft((value) => value + emoji); setShowEmoji(false); }} className="rounded-lg p-2 text-lg hover:bg-white/10">{emoji}</button>)}</div>}
                   </div>
@@ -655,6 +676,28 @@ function formatFileSize(size: number | null) {
   if (!size) return "File attachment";
   if (size < 1024 * 1024) return `${Math.ceil(size / 1024)} KB`;
   return `${(size / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function getAttachmentContentType(file: File, extension: string) {
+  if (file.type) return file.type;
+  const map: Record<string, string> = {
+    pdf: "application/pdf",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    zip: "application/zip",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    gif: "image/gif",
+    webp: "image/webp",
+    heic: "image/heic",
+    heif: "image/heif",
+    mp4: "video/mp4",
+    mov: "video/quicktime",
+    webm: "video/webm",
+    m4v: "video/x-m4v",
+  };
+  return map[extension] || "application/octet-stream";
 }
 
 function getFileIcon(type: string | null) {

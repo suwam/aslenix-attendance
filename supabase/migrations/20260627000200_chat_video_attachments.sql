@@ -12,6 +12,8 @@ SET
     'image/png',
     'image/gif',
     'image/webp',
+    'image/heic',
+    'image/heif',
     'video/mp4',
     'video/quicktime',
     'video/webm',

@@ -228,13 +228,14 @@ VALUES (
   'chat-attachments',
   'chat-attachments',
   false,
-  15728640,
+  52428800,
   ARRAY[
     'application/pdf',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'application/zip',
-    'image/jpeg', 'image/png', 'image/gif', 'image/webp'
+    'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif',
+    'video/mp4', 'video/quicktime', 'video/webm', 'video/x-m4v'
   ]
 )
 ON CONFLICT (id) DO UPDATE SET
