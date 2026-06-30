@@ -519,7 +519,7 @@ function MessagesPage() {
           <div className="border-t border-white/10 p-3 text-center text-[10px] font-semibold uppercase tracking-[0.15em] text-white/25">Messages are permanent &amp; auditable</div>
         </aside>
 
-        <section className={`${mobileChatOpen ? "flex" : "hidden"} w-full min-w-0 flex-1 flex-col bg-[radial-gradient(circle_at_70%_0%,rgba(124,58,237,.12),transparent_30%),#070a13] md:flex`}>
+        <section className={`${mobileChatOpen ? "flex" : "hidden"} w-full min-w-0 flex-1 flex-col overflow-x-hidden bg-[radial-gradient(circle_at_70%_0%,rgba(124,58,237,.12),transparent_30%),#070a13] md:flex`}>
           {(isAdmin ? selectedEmployee : user) ? (
             <>
               <header className="flex h-16 shrink-0 items-center gap-2 border-b border-white/10 bg-[#0b0e1a]/90 px-2 backdrop-blur-xl sm:h-[72px] sm:gap-3 sm:px-4">
@@ -550,8 +550,8 @@ function MessagesPage() {
                 <input type="date" value={dateSearch} onChange={(event) => setDateSearch(event.target.value)} className="h-8 w-10 rounded-lg border-0 bg-white/5 px-2 text-transparent outline-none [color-scheme:dark]" aria-label="Search messages by date" />
               </div>
 
-              <div ref={messageScrollerRef} className="flex-1 overflow-y-auto overscroll-contain px-2 py-3 sm:px-5 sm:py-4 [scrollbar-width:thin]">
-                <div className="mx-auto max-w-4xl space-y-1">
+              <div ref={messageScrollerRef} className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-2 py-3 sm:px-5 sm:py-4 [scrollbar-width:thin]">
+                <div className="mx-auto w-full min-w-0 max-w-4xl overflow-hidden space-y-1">
                   <div className="mx-auto mb-4 flex max-w-md items-center gap-2 rounded-xl border border-cyan-300/10 bg-cyan-300/[0.055] px-3 py-2 text-left text-[10px] leading-5 text-cyan-100/55 sm:mb-5 sm:text-center sm:text-[11px]"><ShieldCheck size={15} className="shrink-0" />This secure workplace conversation cannot be edited or deleted.</div>
                   {loading ? <MessageSkeleton /> : visibleMessages.length ? visibleMessages.map((message, index) => {
                     const mine = message.sender_id === user?.id;
@@ -569,16 +569,16 @@ function MessagesPage() {
                 </div>
               </div>
 
-              <form onSubmit={sendMessage} className="relative shrink-0 border-t border-white/10 bg-[#0b0e1a]/95 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-xl sm:p-4">
-                <div className="mx-auto flex max-w-4xl items-end gap-1.5 sm:gap-2">
+              <form onSubmit={sendMessage} className="relative w-full max-w-full shrink-0 overflow-hidden border-t border-white/10 bg-[#0b0e1a]/95 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-xl sm:p-4">
+                <div className="mx-auto flex w-full min-w-0 max-w-4xl items-end gap-1.5 sm:gap-2">
                   <input ref={fileInputRef} type="file" accept={ACCEPTED_ATTACHMENT_TYPES} className="hidden" onChange={(event) => event.target.files?.[0] && sendMessage(undefined, event.target.files[0])} />
-                  <button type="button" onClick={() => fileInputRef.current?.click()} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white/50 transition hover:bg-white/5 hover:text-cyan-200 sm:h-11 sm:w-11" aria-label="Attach file"><Paperclip size={20} /></button>
-                  <div className="relative flex min-h-11 flex-1 items-end rounded-2xl border border-white/10 bg-white/[0.055] focus-within:border-cyan-300/30">
+                  <button type="button" onClick={() => fileInputRef.current?.click()} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.045] text-white/55 transition hover:border-cyan-300/25 hover:bg-cyan-300/10 hover:text-cyan-100" aria-label="Attach file"><Paperclip size={21} /></button>
+                  <div className="relative flex min-h-11 min-w-0 flex-1 items-end rounded-2xl border border-cyan-300/15 bg-white/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] focus-within:border-cyan-300/45 focus-within:shadow-[0_0_24px_rgba(34,211,238,0.12)]">
                     <textarea ref={textareaRef} value={draft} onFocus={() => setComposerFocused(true)} onBlur={() => { setComposerFocused(false); if (user) db.from("chat_presence").upsert({ user_id: user.id, is_online: true, last_seen_at: new Date().toISOString(), typing_conversation_id: null }); }} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendMessage(); } }} rows={1} placeholder="Type your message…" className="max-h-28 min-h-11 flex-1 resize-none bg-transparent px-3 py-3 text-sm leading-5 outline-none placeholder:text-white/25 sm:px-4" />
                     <button type="button" onClick={() => setShowEmoji((value) => !value)} className="m-1.5 flex h-8 w-8 items-center justify-center rounded-lg text-white/45 hover:bg-white/5 hover:text-yellow-200" aria-label="Choose emoji"><Smile size={19} /></button>
                     {showEmoji && <div className="absolute bottom-12 right-0 grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-[#111525] p-2 shadow-2xl">{QUICK_EMOJIS.map((emoji) => <button type="button" key={emoji} onClick={() => { setDraft((value) => value + emoji); setShowEmoji(false); }} className="rounded-lg p-2 text-lg hover:bg-white/10">{emoji}</button>)}</div>}
                   </div>
-                  <button type="submit" disabled={sending || !draft.trim()} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 via-violet-500 to-cyan-400 text-white shadow-[0_0_24px_rgba(124,58,237,.3)] transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40 sm:h-11 sm:w-11" aria-label="Send message"><Send size={18} /></button>
+                  <button type="submit" disabled={sending || !draft.trim()} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-violet-500 to-cyan-400 text-white shadow-[0_0_24px_rgba(124,58,237,.3)] transition hover:scale-105 disabled:cursor-not-allowed disabled:grayscale disabled:opacity-45" aria-label="Send message"><Send size={19} /></button>
                 </div>
                 <p className="mx-auto mt-2 hidden max-w-4xl pl-14 text-[10px] text-white/25 sm:block">PDF, DOCX, XLSX, photos, videos and ZIP · Maximum 50 MB</p>
               </form>
@@ -607,21 +607,23 @@ function MessageBubble({ message, mine, signedUrl }: { message: ChatMessage; min
   const video = message.attachment_type?.startsWith("video/");
   const FileIcon = getFileIcon(message.attachment_type);
   return (
-    <div className={`mb-2 flex ${mine ? "justify-end" : "justify-start"}`}>
-      <div className={`max-w-[86%] rounded-2xl border px-3.5 py-2.5 text-sm shadow-lg sm:max-w-[72%] ${mine ? "rounded-br-md border-violet-300/15 bg-gradient-to-br from-violet-600/80 to-pink-600/75" : "rounded-bl-md border-white/10 bg-[#151a29]"}`}>
+    <div className={`mb-2 flex min-w-0 ${mine ? "justify-end" : "justify-start"}`}>
+      <div className={`min-w-0 max-w-[82vw] overflow-hidden rounded-2xl border px-2.5 py-2 text-sm shadow-lg sm:max-w-[72%] sm:px-3.5 sm:py-2.5 ${mine ? "rounded-br-md border-violet-300/15 bg-gradient-to-br from-violet-600/85 via-fuchsia-600/78 to-pink-600/78 shadow-[0_14px_34px_rgba(168,85,247,0.18)]" : "rounded-bl-md border-white/10 bg-[#151a29] shadow-[0_14px_34px_rgba(0,0,0,0.18)]"}`}>
         {message.attachment_path && (
           image && signedUrl ? (
-            <a href={signedUrl} target="_blank" rel="noreferrer" className="mb-2 block overflow-hidden rounded-xl"><img src={signedUrl} alt={message.attachment_name || "Attachment"} className="max-h-64 w-full object-cover" /></a>
+            <a href={signedUrl} target="_blank" rel="noreferrer" className="mb-2 block max-w-full overflow-hidden rounded-xl border border-white/10 bg-black/20">
+              <img src={signedUrl} alt={message.attachment_name || "Attachment"} className="block max-h-[46dvh] w-full max-w-full object-cover" loading="lazy" />
+            </a>
           ) : video && signedUrl ? (
-            <div className="mb-2 overflow-hidden rounded-xl border border-white/10 bg-black/20">
-              <video src={signedUrl} controls preload="metadata" className="max-h-72 w-full bg-black object-contain" />
+            <div className="mb-2 max-w-full overflow-hidden rounded-xl border border-white/10 bg-black/20">
+              <video src={signedUrl} controls preload="metadata" playsInline className="block max-h-[46dvh] w-full max-w-full bg-black object-contain" />
               <a href={signedUrl} target="_blank" rel="noreferrer" className="flex items-center justify-between gap-3 px-3 py-2 text-xs text-white/70 hover:text-white">
                 <span className="min-w-0 truncate">{message.attachment_name || "Video attachment"}</span>
                 <Download size={14} className="shrink-0" />
               </a>
             </div>
           ) : (
-            <a href={signedUrl || "#"} target={signedUrl ? "_blank" : undefined} rel="noreferrer" className="mb-2 flex min-w-0 items-center gap-3 rounded-xl border border-white/10 bg-black/15 p-3 hover:bg-black/25">
+            <a href={signedUrl || "#"} target={signedUrl ? "_blank" : undefined} rel="noreferrer" className="mb-2 flex min-w-0 max-w-full items-center gap-3 rounded-xl border border-white/10 bg-black/15 p-3 hover:bg-black/25">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10"><FileIcon size={20} /></span>
               <span className="min-w-0 flex-1"><strong className="block truncate text-xs">{message.attachment_name}</strong><small className="mt-0.5 block text-[10px] text-white/45">{formatFileSize(message.attachment_size)}</small></span>
               <Download size={15} className="shrink-0 text-white/45" />

@@ -38,6 +38,8 @@ function ReportsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const todayDate = format(new Date(), "yyyy-MM-dd");
+  const isFutureDate = date > todayDate;
   const isWeeklyOff = isWeeklyOffDate(date);
   const weekStart = format(startOfWeek(new Date(`${date}T00:00:00`), { weekStartsOn: 0 }), "yyyy-MM-dd");
   const weekEnd = format(addDays(new Date(`${weekStart}T00:00:00`), 5), "yyyy-MM-dd");
@@ -83,7 +85,7 @@ function ReportsPage() {
         ? merged
         : merged.filter((row) => {
             if (statusFilter === "weekly_off") return isWeeklyOff && !row.attendance;
-            if (statusFilter === "absent") return !isWeeklyOff && !row.attendance;
+            if (statusFilter === "absent") return !isFutureDate && !isWeeklyOff && !row.attendance;
             if (statusFilter === "late") return row.attendance?.is_late;
             if (statusFilter === "early_checkout") return row.attendance?.is_early_checkout;
             return row.attendance?.status === statusFilter;
@@ -119,18 +121,24 @@ function ReportsPage() {
 
     const merged = employeeProfiles.map((profile) => {
       const records = attendanceByUser.get(profile.user_id) ?? [];
-      const workDays = dateRange(startDate, endDate).filter((day) => !isWeeklyOffDate(day)).length;
+      const elapsedEndDate = endDate > todayDate ? todayDate : endDate;
+      const elapsedWorkDates =
+        startDate <= todayDate ? dateRange(startDate, elapsedEndDate).filter((day) => !isWeeklyOffDate(day)) : [];
+      const elapsedRecords = records.filter((record) => record.date <= todayDate);
+      const recordedWorkDates = new Set(
+        elapsedRecords.filter((record) => !isWeeklyOffDate(record.date)).map((record) => record.date),
+      );
       return {
         ...profile,
         records,
-        presentDays: records.filter((record) => ["present", "late", "wfh"].includes(record.status)).length,
-        lateDays: records.filter((record) => record.is_late).length,
-        earlyCheckoutDays: records.filter((record) => record.is_early_checkout).length,
-        leaveDays: records.filter((record) => record.status === "leave").length,
-        wfhDays: records.filter((record) => record.status === "wfh").length,
-        editedDays: records.filter((record) => record.is_edited).length,
-        absentDays: Math.max(workDays - records.length, 0),
-        totalHours: records.reduce((total, record) => total + Number(record.work_hours || 0), 0),
+        presentDays: elapsedRecords.filter((record) => ["present", "late", "wfh"].includes(record.status)).length,
+        lateDays: elapsedRecords.filter((record) => record.is_late).length,
+        earlyCheckoutDays: elapsedRecords.filter((record) => record.is_early_checkout).length,
+        leaveDays: elapsedRecords.filter((record) => record.status === "leave").length,
+        wfhDays: elapsedRecords.filter((record) => record.status === "wfh").length,
+        editedDays: elapsedRecords.filter((record) => record.is_edited).length,
+        absentDays: Math.max(elapsedWorkDates.length - recordedWorkDates.size, 0),
+        totalHours: elapsedRecords.reduce((total, record) => total + Number(record.work_hours || 0), 0),
       };
     });
 
@@ -184,7 +192,7 @@ function ReportsPage() {
         attendance?.check_out_time ? format(new Date(attendance.check_out_time), "HH:mm") : "",
         attendance?.work_location || "",
         attendance?.work_hours ? formatWorkHours(attendance.work_hours) : "",
-        attendance ? attendanceLabel(attendance) : isWeeklyOff ? "Weekly off" : "Absent",
+        dailyStatusLabel(attendance, isWeeklyOff, isFutureDate),
         attendance?.is_edited ? "Yes" : "No",
         attendance?.is_late ? "Yes" : "No",
         attendance?.is_early_checkout ? "Yes" : "No",
@@ -382,7 +390,9 @@ function ReportsPage() {
                             ? attendanceLabel(attendance)
                             : isWeeklyOff
                               ? "Weekly off"
-                              : "Absent"}
+                              : isFutureDate
+                                ? "Not due"
+                                : "Absent"}
                         </span>
                       </td>
                     </tr>
@@ -401,6 +411,13 @@ function attendanceLabel(attendance: any) {
   if (attendance.is_early_checkout) return "Early checkout";
   if (attendance.is_late) return "Late";
   return attendance.status.replace("_", " ");
+}
+
+function dailyStatusLabel(attendance: any, isWeeklyOff: boolean, isFutureDate: boolean) {
+  if (attendance) return attendanceLabel(attendance);
+  if (isWeeklyOff) return "Weekly off";
+  if (isFutureDate) return "Not due";
+  return "Absent";
 }
 
 function sortByEmployeeName<T extends { full_name?: string | null }>(rows: T[]) {
