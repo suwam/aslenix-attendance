@@ -73,11 +73,12 @@ function LeavesPage() {
       filtered.map((l) => ({
         ...l,
         profile: map.get(l.user_id),
-        duration:
-          Math.max(
-            1,
-            differenceInDays(new Date(l.end_date), new Date(l.start_date)) + 1,
-          ),
+        duration: l.is_half_day
+          ? 0.5
+          : Math.max(
+              1,
+              differenceInDays(new Date(l.end_date), new Date(l.start_date)) + 1,
+            ),
       })),
     );
     setLoading(false);
@@ -222,7 +223,11 @@ function LeavesPage() {
                     </div>
                     <div className="rounded-3xl bg-white/5 p-4">
                       <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Duration</div>
-                      <div className="mt-2 text-sm font-semibold">{r.duration} day{r.duration === 1 ? "" : "s"}</div>
+                      <div className="mt-2 text-sm font-semibold">
+                        {r.is_half_day
+                          ? `Half Day ${r.half_day_session ? `(${r.half_day_session === "morning" ? "Morning" : "Afternoon"})` : ""}`
+                          : `${r.duration} day${r.duration === 1 ? "" : "s"}`}
+                      </div>
                     </div>
                   </div>
 
