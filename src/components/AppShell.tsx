@@ -177,9 +177,10 @@ export function AppShell({ children }: { children: ReactNode }) {
     nav({ to: "/login" });
   };
 
+  const isMessagesPage = currentPath === "/messages";
+
   return (
-    <div className="min-h-screen flex">
-      {/* Sidebar (desktop) */}
+    <div className={`min-h-screen flex ${isMessagesPage ? "h-screen overflow-hidden" : ""}`}>
       <aside
         className="hidden lg:flex flex-col w-64 shrink-0 sticky top-0 h-screen min-h-0 p-4 gap-2 border-r border-sidebar-border"
         style={{ background: "var(--sidebar)", backdropFilter: "blur(20px)" }}
@@ -276,7 +277,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
 
       {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className={`flex-1 flex flex-col min-w-0 ${isMessagesPage ? "h-full overflow-hidden" : ""}`}>
         <header
           className="sticky top-0 z-30 h-16 px-4 sm:px-6 flex items-center gap-3 border-b border-border"
           style={{
@@ -397,8 +398,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-[1600px] w-full mx-auto">
-          <div key={currentPath}>{children}</div>
+        <main className={`flex-1 max-w-[1600px] w-full mx-auto ${isMessagesPage ? "p-0 sm:p-0 lg:p-0 h-full min-h-0 overflow-hidden flex flex-col" : "p-4 sm:p-6 lg:p-8"}`}>
+          <div key={currentPath} className={isMessagesPage ? "flex-1 min-h-0 h-full flex flex-col" : ""}>{children}</div>
         </main>
 
         {!isAdmin && currentPath !== "/messages" && (

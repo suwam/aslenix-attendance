@@ -73,6 +73,7 @@ type ChatMessage = {
   delivered_at: string | null;
   read_at: string | null;
   created_at: string;
+  reactions?: Record<string, string[]> | null;
 };
 
 type Presence = {
@@ -112,7 +113,8 @@ function MessagesPage() {
     if (isAdmin) return true;
     if (!profile) return false;
     const pos = (profile.position || "").toLowerCase();
-    return pos.includes("hr") || pos.includes("human resources");
+    const dept = (profile.department || "").toLowerCase();
+    return pos.includes("hr") || pos.includes("human resources") || dept.includes("hr") || dept.includes("human resources");
   }, [isAdmin, profile]);
 
   const [employees, setEmployees] = useState<ChatProfile[]>([]);
@@ -136,11 +138,16 @@ function MessagesPage() {
   const [composerFocused, setComposerFocused] = useState(false);
   const [presenceTick, setPresenceTick] = useState(0);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  const [messageLimit, setMessageLimit] = useState(50);
+  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messageScrollerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const pendingAutoScrollRef = useRef(false);
+  const previousScrollHeightRef = useRef<number | null>(null);
+  const lastMessageIdRef = useRef<string | null>(null);
+  const firstMessageIdRef = useRef<string | null>(null);
 
   const activeConversation = useMemo(
     () => conversations.find((item) => item.employee_id === selectedEmployeeId) ?? null,
@@ -187,7 +194,8 @@ function MessagesPage() {
         ((profileRows ?? []) as ChatProfile[]).filter((item) => {
           if (adminIds.has(item.user_id)) return false;
           const pos = (item.position || "").toLowerCase();
-          return !(pos.includes("hr") || pos.includes("human resources"));
+          const dept = (item.department || "").toLowerCase();
+          return !(pos.includes("hr") || pos.includes("human resources") || dept.includes("hr") || dept.includes("human resources"));
         })
       );
     } else {
@@ -202,12 +210,16 @@ function MessagesPage() {
           .filter((item) => {
             if (adminIds.has(item.user_id)) return true;
             const pos = (item.position || "").toLowerCase();
-            return pos.includes("hr") || pos.includes("human resources");
+            const dept = (item.department || "").toLowerCase();
+            return pos.includes("hr") || pos.includes("human resources") || dept.includes("hr") || dept.includes("human resources");
           })
-          .map((item) => ({
-            ...item,
-            role: roleByUser.get(item.user_id) ?? ((item.position || "").toLowerCase().includes("hr") ? "hr_manager" : null)
-          }))
+          .map((item) => {
+            const isHr = (item.position || "").toLowerCase().includes("hr") || (item.department || "").toLowerCase().includes("hr");
+            return {
+              ...item,
+              role: roleByUser.get(item.user_id) ?? (isHr ? "hr_manager" : null)
+            };
+          })
           .sort(sortOfficials)
       );
     }
@@ -225,10 +237,18 @@ function MessagesPage() {
     return created as Conversation;
   }, [db, isChatAdmin, user]);
 
-  const loadMessages = useCallback(async (conversationId: string) => {
-    const { data, error } = await db.from("chat_messages").select("*").eq("conversation_id", conversationId).order("created_at", { ascending: true }).limit(1000);
+  const loadMessages = useCallback(async (conversationId: string, limit: number) => {
+    if (messageScrollerRef.current) {
+      previousScrollHeightRef.current = messageScrollerRef.current.scrollHeight;
+    }
+    const { data, error } = await db.from("chat_messages")
+      .select("*")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: false })
+      .limit(limit);
     if (error) return toast.error("Unable to load this conversation");
-    setMessages((data ?? []) as ChatMessage[]);
+    const sorted = (data ?? []).reverse();
+    setMessages(sorted as ChatMessage[]);
     await db.rpc("mark_chat_messages_read", { _conversation_id: conversationId });
     window.dispatchEvent(new Event("messages:changed"));
   }, [db]);
@@ -262,12 +282,17 @@ function MessagesPage() {
   }, [adminProfiles, isChatAdmin, selectedOfficialId]);
 
   useEffect(() => {
+    setMessageLimit(50);
+    setReplyingTo(null);
+  }, [currentConversation?.id]);
+
+  useEffect(() => {
     if (!currentConversation) {
       setMessages([]);
       return;
     }
-    loadMessages(currentConversation.id);
-  }, [currentConversation?.id, loadMessages]);
+    loadMessages(currentConversation.id, messageLimit);
+  }, [currentConversation?.id, messageLimit, loadMessages]);
 
   useEffect(() => {
     setShowInfoPanel(false);
@@ -280,13 +305,13 @@ function MessagesPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "chat_messages" }, (payload: any) => {
         loadOverview();
         const changed = payload.new?.conversation_id || payload.old?.conversation_id;
-        if (changed && changed === currentConversation?.id) loadMessages(changed);
+        if (changed && changed === currentConversation?.id) loadMessages(changed, messageLimit);
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "chat_conversations" }, loadOverview)
       .on("postgres_changes", { event: "*", schema: "public", table: "chat_presence" }, loadPresence)
       .subscribe();
     return () => { db.removeChannel(channel); };
-  }, [currentConversation?.id, db, loadMessages, loadOverview, loadPresence, user]);
+  }, [currentConversation?.id, db, loadMessages, loadOverview, loadPresence, user, messageLimit]);
 
   useEffect(() => {
     if (!user) return;
@@ -335,10 +360,24 @@ function MessagesPage() {
   }, []);
 
   useLayoutEffect(() => {
-    if (!messages.length && !pendingAutoScrollRef.current) return;
-    scrollToLatestMessage();
+    const scroller = messageScrollerRef.current;
+    if (!scroller || !messages.length) return;
+
+    const currentFirstId = messages[0]?.id;
+    const currentLastId = messages[messages.length - 1]?.id;
+
+    if (firstMessageIdRef.current && currentFirstId !== firstMessageIdRef.current && currentLastId === lastMessageIdRef.current) {
+      if (previousScrollHeightRef.current !== null) {
+        scroller.scrollTop = scroller.scrollHeight - previousScrollHeightRef.current;
+      }
+    } else {
+      scrollToLatestMessage();
+    }
+
+    firstMessageIdRef.current = currentFirstId;
+    lastMessageIdRef.current = currentLastId;
     pendingAutoScrollRef.current = false;
-  }, [currentConversation?.id, messages.length, scrollToLatestMessage]);
+  }, [messages, scrollToLatestMessage]);
 
   useEffect(() => {
     const attachmentMessages = messages.filter((item) => item.attachment_path && !signedUrls[item.id]);
@@ -474,24 +513,33 @@ function MessagesPage() {
           attachment_size: file.size,
         };
       }
+      let messageBody = draft.trim();
+      if (replyingTo) {
+        const replyUser = replyingTo.sender_is_admin ? "Admin" : "Teammate";
+        const cleanBody = replyingTo.body ? replyingTo.body.replace(/\n/g, " ") : "Attachment";
+        const truncated = cleanBody.length > 50 ? `${cleanBody.substring(0, 50)}...` : cleanBody;
+        messageBody = `> [${replyUser}]: ${truncated}\n\n${messageBody}`;
+      }
+
       const { error } = await db.from("chat_messages").insert({
         conversation_id: conversation.id,
         sender_id: user.id,
         recipient_id: isChatAdmin ? selectedEmployeeId : selectedOfficial?.user_id ?? null,
         sender_is_admin: isChatAdmin,
-        body: draft.trim() || null,
+        body: messageBody || null,
         ...attachment,
       });
       if (error) throw error;
       setDraft("");
       setShowEmoji(false);
+      setReplyingTo(null);
       await db.from("chat_presence").upsert({
         user_id: user.id,
         is_online: true,
         last_seen_at: new Date().toISOString(),
         typing_conversation_id: null,
       });
-      await Promise.all([loadMessages(conversation.id), loadOverview()]);
+      await Promise.all([loadMessages(conversation.id, messageLimit), loadOverview()]);
       window.requestAnimationFrame(() => {
         scrollToLatestMessage();
         textareaRef.current?.focus({ preventScroll: true });
@@ -502,6 +550,40 @@ function MessagesPage() {
     } finally {
       setSending(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function toggleReaction(message: ChatMessage, emoji: string) {
+    if (!user) return;
+    const current = (message.reactions || {}) as Record<string, string[]>;
+    const uids = current[emoji] || [];
+    const exists = uids.includes(user.id);
+    const updatedUids = exists
+      ? uids.filter((id) => id !== user.id)
+      : [...uids, user.id];
+    
+    const updated = {
+      ...current,
+      [emoji]: updatedUids,
+    };
+    
+    if (updatedUids.length === 0) {
+      delete updated[emoji];
+    }
+
+    const { error } = await db.from("chat_messages")
+      .update({ reactions: updated })
+      .eq("id", message.id);
+    
+    if (error) {
+      console.error("Failed to update reaction:", error);
+      toast.error("Reaction could not be saved");
+    } else {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === message.id ? { ...msg, reactions: updated } : msg
+        )
+      );
     }
   }
 
@@ -524,14 +606,14 @@ function MessagesPage() {
   ).length;
 
   return (
-    <div className="-mx-4 -my-4 min-h-[calc(100dvh-4rem)] overflow-hidden bg-[#0B1020] text-white shadow-2xl sm:mx-0 sm:my-0 sm:min-h-0 sm:rounded-[30px] sm:border sm:border-white/[0.08] sm:p-4 lg:p-5">
+    <div className="-mx-4 -my-4 sm:mx-0 sm:my-0 h-full flex flex-col flex-1 min-h-0 overflow-hidden bg-[#0B1020] text-white shadow-2xl sm:rounded-[30px] sm:border sm:border-white/[0.08] sm:p-4 lg:p-5">
       <div className="hidden gap-3 pb-4 lg:grid lg:grid-cols-3">
         <ChatMetric icon={MessageCircle} label={isChatAdmin ? "Total conversations" : "Inbox"} value={isChatAdmin ? conversations.length : "Official Channel"} subtitle={isChatAdmin ? "+18 today" : "Secure messaging"} tone="cyan" />
         <ChatMetric icon={Users} label={isChatAdmin ? "Waiting for reply" : "Channel status"} value={isChatAdmin ? waitingForReply : "Active"} subtitle={isChatAdmin ? "3 urgent" : "Auditable history"} tone="violet" />
         <ChatMetric icon={ShieldCheck} label="Unread messages" value={totalUnread} subtitle={totalUnread ? "High priority" : "All caught up"} tone="pink" />
       </div>
 
-      <div className="flex h-[calc(100dvh-4rem)] overflow-hidden bg-[#0B1020] sm:h-[calc(100dvh-8rem)] sm:rounded-[26px] sm:border sm:border-white/[0.08]">
+      <div className="flex flex-1 min-h-0 overflow-hidden bg-[#0B1020] sm:rounded-[26px] sm:border sm:border-white/[0.08]">
         <aside className={`${mobileChatOpen ? "hidden" : "flex"} w-full shrink-0 flex-col bg-[#121827] md:flex md:w-[340px] md:border-r md:border-white/[0.08] xl:w-[380px]`}>
           <div className="border-b border-white/[0.08] p-4">
             <div className="flex items-center justify-between gap-3">
@@ -691,6 +773,17 @@ function MessagesPage() {
 
               <div ref={messageScrollerRef} className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-2 py-3 sm:px-5 sm:py-4 [scrollbar-width:thin]">
                 <div className="mx-auto w-full min-w-0 max-w-4xl overflow-hidden space-y-1">
+                  {messages.length >= messageLimit && (
+                    <div className="flex justify-center py-2">
+                      <button
+                        type="button"
+                        onClick={() => setMessageLimit((prev) => prev + 50)}
+                        className="rounded-full border border-white/10 bg-white/[0.045] px-4 py-1.5 text-xs font-bold text-white/55 transition hover:bg-[#22304A] hover:text-white cursor-pointer"
+                      >
+                        Load Older Messages
+                      </button>
+                    </div>
+                  )}
                   <div className="mx-auto mb-5 flex max-w-xl items-start gap-3 rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.07] px-4 py-3 text-left shadow-[0_18px_45px_rgba(0,194,255,.06)]">
                     <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-cyan-300/10 text-cyan-200"><ShieldCheck size={17} /></span>
                     <div>
@@ -705,7 +798,14 @@ function MessagesPage() {
                     return (
                       <div key={message.id}>
                         {showDate && <DateSeparator date={message.created_at} />}
-                        <MessageBubble message={message} mine={mine} signedUrl={signedUrls[message.id]} />
+                        <MessageBubble
+                          message={message}
+                          mine={mine}
+                          signedUrl={signedUrls[message.id]}
+                          currentUserId={user?.id}
+                          onToggleReaction={toggleReaction}
+                          onReply={setReplyingTo}
+                        />
                       </div>
                     );
                   }) : <EmptyMessages isAdmin={isChatAdmin} onUpload={() => fileInputRef.current?.click()} />}
@@ -715,19 +815,28 @@ function MessagesPage() {
               </div>
 
               <form onSubmit={sendMessage} className="relative w-full max-w-full shrink-0 overflow-hidden border-t border-white/[0.08] bg-[#121827]/95 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-18px_50px_rgba(0,0,0,.22)] backdrop-blur-xl sm:p-4">
+                {replyingTo && (
+                  <div className="mx-auto mb-2 flex max-w-4xl items-center justify-between gap-3 border-l-2 border-cyan-400 bg-cyan-300/[0.04] px-4 py-2 text-xs rounded-r-xl animate-[fade-in_.15s_ease-out]">
+                    <div className="min-w-0 flex-1">
+                      <span className="font-bold text-cyan-300">Replying to {replyingTo.sender_is_admin ? "Admin" : "Teammate"}:</span>
+                      <p className="truncate text-white/55 mt-0.5">{replyingTo.body || "Attachment"}</p>
+                    </div>
+                    <button type="button" onClick={() => setReplyingTo(null)} className="text-white/35 hover:text-white cursor-pointer" aria-label="Cancel reply"><X size={14} /></button>
+                  </div>
+                )}
                 <div className="mx-auto w-full min-w-0 max-w-4xl rounded-3xl border border-white/[0.08] bg-[#182233] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,.05),0_18px_55px_rgba(0,0,0,.18)]">
                   <div className="flex w-full min-w-0 items-end gap-1.5 sm:gap-2">
                   <input ref={fileInputRef} type="file" accept={ACCEPTED_ATTACHMENT_TYPES} className="hidden" onChange={(event) => event.target.files?.[0] && sendMessage(undefined, event.target.files[0])} />
-                  <button type="button" onClick={() => fileInputRef.current?.click()} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.045] text-white/55 transition hover:border-cyan-300/25 hover:bg-cyan-300/10 hover:text-cyan-100 active:scale-95" aria-label="Attach file"><Paperclip size={21} /></button>
+                  <button type="button" onClick={() => fileInputRef.current?.click()} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.045] text-white/55 transition hover:border-cyan-300/25 hover:bg-cyan-300/10 hover:text-cyan-100 active:scale-95 cursor-pointer" aria-label="Attach file"><Paperclip size={21} /></button>
                   <div className="relative flex min-h-11 min-w-0 flex-1 items-end rounded-2xl border border-cyan-300/15 bg-[#0B1020]/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition focus-within:border-cyan-300/45 focus-within:shadow-[0_0_24px_rgba(0,194,255,0.12)]">
                     <textarea ref={textareaRef} value={draft} onFocus={() => setComposerFocused(true)} onBlur={() => { setComposerFocused(false); if (user) db.from("chat_presence").upsert({ user_id: user.id, is_online: true, last_seen_at: new Date().toISOString(), typing_conversation_id: null }); }} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendMessage(); } }} rows={1} placeholder="Type a secure workplace message..." className="max-h-28 min-h-11 flex-1 resize-none bg-transparent px-3 py-3 text-sm leading-5 outline-none placeholder:text-white/25 sm:px-4" />
                     <button type="button" className="m-1 flex h-8 w-8 items-center justify-center rounded-lg text-white/35 hover:bg-white/5 hover:text-cyan-200" aria-label="Mention teammate"><AtSign size={17} /></button>
                     <button type="button" className="m-1 flex h-8 w-8 items-center justify-center rounded-lg text-white/35 hover:bg-white/5 hover:text-violet-200" aria-label="AI assistant"><Bot size={17} /></button>
-                    <button type="button" onClick={() => setShowEmoji((value) => !value)} className="m-1 flex h-8 w-8 items-center justify-center rounded-lg text-white/45 hover:bg-white/5 hover:text-yellow-200" aria-label="Choose emoji"><Smile size={19} /></button>
+                    <button type="button" onClick={() => setShowEmoji((value) => !value)} className="m-1 flex h-8 w-8 items-center justify-center rounded-lg text-white/45 hover:bg-white/5 hover:text-yellow-200 cursor-pointer" aria-label="Choose emoji"><Smile size={19} /></button>
                     {showEmoji && <div className="absolute bottom-12 right-0 grid grid-cols-4 gap-1 rounded-2xl border border-white/10 bg-[#111525] p-2 shadow-2xl">{QUICK_EMOJIS.map((emoji) => <button type="button" key={emoji} onClick={() => { setDraft((value) => value + emoji); setShowEmoji(false); }} className="rounded-lg p-2 text-lg hover:bg-white/10">{emoji}</button>)}</div>}
                   </div>
                   <button type="button" className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.045] text-white/45 transition hover:bg-[#22304A] hover:text-cyan-100 active:scale-95 sm:flex" aria-label="Voice message"><Mic size={19} /></button>
-                  <button type="submit" disabled={sending || !draft.trim()} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-violet-500 to-cyan-400 text-white shadow-[0_0_24px_rgba(124,58,237,.3)] transition hover:scale-105 hover:shadow-[0_0_32px_rgba(0,194,255,.22)] active:scale-95 disabled:cursor-not-allowed disabled:grayscale disabled:opacity-45" aria-label="Send message"><Send size={19} /></button>
+                  <button type="submit" disabled={sending || !draft.trim()} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-violet-500 to-cyan-400 text-white shadow-[0_0_24px_rgba(124,58,237,.3)] transition hover:scale-105 hover:shadow-[0_0_32px_rgba(0,194,255,.22)] active:scale-95 disabled:cursor-not-allowed disabled:grayscale disabled:opacity-45 cursor-pointer" aria-label="Send message"><Send size={19} /></button>
                   </div>
                   <div className="mt-2 flex items-center justify-between gap-3 px-1 text-[10px] text-white/28">
                     <span className="truncate">Supports PDF, DOCX, XLSX, ZIP, Images · Maximum upload: 50MB</span>
@@ -736,7 +845,82 @@ function MessagesPage() {
                 </div>
               </form>
             </>
-          ) : <div className="flex flex-1 items-center justify-center text-center"><div><MessageCircle className="mx-auto text-cyan-300/30" size={46} /><h2 className="mt-4 font-black">Select a conversation</h2><p className="mt-1 text-sm text-white/35">Choose an official to start messaging.</p></div></div>}
+          ) : !isChatAdmin && adminProfiles.length > 0 ? (
+            <div className="flex flex-1 flex-col overflow-y-auto p-6 sm:p-8 lg:p-10 bg-[#0B1020]">
+              <div className="max-w-4xl mx-auto w-full animate-[fade-in_.2s_ease-out]">
+                <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between border-b border-white/[0.08] pb-6">
+                  <div>
+                    <h2 className="text-2xl font-black text-white tracking-tight">Contact HR & Administration</h2>
+                    <p className="text-sm text-white/45 mt-1.5">Directly message any of the available workspace administrators or HR managers below.</p>
+                  </div>
+                  <div className="mt-4 md:mt-0 flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-[#182233] px-3 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,.04)]">
+                    <Search size={14} className="text-white/40" />
+                    <input value={employeeSearch} onChange={(event) => setEmployeeSearch(event.target.value)} placeholder="Search administrators..." className="h-9 w-44 bg-transparent text-xs outline-none placeholder:text-white/30" />
+                    {employeeSearch && <button onClick={() => setEmployeeSearch("")} aria-label="Clear search"><X size={13} /></button>}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {adminProfiles
+                    .filter(official => !employeeSearch || (official.full_name || "").toLowerCase().includes(employeeSearch.toLowerCase()))
+                    .map((official) => {
+                      const online = presences.some((item) => item.user_id === official.user_id && item.is_online);
+                      const initialsStr = initials(official.full_name);
+                      return (
+                        <div key={official.user_id} className="relative group rounded-3xl border border-white/[0.08] bg-[#121827]/70 p-6 flex flex-col justify-between transition duration-300 hover:border-cyan-300/25 hover:bg-[#182233]/70 hover:shadow-[0_20px_50px_rgba(0,194,255,0.06)]">
+                          <div>
+                            <div className="flex items-start gap-4">
+                              <div className="relative shrink-0 h-14 w-14">
+                                <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-2xl border border-cyan-300/30 bg-gradient-to-br from-cyan-400/25 to-violet-500/25 text-base font-black text-white">
+                                  {official.avatar_url ? (
+                                    <img src={official.avatar_url} alt="" className="h-full w-full object-cover" />
+                                  ) : (
+                                    initialsStr
+                                  )}
+                                </div>
+                                <span className={`absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-[3px] border-[#121827] ${online ? "bg-emerald-400" : "bg-slate-600"}`} />
+                              </div>
+                              <div className="min-w-0">
+                                <h3 className="font-black text-white text-base truncate flex items-center gap-1.5">
+                                  {official.full_name || "Official"}
+                                  <ShieldCheck size={16} className="text-cyan-300 shrink-0" />
+                                </h3>
+                                <div className="mt-0.5 text-xs font-semibold uppercase tracking-[0.08em] text-purple-300/80">
+                                  {official.role === "super_admin" ? "Super Admin" : official.role === "hr_manager" ? "HR Manager" : "Administrator"}
+                                </div>
+                                <div className="mt-1 text-xs text-white/40 truncate">
+                                  {official.position || "Official Support Channel"}
+                                </div>
+                              </div>
+                            </div>
+                            <p className="mt-4 text-xs text-white/55 leading-relaxed">
+                              Available for leave approvals, attendance updates, official company circulars, and support queries.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedOfficialId(official.user_id);
+                              setMobileChatOpen(true);
+                            }}
+                            className="mt-6 w-full rounded-2xl bg-[#182233] border border-white/[0.08] hover:border-cyan-300/25 hover:bg-cyan-300/10 hover:text-cyan-100 text-white font-bold py-2.5 px-4 text-xs tracking-wider uppercase transition active:scale-95 cursor-pointer"
+                          >
+                            Message
+                          </button>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-1 items-center justify-center text-center">
+              <div>
+                <MessageCircle className="mx-auto text-cyan-300/30" size={46} />
+                <h2 className="mt-4 font-black">Select a conversation</h2>
+                <p className="mt-1 text-sm text-white/35">Choose an official to start messaging.</p>
+              </div>
+            </div>
+          )}
         </section>
 
         {showInfoPanel && <aside className="hidden w-[300px] shrink-0 animate-[fade-in_.18s_ease-out] border-l border-white/[0.08] bg-[#121827] p-4 xl:block">
@@ -780,18 +964,68 @@ function Avatar({ profile, online, admin, compact }: { profile?: ChatProfile | n
   );
 }
 
-function MessageBubble({ message, mine, signedUrl }: { message: ChatMessage; mine: boolean; signedUrl?: string }) {
+function MessageBubble({
+  message,
+  mine,
+  signedUrl,
+  currentUserId,
+  onToggleReaction,
+  onReply,
+}: {
+  message: ChatMessage;
+  mine: boolean;
+  signedUrl?: string;
+  currentUserId?: string;
+  onToggleReaction: (message: ChatMessage, emoji: string) => void;
+  onReply: (message: ChatMessage) => void;
+}) {
   const image = message.attachment_type?.startsWith("image/");
   const video = message.attachment_type?.startsWith("video/");
   const FileIcon = getFileIcon(message.attachment_type);
+
+  const isReply = message.body?.startsWith("> [");
+  let quoteUser = "";
+  let quoteBody = "";
+  let cleanBody = message.body || "";
+
+  if (isReply && message.body) {
+    const splitIdx = message.body.indexOf("\n\n");
+    if (splitIdx !== -1) {
+      const header = message.body.substring(0, splitIdx);
+      const match = header.match(/^>\s*\[([^\]]+)\]:\s*(.*)$/);
+      if (match) {
+        quoteUser = match[1];
+        quoteBody = match[2];
+      }
+      cleanBody = message.body.substring(splitIdx + 2);
+    }
+  }
+
   return (
     <div className={`group mb-3 flex min-w-0 items-end gap-2 ${mine ? "justify-end" : "justify-start"}`}>
       <div className={`order-2 flex translate-y-1 gap-1 opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100 ${mine ? "" : "order-1"}`}>
-        <button className="rounded-lg bg-[#182233] p-1.5 text-white/35 hover:text-cyan-200" aria-label="Reply"><CornerUpLeft size={13} /></button>
-        <button className="rounded-lg bg-[#182233] p-1.5 text-white/35 hover:text-cyan-200" aria-label="Copy"><Copy size={13} /></button>
-        <button className="rounded-lg bg-[#182233] p-1.5 text-white/35 hover:text-cyan-200" aria-label="Forward"><Forward size={13} /></button>
+        <div className="flex gap-0.5 rounded-lg bg-[#182233] p-0.5 border border-white/5 shadow-md">
+          {["👍", "❤️", "😂", "🎉", "🙏"].map((emoji) => (
+            <button
+              key={emoji}
+              onClick={() => onToggleReaction(message, emoji)}
+              className="rounded p-1 text-xs hover:bg-white/15 active:scale-90 cursor-pointer"
+              title={`React with ${emoji}`}
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+        <button onClick={() => onReply(message)} className="rounded-lg bg-[#182233] p-1.5 text-white/35 hover:text-cyan-200 hover:bg-white/5 cursor-pointer" aria-label="Reply"><CornerUpLeft size={13} /></button>
+        <button onClick={() => { navigator.clipboard.writeText(cleanBody); toast.success("Copied to clipboard"); }} className="rounded-lg bg-[#182233] p-1.5 text-white/35 hover:text-cyan-200 hover:bg-white/5 cursor-pointer" aria-label="Copy"><Copy size={13} /></button>
       </div>
       <div className={`min-w-0 max-w-[82vw] animate-[fade-in_.18s_ease-out] overflow-hidden rounded-2xl border px-2.5 py-2 text-sm shadow-lg sm:max-w-[72%] sm:px-3.5 sm:py-2.5 ${mine ? "order-1 rounded-br-md border-violet-300/15 bg-gradient-to-br from-violet-600/90 via-fuchsia-600/82 to-pink-600/82 shadow-[0_18px_42px_rgba(168,85,247,0.20)]" : "order-2 rounded-bl-md border-white/[0.08] bg-[#182233] shadow-[0_18px_42px_rgba(0,0,0,0.18)]"}`}>
+        {quoteUser && (
+          <div className="mb-2 border-l-2 border-white/20 bg-white/5 px-2.5 py-1.5 text-[11px] rounded-r-lg text-white/70">
+            <span className="font-bold block text-[10px] text-white/50">{quoteUser}</span>
+            <p className="line-clamp-2 mt-0.5">{quoteBody}</p>
+          </div>
+        )}
         {message.attachment_path && (
           image && signedUrl ? (
             <a href={signedUrl} target="_blank" rel="noreferrer" className="mb-2 block max-w-full overflow-hidden rounded-xl border border-white/10 bg-black/20">
@@ -813,11 +1047,34 @@ function MessageBubble({ message, mine, signedUrl }: { message: ChatMessage; min
             </a>
           )
         )}
-        {message.body && <p className="whitespace-pre-wrap break-words leading-5 text-white/90">{message.body}</p>}
+        {cleanBody && <p className="whitespace-pre-wrap break-words leading-5 text-white/90">{cleanBody}</p>}
         <div className={`mt-1 flex items-center justify-end gap-1 text-[9px] ${mine ? "text-white/60" : "text-white/35"}`}>
           {format(new Date(message.created_at), "h:mm a")}
           {mine && (message.read_at ? <CheckCheck size={13} className="text-cyan-200" /> : message.delivered_at ? <CheckCheck size={13} /> : <Check size={13} />)}
         </div>
+        {message.reactions && Object.keys(message.reactions).length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {Object.entries(message.reactions as Record<string, string[]>).map(([emoji, uids]) => {
+              if (!uids || uids.length === 0) return null;
+              const reacted = currentUserId && uids.includes(currentUserId);
+              return (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => onToggleReaction(message, emoji)}
+                  className={`flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs transition active:scale-95 cursor-pointer ${
+                    reacted
+                      ? "border-cyan-300/30 bg-cyan-300/10 text-cyan-200"
+                      : "border-white/10 bg-white/[0.035] text-white/55 hover:bg-[#22304A] hover:text-white"
+                  }`}
+                >
+                  <span>{emoji}</span>
+                  <span className="text-[10px] font-bold">{uids.length}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
