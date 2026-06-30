@@ -425,7 +425,6 @@ function EmployeeDashboard() {
 
   const checkIn = async () => {
     if (!user) return;
-    if (isAdmin) return toast.info("Admin accounts do not need attendance check-in.");
     if (isWeeklyOff) return toast.info("Saturday is a weekly off. Attendance is not required.");
     setBusy(true);
     let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
@@ -468,7 +467,6 @@ function EmployeeDashboard() {
   };
 
   const checkOut = async () => {
-    if (isAdmin) return toast.info("Admin accounts do not need attendance checkout.");
     if (!user || !today) return;
     setBusy(true);
     let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
@@ -776,10 +774,10 @@ function EmployeeDashboard() {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <Button onClick={checkIn} disabled={busy || isWeeklyOff || Boolean(today) || isAdmin} className="h-14 rounded-2xl bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-500 text-base font-black text-white shadow-[0_0_34px_rgba(34,211,238,.18)] transition hover:scale-[1.01]">
+              <Button onClick={checkIn} disabled={busy || isWeeklyOff || Boolean(today)} className="h-14 rounded-2xl bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-500 text-base font-black text-white shadow-[0_0_34px_rgba(34,211,238,.18)] transition hover:scale-[1.01]">
                 <LogIn size={18} className="mr-2" /> Check In
               </Button>
-              <Button onClick={checkOut} disabled={busy || !today || Boolean(today?.check_out_time) || isAdmin} variant="outline" className="h-14 rounded-2xl border-white/15 bg-white/[0.06] text-base font-black text-white hover:bg-white/[0.1]">
+              <Button onClick={checkOut} disabled={busy || !today || Boolean(today?.check_out_time)} variant="outline" className="h-14 rounded-2xl border-white/15 bg-white/[0.06] text-base font-black text-white hover:bg-white/[0.1]">
                 <LogOut size={18} className="mr-2" /> Check Out
               </Button>
             </div>

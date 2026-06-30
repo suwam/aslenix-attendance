@@ -44,6 +44,19 @@ const TYPES = [
 
 function MyLeaves() {
   const { user } = useAuth();
+
+export const Route = createFileRoute("/_app/my-leaves")({ component: MyLeaves });
+
+const TYPES = [
+  { v: "sick", l: "Sick Leave" },
+  { v: "casual", l: "Casual Leave" },
+  { v: "vacation", l: "Vacation" },
+  { v: "emergency", l: "Emergency" },
+  { v: "wfh", l: "Work From Home" },
+];
+
+function MyLeaves() {
+  const { user } = useAuth();
   const [rows, setRows] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -52,6 +65,8 @@ function MyLeaves() {
     start_date: "",
     end_date: "",
     reason: "",
+    is_half_day: false,
+    half_day_session: "morning",
   });
   const [busy, setBusy] = useState(false);
 
@@ -74,17 +89,25 @@ function MyLeaves() {
     e.preventDefault();
     if (!user) return;
     const startDate = bsInputToAdDateString(form.start_date);
-    const endDate = bsInputToAdDateString(form.end_date);
-    if (!startDate || !endDate) return toast.error("Enter valid BS dates in YYYY-MM-DD format");
+    const endDate = bsInputToAdDateString(form.is_half_day ? form.start_date : form.end_date);
+    if (!startDate || (!form.is_half_day && !endDate)) return toast.error("Enter valid BS dates in YYYY-MM-DD format");
     setBusy(true);
     const { error } = await supabase
       .from("leave_requests")
-      .insert({ ...form, start_date: startDate, end_date: endDate, user_id: user.id, leave_type: form.leave_type as any });
+      .insert({ 
+        leave_type: form.leave_type as any,
+        start_date: startDate,
+        end_date: endDate,
+        reason: form.reason,
+        user_id: user.id,
+        is_half_day: form.is_half_day,
+        half_day_session: form.is_half_day ? form.half_day_session : null
+      });
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Leave requested");
     setOpen(false);
-    setForm({ leave_type: "casual", start_date: "", end_date: "", reason: "" });
+    setForm({ leave_type: "casual", start_date: "", end_date: "", reason: "", is_half_day: false, half_day_session: "morning" });
     load();
   };
 
@@ -98,7 +121,7 @@ function MyLeaves() {
   const pendingCount = rows.filter((row) => row.status === "pending").length;
   const approvedCount = rows.filter((row) => row.status === "approved").length;
   const totalRequestedDays = rows.reduce(
-    (sum, row) => sum + getLeaveDays(row.start_date, row.end_date),
+    (sum, row) => sum + getLeaveDays(row.start_date, row.end_date, row.is_half_day),
     0,
   );
 
@@ -156,11 +179,11 @@ function MyLeaves() {
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 Select your leave type and dates. Add a concise reason so HR can review quickly.
               </p>
-              {form.start_date && form.end_date && (
+              {form.start_date && (form.is_half_day || form.end_date) && (
                 <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.035] p-3">
                   <div className="text-xs uppercase tracking-wider text-muted-foreground">Duration</div>
                   <div className="mt-1 text-2xl font-bold text-white">
-                    {getLeaveDays(form.start_date, form.end_date)} days
+                    {getLeaveDays(form.start_date, form.is_half_day ? form.start_date : form.end_date, form.is_half_day)} {form.is_half_day ? "day" : "days"}
                   </div>
                 </div>
               )}
@@ -185,8 +208,23 @@ function MyLeaves() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="sm:col-span-2">
+                <Label className="mb-2 block text-sm font-semibold text-white">Leave Duration</Label>
+                <Select
+                  value={form.is_half_day ? "half" : "full"}
+                  onValueChange={(v) => setForm({ ...form, is_half_day: v === "half" })}
+                >
+                  <SelectTrigger className="rounded-xl border-white/10 bg-black/20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="full">Full Day</SelectItem>
+                    <SelectItem value="half">Half Day</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
-                <Label className="mb-2 block text-sm font-semibold text-white">Start date (BS)</Label>
+                <Label className="mb-2 block text-sm font-semibold text-white">{form.is_half_day ? "Leave date (BS)" : "Start date (BS)"}</Label>
                 <BSDateInput
                   required
                   value={form.start_date}
@@ -194,15 +232,33 @@ function MyLeaves() {
                   inputClassName="rounded-xl border-white/10 bg-black/20"
                 />
               </div>
-              <div>
-                <Label className="mb-2 block text-sm font-semibold text-white">End date (BS)</Label>
-                <BSDateInput
-                  required
-                  value={form.end_date}
-                  onChange={(value) => setForm({ ...form, end_date: value })}
-                  inputClassName="rounded-xl border-white/10 bg-black/20"
-                />
-              </div>
+              {!form.is_half_day ? (
+                <div>
+                  <Label className="mb-2 block text-sm font-semibold text-white">End date (BS)</Label>
+                  <BSDateInput
+                    required
+                    value={form.end_date}
+                    onChange={(value) => setForm({ ...form, end_date: value })}
+                    inputClassName="rounded-xl border-white/10 bg-black/20"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <Label className="mb-2 block text-sm font-semibold text-white">Half-Day Session</Label>
+                  <Select
+                    value={form.half_day_session}
+                    onValueChange={(v) => setForm({ ...form, half_day_session: v })}
+                  >
+                    <SelectTrigger className="rounded-xl border-white/10 bg-black/20">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="morning">First Half (Morning)</SelectItem>
+                      <SelectItem value="afternoon">Second Half (Afternoon)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="sm:col-span-2">
                 <Label className="mb-2 block text-sm font-semibold text-white">Reason</Label>
                 <Textarea
@@ -254,7 +310,8 @@ function MyLeaves() {
                       {formatNepaliDate(r.end_date, "DD MMMM YYYY")} BS
                     </div>
                     <div className="mt-1 text-sm text-muted-foreground">
-                      {getLeaveDays(r.start_date, r.end_date)} requested days
+                      {getLeaveDays(r.start_date, r.end_date, r.is_half_day)} requested days
+                      {r.is_half_day && r.half_day_session && ` (${r.half_day_session === 'morning' ? 'Morning' : 'Afternoon'})`}
                     </div>
                   </div>
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] text-primary">
@@ -346,7 +403,8 @@ function LeaveStatusPill({ status }: { status: string }) {
   );
 }
 
-function getLeaveDays(startDate?: string | null, endDate?: string | null) {
+function getLeaveDays(startDate?: string | null, endDate?: string | null, isHalfDay?: boolean) {
+  if (isHalfDay) return 0.5;
   if (!startDate || !endDate) return 0;
   const start = new Date(`${startDate}T00:00:00`);
   const end = new Date(`${endDate}T00:00:00`);

@@ -606,7 +606,7 @@ function MessagesPage() {
   ).length;
 
   return (
-    <div className="-mx-4 -my-4 sm:mx-0 sm:my-0 h-full flex flex-col flex-1 min-h-0 overflow-hidden bg-[#0B1020] text-white shadow-2xl sm:rounded-[30px] sm:border sm:border-white/[0.08] sm:p-4 lg:p-5">
+    <div className="-mx-4 -mb-4 mt-0 sm:mx-0 sm:my-0 h-full flex flex-col flex-1 min-h-0 overflow-hidden bg-[#0B1020] text-white shadow-2xl sm:rounded-[30px] sm:border sm:border-white/[0.08] sm:p-4 lg:p-5">
       <div className="hidden gap-3 pb-4 lg:grid lg:grid-cols-3">
         <ChatMetric icon={MessageCircle} label={isChatAdmin ? "Total conversations" : "Inbox"} value={isChatAdmin ? conversations.length : "Official Channel"} subtitle={isChatAdmin ? "+18 today" : "Secure messaging"} tone="cyan" />
         <ChatMetric icon={Users} label={isChatAdmin ? "Waiting for reply" : "Channel status"} value={isChatAdmin ? waitingForReply : "Active"} subtitle={isChatAdmin ? "3 urgent" : "Auditable history"} tone="violet" />
@@ -838,8 +838,8 @@ function MessagesPage() {
                   <button type="button" className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.045] text-white/45 transition hover:bg-[#22304A] hover:text-cyan-100 active:scale-95 sm:flex" aria-label="Voice message"><Mic size={19} /></button>
                   <button type="submit" disabled={sending || !draft.trim()} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-violet-500 to-cyan-400 text-white shadow-[0_0_24px_rgba(124,58,237,.3)] transition hover:scale-105 hover:shadow-[0_0_32px_rgba(0,194,255,.22)] active:scale-95 disabled:cursor-not-allowed disabled:grayscale disabled:opacity-45 cursor-pointer" aria-label="Send message"><Send size={19} /></button>
                   </div>
-                  <div className="mt-2 flex items-center justify-between gap-3 px-1 text-[10px] text-white/28">
-                    <span className="truncate">Supports PDF, DOCX, XLSX, ZIP, Images · Maximum upload: 50MB</span>
+                  <div className="mt-2 flex items-center justify-end sm:justify-between gap-3 px-1 text-[10px] text-white/28">
+                    <span className="truncate hidden sm:inline">Supports PDF, DOCX, XLSX, ZIP, Images · Maximum upload: 50MB</span>
                     <span className="shrink-0 tabular-nums">{draft.length}/2000</span>
                   </div>
                 </div>
