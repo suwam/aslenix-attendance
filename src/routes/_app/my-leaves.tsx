@@ -44,19 +44,6 @@ const TYPES = [
 
 function MyLeaves() {
   const { user } = useAuth();
-
-export const Route = createFileRoute("/_app/my-leaves")({ component: MyLeaves });
-
-const TYPES = [
-  { v: "sick", l: "Sick Leave" },
-  { v: "casual", l: "Casual Leave" },
-  { v: "vacation", l: "Vacation" },
-  { v: "emergency", l: "Emergency" },
-  { v: "wfh", l: "Work From Home" },
-];
-
-function MyLeaves() {
-  const { user } = useAuth();
   const [rows, setRows] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
