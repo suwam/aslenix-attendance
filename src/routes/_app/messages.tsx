@@ -45,6 +45,7 @@ type ChatProfile = {
   avatar_url: string | null;
   position: string | null;
   department: string | null;
+  role?: string | null;
   approval_status?: string | null;
   is_suspended?: boolean | null;
 };
@@ -113,6 +114,7 @@ function MessagesPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [presences, setPresences] = useState<Presence[]>([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+  const [selectedOfficialId, setSelectedOfficialId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [employeeSearch, setEmployeeSearch] = useState("");
   const [messageSearch, setMessageSearch] = useState("");
@@ -122,6 +124,7 @@ function MessagesPage() {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [mobileChatOpen, setMobileChatOpen] = useState(false);
+  const [showInfoPanel, setShowInfoPanel] = useState(false);
   const [composerFocused, setComposerFocused] = useState(false);
   const [presenceTick, setPresenceTick] = useState(0);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
@@ -138,6 +141,10 @@ function MessagesPage() {
   const selectedEmployee = useMemo(
     () => employees.find((item) => item.user_id === selectedEmployeeId) ?? null,
     [employees, selectedEmployeeId],
+  );
+  const selectedOfficial = useMemo(
+    () => adminProfiles.find((item) => item.user_id === selectedOfficialId) ?? adminProfiles[0] ?? null,
+    [adminProfiles, selectedOfficialId],
   );
   const employeeConversation = !isAdmin && user
     ? conversations.find((item) => item.employee_id === user.id) ?? null
@@ -174,8 +181,14 @@ function MessagesPage() {
         db.from("profiles").select("user_id, full_name, avatar_url, position, department").order("full_name"),
         db.from("user_roles").select("user_id, role").in("role", ["super_admin", "admin", "hr_manager"]),
       ]);
+      const roleByUser = new Map((roleRows ?? []).map((row: any) => [row.user_id, row.role]));
       const adminIds = new Set((roleRows ?? []).map((row: any) => row.user_id));
-      setAdminProfiles(((rows ?? []) as ChatProfile[]).filter((item) => adminIds.has(item.user_id)));
+      setAdminProfiles(
+        ((rows ?? []) as ChatProfile[])
+          .filter((item) => adminIds.has(item.user_id))
+          .map((item) => ({ ...item, role: roleByUser.get(item.user_id) ?? null }))
+          .sort(sortOfficials),
+      );
     }
   }, [db, isAdmin, user]);
 
@@ -223,12 +236,21 @@ function MessagesPage() {
   }, [conversations, employees, isAdmin, selectedEmployeeId]);
 
   useEffect(() => {
+    if (isAdmin || selectedOfficialId || adminProfiles.length === 0) return;
+    setSelectedOfficialId(adminProfiles[0].user_id);
+  }, [adminProfiles, isAdmin, selectedOfficialId]);
+
+  useEffect(() => {
     if (!currentConversation) {
       setMessages([]);
       return;
     }
     loadMessages(currentConversation.id);
   }, [currentConversation?.id, loadMessages]);
+
+  useEffect(() => {
+    setShowInfoPanel(false);
+  }, [currentConversation?.id]);
 
   useEffect(() => {
     if (!user) return;
@@ -326,6 +348,22 @@ function MessagesPage() {
     return map;
   }, [isAdmin, overviewMessages]);
 
+  const officialRows = useMemo(() => {
+    if (isAdmin) return [];
+    const fallbackOfficialId = adminProfiles[0]?.user_id;
+    return adminProfiles.map((official) => {
+      const officialMessages = overviewMessages.filter((item) =>
+        item.sender_is_admin
+          ? item.sender_id === official.user_id
+          : item.recipient_id === official.user_id || (!item.recipient_id && official.user_id === fallbackOfficialId),
+      );
+      const lastMessage = officialMessages[0] ?? null;
+      const unread = overviewMessages.filter((item) => item.sender_is_admin && item.sender_id === official.user_id && !item.read_at).length;
+      const online = presences.some((item) => item.user_id === official.user_id && item.is_online);
+      return { official, lastMessage, unread, online };
+    });
+  }, [adminProfiles, isAdmin, overviewMessages, presences]);
+
   const conversationRows = useMemo(() => {
     const needle = employeeSearch.trim().toLowerCase();
     return employees
@@ -350,20 +388,24 @@ function MessagesPage() {
 
   const visibleMessages = useMemo(() => {
     const needle = messageSearch.trim().toLowerCase();
+    const fallbackOfficialId = adminProfiles[0]?.user_id;
     return messages.filter((item) => {
+      if (!isAdmin && selectedOfficial?.user_id) {
+        const belongsToSelectedOfficial = item.sender_is_admin
+          ? item.sender_id === selectedOfficial.user_id
+          : item.recipient_id === selectedOfficial.user_id || (!item.recipient_id && selectedOfficial.user_id === fallbackOfficialId);
+        if (!belongsToSelectedOfficial) return false;
+      }
       if (needle && !`${item.body ?? ""} ${item.attachment_name ?? ""}`.toLowerCase().includes(needle)) return false;
       if (dateSearch && format(new Date(item.created_at), "yyyy-MM-dd") !== dateSearch) return false;
       return true;
     });
-  }, [dateSearch, messageSearch, messages]);
+  }, [adminProfiles, dateSearch, isAdmin, messageSearch, messages, selectedOfficial?.user_id]);
 
   const peerPresence = useMemo(() => {
     if (isAdmin) return presences.find((item) => item.user_id === selectedEmployeeId) ?? null;
-    const adminIds = new Set(adminProfiles.map((item) => item.user_id));
-    return presences.find((item) => adminIds.has(item.user_id) && item.is_online)
-      ?? presences.filter((item) => adminIds.has(item.user_id)).sort((a, b) => +new Date(b.last_seen_at) - +new Date(a.last_seen_at))[0]
-      ?? null;
-  }, [adminProfiles, isAdmin, presences, selectedEmployeeId]);
+    return presences.find((item) => item.user_id === selectedOfficial?.user_id) ?? null;
+  }, [isAdmin, presences, selectedEmployeeId, selectedOfficial?.user_id]);
 
   const presenceNow = Date.now() + presenceTick * 0;
   const peerTypingIsFresh = peerPresence?.updated_at
@@ -414,7 +456,7 @@ function MessagesPage() {
       const { error } = await db.from("chat_messages").insert({
         conversation_id: conversation.id,
         sender_id: user.id,
-        recipient_id: isAdmin ? selectedEmployeeId : null,
+        recipient_id: isAdmin ? selectedEmployeeId : selectedOfficial?.user_id ?? null,
         sender_is_admin: isAdmin,
         body: draft.trim() || null,
         ...attachment,
@@ -565,7 +607,15 @@ function MessagesPage() {
                     <button onClick={() => setConversationFlag("archive")} title={currentConversation.archived_by_admin ? "Restore" : "Archive conversation"} className="rounded-lg p-2 text-white/50 hover:bg-white/5 hover:text-violet-200">{currentConversation.archived_by_admin ? <ArchiveRestore size={18} /> : <Archive size={18} />}</button>
                   </div>
                 )}
-                <button className="rounded-lg p-2 text-white/35 hover:bg-white/5" aria-label="Conversation information"><MoreVertical size={18} /></button>
+                <button
+                  type="button"
+                  onClick={() => setShowInfoPanel((value) => !value)}
+                  className={`rounded-lg p-2 transition ${showInfoPanel ? "bg-cyan-300/10 text-cyan-100" : "text-white/35 hover:bg-white/5"}`}
+                  aria-label="Conversation information"
+                  aria-expanded={showInfoPanel}
+                >
+                  <MoreVertical size={18} />
+                </button>
               </header>
 
               <div className="flex items-center gap-2 border-b border-white/[0.06] px-2 py-2 sm:px-3 xl:hidden">
@@ -623,7 +673,16 @@ function MessagesPage() {
           ) : <div className="flex flex-1 items-center justify-center text-center"><div><MessageCircle className="mx-auto text-cyan-300/30" size={46} /><h2 className="mt-4 font-black">Select a conversation</h2><p className="mt-1 text-sm text-white/35">Choose an employee to start messaging.</p></div></div>}
         </section>
 
-        <aside className="hidden w-[300px] shrink-0 border-l border-white/[0.08] bg-[#121827] p-4 xl:block">
+        {showInfoPanel && <aside className="hidden w-[300px] shrink-0 animate-[fade-in_.18s_ease-out] border-l border-white/[0.08] bg-[#121827] p-4 xl:block">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <div className="text-sm font-black">Details</div>
+              <div className="text-[11px] text-white/35">Conversation information</div>
+            </div>
+            <button type="button" onClick={() => setShowInfoPanel(false)} className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-2 text-white/45 transition hover:bg-[#22304A] hover:text-white" aria-label="Close details panel">
+              <X size={16} />
+            </button>
+          </div>
           <div className="rounded-3xl border border-white/[0.08] bg-[#182233]/80 p-4">
             <div className="flex items-center gap-3">
               <Avatar profile={isAdmin ? selectedEmployee : adminProfiles[0]} online={Boolean(peerPresence?.is_online)} admin={!isAdmin} />
@@ -637,7 +696,7 @@ function MessagesPage() {
           <InfoSection title="Shared Files" items={[`${messages.filter((item) => item.attachment_path).length} attachments`, "PDF, Office, Images, ZIP", "Video previews supported"]} />
           <InfoSection title="Pinned Messages" items={["No pinned messages yet", "Use hover actions to review", "Important items stay visible"]} />
           <InfoSection title="Recent Activity" items={[visibleMessages.length ? `${visibleMessages.length} messages loaded` : "No messages yet", totalUnread ? `${totalUnread} unread` : "All caught up", peerPresence?.is_online ? "Member online" : "Member offline"]} />
-        </aside>
+        </aside>}
       </div>
     </div>
   );
