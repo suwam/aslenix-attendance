@@ -107,6 +107,14 @@ const QUICK_EMOJIS = ["👍", "✅", "🙏", "🙂", "📌", "📄", "👏", "�
 function MessagesPage() {
   const { user, profile, isAdmin } = useAuth();
   const db = supabase as any;
+
+  const isChatAdmin = useMemo(() => {
+    if (isAdmin) return true;
+    if (!profile) return false;
+    const pos = (profile.position || "").toLowerCase();
+    return pos.includes("hr") || pos.includes("human resources");
+  }, [isAdmin, profile]);
+
   const [employees, setEmployees] = useState<ChatProfile[]>([]);
   const [adminProfiles, setAdminProfiles] = useState<ChatProfile[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -146,10 +154,10 @@ function MessagesPage() {
     () => adminProfiles.find((item) => item.user_id === selectedOfficialId) ?? adminProfiles[0] ?? null,
     [adminProfiles, selectedOfficialId],
   );
-  const employeeConversation = !isAdmin && user
+  const employeeConversation = !isChatAdmin && user
     ? conversations.find((item) => item.employee_id === user.id) ?? null
     : null;
-  const currentConversation = isAdmin ? activeConversation : employeeConversation;
+  const currentConversation = isChatAdmin ? activeConversation : employeeConversation;
 
   const loadOverview = useCallback(async () => {
     if (!user) return;
@@ -169,13 +177,19 @@ function MessagesPage() {
 
   const loadPeople = useCallback(async () => {
     if (!user) return;
-    if (isAdmin) {
+    if (isChatAdmin) {
       const [{ data: profileRows }, { data: roleRows }] = await Promise.all([
         db.from("profiles").select("user_id, full_name, avatar_url, position, department, approval_status, is_suspended").eq("approval_status", "approved").eq("is_suspended", false).order("full_name"),
         db.from("user_roles").select("user_id, role").in("role", ["super_admin", "admin", "hr_manager"]),
       ]);
       const adminIds = new Set((roleRows ?? []).map((row: any) => row.user_id));
-      setEmployees(((profileRows ?? []) as ChatProfile[]).filter((item) => !adminIds.has(item.user_id)));
+      setEmployees(
+        ((profileRows ?? []) as ChatProfile[]).filter((item) => {
+          if (adminIds.has(item.user_id)) return false;
+          const pos = (item.position || "").toLowerCase();
+          return !(pos.includes("hr") || pos.includes("human resources"));
+        })
+      );
     } else {
       const [{ data: rows }, { data: roleRows }] = await Promise.all([
         db.from("profiles").select("user_id, full_name, avatar_url, position, department").order("full_name"),
@@ -185,15 +199,22 @@ function MessagesPage() {
       const adminIds = new Set((roleRows ?? []).map((row: any) => row.user_id));
       setAdminProfiles(
         ((rows ?? []) as ChatProfile[])
-          .filter((item) => adminIds.has(item.user_id))
-          .map((item) => ({ ...item, role: roleByUser.get(item.user_id) ?? null }))
-          .sort(sortOfficials),
+          .filter((item) => {
+            if (adminIds.has(item.user_id)) return true;
+            const pos = (item.position || "").toLowerCase();
+            return pos.includes("hr") || pos.includes("human resources");
+          })
+          .map((item) => ({
+            ...item,
+            role: roleByUser.get(item.user_id) ?? ((item.position || "").toLowerCase().includes("hr") ? "hr_manager" : null)
+          }))
+          .sort(sortOfficials)
       );
     }
-  }, [db, isAdmin, user]);
+  }, [db, isChatAdmin, user]);
 
   const ensureEmployeeConversation = useCallback(async () => {
-    if (!user || isAdmin) return;
+    if (!user || isChatAdmin) return;
     const { data } = await db.from("chat_conversations").select("*").eq("employee_id", user.id).maybeSingle();
     if (data) return data as Conversation;
     const { data: created, error } = await db.from("chat_conversations").insert({ employee_id: user.id }).select("*").single();
@@ -202,7 +223,7 @@ function MessagesPage() {
       return existing as Conversation;
     }
     return created as Conversation;
-  }, [db, isAdmin, user]);
+  }, [db, isChatAdmin, user]);
 
   const loadMessages = useCallback(async (conversationId: string) => {
     const { data, error } = await db.from("chat_messages").select("*").eq("conversation_id", conversationId).order("created_at", { ascending: true }).limit(1000);
@@ -223,22 +244,22 @@ function MessagesPage() {
     (async () => {
       setLoading(true);
       await loadPeople();
-      if (!isAdmin) await ensureEmployeeConversation();
+      if (!isChatAdmin) await ensureEmployeeConversation();
       if (!cancelled) await Promise.all([loadOverview(), loadPresence()]);
     })();
     return () => { cancelled = true; };
-  }, [ensureEmployeeConversation, isAdmin, loadOverview, loadPeople, loadPresence, user]);
+  }, [ensureEmployeeConversation, isChatAdmin, loadOverview, loadPeople, loadPresence, user]);
 
   useEffect(() => {
-    if (!isAdmin || selectedEmployeeId || employees.length === 0) return;
+    if (!isChatAdmin || selectedEmployeeId || employees.length === 0) return;
     const firstConversation = conversations.find((item) => !item.archived_by_admin) ?? conversations[0];
     setSelectedEmployeeId(firstConversation?.employee_id ?? employees[0].user_id);
-  }, [conversations, employees, isAdmin, selectedEmployeeId]);
+  }, [conversations, employees, isChatAdmin, selectedEmployeeId]);
 
   useEffect(() => {
-    if (isAdmin || selectedOfficialId || adminProfiles.length === 0) return;
+    if (isChatAdmin || selectedOfficialId || adminProfiles.length === 0) return;
     setSelectedOfficialId(adminProfiles[0].user_id);
-  }, [adminProfiles, isAdmin, selectedOfficialId]);
+  }, [adminProfiles, isChatAdmin, selectedOfficialId]);
 
   useEffect(() => {
     if (!currentConversation) {
@@ -342,14 +363,14 @@ function MessagesPage() {
   const unreadByConversation = useMemo(() => {
     const map = new Map<string, number>();
     overviewMessages.forEach((item) => {
-      const incoming = isAdmin ? !item.sender_is_admin : item.sender_is_admin;
+      const incoming = isChatAdmin ? !item.sender_is_admin : item.sender_is_admin;
       if (incoming && !item.read_at) map.set(item.conversation_id, (map.get(item.conversation_id) ?? 0) + 1);
     });
     return map;
-  }, [isAdmin, overviewMessages]);
+  }, [isChatAdmin, overviewMessages]);
 
   const officialRows = useMemo(() => {
-    if (isAdmin) return [];
+    if (isChatAdmin) return [];
     const fallbackOfficialId = adminProfiles[0]?.user_id;
     return adminProfiles.map((official) => {
       const officialMessages = overviewMessages.filter((item) =>
@@ -362,7 +383,7 @@ function MessagesPage() {
       const online = presences.some((item) => item.user_id === official.user_id && item.is_online);
       return { official, lastMessage, unread, online };
     });
-  }, [adminProfiles, isAdmin, overviewMessages, presences]);
+  }, [adminProfiles, isChatAdmin, overviewMessages, presences]);
 
   const conversationRows = useMemo(() => {
     const needle = employeeSearch.trim().toLowerCase();
@@ -390,7 +411,7 @@ function MessagesPage() {
     const needle = messageSearch.trim().toLowerCase();
     const fallbackOfficialId = adminProfiles[0]?.user_id;
     return messages.filter((item) => {
-      if (!isAdmin && selectedOfficial?.user_id) {
+      if (!isChatAdmin && selectedOfficial?.user_id) {
         const belongsToSelectedOfficial = item.sender_is_admin
           ? item.sender_id === selectedOfficial.user_id
           : item.recipient_id === selectedOfficial.user_id || (!item.recipient_id && selectedOfficial.user_id === fallbackOfficialId);
@@ -400,12 +421,12 @@ function MessagesPage() {
       if (dateSearch && format(new Date(item.created_at), "yyyy-MM-dd") !== dateSearch) return false;
       return true;
     });
-  }, [adminProfiles, dateSearch, isAdmin, messageSearch, messages, selectedOfficial?.user_id]);
+  }, [adminProfiles, dateSearch, isChatAdmin, messageSearch, messages, selectedOfficial?.user_id]);
 
   const peerPresence = useMemo(() => {
-    if (isAdmin) return presences.find((item) => item.user_id === selectedEmployeeId) ?? null;
+    if (isChatAdmin) return presences.find((item) => item.user_id === selectedEmployeeId) ?? null;
     return presences.find((item) => item.user_id === selectedOfficial?.user_id) ?? null;
-  }, [isAdmin, presences, selectedEmployeeId, selectedOfficial?.user_id]);
+  }, [isChatAdmin, presences, selectedEmployeeId, selectedOfficial?.user_id]);
 
   const presenceNow = Date.now() + presenceTick * 0;
   const peerTypingIsFresh = peerPresence?.updated_at
@@ -417,7 +438,7 @@ function MessagesPage() {
 
   async function getOrCreateConversation() {
     if (currentConversation) return currentConversation;
-    const employeeId = isAdmin ? selectedEmployeeId : user?.id;
+    const employeeId = isChatAdmin ? selectedEmployeeId : user?.id;
     if (!employeeId) throw new Error("Choose an employee first");
     const { data, error } = await db.from("chat_conversations").insert({ employee_id: employeeId }).select("*").single();
     if (error) {
@@ -456,8 +477,8 @@ function MessagesPage() {
       const { error } = await db.from("chat_messages").insert({
         conversation_id: conversation.id,
         sender_id: user.id,
-        recipient_id: isAdmin ? selectedEmployeeId : selectedOfficial?.user_id ?? null,
-        sender_is_admin: isAdmin,
+        recipient_id: isChatAdmin ? selectedEmployeeId : selectedOfficial?.user_id ?? null,
+        sender_is_admin: isChatAdmin,
         body: draft.trim() || null,
         ...attachment,
       });
@@ -505,8 +526,8 @@ function MessagesPage() {
   return (
     <div className="-mx-4 -my-4 min-h-[calc(100dvh-4rem)] overflow-hidden bg-[#0B1020] text-white shadow-2xl sm:mx-0 sm:my-0 sm:min-h-0 sm:rounded-[30px] sm:border sm:border-white/[0.08] sm:p-4 lg:p-5">
       <div className="hidden gap-3 pb-4 lg:grid lg:grid-cols-3">
-        <ChatMetric icon={MessageCircle} label={isAdmin ? "Total conversations" : "Inbox"} value={isAdmin ? conversations.length : "Official"} subtitle={isAdmin ? "+18 today" : "Secure admin channel"} tone="cyan" />
-        <ChatMetric icon={Users} label={isAdmin ? "Waiting for reply" : "Channel status"} value={isAdmin ? waitingForReply : "Secure"} subtitle={isAdmin ? "3 urgent" : "Auditable history"} tone="violet" />
+        <ChatMetric icon={MessageCircle} label={isChatAdmin ? "Total conversations" : "Inbox"} value={isChatAdmin ? conversations.length : "Official Channel"} subtitle={isChatAdmin ? "+18 today" : "Secure messaging"} tone="cyan" />
+        <ChatMetric icon={Users} label={isChatAdmin ? "Waiting for reply" : "Channel status"} value={isChatAdmin ? waitingForReply : "Active"} subtitle={isChatAdmin ? "3 urgent" : "Auditable history"} tone="violet" />
         <ChatMetric icon={ShieldCheck} label="Unread messages" value={totalUnread} subtitle={totalUnread ? "High priority" : "All caught up"} tone="pink" />
       </div>
 
@@ -516,11 +537,11 @@ function MessagesPage() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2 text-lg font-black"><MessageCircle className="text-cyan-300" size={21} /> Messages</div>
-                <p className="mt-1 text-xs text-white/45">{isAdmin ? "Admin–employee workspace" : "Your secure Admin / HR channel"}</p>
+                <p className="mt-1 text-xs text-white/45">{isChatAdmin ? "Admin–employee workspace" : "Your secure Admin / HR channel"}</p>
               </div>
               {totalUnread > 0 && <span className="rounded-full bg-gradient-to-r from-pink-500 to-violet-500 px-2.5 py-1 text-xs font-black">{totalUnread}</span>}
             </div>
-            {isAdmin && (
+            {isChatAdmin && (
               <>
                 <label className="mt-4 flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-[#182233] px-3 shadow-[inset_0_1px_0_rgba(255,255,255,.04)] transition focus-within:border-cyan-300/45 focus-within:shadow-[0_0_28px_rgba(0,194,255,.12)]">
                   <Search size={16} className="text-white/40" />
@@ -539,7 +560,7 @@ function MessagesPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto [scrollbar-width:thin]">
-            {isAdmin ? (
+            {isChatAdmin ? (
               conversationRows.length ? conversationRows.map(({ employee, conversation, lastMessage }) => {
                 const unread = conversation ? unreadByConversation.get(conversation.id) ?? 0 : 0;
                 const online = presences.some((item) => item.user_id === employee.user_id && item.is_online);
@@ -563,35 +584,80 @@ function MessagesPage() {
                 );
               }) : <EmptySidebar text={conversationFilter === "archived" ? "No archived conversations" : "No conversations found"} />
             ) : (
-              <button onClick={() => setMobileChatOpen(true)} className="group flex w-full gap-3 border-b border-white/[0.06] bg-gradient-to-r from-cyan-400/10 via-[#121827] to-transparent p-4 text-left transition duration-200 hover:bg-[#22304A]/60">
-                <Avatar profile={adminProfiles[0]} online={Boolean(peerPresence?.is_online)} admin />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <strong className="truncate text-sm">Aslenix Admin</strong>
-                    <span className="rounded-full border border-cyan-300/15 bg-cyan-300/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] text-cyan-100/75">Official</span>
-                    <ShieldCheck size={13} className="shrink-0 text-cyan-300" />
-                    <span className="ml-auto shrink-0 text-[10px] text-white/35">{overviewMessages[0] ? formatMessageListTime(overviewMessages[0].created_at) : "New"}</span>
-                  </div>
-                  <p className="mt-1 truncate text-xs text-white/45">{overviewMessages[0]?.body || overviewMessages[0]?.attachment_name || "Official workplace communication"}</p>
-                </div>
-                {totalUnread > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-pink-500 px-1 text-[10px] font-black shadow-[0_0_18px_rgba(236,72,153,.35)]">{totalUnread}</span>}
-              </button>
+              officialRows.map(({ official, lastMessage, unread, online }) => {
+                const isSelected = selectedOfficialId === official.user_id;
+                const typing = presences.find((item) => item.user_id === official.user_id && item.typing_conversation_id === currentConversation?.id);
+                const isTyping = Boolean(typing && (typing.updated_at ? Date.now() - new Date(typing.updated_at).getTime() < 7000 : true));
+                return (
+                  <button
+                    key={official.user_id}
+                    onClick={() => {
+                      setSelectedOfficialId(official.user_id);
+                      setMobileChatOpen(true);
+                    }}
+                    className={`group flex w-full gap-3 border-b border-white/[0.06] p-4 text-left transition duration-200 hover:bg-[#22304A]/60 ${
+                      isSelected
+                        ? "bg-gradient-to-r from-cyan-400/15 via-[#182233] to-transparent shadow-[inset_3px_0_0_rgba(0,194,255,.9)]"
+                        : unread > 0
+                        ? "bg-cyan-300/[0.045]"
+                        : ""
+                    }`}
+                  >
+                    <Avatar profile={official} online={online} admin compact />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <strong className={`truncate text-sm ${unread > 0 ? "text-white" : "text-white/82"}`}>
+                          {official.full_name || "Official"}
+                        </strong>
+                        <span className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] ${
+                          official.role === "super_admin"
+                            ? "border border-pink-500/20 bg-pink-500/10 text-pink-300"
+                            : official.role === "hr_manager"
+                            ? "border border-purple-500/20 bg-purple-500/10 text-purple-300"
+                            : "border border-cyan-300/15 bg-cyan-300/10 text-cyan-100/75"
+                        }`}>
+                          {official.role === "super_admin" ? "S-Admin" : official.role === "hr_manager" ? "HR" : "Admin"}
+                        </span>
+                        {lastMessage && (
+                          <span className="ml-auto shrink-0 text-[10px] text-white/35">
+                            {formatMessageListTime(lastMessage.created_at)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-0.5 truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-100/35">
+                        {official.position || "Administrator"}
+                      </div>
+                      <div className="mt-1 flex items-center gap-2">
+                        <p className={`truncate text-xs ${unread > 0 ? "font-semibold text-white/80" : "text-white/45"}`}>
+                          {lastMessage?.body || lastMessage?.attachment_name || "Start the conversation"}
+                        </p>
+                        {isTyping && <span className="shrink-0 text-[10px] font-bold text-cyan-300 animate-pulse">typing…</span>}
+                        {unread > 0 && (
+                          <span className="ml-auto flex h-5 min-w-5 shrink-0 animate-pulse items-center justify-center rounded-full bg-pink-500 px-1 text-[10px] font-black shadow-[0_0_18px_rgba(236,72,153,.35)]">
+                            {unread}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })
             )}
           </div>
           <div className="border-t border-white/10 p-3 text-center text-[10px] font-semibold uppercase tracking-[0.15em] text-white/25">Messages are permanent &amp; auditable</div>
         </aside>
 
         <section className={`${mobileChatOpen ? "flex" : "hidden"} w-full min-w-0 flex-1 flex-col overflow-x-hidden bg-[radial-gradient(circle_at_70%_0%,rgba(0,194,255,.08),transparent_30%),#0B1020] md:flex`}>
-          {(isAdmin ? selectedEmployee : user) ? (
+          {(isChatAdmin ? selectedEmployee : selectedOfficial) ? (
             <>
               <header className="flex h-16 shrink-0 items-center gap-2 border-b border-white/[0.08] bg-[#121827]/95 px-2 backdrop-blur-xl sm:h-[76px] sm:gap-3 sm:px-4">
                 <button onClick={() => setMobileChatOpen(false)} className="rounded-lg p-2 hover:bg-white/5 md:hidden" aria-label="Back to conversations"><ArrowLeft size={19} /></button>
-                <Avatar profile={isAdmin ? selectedEmployee : adminProfiles[0]} online={Boolean(peerPresence?.is_online)} admin={!isAdmin} compact />
+                <Avatar profile={isChatAdmin ? selectedEmployee : selectedOfficial} online={Boolean(peerPresence?.is_online)} admin={!isChatAdmin} compact />
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2"><h2 className="truncate text-sm font-black sm:text-base">{isAdmin ? selectedEmployee?.full_name : "Aslenix Admin"}</h2>{!isAdmin && <ShieldCheck size={14} className="text-cyan-300" />}</div>
-                  <div className="mt-0.5 truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-white/30">{isAdmin ? selectedEmployee?.department || selectedEmployee?.position || "Employee" : "Official workplace channel"}</div>
+                  <div className="flex items-center gap-2"><h2 className="truncate text-sm font-black sm:text-base">{isChatAdmin ? selectedEmployee?.full_name : selectedOfficial?.full_name || "Aslenix Admin"}</h2>{!isChatAdmin && <ShieldCheck size={14} className="text-cyan-300" />}</div>
+                  <div className="mt-0.5 truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-white/30">{isChatAdmin ? selectedEmployee?.department || selectedEmployee?.position || "Employee" : selectedOfficial?.position || "Official support channel"}</div>
                   <p className={`truncate text-[11px] ${peerIsTyping ? "text-cyan-300" : "text-white/40"}`}>
-                    {peerIsTyping ? "typing…" : peerPresence?.is_online ? "Online" : peerPresence?.last_seen_at ? `Last seen ${formatDistanceToNow(new Date(peerPresence.last_seen_at), { addSuffix: true })}` : (isAdmin ? selectedEmployee?.position : "Official support channel")}
+                    {peerIsTyping ? "typing…" : peerPresence?.is_online ? "Online" : peerPresence?.last_seen_at ? `Last seen ${formatDistanceToNow(new Date(peerPresence.last_seen_at), { addSuffix: true })}` : (isChatAdmin ? selectedEmployee?.position : selectedOfficial?.position || "Support channel")}
                   </p>
                 </div>
                 <label className="hidden items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 xl:flex">
@@ -599,9 +665,9 @@ function MessagesPage() {
                   <input value={messageSearch} onChange={(event) => setMessageSearch(event.target.value)} placeholder="Search messages" className="h-9 w-32 bg-transparent text-xs outline-none 2xl:w-44" />
                 </label>
                 <input type="date" value={dateSearch} onChange={(event) => setDateSearch(event.target.value)} className="hidden h-9 rounded-xl border border-white/10 bg-white/5 px-2 text-xs text-white/60 outline-none 2xl:block [color-scheme:dark]" aria-label="Search messages by date" />
-                <button className="hidden rounded-xl border border-white/[0.08] bg-white/[0.04] p-2 text-white/45 transition hover:bg-[#22304A] hover:text-cyan-100 lg:inline-flex" aria-label="Voice call"><Phone size={18} /></button>
-                <button className="hidden rounded-xl border border-white/[0.08] bg-white/[0.04] p-2 text-white/45 transition hover:bg-[#22304A] hover:text-cyan-100 lg:inline-flex" aria-label="Video call"><Video size={18} /></button>
-                {isAdmin && currentConversation && (
+                <button className="hidden rounded-xl border border-white/[0.08] bg-white/[0.045] p-2 text-white/45 transition hover:bg-[#22304A] hover:text-cyan-100 lg:inline-flex" aria-label="Voice call"><Phone size={18} /></button>
+                <button className="hidden rounded-xl border border-white/[0.08] bg-white/[0.045] p-2 text-white/45 transition hover:bg-[#22304A] hover:text-cyan-100 lg:inline-flex" aria-label="Video call"><Video size={18} /></button>
+                {isChatAdmin && currentConversation && (
                   <div className="flex items-center gap-1">
                     <button onClick={() => setConversationFlag("pin")} title={currentConversation.pinned_by_admin ? "Unpin" : "Pin conversation"} className="rounded-lg p-2 text-white/50 hover:bg-white/5 hover:text-cyan-200">{currentConversation.pinned_by_admin ? <PinOff size={18} /> : <Pin size={18} />}</button>
                     <button onClick={() => setConversationFlag("archive")} title={currentConversation.archived_by_admin ? "Restore" : "Archive conversation"} className="rounded-lg p-2 text-white/50 hover:bg-white/5 hover:text-violet-200">{currentConversation.archived_by_admin ? <ArchiveRestore size={18} /> : <Archive size={18} />}</button>
@@ -642,7 +708,7 @@ function MessagesPage() {
                         <MessageBubble message={message} mine={mine} signedUrl={signedUrls[message.id]} />
                       </div>
                     );
-                  }) : <EmptyMessages isAdmin={isAdmin} onUpload={() => fileInputRef.current?.click()} />}
+                  }) : <EmptyMessages isAdmin={isChatAdmin} onUpload={() => fileInputRef.current?.click()} />}
                   {peerIsTyping && <div className="flex w-fit gap-1 rounded-2xl rounded-bl-md border border-white/10 bg-white/[0.07] px-4 py-3"><i className="h-1.5 w-1.5 animate-bounce rounded-full bg-white/45" /><i className="h-1.5 w-1.5 animate-bounce rounded-full bg-white/45 [animation-delay:120ms]" /><i className="h-1.5 w-1.5 animate-bounce rounded-full bg-white/45 [animation-delay:240ms]" /></div>}
                   <div ref={messagesEndRef} />
                 </div>
@@ -670,7 +736,7 @@ function MessagesPage() {
                 </div>
               </form>
             </>
-          ) : <div className="flex flex-1 items-center justify-center text-center"><div><MessageCircle className="mx-auto text-cyan-300/30" size={46} /><h2 className="mt-4 font-black">Select a conversation</h2><p className="mt-1 text-sm text-white/35">Choose an employee to start messaging.</p></div></div>}
+          ) : <div className="flex flex-1 items-center justify-center text-center"><div><MessageCircle className="mx-auto text-cyan-300/30" size={46} /><h2 className="mt-4 font-black">Select a conversation</h2><p className="mt-1 text-sm text-white/35">Choose an official to start messaging.</p></div></div>}
         </section>
 
         {showInfoPanel && <aside className="hidden w-[300px] shrink-0 animate-[fade-in_.18s_ease-out] border-l border-white/[0.08] bg-[#121827] p-4 xl:block">
@@ -685,10 +751,10 @@ function MessagesPage() {
           </div>
           <div className="rounded-3xl border border-white/[0.08] bg-[#182233]/80 p-4">
             <div className="flex items-center gap-3">
-              <Avatar profile={isAdmin ? selectedEmployee : adminProfiles[0]} online={Boolean(peerPresence?.is_online)} admin={!isAdmin} />
+              <Avatar profile={isChatAdmin ? selectedEmployee : selectedOfficial} online={Boolean(peerPresence?.is_online)} admin={!isChatAdmin} />
               <div className="min-w-0">
-                <div className="truncate text-sm font-black">{isAdmin ? selectedEmployee?.full_name || "Employee" : "Aslenix Admin"}</div>
-                <div className="mt-0.5 truncate text-xs text-white/40">{isAdmin ? selectedEmployee?.department || selectedEmployee?.position || "Team member" : "Official support channel"}</div>
+                <div className="truncate text-sm font-black">{isChatAdmin ? selectedEmployee?.full_name || "Employee" : selectedOfficial?.full_name || "Aslenix Admin"}</div>
+                <div className="mt-0.5 truncate text-xs text-white/40">{isChatAdmin ? selectedEmployee?.department || selectedEmployee?.position || "Team member" : selectedOfficial?.position || "Official support channel"}</div>
               </div>
             </div>
           </div>
@@ -884,4 +950,16 @@ function getFileIcon(type: string | null) {
   if (type?.startsWith("image/")) return ImageIcon;
   if (type?.startsWith("video/")) return Video;
   return FileText;
+}
+
+function sortOfficials(a: ChatProfile, b: ChatProfile) {
+  const roleOrder: Record<string, number> = {
+    super_admin: 1,
+    admin: 2,
+    hr_manager: 3,
+  };
+  const orderA = roleOrder[a.role || ""] ?? 99;
+  const orderB = roleOrder[b.role || ""] ?? 99;
+  if (orderA !== orderB) return orderA - orderB;
+  return (a.full_name || "").localeCompare(b.full_name || "");
 }
