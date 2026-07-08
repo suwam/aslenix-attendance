@@ -74,16 +74,16 @@ export const EmployeeQRCard = forwardRef<HTMLDivElement, { profile: QRProfile; s
             />
           ) : (
             <div
-              className="h-14 w-14 rounded-full flex items-center justify-center text-white text-base font-bold"
+              className="h-14 w-14 rounded-full flex items-center justify-center text-foreground text-base font-bold"
               style={{ background: "var(--gradient-brand)" }}
             >
               {initials}
             </div>
           )}
           <div className="min-w-0">
-            <div className="text-white font-semibold truncate">{profile.full_name}</div>
-            <div className="text-[11px] text-white/60 truncate">{profile.position || "—"}</div>
-            <div className="text-[10px] text-white/40 truncate">
+            <div className="text-foreground font-semibold truncate">{profile.full_name}</div>
+            <div className="text-[11px] text-muted-foreground truncate">{profile.position || "—"}</div>
+            <div className="text-[10px] text-muted-foreground truncate">
               {profile.department || "Unassigned"}
             </div>
           </div>
@@ -91,12 +91,12 @@ export const EmployeeQRCard = forwardRef<HTMLDivElement, { profile: QRProfile; s
 
         <div className="relative mt-4 flex items-center justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <div className="text-[9px] uppercase tracking-wider text-white/40">Employee ID</div>
-            <div className="text-sm font-mono text-white truncate">
+            <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Employee ID</div>
+            <div className="text-sm font-mono text-foreground truncate">
               {profile.employee_code || "—"}
             </div>
-            <div className="text-[9px] uppercase tracking-wider text-white/40 mt-2">Email</div>
-            <div className="text-[10px] text-white/70 truncate">{profile.email}</div>
+            <div className="text-[9px] uppercase tracking-wider text-muted-foreground mt-2">Email</div>
+            <div className="text-[10px] text-muted-foreground truncate">{profile.email}</div>
           </div>
           <div
             className="rounded-lg bg-white p-2 shrink-0"
@@ -111,7 +111,7 @@ export const EmployeeQRCard = forwardRef<HTMLDivElement, { profile: QRProfile; s
           </div>
         </div>
 
-        <div className="relative mt-3 text-[9px] text-white/30 text-center tracking-wider">
+        <div className="relative mt-3 text-[9px] text-muted-foreground text-center tracking-wider">
           ASLENIX • DIGITAL EMPLOYEE ID
         </div>
       </div>

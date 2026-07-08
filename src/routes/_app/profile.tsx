@@ -150,7 +150,7 @@ function ProfilePage() {
         title="My Profile"
         subtitle="Manage your personal information and employee identity"
         actions={
-          <div className="rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5 text-xs font-semibold capitalize text-muted-foreground">
+          <div className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold capitalize text-muted-foreground">
             {roleLabel}
           </div>
         }
@@ -158,7 +158,7 @@ function ProfilePage() {
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[380px_minmax(0,1fr)]">
         <div className="grid gap-5">
-          <GlassCard className="overflow-hidden border-white/10 bg-white/[0.025] text-center">
+          <GlassCard className="overflow-hidden border-border bg-card text-center">
             <div className="mx-auto mb-4 flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
               <Sparkles size={12} />
               Employee profile
@@ -171,16 +171,16 @@ function ProfilePage() {
                   className="h-32 w-32 rounded-3xl object-cover ring-2 ring-primary/40"
                 />
               ) : (
-                <div className="flex h-32 w-32 items-center justify-center rounded-3xl text-3xl font-bold text-white shadow-[0_0_34px_rgba(255,45,111,.22)]" style={{ background: "var(--gradient-brand)" }}>
+                <div className="flex h-32 w-32 items-center justify-center rounded-3xl text-3xl font-bold text-foreground shadow-sm" style={{ background: "var(--gradient-brand)" }}>
                   {initials}
                 </div>
               )}
-              <label className="absolute -bottom-2 -right-2 flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border border-white/10 text-white ring-4 ring-background transition hover:scale-105" style={{ background: "var(--gradient-brand)" }}>
+              <label className="absolute -bottom-2 -right-2 flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border border-border text-foreground ring-4 ring-background transition hover:scale-105" style={{ background: "var(--gradient-brand)" }}>
                 {uploading ? <Loader2 size={17} className="animate-spin" /> : <Camera size={17} />}
                 <input type="file" accept="image/*" className="hidden" onChange={uploadAvatar} disabled={uploading} />
               </label>
             </div>
-            <div className="mt-6 text-2xl font-bold text-white">{form.full_name || "Unnamed employee"}</div>
+            <div className="mt-6 text-2xl font-bold text-foreground">{form.full_name || "Unnamed employee"}</div>
             <div className="mt-1 flex min-w-0 items-center justify-center gap-2 text-sm text-muted-foreground">
               <Mail size={14} className="shrink-0" />
               <span className="truncate">{form.email}</span>
@@ -192,22 +192,22 @@ function ProfilePage() {
           </GlassCard>
 
           {completion < 100 && (
-            <GlassCard className="border-white/10 bg-white/[0.025]">
+            <GlassCard className="border-border bg-card">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
-                  <h3 className="font-semibold text-white">Profile completion</h3>
+                  <h3 className="font-semibold text-foreground">Profile completion</h3>
                   <p className="text-xs text-muted-foreground">{completedFields} of {completionFields.length} details filled</p>
                 </div>
                 <div className="text-3xl font-bold tabular-nums gradient-text">{completion}%</div>
               </div>
-              <div className="h-2 overflow-hidden rounded-full bg-white/10">
+              <div className="h-2 overflow-hidden rounded-full bg-card">
                 <div className="h-full rounded-full transition-all" style={{ width: `${completion}%`, background: "var(--gradient-brand)" }} />
               </div>
             </GlassCard>
           )}
 
-          <GlassCard className="border-white/10 bg-white/[0.025]">
-            <h3 className="mb-4 font-semibold text-white">Quick links</h3>
+          <GlassCard className="border-border bg-card">
+            <h3 className="mb-4 font-semibold text-foreground">Quick links</h3>
             <div className="grid gap-2">
               <QuickProfileLink to="/my-attendance" icon={CalendarDays} label="My attendance" />
               <QuickProfileLink to="/my-leaves" icon={ClipboardList} label="My leaves" />
@@ -223,10 +223,10 @@ function ProfilePage() {
             <InfoTile icon={HeartPulse} label="Emergency ready" value={form.emergency_contact ? "Available" : "Missing"} />
           </div>
 
-          <GlassCard className="border-white/10 bg-white/[0.025]">
+          <GlassCard className="border-border bg-card">
             <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-white">Personal information</h3>
+                <h3 className="text-lg font-semibold text-foreground">Personal information</h3>
                 <p className="text-sm text-muted-foreground">Keep your contact and workplace details up to date.</p>
               </div>
               <Button onClick={save} disabled={saving} className="neon-button h-11 rounded-xl">
@@ -262,7 +262,7 @@ function ProfilePage() {
                   value={form.blood_group || "not-set"}
                   onValueChange={(value) => setForm({ ...form, blood_group: value === "not-set" ? "" : value })}
                 >
-                  <SelectTrigger className="rounded-xl border-white/10 bg-black/20">
+                  <SelectTrigger className="rounded-xl border-border bg-card">
                     <SelectValue placeholder="Select blood group" />
                   </SelectTrigger>
                   <SelectContent>
@@ -286,7 +286,7 @@ function ProfilePage() {
 
 function ProfilePill({ icon: Icon, label }: { icon: typeof Briefcase; label: string }) {
   return (
-    <div className="flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+    <div className="flex min-w-0 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground">
       <Icon size={13} className="shrink-0 text-primary" />
       <span className="truncate capitalize">{label}</span>
     </div>
@@ -303,11 +303,11 @@ function InfoTile({
   value: string;
 }) {
   return (
-    <GlassCard className="border-white/10 bg-white/[0.025]">
+    <GlassCard className="border-border bg-card">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
-          <div className="mt-3 truncate text-xl font-bold text-white">{value}</div>
+          <div className="mt-3 truncate text-xl font-bold text-foreground">{value}</div>
         </div>
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
           <Icon size={19} />
@@ -329,10 +329,10 @@ function QuickProfileLink({
   return (
     <Link
       to={to}
-      className="group flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm font-semibold text-white transition hover:border-primary/30 hover:bg-white/[0.05]"
+      className="group flex items-center justify-between gap-3 rounded-2xl border border-border bg-card px-4 py-3 text-sm font-semibold text-foreground transition hover:border-primary/30 hover:bg-card"
     >
       <span className="flex min-w-0 items-center gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] text-muted-foreground transition group-hover:text-primary">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-card text-muted-foreground transition group-hover:text-primary">
           <Icon size={16} />
         </span>
         <span className="truncate">{label}</span>
@@ -355,7 +355,7 @@ function ProfileField({
 }) {
   return (
     <div className={className}>
-      <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+      <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
         <Icon size={14} className="text-primary" />
         {label}
       </Label>

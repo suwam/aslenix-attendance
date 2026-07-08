@@ -299,12 +299,12 @@ function MyAttendance() {
 
       {requests.length > 0 && (
         <GlassCard className="mt-5">
-          <div className="mb-3 text-sm font-semibold text-white">Correction requests</div>
+          <div className="mb-3 text-sm font-semibold text-foreground">Correction requests</div>
           <div className="space-y-2">
             {requests.slice(0, 4).map((request) => (
-              <div key={request.id} className="flex flex-col gap-2 rounded-xl border border-white/10 bg-white/[0.035] p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div key={request.id} className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <div className="text-sm text-white">{format(new Date(request.created_at), "MMM d, yyyy HH:mm")}</div>
+                  <div className="text-sm text-foreground">{format(new Date(request.created_at), "MMM d, yyyy HH:mm")}</div>
                   <div className="text-xs text-muted-foreground">{request.reason}</div>
                 </div>
                 <RequestBadge status={request.status} />
@@ -315,8 +315,8 @@ function MyAttendance() {
       )}
 
       <Dialog open={requestOpen} onOpenChange={setRequestOpen}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto border-white/10 bg-background/95 p-0 sm:max-w-2xl">
-          <div className="border-b border-white/10 px-6 py-5">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto border-border bg-background/95 p-0 sm:max-w-2xl">
+          <div className="border-b border-border px-6 py-5">
             <DialogHeader>
               <DialogTitle>Request Attendance Correction</DialogTitle>
               <div className="text-sm text-muted-foreground">
@@ -344,7 +344,7 @@ function MyAttendance() {
             </CorrectionSection>
 
             <CorrectionSection>
-              <div className="mb-3 text-sm font-semibold text-white">Current Attendance Record</div>
+              <div className="mb-3 text-sm font-semibold text-foreground">Current Attendance Record</div>
               <div className="grid gap-2 sm:grid-cols-2">
                 <ReadOnlyValue label="Check-in" value={formatTimeDisplay(attendance?.check_in_time)} />
                 <ReadOnlyValue label="Check-out" value={formatTimeDisplay(attendance?.check_out_time)} />
@@ -355,7 +355,7 @@ function MyAttendance() {
 
             <CorrectionSection>
               <div className="mb-4">
-                <div className="text-sm font-semibold text-white">Requested Correction</div>
+                <div className="text-sm font-semibold text-foreground">Requested Correction</div>
                 <div className="mt-1 text-xs text-muted-foreground">
                   Only the fields required for {getCorrectionTypeLabel(form.correctionType)} are shown.
                 </div>
@@ -432,7 +432,7 @@ function MyAttendance() {
 
             <CorrectionSection>
               <div className="mb-3">
-                <div className="text-sm font-semibold text-white">Correction Details</div>
+                <div className="text-sm font-semibold text-foreground">Correction Details</div>
               </div>
               <Field label="Reason *" error={errors.reason}>
                 <Textarea
@@ -457,7 +457,7 @@ function MyAttendance() {
             </div>
           </div>
 
-          <DialogFooter className="flex-row items-center justify-between border-t border-white/10 bg-black/20 px-6 py-4 sm:justify-between">
+          <DialogFooter className="flex-row items-center justify-between border-t border-border bg-card px-6 py-4 sm:justify-between">
             <Button variant="outline" onClick={() => setRequestOpen(false)}>
               Cancel
             </Button>
@@ -470,23 +470,23 @@ function MyAttendance() {
       </Dialog>
 
       <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto border-white/10 bg-background/95 sm:max-w-3xl">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto border-border bg-background/95 sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>Attendance History</DialogTitle>
           </DialogHeader>
           {history.length === 0 ? (
-            <div className="rounded-xl border border-white/10 bg-white/[0.035] p-6 text-center text-muted-foreground">
+            <div className="rounded-xl border border-border bg-card p-6 text-center text-muted-foreground">
               No previous modifications.
             </div>
           ) : (
             <div className="space-y-3">
               {history.map((item) => (
-                <div key={item.id} className="rounded-xl border border-white/10 bg-white/[0.035] p-4">
+                <div key={item.id} className="rounded-xl border border-border bg-card p-4">
                   <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="font-semibold text-white">Edited by {item.edited_by_name}</div>
+                    <div className="font-semibold text-foreground">Edited by {item.edited_by_name}</div>
                     <div className="text-xs text-muted-foreground">{format(new Date(item.created_at), "MMM d, yyyy HH:mm")}</div>
                   </div>
-                  <div className="mt-3 rounded-lg bg-black/20 p-3 text-sm">
+                  <div className="mt-3 rounded-lg bg-card p-3 text-sm">
                     <span className="text-muted-foreground">Reason: </span>
                     {item.reason}
                   </div>
@@ -562,7 +562,7 @@ function Field({ label, children, error }: { label: string; children: React.Reac
 
 function CorrectionSection({ children }: { children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 shadow-[inset_0_1px_0_oklch(1_0_0/.06)]">
+    <section className="rounded-2xl border border-border bg-card p-4 shadow-[inset_0_1px_0_oklch(1_0_0/.06)]">
       {children}
     </section>
   );
@@ -570,9 +570,9 @@ function CorrectionSection({ children }: { children: React.ReactNode }) {
 
 function ReadOnlyValue({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-black/20 px-3 py-2">
+    <div className="rounded-xl bg-card px-3 py-2">
       <div className="text-[11px] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
-      <div className="mt-1 text-sm font-semibold text-white">{value}</div>
+      <div className="mt-1 text-sm font-semibold text-foreground">{value}</div>
     </div>
   );
 }

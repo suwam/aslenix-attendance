@@ -9,7 +9,7 @@ import { bsInputToAdDateString, formatBsInput, getNepaliDate } from "@/lib/nepal
 import { cn } from "@/lib/utils";
 
 const pickerPanelClass =
-  "w-[324px] overflow-hidden rounded-2xl border border-cyan-300/20 bg-[#06101f]/90 p-0 text-white shadow-[0_22px_70px_rgba(0,0,0,.55),0_0_44px_rgba(34,211,238,.14)] backdrop-blur-2xl before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_16%_0%,rgba(34,211,238,.18),transparent_32%),radial-gradient(circle_at_92%_18%,rgba(255,45,111,.14),transparent_30%)]";
+  "w-[324px] overflow-hidden rounded-2xl border border-cyan-300/20 bg-[#06101f]/90 p-0 text-foreground shadow-[0_22px_70px_rgba(0,0,0,.55),0_0_44px_rgba(34,211,238,.14)] backdrop-blur-2xl before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_16%_0%,rgba(34,211,238,.18),transparent_32%),radial-gradient(circle_at_92%_18%,rgba(255,45,111,.14),transparent_30%)]";
 
 type BSDateInputProps = {
   value: string;
@@ -104,7 +104,7 @@ export function BSDateInput({
             type="button"
             aria-label="Open BS calendar"
             title="Open BS calendar"
-            className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition hover:bg-white/10 hover:text-white"
+            className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition hover:bg-card hover:text-foreground"
             disabled={disabled}
           >
             <CalendarDays size={16} />
@@ -113,23 +113,23 @@ export function BSDateInput({
         <PopoverContent align="end" className={pickerPanelClass}>
           <div className="relative p-4">
             <div className="mb-4 flex items-center justify-between gap-2">
-            <Button type="button" variant="ghost" size="icon" className="h-9 w-9 rounded-xl border border-white/10 bg-white/[0.04] text-slate-200 hover:bg-cyan-400/10 hover:text-cyan-100" onClick={() => moveMonth(-1)}>
+            <Button type="button" variant="ghost" size="icon" className="h-9 w-9 rounded-xl border border-border bg-card text-slate-200 hover:bg-cyan-400/10 hover:text-cyan-100" onClick={() => moveMonth(-1)}>
               <ChevronLeft size={16} />
             </Button>
             <div className="text-center">
               <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-cyan-200/75">BS Calendar</div>
-              <div className="mt-1 text-base font-extrabold tabular-nums text-white">{monthLabel} BS</div>
+              <div className="mt-1 text-base font-extrabold tabular-nums text-foreground">{monthLabel} BS</div>
             </div>
-            <Button type="button" variant="ghost" size="icon" className="h-9 w-9 rounded-xl border border-white/10 bg-white/[0.04] text-slate-200 hover:bg-pink-400/10 hover:text-pink-100" onClick={() => moveMonth(1)}>
+            <Button type="button" variant="ghost" size="icon" className="h-9 w-9 rounded-xl border border-border bg-card text-slate-200 hover:bg-pink-400/10 hover:text-pink-100" onClick={() => moveMonth(1)}>
               <ChevronRight size={16} />
             </Button>
           </div>
-          <div className="grid grid-cols-7 gap-1 rounded-2xl border border-white/10 bg-white/[0.035] p-2 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+          <div className="grid grid-cols-7 gap-1 rounded-2xl border border-border bg-card p-2 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
             {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
               <div key={day} className="py-1">{day}</div>
             ))}
           </div>
-          <div className="mt-2 grid grid-cols-7 gap-1 rounded-2xl border border-white/10 bg-black/15 p-2">
+          <div className="mt-2 grid grid-cols-7 gap-1 rounded-2xl border border-border bg-card p-2">
             {Array.from({ length: days.firstWeekday }).map((_, index) => (
               <div key={`blank-${index}`} className="h-9" />
             ))}
@@ -150,7 +150,7 @@ export function BSDateInput({
                     "grid h-9 place-items-center rounded-xl text-sm font-extrabold tabular-nums transition",
                     "hover:bg-cyan-400/15 hover:text-cyan-100 hover:shadow-[0_0_18px_rgba(34,211,238,.18)]",
                     isSelected
-                      ? "bg-gradient-to-br from-cyan-300 via-violet-500 to-pink-500 text-white shadow-[0_0_24px_rgba(34,211,238,.32)]"
+                      ? "bg-gradient-to-br from-cyan-300 via-violet-500 to-pink-500 text-foreground shadow-[0_0_24px_rgba(34,211,238,.32)]"
                       : "text-slate-200/95",
                     !isSelected && isToday && "border border-cyan-300/60 bg-cyan-400/10 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,.16)]",
                   )}
@@ -160,9 +160,9 @@ export function BSDateInput({
               );
             })}
           </div>
-          <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
+          <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
             <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Nepali date picker</span>
-            <Button type="button" variant="outline" className="h-9 rounded-xl border-white/10 bg-white/[0.04] px-4 text-xs font-bold hover:bg-cyan-400/10 hover:text-cyan-100" onClick={selectToday}>
+            <Button type="button" variant="outline" className="h-9 rounded-xl border-border bg-card px-4 text-xs font-bold hover:bg-cyan-400/10 hover:text-cyan-100" onClick={selectToday}>
               Today
             </Button>
           </div>
@@ -214,7 +214,7 @@ export function BSMonthInput({
             type="button"
             aria-label="Open BS month picker"
             title="Open BS month picker"
-            className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition hover:bg-white/10 hover:text-white"
+            className="absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition hover:bg-card hover:text-foreground"
           >
             <CalendarDays size={16} />
           </button>
@@ -222,14 +222,14 @@ export function BSMonthInput({
         <PopoverContent align="end" className={pickerPanelClass}>
           <div className="relative p-4">
           <div className="mb-4 flex items-center justify-between gap-2">
-            <Button type="button" variant="ghost" size="icon" className="h-9 w-9 rounded-xl border border-white/10 bg-white/[0.04] text-slate-200 hover:bg-cyan-400/10 hover:text-cyan-100" onClick={() => setViewYear((year) => year - 1)}>
+            <Button type="button" variant="ghost" size="icon" className="h-9 w-9 rounded-xl border border-border bg-card text-slate-200 hover:bg-cyan-400/10 hover:text-cyan-100" onClick={() => setViewYear((year) => year - 1)}>
               <ChevronLeft size={16} />
             </Button>
             <div className="text-center">
               <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-cyan-200/75">BS Month</div>
-              <div className="mt-1 text-base font-extrabold tabular-nums text-white">{viewYear} BS</div>
+              <div className="mt-1 text-base font-extrabold tabular-nums text-foreground">{viewYear} BS</div>
             </div>
-            <Button type="button" variant="ghost" size="icon" className="h-9 w-9 rounded-xl border border-white/10 bg-white/[0.04] text-slate-200 hover:bg-pink-400/10 hover:text-pink-100" onClick={() => setViewYear((year) => year + 1)}>
+            <Button type="button" variant="ghost" size="icon" className="h-9 w-9 rounded-xl border border-border bg-card text-slate-200 hover:bg-pink-400/10 hover:text-pink-100" onClick={() => setViewYear((year) => year + 1)}>
               <ChevronRight size={16} />
             </Button>
           </div>
@@ -247,8 +247,8 @@ export function BSMonthInput({
                     "rounded-xl border px-2 py-3 text-sm font-bold transition",
                     "hover:border-cyan-300/40 hover:bg-cyan-400/15 hover:text-cyan-100",
                     isSelected
-                      ? "border-transparent bg-gradient-to-br from-cyan-400 to-fuchsia-500 text-white shadow-lg shadow-cyan-500/20"
-                      : "border-white/10 bg-white/[0.035] text-slate-200",
+                      ? "border-transparent bg-gradient-to-br from-cyan-400 to-fuchsia-500 text-foreground shadow-lg shadow-cyan-500/20"
+                      : "border-border bg-card text-slate-200",
                     !isSelected && isCurrent && "border-cyan-300/50 text-cyan-200",
                   )}
                 >
@@ -257,9 +257,9 @@ export function BSMonthInput({
               );
             })}
           </div>
-          <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
+          <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
             <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Nepali month picker</span>
-            <Button type="button" variant="outline" className="h-9 rounded-xl border-white/10 bg-white/[0.04] px-4 text-xs font-bold hover:bg-cyan-400/10 hover:text-cyan-100" onClick={selectCurrentMonth}>
+            <Button type="button" variant="outline" className="h-9 rounded-xl border-border bg-card px-4 text-xs font-bold hover:bg-cyan-400/10 hover:text-cyan-100" onClick={selectCurrentMonth}>
               This month
             </Button>
           </div>
@@ -330,7 +330,7 @@ export function GlassTimeInput({
         <button
           type="button"
           className={cn(
-            "flex h-10 w-full items-center justify-between gap-2 rounded-xl border border-white/10 bg-black/20 px-3 text-left font-semibold tabular-nums text-white transition",
+            "flex h-10 w-full items-center justify-between gap-2 rounded-xl border border-border bg-card px-3 text-left font-semibold tabular-nums text-foreground transition",
             "hover:border-cyan-300/30 hover:bg-cyan-400/10 focus:outline-none focus:ring-2 focus:ring-cyan-300/30",
             className,
           )}
@@ -339,7 +339,7 @@ export function GlassTimeInput({
           <Clock size={16} className="text-cyan-200/80" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[286px] overflow-hidden rounded-2xl border border-cyan-300/20 bg-[#06101f]/95 p-0 text-white shadow-[0_22px_70px_rgba(0,0,0,.55),0_0_44px_rgba(255,45,111,.12)] backdrop-blur-2xl">
+      <PopoverContent align="end" className="w-[286px] overflow-hidden rounded-2xl border border-cyan-300/20 bg-[#06101f]/95 p-0 text-foreground shadow-[0_22px_70px_rgba(0,0,0,.55),0_0_44px_rgba(255,45,111,.12)] backdrop-blur-2xl">
         <div className="relative p-4">
           <div className="mb-4 flex items-center justify-between">
             <div>
@@ -354,9 +354,9 @@ export function GlassTimeInput({
             <TimeColumn label="Hour" values={hours} selected={hourValue} onSelect={(hour) => select(hour, minuteValue)} />
             <TimeColumn label="Minute" values={minutes} selected={minuteValue} onSelect={(minute) => select(hourValue, minute)} />
           </div>
-          <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
+          <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
             <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Aslenix time</span>
-            <Button type="button" variant="outline" className="h-9 rounded-xl border-white/10 bg-white/[0.04] px-4 text-xs font-bold hover:bg-pink-400/10 hover:text-pink-100" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" className="h-9 rounded-xl border-border bg-card px-4 text-xs font-bold hover:bg-pink-400/10 hover:text-pink-100" onClick={() => setOpen(false)}>
               Done
             </Button>
           </div>
@@ -378,7 +378,7 @@ function TimeColumn({
   onSelect: (value: string) => void;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-2">
+    <div className="rounded-2xl border border-border bg-card p-2">
       <div className="px-2 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">{label}</div>
       <div className="max-h-48 space-y-1 overflow-y-auto pr-1">
         {values.map((value) => (
@@ -389,8 +389,8 @@ function TimeColumn({
             className={cn(
               "grid h-9 w-full place-items-center rounded-xl text-sm font-extrabold tabular-nums transition",
               selected === value
-                ? "bg-gradient-to-r from-cyan-400 to-pink-500 text-white shadow-[0_0_18px_rgba(34,211,238,.22)]"
-                : "text-slate-300 hover:bg-white/[0.06] hover:text-white",
+                ? "bg-gradient-to-r from-cyan-400 to-pink-500 text-foreground shadow-[0_0_18px_rgba(34,211,238,.22)]"
+                : "text-slate-300 hover:bg-card hover:text-foreground",
             )}
           >
             {value}

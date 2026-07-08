@@ -198,7 +198,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Link
                 key={item.to}
                 to={item.to}
-                className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all relative ${active ? "text-white" : "text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent"}`}
+                className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all relative ${active ? "text-foreground" : "text-sidebar-foreground/75 hover:text-sidebar-foreground hover:bg-sidebar-accent"}`}
               >
                 {active && (
                   <div
@@ -213,7 +213,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <span>{item.label}</span>
                 {item.to === "/messages" && messageUnread > 0 && (
                   <span
-                    className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-black text-white"
+                    className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-black text-foreground"
                     style={{ background: "var(--gradient-brand)" }}
                   >
                     {messageUnread > 99 ? "99+" : messageUnread}
@@ -230,7 +230,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {mobileOpen && (
         <>
           <div
-            className="lg:hidden fixed inset-0 z-40 bg-black/60"
+            className="lg:hidden fixed inset-0 z-40 bg-card"
             onClick={() => setMobileOpen(false)}
           />
           <aside
@@ -257,13 +257,13 @@ export function AppShell({ children }: { children: ReactNode }) {
                     key={item.to}
                     to={item.to}
                     onClick={() => setMobileOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium ${active ? "text-white" : "text-sidebar-foreground/75 hover:bg-sidebar-accent"}`}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium ${active ? "text-foreground" : "text-sidebar-foreground/75 hover:bg-sidebar-accent"}`}
                     style={active ? { background: "var(--gradient-brand)" } : undefined}
                   >
                     <Icon size={18} />
                     <span>{item.label}</span>
                     {item.to === "/messages" && messageUnread > 0 && (
-                      <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-white/20 px-1 text-[10px] font-black text-white">
+                      <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-card px-1 text-[10px] font-black text-foreground">
                         {messageUnread > 99 ? "99+" : messageUnread}
                       </span>
                     )}
@@ -303,7 +303,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Bell size={18} />
                 {unread > 0 && (
                   <span
-                    className="absolute top-1 right-1 h-4 min-w-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center text-white"
+                    className="absolute top-1 right-1 h-4 min-w-4 px-1 rounded-full text-[10px] font-bold flex items-center justify-center text-foreground"
                     style={{ background: "var(--gradient-brand)" }}
                   >
                     {unread > 9 ? "9+" : unread}
@@ -313,12 +313,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             </PopoverTrigger>
             <PopoverContent
               align="end"
-              className="w-[calc(100vw-2rem)] max-w-sm overflow-hidden rounded-2xl border-white/10 bg-background/95 p-0 shadow-[0_24px_70px_rgba(0,0,0,0.45)]"
+              className="w-[calc(100vw-2rem)] max-w-sm overflow-hidden rounded-2xl border-border bg-background/95 p-0 shadow-[0_24px_70px_rgba(0,0,0,0.45)]"
             >
-              <div className="border-b border-white/10 bg-white/[0.035] px-4 py-3">
+              <div className="border-b border-border bg-card px-4 py-3">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-sm font-bold text-white">Notifications</div>
+                    <div className="text-sm font-bold text-foreground">Notifications</div>
                     <div className="text-xs text-muted-foreground">
                       {unread ? `${unread} unread update${unread === 1 ? "" : "s"}` : "You're all caught up"}
                     </div>
@@ -336,8 +336,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                         key={item.id}
                         className={`rounded-xl border p-3 transition-colors ${
                           item.is_read
-                            ? "border-white/8 bg-white/[0.025] opacity-75"
-                            : "border-white/14 bg-white/[0.045] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                            ? "border-border bg-card opacity-75"
+                            : "border-border bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                         }`}
                       >
                         <div className="flex items-start gap-3">
@@ -349,8 +349,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between gap-2">
-                              <div className="truncate text-sm font-bold text-white/90">{item.title}</div>
-                              <time className="shrink-0 text-[10px] font-semibold text-white/42">
+                              <div className="truncate text-sm font-bold text-muted-foreground">{item.title}</div>
+                              <time className="shrink-0 text-[10px] font-semibold text-muted-foreground">
                                 {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                               </time>
                             </div>
@@ -359,7 +359,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                               <button
                                 type="button"
                                 onClick={() => markNotificationRead(item.id)}
-                                className="mt-2 rounded-full border border-white/10 bg-white/[0.035] px-2.5 py-1 text-[11px] font-semibold text-white/62 transition-colors hover:border-white/18 hover:bg-white/[0.07] hover:text-white"
+                                className="mt-2 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-semibold text-muted-foreground transition-colors hover:border-border hover:bg-card hover:text-foreground"
                               >
                                 Mark Read
                               </button>
@@ -372,15 +372,15 @@ export function AppShell({ children }: { children: ReactNode }) {
                 ) : (
                   <div className="px-4 py-10 text-center">
                     <BellDot className="mx-auto mb-3 text-cyan-200" size={24} />
-                    <div className="text-sm font-semibold text-white">No notifications</div>
+                    <div className="text-sm font-semibold text-foreground">No notifications</div>
                     <div className="mt-1 text-xs text-muted-foreground">New updates will appear here.</div>
                   </div>
                 )}
               </div>
-              <div className="border-t border-white/10 p-2">
+              <div className="border-t border-border p-2">
                 <Link
                   to={isAdmin ? "/admin/notifications" : "/notifications"}
-                  className="block rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2 text-center text-sm font-semibold text-white/78 transition-colors hover:border-white/18 hover:bg-white/[0.07] hover:text-white"
+                  className="block rounded-xl border border-border bg-card px-3 py-2 text-center text-sm font-semibold text-muted-foreground transition-colors hover:border-border hover:bg-card hover:text-foreground"
                 >
                   View all notifications
                 </Link>
@@ -405,13 +405,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         {!isAdmin && currentPath !== "/messages" && (
           <Link
             to="/messages"
-            className="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-violet-500 to-cyan-400 text-white shadow-[0_16px_45px_rgba(124,58,237,0.45)] ring-1 ring-white/20 transition hover:-translate-y-1 hover:scale-105 sm:bottom-6 sm:right-6"
+            className="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-violet-500 to-cyan-400 text-foreground shadow-[0_16px_45px_rgba(124,58,237,0.45)] ring-1 ring-white/20 transition hover:-translate-y-1 hover:scale-105 sm:bottom-6 sm:right-6"
             style={{ animation: "message-float 3.2s ease-in-out infinite" }}
             aria-label="Open messages"
           >
             <MessageSquare size={24} />
             {messageUnread > 0 && (
-              <span className="absolute -right-1.5 -top-1.5 flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-background bg-pink-500 px-1 text-[11px] font-black text-white shadow-lg">
+              <span className="absolute -right-1.5 -top-1.5 flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-background bg-pink-500 px-1 text-[11px] font-black text-foreground shadow-lg">
                 {messageUnread > 99 ? "99+" : messageUnread}
               </span>
             )}
@@ -459,7 +459,7 @@ function Avatar({ profile }: { profile: any }) {
     />
   ) : (
     <div
-      className="h-9 w-9 rounded-full flex items-center justify-center text-white text-sm font-semibold"
+      className="h-9 w-9 rounded-full flex items-center justify-center text-foreground text-sm font-semibold"
       style={{ background: "var(--gradient-brand)" }}
     >
       {initials}

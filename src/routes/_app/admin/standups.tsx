@@ -160,7 +160,7 @@ function AdminStandupsPage() {
           <BSDateInput
             value={bsDate}
             onChange={setBsDate}
-            className="w-auto border-cyan-300/20 bg-white/5 shadow-[0_0_30px_rgba(34,211,238,0.08)]"
+            className="w-auto border-cyan-300/20 bg-card shadow-[0_0_30px_rgba(34,211,238,0.08)]"
           />
         }
       />
@@ -177,7 +177,7 @@ function AdminStandupsPage() {
                   </div>
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200/80">AI Daily Briefing</p>
-                    <h2 className="text-2xl font-bold text-white">Executive standup pulse</h2>
+                    <h2 className="text-2xl font-bold text-foreground">Executive standup pulse</h2>
                   </div>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -187,23 +187,23 @@ function AdminStandupsPage() {
                   <BriefingPoint label={`Team execution confidence: ${executionConfidence}%`} tone="blue" />
                   <BriefingPoint label={blockerCount > 2 ? "Manager attention recommended" : "No critical risks identified"} tone={blockerCount > 2 ? "amber" : "green"} />
                 </div>
-                <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 p-4">
+                <div className="mt-5 rounded-2xl border border-border bg-card p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-fuchsia-200/80">AI Insights</p>
-                  <p className="mt-2 text-lg font-semibold leading-relaxed text-white">
+                  <p className="mt-2 text-lg font-semibold leading-relaxed text-foreground">
                     {makeAiInsight(signals.length, blockerCount, executionConfidence)}
                   </p>
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-white/10 bg-white/[0.045] p-5 backdrop-blur-xl">
+              <div className="rounded-3xl border border-border bg-card p-5 backdrop-blur-xl">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Execution Confidence</p>
-                    <div className="mt-2 text-5xl font-black text-white tabular-nums">{executionConfidence}%</div>
+                    <div className="mt-2 text-5xl font-black text-foreground tabular-nums">{executionConfidence}%</div>
                   </div>
                   <Gauge className="text-cyan-200" size={34} />
                 </div>
-                <div className="mt-5 h-3 rounded-full bg-white/10">
+                <div className="mt-5 h-3 rounded-full bg-card">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-blue-400 to-fuchsia-400 shadow-[0_0_22px_rgba(34,211,238,0.45)]"
                     style={{ width: `${executionConfidence}%` }}
@@ -223,7 +223,7 @@ function AdminStandupsPage() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-fuchsia-200/80">AI Recommendation Center</p>
-              <h2 className="mt-1 text-2xl font-bold text-white">Suggested actions</h2>
+              <h2 className="mt-1 text-2xl font-bold text-foreground">Suggested actions</h2>
             </div>
             <Lightbulb className="text-amber-200" />
           </div>
@@ -231,7 +231,7 @@ function AdminStandupsPage() {
             {buildRecommendations(signals, blockerCount).map((item) => (
               <div
                 key={item}
-                className="group flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.045] p-4 transition-all duration-300 hover:border-cyan-300/35 hover:bg-cyan-300/10"
+                className="group flex items-start gap-3 rounded-2xl border border-border bg-card p-4 transition-all duration-300 hover:border-cyan-300/35 hover:bg-cyan-300/10"
               >
                 <div className="mt-0.5 h-2.5 w-2.5 rounded-full bg-gradient-to-r from-cyan-300 to-fuchsia-300 shadow-[0_0_14px_rgba(34,211,238,0.65)]" />
                 <p className="text-sm leading-relaxed text-slate-200">{item}</p>
@@ -257,7 +257,7 @@ function AdminStandupsPage() {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search employee, role, department..."
-          className="border-white/10 bg-white/[0.045] pl-9 text-white placeholder:text-slate-500 focus-visible:ring-cyan-300/40"
+          className="border-border bg-card pl-9 text-foreground placeholder:text-slate-500 focus-visible:ring-cyan-300/40"
         />
       </div>
 
@@ -296,7 +296,7 @@ function AdminStandupsPage() {
                 {signals.length === 0 && (
                   <div className="rounded-3xl border border-dashed border-cyan-300/20 bg-cyan-300/5 p-10 text-center">
                     <MessageSquareText className="mx-auto text-cyan-200" size={30} />
-                    <h3 className="mt-3 text-lg font-bold text-white">No standups found for this date</h3>
+                    <h3 className="mt-3 text-lg font-bold text-foreground">No standups found for this date</h3>
                     <p className="mt-1 text-sm text-muted-foreground">Submitted standups will appear as AI intelligence cards here.</p>
                   </div>
                 )}
@@ -308,7 +308,7 @@ function AdminStandupsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-100/80">AI Risk & Blocker Analysis</p>
-                    <h2 className="mt-1 text-xl font-bold text-white">Operational signals</h2>
+                    <h2 className="mt-1 text-xl font-bold text-foreground">Operational signals</h2>
                   </div>
                   <AlertTriangle className="text-amber-200" />
                 </div>
@@ -367,7 +367,7 @@ function AdminStandupsPage() {
                   />
                   <div className="relative grid h-36 w-36 place-items-center rounded-full bg-[#070d1a] text-center">
                     <div>
-                      <div className="text-5xl font-black text-white">{submissionRate}%</div>
+                      <div className="text-5xl font-black text-foreground">{submissionRate}%</div>
                       <div className="mt-1 text-xs uppercase tracking-[0.2em] text-cyan-100/70">Submitted</div>
                     </div>
                   </div>
@@ -392,7 +392,7 @@ function AdminStandupsPage() {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-fuchsia-200/80">Team Workload Heatmap</p>
-                <h2 className="text-2xl font-bold text-white">Weekly intensity map</h2>
+                <h2 className="text-2xl font-bold text-foreground">Weekly intensity map</h2>
               </div>
               <span className="text-sm text-muted-foreground">AI compares submitted standups, blockers, and work hours.</span>
             </div>
@@ -400,7 +400,7 @@ function AdminStandupsPage() {
               {heatmap.map((item) => (
                 <div key={item.day} className="grid grid-cols-[3rem_1fr_4rem] items-center gap-4">
                   <span className="text-sm font-semibold text-slate-300">{item.day}</span>
-                  <div className="flex h-8 items-center gap-1 rounded-full border border-white/10 bg-white/[0.035] px-2">
+                  <div className="flex h-8 items-center gap-1 rounded-full border border-border bg-card px-2">
                     {Array.from({ length: 10 }).map((_, index) => (
                       <div
                         key={index}
@@ -408,12 +408,12 @@ function AdminStandupsPage() {
                           "h-4 flex-1 rounded-full transition-all duration-300",
                           index < item.level
                             ? "bg-gradient-to-r from-cyan-300 to-fuchsia-400 shadow-[0_0_12px_rgba(34,211,238,0.22)]"
-                            : "bg-white/8",
+                            : "bg-card",
                         )}
                       />
                     ))}
                   </div>
-                  <span className="text-right text-sm font-bold text-white">{item.score}%</span>
+                  <span className="text-right text-sm font-bold text-foreground">{item.score}%</span>
                 </div>
               ))}
             </div>
@@ -450,11 +450,11 @@ function AiKpiCard({
   }[tone];
 
   return (
-    <GlassCard className="group overflow-hidden border border-white/10 bg-[#07111f]/70 p-4 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/30 hover:shadow-[0_0_34px_rgba(34,211,238,0.14)]">
+    <GlassCard className="group overflow-hidden border border-border bg-[#07111f]/70 p-4 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/30 hover:shadow-[0_0_34px_rgba(34,211,238,0.14)]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
-          <div className="mt-2 text-2xl font-black text-white tabular-nums">{value}</div>
+          <div className="mt-2 text-2xl font-black text-foreground tabular-nums">{value}</div>
         </div>
         <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br shadow-lg", toneClass)}>
           <Icon size={20} />
@@ -483,7 +483,7 @@ function StandupEmployeeCard({ row, selected, onSelect }: { row: EmployeeSignal;
         <div className="flex min-w-0 items-start gap-4">
           <EmployeeAvatar profile={row.profile} size="lg" />
           <div className="min-w-0">
-            <h3 className="truncate text-xl font-semibold leading-tight text-white">{getEmployeeName(row)}</h3>
+            <h3 className="truncate text-xl font-semibold leading-tight text-foreground">{getEmployeeName(row)}</h3>
             <p className="mt-1 truncate text-base text-slate-400">{row.profile?.department || row.profile?.email || "Team member"}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <StatusPill status={row.status} />
@@ -497,7 +497,7 @@ function StandupEmployeeCard({ row, selected, onSelect }: { row: EmployeeSignal;
           <StandupSnippet label="Tomorrow" text={row.today || "No execution plan shared."} />
           <div className="rounded-2xl border border-[rgba(0,180,255,0.15)] bg-[#081B2D]/85 p-4">
             <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-slate-400">Hours</p>
-            <p className="mt-2 text-4xl font-black leading-none text-white tabular-nums">{formatWorkHours(row.hours)}</p>
+            <p className="mt-2 text-4xl font-black leading-none text-foreground tabular-nums">{formatWorkHours(row.hours)}</p>
           </div>
           <div className="rounded-2xl border border-[rgba(0,180,255,0.15)] bg-[#081B2D]/85 p-4 sm:col-span-2 xl:col-span-1">
             <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-cyan-100/70">AI Insight</p>
@@ -507,7 +507,7 @@ function StandupEmployeeCard({ row, selected, onSelect }: { row: EmployeeSignal;
 
         <div className="rounded-3xl border border-cyan-300/20 bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.18),transparent_42%),linear-gradient(180deg,rgba(139,92,246,0.14),rgba(11,34,56,0.86))] p-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_0_24px_rgba(34,211,238,0.1)]">
           <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-slate-400">Score</p>
-          <p className="mt-1 text-5xl font-black leading-none text-white">{row.score}</p>
+          <p className="mt-1 text-5xl font-black leading-none text-foreground">{row.score}</p>
           <p className="mt-2 text-xs font-semibold text-cyan-100/80">AI productivity</p>
         </div>
       </div>
@@ -530,7 +530,7 @@ function EmployeeIntelligencePanel({ row }: { row?: EmployeeSignal }) {
         <EmployeeAvatar profile={row.profile} size="lg" />
         <div className="min-w-0 flex-1">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200/80">Employee Intelligence Drawer</p>
-          <h2 className="mt-1 truncate text-xl font-bold text-white">{getEmployeeName(row)}</h2>
+          <h2 className="mt-1 truncate text-xl font-bold text-foreground">{getEmployeeName(row)}</h2>
           <p className="text-sm text-muted-foreground">{row.profile?.department || "Team member"}</p>
         </div>
       </div>
@@ -541,7 +541,7 @@ function EmployeeIntelligencePanel({ row }: { row?: EmployeeSignal }) {
         <IntelScore label="Focus" value={row.focus} />
       </div>
 
-      <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+      <div className="mt-5 rounded-2xl border border-border bg-card p-4">
         <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-100/70">Recent standup</p>
         <p className="mt-2 text-sm leading-relaxed text-slate-200">{row.yesterday || "No completed work update shared."}</p>
         <p className="mt-3 text-xs text-muted-foreground">
@@ -562,7 +562,7 @@ function AnalyticsCard({ title, icon: Icon, children }: { title: string; icon: t
   return (
     <GlassCard className="border border-cyan-300/10 bg-[#070d1a]/70">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-white">{title}</h2>
+        <h2 className="text-xl font-bold text-foreground">{title}</h2>
         <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10 text-cyan-200">
           <Icon size={19} />
         </div>
@@ -599,7 +599,7 @@ function BriefingPoint({ label, tone }: { label: string; tone: "blue" | "green" 
     purple: "bg-fuchsia-300",
   }[tone];
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.045] p-3">
+    <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3">
       <span className={cn("h-2.5 w-2.5 rounded-full shadow-[0_0_14px_currentColor]", color)} />
       <span className="text-sm font-medium text-slate-100">{label}</span>
     </div>
@@ -608,8 +608,8 @@ function BriefingPoint({ label, tone }: { label: string; tone: "blue" | "green" 
 
 function MiniMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
-      <div className="text-lg font-black text-white">{value}</div>
+    <div className="rounded-2xl border border-border bg-card p-3">
+      <div className="text-lg font-black text-foreground">{value}</div>
       <div className="mt-1 text-[0.65rem] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
     </div>
   );
@@ -640,7 +640,7 @@ function RiskCard({ title, text, recommendation, tone }: { title: string; text: 
       </div>
       <p className="mt-2 text-sm leading-relaxed text-slate-200">{text}</p>
       <p className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] opacity-80">AI Recommendation</p>
-      <p className="mt-1 text-sm text-white">{recommendation}</p>
+      <p className="mt-1 text-sm text-foreground">{recommendation}</p>
     </div>
   );
 }
@@ -656,8 +656,8 @@ function StatusPill({ status }: { status: EmployeeSignal["status"] }) {
 
 function IntelScore({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-3 text-center">
-      <div className="text-2xl font-black text-white">{value}</div>
+    <div className="rounded-2xl border border-border bg-card p-3 text-center">
+      <div className="text-2xl font-black text-foreground">{value}</div>
       <div className="mt-1 text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
     </div>
   );
@@ -665,12 +665,12 @@ function IntelScore({ label, value }: { label: string; value: number }) {
 
 function CoachingLine({ icon: Icon, label, text }: { icon: typeof Target; label: string; text: string }) {
   return (
-    <div className="flex gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+    <div className="flex gap-3 rounded-2xl border border-border bg-card p-3">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-300/10 text-cyan-200">
         <Icon size={17} />
       </div>
       <div>
-        <p className="text-sm font-bold text-white">{label}</p>
+        <p className="text-sm font-bold text-foreground">{label}</p>
         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{text}</p>
       </div>
     </div>
@@ -692,7 +692,7 @@ function EmployeeAvatar({ profile, size = "md" }: { profile?: StandupRow["profil
   }
 
   return (
-    <div className={cn(dimension, "flex items-center justify-center rounded-full bg-gradient-to-br from-cyan-300 via-blue-500 to-fuchsia-500 text-sm font-black text-white shadow-[0_0_24px_rgba(34,211,238,0.22)]")}>
+    <div className={cn(dimension, "flex items-center justify-center rounded-full bg-gradient-to-br from-cyan-300 via-blue-500 to-fuchsia-500 text-sm font-black text-foreground shadow-[0_0_24px_rgba(34,211,238,0.22)]")}>
       {initials}
     </div>
   );
@@ -706,7 +706,7 @@ function ChartTooltip({ active, payload, label }: any) {
       {payload.map((item: any) => (
         <div key={item.dataKey} className="flex items-center justify-between gap-6 text-sm">
           <span className="capitalize text-muted-foreground">{item.dataKey}</span>
-          <span className="font-bold text-white">{item.value}</span>
+          <span className="font-bold text-foreground">{item.value}</span>
         </div>
       ))}
     </div>

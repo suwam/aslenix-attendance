@@ -130,7 +130,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
 
   return (
     <GlassCard
-      className="min-w-0 overflow-hidden border border-white/10 bg-card/65 p-3 shadow-[var(--shadow-glass),0_0_36px_-24px_var(--primary),0_0_42px_-28px_var(--accent)] backdrop-blur-xl sm:p-5"
+      className="min-w-0 overflow-hidden border border-border bg-card/65 p-3 shadow-sm backdrop-blur-xl sm:p-5"
       glow="blue"
     >
       <div className="relative z-10">
@@ -155,7 +155,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
               type="button"
               variant="outline"
               size="icon"
-              className="h-9 w-9 rounded-xl border-white/10 bg-card/50 shadow-[0_0_22px_-16px_var(--accent)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:border-accent/40 hover:shadow-[0_0_28px_-10px_var(--accent)]"
+              className="h-9 w-9 rounded-xl border-border bg-card/50 shadow-[0_0_22px_-16px_var(--accent)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:border-accent/40 hover:shadow-[0_0_28px_-10px_var(--accent)]"
               disabled={!canGoPrev}
               onClick={() => goMonth(-1)}
               aria-label="Previous Nepali month"
@@ -166,7 +166,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
               type="button"
               variant="outline"
               size="icon"
-              className="h-9 w-9 rounded-xl border-white/10 bg-card/50 shadow-[0_0_22px_-16px_var(--primary)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary/40 hover:shadow-[0_0_28px_-10px_var(--primary)]"
+              className="h-9 w-9 rounded-xl border-border bg-card/50 shadow-[0_0_22px_-16px_var(--primary)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:border-primary/40 hover:shadow-[0_0_28px_-10px_var(--primary)]"
               onClick={() => setVisible({ year: initialYear, month: initialMonth })}
               aria-label="Go to current Nepali month"
             >
@@ -176,7 +176,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
               type="button"
               variant="outline"
               size="icon"
-              className="h-9 w-9 rounded-xl border-white/10 bg-card/50 shadow-[0_0_22px_-16px_var(--accent)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:border-accent/40 hover:shadow-[0_0_28px_-10px_var(--accent)]"
+              className="h-9 w-9 rounded-xl border-border bg-card/50 shadow-[0_0_22px_-16px_var(--accent)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-[1.02] hover:border-accent/40 hover:shadow-[0_0_28px_-10px_var(--accent)]"
               disabled={!canGoNext}
               onClick={() => goMonth(1)}
               aria-label="Next Nepali month"
@@ -192,7 +192,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
           <CalendarStat label="Weekly Off" value={weeklyOffCount} tone="red" />
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-card/45 p-2 shadow-[0_0_30px_-22px_var(--primary),0_0_34px_-26px_var(--accent),inset_0_1px_0_oklch(1_0_0_/_0.08)] backdrop-blur-xl">
+        <div className="rounded-xl border border-border bg-card/45 p-2 shadow-[0_0_30px_-22px_var(--primary),0_0_34px_-26px_var(--accent),inset_0_1px_0_oklch(1_0_0_/_0.08)] backdrop-blur-xl">
           <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
             {WEEKDAYS.map((day, index) => (
               <div key={day} className={cn("py-2", index === 6 && "text-primary")}>
@@ -217,11 +217,11 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
                   title={holiday?.title}
                   className={cn(
                     "group relative flex aspect-square min-h-11 flex-col items-center justify-center rounded-lg border pb-2 text-xs backdrop-blur-xl transition-all duration-300 ease-out sm:min-h-14 sm:pb-2.5",
-                    "border-white/10 bg-card/45 shadow-[0_0_18px_-16px_var(--accent)] hover:-translate-y-1 hover:scale-[1.02] hover:border-primary/35 hover:bg-white/[0.075] hover:shadow-[0_0_30px_-10px_var(--primary),0_0_22px_-14px_var(--accent)]",
+                    "border-border bg-card/45 shadow-[0_0_18px_-16px_var(--accent)] hover:-translate-y-1 hover:scale-[1.02] hover:border-primary/35 hover:bg-card hover:shadow-[0_0_30px_-10px_var(--primary),0_0_22px_-14px_var(--accent)]",
                     !day && "invisible",
                     isAdmin && day && "cursor-pointer",
                     isToday &&
-                      "border-white/30 bg-gradient-to-br from-pink-500/35 via-blue-500/30 to-purple-500/35 text-white shadow-[0_0_36px_-8px_rgba(236,72,153,0.55),0_0_30px_-10px_rgba(59,130,246,0.5),0_0_28px_-12px_rgba(168,85,247,0.5)] ring-1 ring-pink-300/35 animate-pulse-glow",
+                      "border-border bg-gradient-to-br from-pink-500/35 via-blue-500/30 to-purple-500/35 text-foreground shadow-[0_0_36px_-8px_rgba(236,72,153,0.55),0_0_30px_-10px_rgba(59,130,246,0.5),0_0_28px_-12px_rgba(168,85,247,0.5)] ring-1 ring-pink-300/35 animate-pulse-glow",
                     holiday && "border-warning/35 bg-warning/10 text-warning shadow-[0_0_22px_-16px_var(--warning)]",
                     isWeeklyOff &&
                       "border-primary/45 bg-primary/10 text-primary shadow-[0_0_24px_-14px_var(--primary)]",
@@ -234,7 +234,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
                         className={cn(
                           "text-sm font-black leading-none tabular-nums sm:text-base",
                           isSaturday && "text-primary",
-                          isToday && "text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.45)]",
+                          isToday && "text-foreground drop-shadow-[0_0_8px_rgba(255,255,255,0.45)]",
                         )}
                       >
                         {day.date}
@@ -268,7 +268,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
           <LegendItem icon={Circle} label="Weekly off" className="text-primary" />
         </div>
 
-        <div className="mt-4 rounded-xl border border-white/10 bg-card/45 p-3 shadow-[0_0_26px_-18px_var(--accent)] backdrop-blur-xl transition-all duration-300 ease-out hover:border-accent/25 hover:shadow-[0_0_30px_-12px_var(--accent)]">
+        <div className="mt-4 rounded-xl border border-border bg-card/45 p-3 shadow-[0_0_26px_-18px_var(--accent)] backdrop-blur-xl transition-all duration-300 ease-out hover:border-accent/25 hover:shadow-[0_0_30px_-12px_var(--accent)]">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
@@ -292,7 +292,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
             monthHolidays.map((holiday) => (
               <div
                 key={holiday.id}
-                className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-card/45 px-3 py-2 text-xs shadow-[0_0_22px_-18px_var(--primary)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:border-warning/25 hover:bg-warning/10 hover:shadow-[0_0_28px_-14px_var(--primary)]"
+                className="flex items-center justify-between gap-2 rounded-xl border border-border bg-card/45 px-3 py-2 text-xs shadow-[0_0_22px_-18px_var(--primary)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:border-warning/25 hover:bg-warning/10 hover:shadow-[0_0_28px_-14px_var(--primary)]"
               >
                 <div className="min-w-0">
                   <div className="truncate font-medium">{holiday.title}</div>
@@ -325,7 +325,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
               </div>
             ))
           ) : (
-            <div className="rounded-xl border border-dashed border-white/10 bg-card/45 px-3 py-4 text-center text-xs text-muted-foreground shadow-[0_0_22px_-18px_var(--primary)] backdrop-blur-xl">
+            <div className="rounded-xl border border-dashed border-border bg-card/45 px-3 py-4 text-center text-xs text-muted-foreground shadow-[0_0_22px_-18px_var(--primary)] backdrop-blur-xl">
               No holidays marked this month.
             </div>
           )}
@@ -333,7 +333,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
 
         {isAdmin && (
           <div className="mt-4 space-y-4 rounded-xl border border-accent/20 bg-card/45 p-3 shadow-[0_0_30px_-20px_var(--accent)] backdrop-blur-xl">
-            <div className="flex items-center gap-2 text-xs font-semibold text-white">
+            <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
               <Plus size={13} className="text-accent" />
               Admin calendar controls
             </div>
@@ -393,7 +393,7 @@ function CalendarStat({ label, value, tone }) {
 
 function LegendItem({ icon: Icon, label, className }) {
   return (
-    <div className="flex min-h-9 items-center gap-2 rounded-lg border border-white/10 bg-card/45 px-3 py-2 text-xs text-muted-foreground shadow-[0_0_20px_-16px_var(--accent)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-white/15 hover:shadow-[0_0_26px_-14px_var(--primary)]">
+    <div className="flex min-h-9 items-center gap-2 rounded-lg border border-border bg-card/45 px-3 py-2 text-xs text-muted-foreground shadow-[0_0_20px_-16px_var(--accent)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-border hover:shadow-[0_0_26px_-14px_var(--primary)]">
       <Icon size={12} className={className} />
       <span className="truncate">{label}</span>
     </div>

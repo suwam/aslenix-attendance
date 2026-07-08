@@ -798,7 +798,7 @@ function TopContenders({ rows }: { rows: EmployeeRank[] }) {
             Top 5 Contenders
           </div>
           <h2 className="text-3xl font-bold md:text-4xl">Employee of the Month race</h2>
-          <p className="mt-1 text-sm text-white/65">
+          <p className="mt-1 text-sm text-foreground/65">
             Live ranking from effort-weighted task progress, attendance, standups, HR reviews, bonuses, and overdue penalties.
           </p>
         </div>
@@ -830,9 +830,9 @@ function TopContenders({ rows }: { rows: EmployeeRank[] }) {
         ))}
       </div>
 
-      <div className="relative z-10 mt-5 rounded-2xl border border-white/10 bg-black/20 p-4">
+      <div className="relative z-10 mt-5 rounded-2xl border border-border bg-card p-4">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <div className="text-sm font-semibold text-white">Score comparison</div>
+          <div className="text-sm font-semibold text-foreground">Score comparison</div>
           <div className="text-xs text-muted-foreground">Auto-sorted by final score</div>
         </div>
         <div className="space-y-3">
@@ -879,7 +879,7 @@ function ContenderCard({
             <h3 className={featured ? "text-2xl font-bold md:text-3xl" : "text-lg font-bold"}>
               {employee.name}
             </h3>
-            <p className="mt-1 text-sm text-white/65">{employee.department} · {employee.position}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{employee.department} · {employee.position}</p>
             <div className="mt-3">
               <EligibilityBadge eligible={employee.isEomEligible} />
             </div>
@@ -937,8 +937,8 @@ function ContenderMetric({
   return (
     <div className="eom-contender-metric">
       <Icon size={15} className="text-amber-200" />
-      <div className="mt-2 text-lg font-bold tabular-nums text-white">{value}</div>
-      <div className="text-[10px] uppercase tracking-wider text-white/55">{label}</div>
+      <div className="mt-2 text-lg font-bold tabular-nums text-foreground">{value}</div>
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
     </div>
   );
 }
@@ -998,8 +998,8 @@ function DepartmentFilterBar({
       </div>
       <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-4">
         {(Object.keys(TASK_COMPLEXITY_LABELS) as TaskComplexity[]).map((complexity) => (
-          <div key={complexity} className="rounded-2xl border border-white/10 bg-white/[0.035] p-3">
-            <div className="text-xs font-semibold text-white">
+          <div key={complexity} className="rounded-2xl border border-border bg-card p-3">
+            <div className="text-xs font-semibold text-foreground">
               {TASK_COMPLEXITY_LABELS[complexity]} · {TASK_COMPLEXITY_POINTS[complexity]} pts
             </div>
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
@@ -1036,7 +1036,7 @@ function Leaderboard({ rows, departmentFilter }: { rows: EmployeeRank[]; departm
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold">{row.name}</span>
-                <span className="rounded-full bg-white/6 px-2 py-0.5 text-[10px] text-white/70">
+                <span className="rounded-full bg-card px-2 py-0.5 text-[10px] text-muted-foreground">
                   {row.level}
                 </span>
                 <span className="rounded-full bg-cyan-400/10 px-2 py-0.5 text-[10px] text-cyan-100">
@@ -1301,7 +1301,7 @@ function AnalyticsPanel({ weekly, rows }: { weekly: any[]; rows: EmployeeRank[] 
           </ResponsiveContainer>
           <div className="grid gap-3 sm:grid-cols-3">
             {rows.slice(0, 3).map((row) => (
-              <div key={row.userId} className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+              <div key={row.userId} className="rounded-2xl border border-border bg-card p-4">
                 <div className="text-sm font-semibold">{row.name}</div>
                 <div className="mt-1 text-xs text-muted-foreground">{row.department}</div>
                 <AnalyticsBar label="Effort progress" value={row.effortProgress} />
@@ -1599,11 +1599,11 @@ function FeedbackPanel({
       <GlassCard className="eom-feedback eom-recognition-launcher">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-cyan-100">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-cyan-100">
               <Medal size={13} />
               Recognition console
             </div>
-            <h3 className="text-2xl font-bold text-white">Employee Recognition</h3>
+            <h3 className="text-2xl font-bold text-foreground">Employee Recognition</h3>
             <p className="mt-1 text-sm text-muted-foreground">
               Celebrate achievements and recognize outstanding talent.
             </p>
@@ -1645,7 +1645,7 @@ function FeedbackPanel({
       </GlassCard>
 
       <Dialog open={recognitionDialogOpen} onOpenChange={setRecognitionDialogOpen}>
-        <DialogContent className="recognition-modal max-h-[92vh] w-[calc(100vw-1.25rem)] max-w-6xl overflow-hidden border-white/10 p-0">
+        <DialogContent className="recognition-modal max-h-[92vh] w-[calc(100vw-1.25rem)] max-w-6xl overflow-hidden border-border p-0">
           <div className="recognition-particles" />
           <div className="recognition-modal-shell">
             <DialogHeader className="recognition-modal-header">
@@ -1694,8 +1694,8 @@ function FeedbackPanel({
                     <div className="recognition-selected-employee">
                       <Avatar employee={selectedEmployee} />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-semibold text-white">{selectedEmployee.name}</span>
-                        <span className="block truncate text-xs text-white/55">{selectedEmployee.department} Department</span>
+                        <span className="block truncate text-sm font-semibold text-foreground">{selectedEmployee.name}</span>
+                        <span className="block truncate text-xs text-muted-foreground">{selectedEmployee.department} Department</span>
                       </span>
                       <span className="recognition-score">
                         <b>{selectedEmployee.score}</b>
@@ -1726,8 +1726,8 @@ function FeedbackPanel({
                         >
                           <Avatar employee={row} />
                           <span className="min-w-0 flex-1 text-left">
-                            <span className="block truncate font-semibold text-white">{row.name}</span>
-                            <span className="block truncate text-xs text-white/55">{row.department} Department</span>
+                            <span className="block truncate font-semibold text-foreground">{row.name}</span>
+                            <span className="block truncate text-xs text-muted-foreground">{row.department} Department</span>
                           </span>
                           <span className="recognition-score">
                             <b>{row.score}</b>
@@ -1807,7 +1807,7 @@ function FeedbackPanel({
                   <div className="recognition-preview-icon">
                     <SelectedIcon size={34} />
                   </div>
-                  <div className="text-xs font-bold uppercase tracking-[0.24em] text-white/55">Award Certificate</div>
+                  <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Award Certificate</div>
                   <h3>{selectedEmployee?.name || "Select Employee"}</h3>
                   <p>{selectedConfig.title}</p>
                   <span>{monthLabel} BS</span>
@@ -1847,7 +1847,7 @@ function FeedbackPanel({
       </Dialog>
 
       <Dialog open={Boolean(successAward)} onOpenChange={(open) => !open && onClearSuccess()}>
-        <DialogContent className="recognition-success-modal border-white/10 p-0">
+        <DialogContent className="recognition-success-modal border-border p-0">
           {successAward && (
             <div className="recognition-success-shell">
               <div className="eom-confetti" />
@@ -1861,7 +1861,7 @@ function FeedbackPanel({
                 <span>{monthLabel} BS</span>
               </div>
               <div className="px-6 pb-6 text-center">
-                <h3 className="text-2xl font-bold text-white">Recognition Successfully Assigned</h3>
+                <h3 className="text-2xl font-bold text-foreground">Recognition Successfully Assigned</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
                   {successAward.employee} has been awarded {successAward.badge}.
                 </p>
@@ -1933,7 +1933,7 @@ function HrReviewsSection({
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-semibold">Week {selectedReviews.length - index}</span>
-                      <span className="text-sm text-white/75">{review.rating}</span>
+                      <span className="text-sm text-muted-foreground">{review.rating}</span>
                       <span className="text-xs text-muted-foreground">
                         {formatNepaliDate(review.week_start, "DD MMMM YYYY")} BS
                       </span>
@@ -1944,7 +1944,7 @@ function HrReviewsSection({
               );
             })
           ) : (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5 text-sm text-muted-foreground">
+            <div className="rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground">
               No HR weekly reviews have been submitted for this employee yet.
             </div>
           )}
@@ -1980,7 +1980,7 @@ function HrReviewsSection({
               </button>
             ))
           ) : (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5 text-sm text-muted-foreground">
+            <div className="rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground">
               HR weekly review history will appear here after submissions.
             </div>
           )}
@@ -1988,7 +1988,7 @@ function HrReviewsSection({
       </GlassCard>
     </section>
     <Dialog open={Boolean(dialogEmployee)} onOpenChange={(open) => !open && setReviewDialogEmployeeId(null)}>
-      <DialogContent className="eom-review-dialog max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-hidden border-white/10 bg-background/95 sm:max-w-4xl">
+      <DialogContent className="eom-review-dialog max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-hidden border-border bg-background/95 sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>{dialogEmployee?.name || "Employee"} review history</DialogTitle>
           <DialogDescription>
@@ -2027,7 +2027,7 @@ function HrReviewsSection({
               );
             })
           ) : (
-            <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-5 text-sm text-muted-foreground">
+            <div className="rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground">
               No HR weekly reviews have been submitted for this employee yet.
             </div>
           )}
@@ -2046,18 +2046,18 @@ function ReviewSummaryTile({
   value: string | number | ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+    <div className="rounded-2xl border border-border bg-card p-4">
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="mt-2 text-lg font-bold text-white">{value}</div>
+      <div className="mt-2 text-lg font-bold text-foreground">{value}</div>
     </div>
   );
 }
 
 function ReviewText({ label, value }: { label: string; value?: string | null }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+    <div className="rounded-2xl border border-border bg-card p-3">
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <p className="mt-2 text-sm text-white/75">{value || "No notes added."}</p>
+      <p className="mt-2 text-sm text-muted-foreground">{value || "No notes added."}</p>
     </div>
   );
 }
@@ -2114,7 +2114,7 @@ function PreviousWinners({ rows }: { rows: EmployeeRank[] }) {
       </h3>
       <div className="space-y-3">
         {months.map((item) => (
-          <div key={item.month} className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+          <div key={item.month} className="rounded-2xl border border-border bg-card p-4">
             <div className="flex items-center gap-3">
               <Avatar employee={item.employee} />
               <div className="min-w-0 flex-1">
@@ -2136,7 +2136,7 @@ function PreviousWinners({ rows }: { rows: EmployeeRank[] }) {
 function StatTile({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof Trophy }) {
   return (
     <GlassCard className="eom-stat-tile">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-cyan-400 via-violet-500 to-pink-500 text-white shadow-[0_0_24px_rgba(125,92,255,.35)]">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-cyan-400 via-violet-500 to-pink-500 text-foreground shadow-[0_0_24px_rgba(125,92,255,.35)]">
         <Icon size={18} />
       </div>
       <div>
@@ -2151,10 +2151,10 @@ function AnalyticsBar({ label, value }: { label: string; value: number }) {
   return (
     <div className="eom-analytics-bar mt-3">
       <div className="eom-analytics-bar-label mb-1 flex justify-between text-xs">
-        <span className="text-white/70">{label}</span>
-        <span className="font-semibold text-white">{Math.round(value)}%</span>
+        <span className="text-muted-foreground">{label}</span>
+        <span className="font-semibold text-foreground">{Math.round(value)}%</span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-white/10">
+      <div className="h-2 overflow-hidden rounded-full bg-card">
         <div className="eom-progress h-full rounded-full" style={{ width: `${Math.min(100, value)}%` }} />
       </div>
     </div>
@@ -2168,7 +2168,7 @@ function MiniBar({ label, value, detail }: { label: string; value: number; detai
         <span>{label}</span>
         <span>{detail ?? `${Math.round(value)}%`}</span>
       </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+      <div className="h-1.5 overflow-hidden rounded-full bg-card">
         <div className="eom-progress h-full rounded-full" style={{ width: `${Math.min(100, value)}%` }} />
       </div>
     </div>
@@ -2200,7 +2200,7 @@ function Avatar({ employee, size = "md" }: { employee: EmployeeRank; size?: "md"
       className={`${className} shrink-0 rounded-3xl object-cover ring-2 ring-amber-200/50`}
     />
   ) : (
-    <div className={`${className} flex shrink-0 items-center justify-center rounded-3xl bg-linear-to-br from-pink-500 via-violet-500 to-cyan-400 font-bold text-white shadow-[0_0_30px_rgba(125,92,255,.4)]`}>
+    <div className={`${className} flex shrink-0 items-center justify-center rounded-3xl bg-linear-to-br from-pink-500 via-violet-500 to-cyan-400 font-bold text-foreground shadow-[0_0_30px_rgba(125,92,255,.4)]`}>
       {initials}
     </div>
   );

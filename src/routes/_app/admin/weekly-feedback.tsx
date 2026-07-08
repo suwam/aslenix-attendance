@@ -715,7 +715,7 @@ function WeeklyFeedbackPage() {
                         />
                       )}
                       {selectedWeekLocked && (
-                        <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-sm text-muted-foreground">
+                        <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">
                           Week {selectedWeekNumber} is a future week and is locked for reviews.
                         </div>
                       )}
@@ -851,7 +851,7 @@ function EmployeeCard({
 function WeeklyStat({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof Award }) {
   return (
     <GlassCard className="weekly-stat">
-      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-white shadow-[0_0_24px_rgba(125,92,255,.35)]">
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-foreground shadow-[0_0_24px_rgba(125,92,255,.35)]">
         <Icon size={19} />
       </div>
       <div className="min-w-0">
@@ -864,7 +864,7 @@ function WeeklyStat({ label, value, icon: Icon }: { label: string; value: string
 
 function MiniMetric({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof Award }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+    <div className="rounded-2xl border border-border bg-card p-3">
       <Icon size={15} className="mb-2 text-primary" />
       <div className="text-lg font-bold tabular-nums">{value}</div>
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
@@ -921,9 +921,9 @@ function ReviewDetails({
 
 function ReviewDetail({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+    <div className="rounded-2xl border border-border bg-card p-3">
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="mt-1 text-sm font-semibold text-white/90">{value}</div>
+      <div className="mt-1 text-sm font-semibold text-muted-foreground">{value}</div>
     </div>
   );
 }
@@ -1000,7 +1000,7 @@ function Avatar({ employee, size = "md" }: { employee: EmployeeWeek; size?: "md"
   return employee.avatarUrl ? (
     <img src={employee.avatarUrl} alt="" className={`${className} shrink-0 rounded-2xl object-cover ring-2 ring-primary/40`} />
   ) : (
-    <div className={`${className} flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-violet-500 to-cyan-400 font-bold text-white shadow-[0_0_24px_rgba(125,92,255,.35)]`}>
+    <div className={`${className} flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-violet-500 to-cyan-400 font-bold text-foreground shadow-[0_0_24px_rgba(125,92,255,.35)]`}>
       {initials}
     </div>
   );

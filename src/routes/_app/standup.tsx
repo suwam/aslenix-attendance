@@ -157,7 +157,7 @@ function StandupPage() {
           <BSDateInput
             value={bsDate}
             onChange={setBsDate}
-            className="w-auto border-cyan-300/20 bg-white/5"
+            className="w-auto border-cyan-300/20 bg-card"
           />
         }
       />
@@ -173,7 +173,7 @@ function StandupPage() {
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200/80">AI Standup Assistant</p>
-                  <h2 className="text-2xl font-bold text-white">Make today's update crisp and useful</h2>
+                  <h2 className="text-2xl font-bold text-foreground">Make today's update crisp and useful</h2>
                 </div>
               </div>
               <p className="max-w-3xl text-sm leading-6 text-slate-300">
@@ -186,15 +186,15 @@ function StandupPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-black/20 p-4">
+            <div className="rounded-3xl border border-border bg-card p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-200/80">AI Quality Check</p>
-                  <h3 className="mt-1 text-lg font-bold text-white">{quality.label}</h3>
+                  <h3 className="mt-1 text-lg font-bold text-foreground">{quality.label}</h3>
                 </div>
                 <BrainCircuit className="text-fuchsia-200" />
               </div>
-              <div className="mt-4 h-2.5 rounded-full bg-white/10">
+              <div className="mt-4 h-2.5 rounded-full bg-card">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-blue-400 to-fuchsia-400 shadow-[0_0_18px_rgba(34,211,238,0.35)]"
                   style={{ width: `${quality.score}%` }}
@@ -237,21 +237,21 @@ function StandupPage() {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_520px] xl:items-stretch">
         <div className="space-y-6">
-          <GlassCard className="overflow-hidden border-white/10 bg-white/[0.025] p-0">
-            <div className="border-b border-white/10 bg-white/[0.025] px-6 py-5">
+          <GlassCard className="overflow-hidden border-border bg-card p-0">
+            <div className="border-b border-border bg-card px-6 py-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
                     <ClipboardList size={15} />
                     Daily execution update
                   </div>
-                  <h2 className="text-xl font-bold text-white">Today's standup report</h2>
+                  <h2 className="text-xl font-bold text-foreground">Today's standup report</h2>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <div className={`rounded-full border px-3 py-1.5 text-xs font-bold ${isSubmitted ? "border-success/25 bg-success/10 text-success" : "border-warning/25 bg-warning/10 text-warning"}`}>
                     {isSubmitted ? "Submitted" : "Pending"}
                   </div>
-                  <div className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                  <div className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground">
                     {formatNepaliDate(date, "ddd DD, MMMM YYYY")} BS
                   </div>
                 </div>
@@ -287,7 +287,7 @@ function StandupPage() {
                 hint="Leave blank if nothing is blocking you. If blocked, include what help is needed."
               />
 
-              <div className="grid grid-cols-1 gap-4 border-t border-white/10 pt-5 md:grid-cols-[minmax(0,1fr)_220px]">
+              <div className="grid grid-cols-1 gap-4 border-t border-border pt-5 md:grid-cols-[minmax(0,1fr)_220px]">
                 <div>
                   <Label className="text-xs uppercase tracking-wider text-muted-foreground">Work hours</Label>
                   <div className="mt-2 flex items-center gap-3 rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.055] p-3 shadow-[0_0_24px_rgba(34,211,238,0.08)]">
@@ -314,10 +314,10 @@ function StandupPage() {
             </div>
           </GlassCard>
 
-          <GlassCard className="border-cyan-300/15 bg-white/[0.025]">
+          <GlassCard className="border-cyan-300/15 bg-card">
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-lg font-semibold text-white">AI writing helper</h3>
+                <h3 className="text-lg font-semibold text-foreground">AI writing helper</h3>
                 <p className="text-xs text-muted-foreground">Limited guidance before you save</p>
               </div>
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-300/10 text-cyan-200">
@@ -328,13 +328,13 @@ function StandupPage() {
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <div className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100/75">Readiness</div>
-                  <div className="mt-1 text-2xl font-black text-white">{quality.score}%</div>
+                  <div className="mt-1 text-2xl font-black text-foreground">{quality.score}%</div>
                 </div>
                 <div className="text-right text-xs text-muted-foreground">
                   {quality.label}
                 </div>
               </div>
-              <div className="mt-3 h-2 rounded-full bg-white/10">
+              <div className="mt-3 h-2 rounded-full bg-card">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-blue-400 to-fuchsia-400"
                   style={{ width: `${quality.score}%` }}
@@ -348,14 +348,14 @@ function StandupPage() {
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               {suggestions.map((suggestion) => (
-                <div key={suggestion.title} className={`flex items-start gap-3 rounded-2xl border p-3 text-sm ${suggestion.tone === "good" ? "border-success/20 bg-success/10 text-success" : suggestion.tone === "warn" ? "border-warning/20 bg-warning/10 text-warning" : "border-white/10 bg-black/20 text-slate-300"}`}>
+                <div key={suggestion.title} className={`flex items-start gap-3 rounded-2xl border p-3 text-sm ${suggestion.tone === "good" ? "border-success/20 bg-success/10 text-success" : suggestion.tone === "warn" ? "border-warning/20 bg-warning/10 text-warning" : "border-border bg-card text-slate-300"}`}>
                   {suggestion.tone === "good" ? (
                     <CheckCircle2 size={15} className="mt-0.5 shrink-0" />
                   ) : (
                     <Lightbulb size={15} className="mt-0.5 shrink-0" />
                   )}
                   <span>
-                    <span className="block font-semibold text-white">{suggestion.title}</span>
+                    <span className="block font-semibold text-foreground">{suggestion.title}</span>
                     <span className="mt-0.5 block leading-relaxed">{suggestion.text}</span>
                   </span>
                 </div>
@@ -364,13 +364,13 @@ function StandupPage() {
           </GlassCard>
         </div>
 
-        <GlassCard className="flex min-h-[680px] flex-col border-white/10 bg-white/[0.025] xl:h-full">
+        <GlassCard className="flex min-h-[680px] flex-col border-border bg-card xl:h-full">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <h3 className="text-lg font-semibold text-white">Recent standups</h3>
+              <h3 className="text-lg font-semibold text-foreground">Recent standups</h3>
               <p className="text-xs text-muted-foreground">Last 7 submitted updates</p>
             </div>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.04] text-primary">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-card text-primary">
               <History size={18} />
             </div>
           </div>
@@ -378,11 +378,11 @@ function StandupPage() {
             {recentStandups.map((h, index) => (
               <li
                 key={h.id}
-                className="group relative -mt-2 first:mt-0 rounded-[1.35rem] border border-white/10 bg-[#07111f]/90 p-4 text-sm shadow-[0_14px_34px_rgba(0,0,0,0.22)] transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/25 hover:bg-cyan-300/[0.055]"
+                className="group relative -mt-2 first:mt-0 rounded-[1.35rem] border border-border bg-[#07111f]/90 p-4 text-sm shadow-[0_14px_34px_rgba(0,0,0,0.22)] transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/25 hover:bg-cyan-300/[0.055]"
                 style={{ zIndex: recentStandups.length - index }}
               >
                 <div className="mb-2 flex items-center justify-between gap-3">
-                  <div className="font-semibold text-white">
+                  <div className="font-semibold text-foreground">
                     {formatNepaliDate(h.date, "ddd DD, MMMM YYYY")} BS
                   </div>
                   <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-semibold text-primary">
@@ -400,7 +400,7 @@ function StandupPage() {
               </li>
             ))}
             {recentStandups.length === 0 && (
-              <li className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-muted-foreground">
+              <li className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
                 <Sparkles size={20} className="mx-auto mb-2 text-primary" />
                 No standups yet
               </li>
@@ -431,11 +431,11 @@ function StandupMetric({
   };
 
   return (
-    <GlassCard className="border-white/10 bg-white/[0.025]">
+    <GlassCard className="border-border bg-card">
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
-          <div className="mt-3 text-3xl font-bold tabular-nums text-white">{value}</div>
+          <div className="mt-3 text-3xl font-bold tabular-nums text-foreground">{value}</div>
         </div>
         <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${colors[tone]}`}>
           <Icon size={19} />
@@ -463,7 +463,7 @@ function SummaryBadge({
   return (
     <div className={`rounded-2xl border p-3 ${colors[tone]}`}>
       <div className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-75">{label}</div>
-      <div className="mt-1 text-lg font-black text-white">{value}</div>
+      <div className="mt-1 text-lg font-black text-foreground">{value}</div>
     </div>
   );
 }
@@ -476,7 +476,7 @@ function HistorySignal({ label, active, warning = false }: { label: string; acti
           ? warning
             ? "border-warning/25 bg-warning/10 text-warning"
             : "border-cyan-300/20 bg-cyan-300/10 text-cyan-100"
-          : "border-white/10 bg-white/[0.035] text-muted-foreground"
+          : "border-border bg-card text-muted-foreground"
       }`}
     >
       {label}
@@ -498,12 +498,12 @@ function WritingSignal({
   active: boolean;
 }) {
   return (
-    <div className={`rounded-2xl border p-3 ${active ? "border-cyan-300/20 bg-cyan-300/10" : "border-white/10 bg-black/20"}`}>
+    <div className={`rounded-2xl border p-3 ${active ? "border-cyan-300/20 bg-cyan-300/10" : "border-border bg-card"}`}>
       <div className="flex items-center gap-2">
         <span className={`h-2 w-2 rounded-full ${active ? "bg-success" : "bg-warning"}`} />
         <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</span>
       </div>
-      <div className="mt-1 text-sm font-bold text-white">{value}</div>
+      <div className="mt-1 text-sm font-bold text-foreground">{value}</div>
     </div>
   );
 }
@@ -527,8 +527,8 @@ function StandupField({
 }) {
   return (
     <div>
-      <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.04] text-primary">
+      <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-card text-primary">
           <Icon size={14} />
         </span>
         {label}
@@ -538,7 +538,7 @@ function StandupField({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="rounded-2xl border-white/10 bg-black/20 text-base leading-6"
+        className="rounded-2xl border-border bg-card text-base leading-6"
       />
       <div className="mt-2 flex items-start gap-2 text-xs text-muted-foreground">
         <Sparkles size={13} className="mt-0.5 shrink-0 text-cyan-200" />

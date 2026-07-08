@@ -106,7 +106,7 @@ function EmployeesPage() {
                   />
                 ) : (
                   <div
-                    className="h-20 w-20 rounded-full flex items-center justify-center text-white text-xl font-bold"
+                    className="h-20 w-20 rounded-full flex items-center justify-center text-foreground text-xl font-bold"
                     style={{
                       background: "var(--gradient-brand)",
                       boxShadow: "var(--shadow-neon-red)",

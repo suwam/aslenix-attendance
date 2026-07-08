@@ -170,11 +170,11 @@ function LeavesPage() {
           <button
             key={t.k}
             onClick={() => setTab(t.k)}
-            className={`group rounded-3xl border border-white/10 p-4 text-left transition-all ${
-              tab === t.k ? "bg-white/5 shadow-[0_16px_40px_-24px_rgba(255,255,255,0.6)]" : "bg-transparent hover:border-white/20"
+            className={`group rounded-3xl border border-border p-4 text-left transition-all ${
+              tab === t.k ? "bg-card shadow-[0_16px_40px_-24px_rgba(255,255,255,0.6)]" : "bg-transparent hover:border-border"
             }`}
           >
-            <div className="text-sm font-semibold text-white">{t.label}</div>
+            <div className="text-sm font-semibold text-foreground">{t.label}</div>
             <div className="mt-1 text-xs text-muted-foreground">{summary[t.k]} requests</div>
           </button>
         ))}
@@ -204,7 +204,7 @@ function LeavesPage() {
                         />
                       ) : (
                         <div
-                          className="h-14 w-14 rounded-2xl flex items-center justify-center text-lg font-semibold text-white"
+                          className="h-14 w-14 rounded-2xl flex items-center justify-center text-lg font-semibold text-foreground"
                           style={{ background: "var(--gradient-brand)" }}
                         >
                           {r.profile?.full_name
@@ -227,24 +227,24 @@ function LeavesPage() {
                       <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase ${statusPill(r.status)}`}>
                         {r.status}
                       </span>
-                      <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase text-muted-foreground">
+                      <span className="rounded-full border border-border bg-card px-3 py-1 text-[11px] uppercase text-muted-foreground">
                         {formatBsDate(r.created_at)}
                       </span>
                     </div>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-3xl bg-white/5 p-4">
+                    <div className="rounded-3xl bg-card p-4">
                       <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Leave type</div>
                       <div className="mt-2 text-sm font-semibold">{formatLeaveType(r.leave_type)}</div>
                     </div>
-                    <div className="rounded-3xl bg-white/5 p-4">
+                    <div className="rounded-3xl bg-card p-4">
                       <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Dates</div>
                       <div className="mt-2 text-sm font-semibold">
                         {formatNepaliDate(r.start_date, "DD MMM")} → {formatBsDate(r.end_date)}
                       </div>
                     </div>
-                    <div className="rounded-3xl bg-white/5 p-4">
+                    <div className="rounded-3xl bg-card p-4">
                       <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Duration</div>
                       <div className="mt-2 text-sm font-semibold">
                         {r.is_half_day
@@ -255,35 +255,35 @@ function LeavesPage() {
                   </div>
 
                   {r.reason && (
-                    <div className="rounded-3xl bg-white/5 p-4 text-sm leading-6 text-muted-foreground">
+                    <div className="rounded-3xl bg-card p-4 text-sm leading-6 text-muted-foreground">
                       <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Reason</div>
-                      <p className="mt-2 text-base text-white">{r.reason}</p>
+                      <p className="mt-2 text-base text-foreground">{r.reason}</p>
                     </div>
                   )}
                 </div>
 
                 <div className="space-y-4">
-                  <div className="rounded-3xl bg-white/5 p-5">
-                    <div className="text-sm font-semibold text-white">Request details</div>
+                  <div className="rounded-3xl bg-card p-5">
+                    <div className="text-sm font-semibold text-foreground">Request details</div>
                     <div className="mt-4 space-y-3 text-sm text-muted-foreground">
                       <div className="flex items-center justify-between gap-3">
                         <span>Submitted</span>
-                        <span className="font-semibold text-white">{requestedAgo(r.created_at)}</span>
+                        <span className="font-semibold text-foreground">{requestedAgo(r.created_at)}</span>
                       </div>
                       <div className="flex items-center justify-between gap-3">
                         <span>Requested by</span>
-                        <span className="font-semibold text-white">{r.profile?.full_name || "Employee"}</span>
+                        <span className="font-semibold text-foreground">{r.profile?.full_name || "Employee"}</span>
                       </div>
                       <div className="flex items-center justify-between gap-3">
                         <span>Approval</span>
-                        <span className="font-semibold text-white">{r.status === "pending" ? "Waiting" : "Completed"}</span>
+                        <span className="font-semibold text-foreground">{r.status === "pending" ? "Waiting" : "Completed"}</span>
                       </div>
                     </div>
                   </div>
 
                   {r.status === "pending" ? (
-                    <div className="rounded-3xl bg-white/5 p-5">
-                      <div className="mb-3 text-sm font-semibold text-white">Review controls</div>
+                    <div className="rounded-3xl bg-card p-5">
+                      <div className="mb-3 text-sm font-semibold text-foreground">Review controls</div>
                       <Textarea
                         placeholder="Add a comment (optional)"
                         value={comments[r.id] || ""}
@@ -313,9 +313,9 @@ function LeavesPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="rounded-3xl bg-white/5 p-5">
+                    <div className="rounded-3xl bg-card p-5">
                       <div className="mb-3 flex items-center justify-between">
-                        <div className="text-sm font-semibold text-white">Review summary</div>
+                        <div className="text-sm font-semibold text-foreground">Review summary</div>
                         {r.status === "approved" && (
                           <Button 
                             variant="outline" 
@@ -334,11 +334,11 @@ function LeavesPage() {
                       <div className="space-y-3 text-sm text-muted-foreground">
                         <div>
                           <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Comment</div>
-                          <p className="mt-2 text-white">{r.admin_comment || "No admin note provided."}</p>
+                          <p className="mt-2 text-foreground">{r.admin_comment || "No admin note provided."}</p>
                         </div>
                         <div className="flex items-center justify-between gap-3">
                           <span>Date updated</span>
-                          <span className="font-semibold text-white">{formatBsDate(r.updated_at || r.created_at)}</span>
+                          <span className="font-semibold text-foreground">{formatBsDate(r.updated_at || r.created_at)}</span>
                         </div>
                       </div>
                     </div>
@@ -352,7 +352,7 @@ function LeavesPage() {
 
       {/* Edit Dates Dialog */}
       <Dialog open={!!editingLeave} onOpenChange={(open) => !open && setEditingLeave(null)}>
-        <DialogContent className="border-white/10 bg-background/95 sm:max-w-md">
+        <DialogContent className="border-border bg-background/95 sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Modify Leave Dates</DialogTitle>
             <div className="text-sm text-muted-foreground">
@@ -361,24 +361,24 @@ function LeavesPage() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div>
-              <Label className="mb-2 block text-sm font-semibold text-white">
+              <Label className="mb-2 block text-sm font-semibold text-foreground">
                 {editingLeave?.is_half_day ? "New leave date (BS)" : "New start date (BS)"}
               </Label>
               <BSDateInput
                 required
                 value={editForm.start_date}
                 onChange={(v) => setEditForm({ ...editForm, start_date: v })}
-                inputClassName="rounded-xl border-white/10 bg-black/20"
+                inputClassName="rounded-xl border-border bg-card"
               />
             </div>
             {!editingLeave?.is_half_day && (
               <div>
-                <Label className="mb-2 block text-sm font-semibold text-white">New end date (BS)</Label>
+                <Label className="mb-2 block text-sm font-semibold text-foreground">New end date (BS)</Label>
                 <BSDateInput
                   required
                   value={editForm.end_date}
                   onChange={(v) => setEditForm({ ...editForm, end_date: v })}
-                  inputClassName="rounded-xl border-white/10 bg-black/20"
+                  inputClassName="rounded-xl border-border bg-card"
                 />
               </div>
             )}

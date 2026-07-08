@@ -848,7 +848,7 @@ function AdminAchievementsPage() {
                   </SelectContent>
                 </Select>
                 {selected && (
-                  <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+                  <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3">
                     <Avatar row={selected} />
                     <div className="min-w-0">
                       <div className="truncate text-sm font-semibold">{selected.name}</div>
@@ -868,7 +868,7 @@ function AdminAchievementsPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3 text-sm text-muted-foreground">
+                <div className="rounded-2xl border border-border bg-card p-3 text-sm text-muted-foreground">
                   {selectedBadgeMeta?.description || "Select an achievement to preview the description."}
                 </div>
                 <Input type="date" value={assignDate} onChange={(event) => setAssignDate(event.target.value)} />
@@ -878,7 +878,7 @@ function AdminAchievementsPage() {
                   rows={4}
                   placeholder="Performance review notes or admin feedback..."
                 />
-                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+                <div className="rounded-2xl border border-border bg-card p-3">
                   <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Current achievements
                   </div>
@@ -924,9 +924,9 @@ function AdminAchievementsPage() {
 
 function AnalyticsSummaryItem({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+    <div className="rounded-2xl border border-border bg-card p-3">
       <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="mt-1 truncate text-sm font-bold text-white">{value}</div>
+      <div className="mt-1 truncate text-sm font-bold text-foreground">{value}</div>
     </div>
   );
 }
@@ -957,12 +957,12 @@ function PerformanceTooltip({ active, payload }: any) {
 
   return (
     <div style={tooltipStyle} className="min-w-56 p-3 shadow-2xl">
-      <div className="mb-2 font-semibold text-white">{row.fullName}</div>
+      <div className="mb-2 font-semibold text-foreground">{row.fullName}</div>
       <div className="space-y-1">
         {stats.map(([label, value]) => (
           <div key={label} className="flex items-center justify-between gap-6 text-xs">
             <span className="text-muted-foreground">{label}</span>
-            <span className="font-semibold tabular-nums text-white">{value}</span>
+            <span className="font-semibold tabular-nums text-foreground">{value}</span>
           </div>
         ))}
       </div>
@@ -977,7 +977,7 @@ function AchievementHistory({ rows }: { rows: EmployeeAchievement[] }) {
     .slice(0, 5);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+    <div className="rounded-2xl border border-border bg-card p-3">
       <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         Achievement history
       </div>
@@ -1174,8 +1174,8 @@ function ActivityFeed({ rows }: { rows: EmployeeAchievement[] }) {
       </h3>
       <div className="space-y-3">
         {rows.map((row, index) => (
-          <div key={`${row.userId}-${row.badge}-${index}`} className="flex gap-3 rounded-2xl bg-white/[0.035] p-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-white">
+          <div key={`${row.userId}-${row.badge}-${index}`} className="flex gap-3 rounded-2xl bg-card p-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-foreground">
               <Award size={15} />
             </div>
             <div className="min-w-0">
@@ -1234,7 +1234,7 @@ function EmployeeDetailModal({
                     ))}
                   </div>
                 </div>
-                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-center">
+                <div className="rounded-2xl border border-border bg-card p-4 text-center">
                   <div className="text-3xl font-bold gradient-text">{employee.score}</div>
                   <div className="text-xs uppercase tracking-wider text-muted-foreground">Score</div>
                 </div>
@@ -1269,8 +1269,8 @@ function EmployeeDetailModal({
 
               <GlassCard>
                 <h4 className="mb-3 font-semibold">Achievement details</h4>
-                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-sm text-muted-foreground">
-                  <div className="font-semibold text-white">{employee.badge}</div>
+                <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">
+                  <div className="font-semibold text-foreground">{employee.badge}</div>
                   <div className="mt-1">{achievementDescription(employee.badge)}</div>
                   <div className="mt-3 text-xs">Assigned by Admin - {format(new Date(employee.date), "dd MMM yyyy, HH:mm")}</div>
                 </div>
@@ -1294,7 +1294,7 @@ function AdminAchievementStat({
 }) {
   return (
     <GlassCard className="admin-achievement-stat">
-      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-white shadow-[0_0_24px_rgba(125,92,255,.35)]">
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-foreground shadow-[0_0_24px_rgba(125,92,255,.35)]">
         <Icon size={19} />
       </div>
       <div className="min-w-0">
@@ -1307,7 +1307,7 @@ function AdminAchievementStat({
 
 function DetailStat({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof Trophy }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+    <div className="rounded-2xl border border-border bg-card p-4">
       <Icon size={16} className="mb-2 text-primary" />
       <div className="text-xl font-bold tabular-nums">{value}</div>
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
@@ -1352,7 +1352,7 @@ function Avatar({
   return row.avatarUrl ? (
     <img src={row.avatarUrl} alt="" className={`${className} shrink-0 rounded-2xl object-cover ring-2 ring-primary/40`} />
   ) : (
-    <div className={`${className} flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-violet-500 to-cyan-400 font-bold text-white shadow-[0_0_24px_rgba(125,92,255,.35)]`}>
+    <div className={`${className} flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-violet-500 to-cyan-400 font-bold text-foreground shadow-[0_0_24px_rgba(125,92,255,.35)]`}>
       {initials}
     </div>
   );

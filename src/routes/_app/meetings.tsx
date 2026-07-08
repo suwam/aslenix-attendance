@@ -79,14 +79,14 @@ function MeetingsPage() {
           {upcomingMeetings.length === 0 ? (
             <MeetingEmptyState />
           ) : nextMeeting && (
-            <GlassCard className="overflow-hidden border-primary/20 bg-white/[0.03]">
+            <GlassCard className="overflow-hidden border-primary/20 bg-card">
               <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">
                   <div className="mb-3 flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
                     <CalendarClock size={12} />
                     Next meeting
                   </div>
-                  <h2 className="text-2xl font-bold text-white">{nextMeeting.title}</h2>
+                  <h2 className="text-2xl font-bold text-foreground">{nextMeeting.title}</h2>
                   <MeetingMeta meeting={nextMeeting} />
                   {nextMeeting.agenda && (
                     <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground">
@@ -131,7 +131,7 @@ function MeetingSection({ title, children }: { title: string; children: ReactNod
   return (
     <section className="grid gap-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">{title}</h2>
+        <h2 className="text-lg font-semibold text-foreground">{title}</h2>
       </div>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">{children}</div>
     </section>
@@ -140,14 +140,14 @@ function MeetingSection({ title, children }: { title: string; children: ReactNod
 
 function MeetingEmptyState() {
   return (
-    <GlassCard className="overflow-hidden border-white/10 bg-white/[0.025]">
+    <GlassCard className="overflow-hidden border-border bg-card">
       <div className="relative grid min-h-[260px] gap-6 p-2 md:grid-cols-[1fr_320px] md:items-center">
         <div className="min-w-0">
           <div className="mb-4 flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
             <Sparkles size={12} />
             Schedule clear
           </div>
-          <h2 className="text-3xl font-bold text-white">No upcoming meetings right now</h2>
+          <h2 className="text-3xl font-bold text-foreground">No upcoming meetings right now</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
             When admin schedules or postpones a meeting, it will appear here with the updated date, link, location, and agenda.
           </p>
@@ -157,11 +157,11 @@ function MeetingEmptyState() {
             <EmptyHint icon={NotebookText} label="Agenda" value="Clear" />
           </div>
         </div>
-        <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
+        <div className="rounded-3xl border border-border bg-card p-5">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <div className="text-xs uppercase tracking-wider text-muted-foreground">Today</div>
-              <div className="mt-1 text-xl font-bold text-white">{formatNepaliDate(new Date(), "DD MMMM")} BS</div>
+              <div className="mt-1 text-xl font-bold text-foreground">{formatNepaliDate(new Date(), "DD MMMM")} BS</div>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
               <CalendarDays size={20} />
@@ -169,7 +169,7 @@ function MeetingEmptyState() {
           </div>
           <div className="space-y-3">
             {["Focus work", "Task updates", "Standup notes"].map((item) => (
-              <div key={item} className="rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-sm text-muted-foreground">
+              <div key={item} className="rounded-2xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
                 {item}
               </div>
             ))}
@@ -190,10 +190,10 @@ function EmptyHint({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+    <div className="rounded-2xl border border-border bg-card p-4">
       <Icon size={16} className="mb-3 text-primary" />
       <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="mt-1 font-semibold text-white">{value}</div>
+      <div className="mt-1 font-semibold text-foreground">{value}</div>
     </div>
   );
 }
@@ -202,20 +202,20 @@ function EmployeeMeetingCard({ meeting }: { meeting: any }) {
   const past = isPast(new Date(meeting.meeting_time));
 
   return (
-    <GlassCard className={`group flex flex-col gap-4 border-white/10 bg-white/[0.025] transition hover:border-primary/25 hover:bg-white/[0.04] sm:flex-row sm:items-start ${past ? "opacity-75" : ""}`}>
+    <GlassCard className={`group flex flex-col gap-4 border-border bg-card transition hover:border-primary/25 hover:bg-card sm:flex-row sm:items-start ${past ? "opacity-75" : ""}`}>
       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
         <CalendarClock size={19} />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <h2 className="truncate text-lg font-semibold text-white">{meeting.title}</h2>
+            <h2 className="truncate text-lg font-semibold text-foreground">{meeting.title}</h2>
             <MeetingMeta meeting={meeting} />
           </div>
           <MeetingCountdown time={meeting.meeting_time} />
         </div>
         {meeting.agenda && (
-          <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3 text-sm leading-6 text-muted-foreground">
+          <div className="mt-4 rounded-2xl border border-border bg-card p-3 text-sm leading-6 text-muted-foreground">
             <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               <NotebookText size={13} />
               Agenda
@@ -238,11 +238,11 @@ function EmployeeMeetingCard({ meeting }: { meeting: any }) {
 
 function MeetingMetric({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof CalendarClock }) {
   return (
-    <GlassCard className="border-white/10 bg-white/[0.025]">
+    <GlassCard className="border-border bg-card">
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
-          <div className="mt-3 text-3xl font-bold tabular-nums text-white">{value}</div>
+          <div className="mt-3 text-3xl font-bold tabular-nums text-foreground">{value}</div>
         </div>
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
           <Icon size={19} />

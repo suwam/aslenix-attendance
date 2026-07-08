@@ -155,7 +155,7 @@ function SettingsPage() {
                 />
               </Field>
             </div>
-            <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.025] p-3 text-xs leading-5 text-muted-foreground">
+            <div className="mt-4 rounded-xl border border-border bg-card p-3 text-xs leading-5 text-muted-foreground">
               {supportsAutoCheckout
                 ? "Employees who forget to check out can be automatically checked out at the configured time."
                 : "Auto checkout needs the pending database migration before it can be saved."}
@@ -208,13 +208,13 @@ function SettingsPage() {
         </div>
 
         <div className="grid content-start gap-5">
-          <GlassCard className="overflow-hidden border-white/10 bg-white/[0.025]">
+          <GlassCard className="overflow-hidden border-border bg-card">
             <div className="mb-4 flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10 text-cyan-100">
                 <ShieldCheck size={18} />
               </div>
               <div>
-                <h3 className="font-semibold text-white">Rule Summary</h3>
+                <h3 className="font-semibold text-foreground">Rule Summary</h3>
                 <p className="text-xs text-muted-foreground">Current attendance enforcement</p>
               </div>
             </div>
@@ -226,33 +226,33 @@ function SettingsPage() {
             </div>
           </GlassCard>
 
-          <GlassCard className="overflow-hidden border-white/10 bg-white/[0.025]">
+          <GlassCard className="overflow-hidden border-border bg-card">
             <div className="mb-4 flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-blue-400/20 bg-blue-500/10 text-blue-300">
                 <Navigation size={18} />
               </div>
               <div>
-                <h3 className="font-semibold text-white">Location Preview</h3>
+                <h3 className="font-semibold text-foreground">Location Preview</h3>
                 <p className="text-xs text-muted-foreground">Coordinates used by attendance checks</p>
               </div>
             </div>
             {hasLocation ? (
-              <div className="rounded-xl border border-white/10 bg-white/[0.035] p-4">
+              <div className="rounded-xl border border-border bg-card p-4">
                 <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pinned office</div>
-                <div className="mt-2 break-all text-sm font-semibold text-white">
+                <div className="mt-2 break-all text-sm font-semibold text-foreground">
                   {s.office_latitude}, {s.office_longitude}
                 </div>
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${s.office_latitude},${s.office_longitude}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-4 inline-flex rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5 text-xs font-semibold text-white/72 transition hover:border-white/20 hover:bg-white/[0.07] hover:text-white"
+                  className="mt-4 inline-flex rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:border-border hover:bg-card hover:text-foreground"
                 >
                   Open in Maps
                 </a>
               </div>
             ) : (
-              <div className="rounded-xl border border-dashed border-white/15 bg-white/[0.025] p-4 text-sm text-muted-foreground">
+              <div className="rounded-xl border border-dashed border-border bg-card p-4 text-sm text-muted-foreground">
                 Add office latitude and longitude to enable location-aware attendance.
               </div>
             )}
@@ -275,13 +275,13 @@ function SettingsSection({
   children: React.ReactNode;
 }) {
   return (
-    <GlassCard className="border-white/10 bg-white/[0.025]">
+    <GlassCard className="border-border bg-card">
       <div className="mb-5 flex items-start gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
           <Icon size={18} />
         </div>
         <div>
-          <h3 className="font-semibold text-white">{title}</h3>
+          <h3 className="font-semibold text-foreground">{title}</h3>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">{subtitle}</p>
         </div>
       </div>
@@ -318,11 +318,11 @@ function SettingMetric({
   };
 
   return (
-    <GlassCard className="border-white/10 bg-white/[0.025]">
+    <GlassCard className="border-border bg-card">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
-          <div className="mt-2 truncate text-lg font-bold text-white">{value}</div>
+          <div className="mt-2 truncate text-lg font-bold text-foreground">{value}</div>
         </div>
         <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${colors[tone]}`}>
           <Icon size={17} />
@@ -334,9 +334,9 @@ function SettingMetric({
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.025] px-3 py-2">
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card px-3 py-2">
       <span className="text-xs font-semibold text-muted-foreground">{label}</span>
-      <span className="text-right text-sm font-semibold text-white/82">{value}</span>
+      <span className="text-right text-sm font-semibold text-muted-foreground">{value}</span>
     </div>
   );
 }

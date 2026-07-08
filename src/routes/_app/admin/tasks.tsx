@@ -149,7 +149,7 @@ function AdminTasks() {
             {activity.map((a, i) => (
               <li key={i} className="py-3 flex items-start gap-3">
                 <div
-                  className="h-8 w-8 rounded-lg flex items-center justify-center text-white text-[10px] font-bold shrink-0"
+                  className="h-8 w-8 rounded-lg flex items-center justify-center text-foreground text-[10px] font-bold shrink-0"
                   style={{ background: "var(--gradient-brand)" }}
                 >
                   {a.who

@@ -334,7 +334,7 @@ function ProductivityCommandCenter() {
                     forecast,
                   })}
                 </p>
-                <div className="mt-5 grid gap-2 text-sm text-white/82">
+                <div className="mt-5 grid gap-2 text-sm text-foreground/82">
                   <AiBullet text={`${topEmployee?.name || "Top performer"} is leading execution with a ${topEmployee?.dailyScore || 0}/100 AI score.`} />
                   <AiBullet text={`${attentionEmployees.length || 0} employees need coaching signals reviewed today.`} />
                   <AiBullet text={`Forecast engine confidence is ${confidence}% based on attendance, task velocity, and workload risk.`} />
@@ -490,7 +490,7 @@ function ProductivityCommandCenter() {
                 <h3 className="truncate text-2xl font-bold">{selected?.name}</h3>
                 <p className="text-sm text-muted-foreground">{selected?.department}</p>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-right">
+              <div className="rounded-2xl border border-border bg-card px-4 py-3 text-right">
                 <div className="text-3xl font-bold gradient-text tabular-nums">{selected?.dailyScore || 0}</div>
                 <div className="text-[10px] uppercase text-muted-foreground">AI score</div>
               </div>
@@ -509,7 +509,7 @@ function ProductivityCommandCenter() {
               <InsightCard title="AI insight" text={selected?.insight || "No signal yet."} />
             </div>
 
-            <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+            <div className="mt-5 rounded-2xl border border-border bg-card p-4">
               <div className="mb-2 flex items-center justify-between">
                 <h4 className="flex items-center gap-2 text-sm font-semibold">
                   <MessageSquare size={15} className="text-primary" />
@@ -544,7 +544,7 @@ function ProductivityCommandCenter() {
                           {task.deadline ? ` · Due ${format(new Date(task.deadline), "MMM d")}` : ""}
                         </div>
                       </div>
-                      <div className="rounded-xl bg-white/[0.06] px-2.5 py-1 text-sm font-bold tabular-nums">
+                      <div className="rounded-xl bg-card px-2.5 py-1 text-sm font-bold tabular-nums">
                         {value}%
                       </div>
                     </div>
@@ -557,14 +557,14 @@ function ProductivityCommandCenter() {
                       }
                       onValueCommit={([next]) => saveTaskProgress(task.id, next ?? 0)}
                     />
-                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-card">
                       <div className="productivity-progress h-full rounded-full" style={{ width: `${value}%` }} />
                     </div>
                   </div>
                 );
               })}
               {(!selected || selected.tasks.length === 0) && (
-                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-8 text-center text-sm text-muted-foreground">
+                <div className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
                   No assigned tasks available for this employee yet.
                 </div>
               )}
@@ -660,7 +660,7 @@ function ProductivityCommandCenter() {
                       <span>Month</span>
                       <span>{employee.monthScore}</span>
                     </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-white/10">
+                    <div className="h-2 overflow-hidden rounded-full bg-card">
                       <div className="productivity-progress h-full rounded-full" style={{ width: `${employee.monthScore}%` }} />
                     </div>
                   </div>
@@ -693,7 +693,7 @@ function SignalCard({
 }) {
   return (
     <GlassCard className="productivity-signal">
-      <div className={`flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-[0_0_26px_rgba(33,212,253,.35)] ${
+      <div className={`flex h-11 w-11 items-center justify-center rounded-xl text-foreground shadow-[0_0_26px_rgba(33,212,253,.35)] ${
         tone === "risk"
           ? "bg-gradient-to-br from-rose-500 via-orange-400 to-amber-300"
           : "bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500"
@@ -741,7 +741,7 @@ function ScoreGauge({ value }: { value: number }) {
 
 function AiBullet({ text }: { text: string }) {
   return (
-    <div className="flex items-start gap-2 rounded-2xl border border-white/10 bg-white/[0.035] px-3 py-2">
+    <div className="flex items-start gap-2 rounded-2xl border border-border bg-card px-3 py-2">
       <Sparkles size={14} className="mt-0.5 shrink-0 text-cyan-200" />
       <span>{text}</span>
     </div>
@@ -750,8 +750,8 @@ function AiBullet({ text }: { text: string }) {
 
 function ForecastPill({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-center">
-      <div className="text-lg font-bold tabular-nums text-white">{value}</div>
+    <div className="rounded-2xl border border-border bg-card p-3 text-center">
+      <div className="text-lg font-bold tabular-nums text-foreground">{value}</div>
       <div className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
     </div>
   );
@@ -759,9 +759,9 @@ function ForecastPill({ label, value }: { label: string; value: string | number 
 
 function ForecastCard({ label, value, detail }: { label: string; value: string | number; detail: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan-300/25 hover:bg-white/[0.055]">
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan-300/25 hover:bg-card">
       <div className="text-2xl font-bold gradient-text tabular-nums">{value}</div>
-      <div className="mt-1 text-sm font-semibold text-white/90">{label}</div>
+      <div className="mt-1 text-sm font-semibold text-muted-foreground">{label}</div>
       <div className="mt-2 text-xs leading-5 text-muted-foreground">{detail}</div>
     </div>
   );
@@ -786,11 +786,11 @@ function CopilotMessage({ role, text, tone = "default" }: { role: string; text: 
 }
 
 function RecommendationCard({ priority, title, text }: { priority: "High" | "Medium" | "Low"; title: string; text: string }) {
-  const tone = priority === "High" ? "bg-destructive/15 text-destructive" : priority === "Medium" ? "bg-warning/15 text-warning" : "bg-white/[0.06] text-white/60";
+  const tone = priority === "High" ? "bg-destructive/15 text-destructive" : priority === "Medium" ? "bg-warning/15 text-warning" : "bg-card text-muted-foreground";
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan-300/25 hover:bg-white/[0.055]">
+    <div className="rounded-2xl border border-border bg-card p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan-300/25 hover:bg-card">
       <div className="mb-2 flex items-center justify-between gap-3">
-        <h4 className="font-semibold text-white/90">{title}</h4>
+        <h4 className="font-semibold text-muted-foreground">{title}</h4>
         <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${tone}`}>{priority}</span>
       </div>
       <p className="text-sm leading-6 text-muted-foreground">{text}</p>
@@ -812,7 +812,7 @@ function ProductivityHeatmap({ employees }: { employees: EmployeePulse[] }) {
         {cells.map((value, index) => (
           <span
             key={index}
-            className="aspect-square rounded-md border border-white/10 transition-transform duration-200 hover:scale-110"
+            className="aspect-square rounded-md border border-border transition-transform duration-200 hover:scale-110"
             style={{
               background: `linear-gradient(135deg, rgba(33,212,253,${0.12 + value / 150}), rgba(139,92,246,${0.08 + value / 180}))`,
               boxShadow: value > 80 ? "0 0 18px rgba(33,212,253,0.22)" : undefined,
@@ -827,12 +827,12 @@ function ProductivityHeatmap({ employees }: { employees: EmployeePulse[] }) {
 
 function IntelligenceMetric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+    <div className="rounded-2xl border border-border bg-card p-3">
       <div className="mb-2 flex items-center justify-between text-xs font-semibold text-muted-foreground">
         <span>{label}</span>
-        <span className="text-white tabular-nums">{value}%</span>
+        <span className="text-foreground tabular-nums">{value}%</span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-white/10">
+      <div className="h-2 overflow-hidden rounded-full bg-card">
         <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-violet-400 to-pink-400" style={{ width: `${value}%` }} />
       </div>
     </div>
@@ -860,9 +860,9 @@ function TaskIntelligenceMatrix({
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       {rows.map((row) => (
-        <div key={row.label} className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+        <div key={row.label} className="rounded-2xl border border-border bg-card p-4">
           <div className="text-2xl font-bold gradient-text tabular-nums">{row.value}</div>
-          <div className="mt-1 text-sm font-semibold text-white/90">{row.label}</div>
+          <div className="mt-1 text-sm font-semibold text-muted-foreground">{row.label}</div>
           <div className="mt-2 text-xs text-muted-foreground">{row.detail}</div>
         </div>
       ))}
@@ -874,7 +874,7 @@ function StatusBadge({ employee }: { employee: EmployeePulse }) {
   if (employee.dailyScore >= 88) return <span className="rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-bold uppercase text-success">Elite</span>;
   if (employee.overdueTasks > 0 || employee.attendanceScore < 80) return <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-bold uppercase text-destructive">Risk</span>;
   if (employee.trend > 8) return <span className="rounded-full bg-cyan-300/15 px-2 py-0.5 text-[10px] font-bold uppercase text-cyan-100">Rising</span>;
-  return <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-bold uppercase text-white/60">Stable</span>;
+  return <span className="rounded-full bg-card px-2 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">Stable</span>;
 }
 
 function AttentionRow({ employee }: { employee: EmployeePulse }) {
@@ -885,7 +885,7 @@ function AttentionRow({ employee }: { employee: EmployeePulse }) {
       : "Task progress below target";
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/30 hover:bg-white/[0.055]">
+    <div className="rounded-2xl border border-border bg-card p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/30 hover:bg-card">
       <div className="flex items-center gap-3">
         <Avatar employee={employee} />
         <div className="min-w-0 flex-1">
@@ -895,11 +895,11 @@ function AttentionRow({ employee }: { employee: EmployeePulse }) {
         <div className="rounded-full bg-warning/15 px-2.5 py-1 text-xs font-bold text-warning">Coach</div>
       </div>
       <div className="mt-3 grid gap-2 text-sm md:grid-cols-[.75fr_1.25fr]">
-        <div className="rounded-xl border border-white/10 bg-black/10 px-3 py-2">
+        <div className="rounded-xl border border-border bg-card px-3 py-2">
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Signal</div>
-          <div className="mt-1 font-semibold text-white/90">{reason}</div>
+          <div className="mt-1 font-semibold text-muted-foreground">{reason}</div>
         </div>
-        <div className="rounded-xl border border-white/10 bg-black/10 px-3 py-2">
+        <div className="rounded-xl border border-border bg-card px-3 py-2">
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">AI recommendation</div>
           <div className="mt-1 text-muted-foreground">{employee.improvement}</div>
         </div>
@@ -910,7 +910,7 @@ function AttentionRow({ employee }: { employee: EmployeePulse }) {
 
 function NeuralMetric({ label, value, icon: Icon }: { label: string; value: number; icon: typeof Target }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+    <div className="rounded-2xl border border-border bg-card p-3">
       <Icon size={15} className="mb-2 text-cyan-200" />
       <div className="text-xl font-bold tabular-nums">{value}%</div>
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
@@ -920,7 +920,7 @@ function NeuralMetric({ label, value, icon: Icon }: { label: string; value: numb
 
 function CompactMetric({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-3">
+    <div className="rounded-2xl border border-border bg-card p-3">
       <div className="text-xl font-bold tabular-nums">{value}</div>
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
     </div>
@@ -929,7 +929,7 @@ function CompactMetric({ label, value }: { label: string; value: string | number
 
 function InsightCard({ title, text }: { title: string; text: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+    <div className="rounded-2xl border border-border bg-card p-4">
       <div className="mb-2 text-xs font-bold uppercase tracking-wider text-cyan-100">{title}</div>
       <p className="text-sm text-muted-foreground">{text}</p>
     </div>
@@ -947,7 +947,7 @@ function Avatar({ employee, large = false }: { employee: EmployeePulse; large?: 
   return employee.avatarUrl ? (
     <img src={employee.avatarUrl} alt="" className={`${size} shrink-0 rounded-2xl object-cover ring-2 ring-cyan-300/40`} />
   ) : (
-    <div className={`${size} flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 font-bold text-white shadow-[0_0_24px_rgba(125,92,255,.35)]`}>
+    <div className={`${size} flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 font-bold text-foreground shadow-[0_0_24px_rgba(125,92,255,.35)]`}>
       {initials}
     </div>
   );

@@ -689,7 +689,7 @@ export function TaskDialog({
                   className={`rounded-xl border p-3 text-left transition-colors ${
                     taskComplexity === complexity
                       ? "border-primary/60 bg-primary/15"
-                      : "border-white/10 bg-background/40 hover:border-primary/35"
+                      : "border-border bg-background/40 hover:border-primary/35"
                   } ${!canEditTaskFields ? "cursor-default opacity-70" : ""}`}
                 >
                   <div className="flex items-center justify-between gap-2">

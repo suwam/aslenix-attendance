@@ -160,13 +160,13 @@ function EmployeeSettingsPage() {
         </div>
 
         <div className="grid content-start gap-5">
-          <GlassCard className="border-white/10 bg-white/[0.025]">
+          <GlassCard className="border-border bg-card">
             <div className="mb-4 flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
                 <Settings size={18} />
               </div>
               <div>
-                <h3 className="font-semibold text-white">Account</h3>
+                <h3 className="font-semibold text-foreground">Account</h3>
                 <p className="text-xs text-muted-foreground">Your signed-in employee identity</p>
               </div>
             </div>
@@ -178,8 +178,8 @@ function EmployeeSettingsPage() {
             </div>
           </GlassCard>
 
-          <GlassCard className="border-white/10 bg-white/[0.025]">
-            <h3 className="mb-4 font-semibold text-white">Quick Actions</h3>
+          <GlassCard className="border-border bg-card">
+            <h3 className="mb-4 font-semibold text-foreground">Quick Actions</h3>
             <div className="grid gap-2">
               <QuickLink to="/profile" icon={UserRound} label="Edit profile" />
               <QuickLink to="/notifications" icon={BellDot} label="Open notifications" />
@@ -205,13 +205,13 @@ function SettingsPanel({
   children: React.ReactNode;
 }) {
   return (
-    <GlassCard className="border-white/10 bg-white/[0.025]">
+    <GlassCard className="border-border bg-card">
       <div className="mb-5 flex items-start gap-3">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10 text-cyan-100">
           <Icon size={18} />
         </div>
         <div>
-          <h3 className="font-semibold text-white">{title}</h3>
+          <h3 className="font-semibold text-foreground">{title}</h3>
           <p className="mt-1 text-xs leading-5 text-muted-foreground">{subtitle}</p>
         </div>
       </div>
@@ -237,24 +237,24 @@ function PreferenceToggle({
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition hover:border-white/18 hover:bg-white/[0.055] ${
-        checked ? "border-white/14 bg-white/[0.045]" : "border-white/8 bg-white/[0.025]"
+      className={`flex w-full items-start gap-3 rounded-xl border p-4 text-left transition hover:border-border hover:bg-card ${
+        checked ? "border-border bg-card" : "border-border bg-card"
       }`}
     >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.035] text-white/72">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground">
         <Icon size={17} />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="font-semibold text-white/90">{label}</div>
+        <div className="font-semibold text-muted-foreground">{label}</div>
         <div className="mt-1 text-xs leading-5 text-muted-foreground">{description}</div>
       </div>
       <span
         className={`flex h-6 w-11 shrink-0 items-center rounded-full border p-0.5 transition ${
-          checked ? "justify-end border-cyan-300/30 bg-cyan-300/20" : "justify-start border-white/10 bg-white/[0.035]"
+          checked ? "justify-end border-cyan-300/30 bg-cyan-300/20" : "justify-start border-border bg-card"
         }`}
         aria-hidden="true"
       >
-        <span className={`flex h-4 w-4 items-center justify-center rounded-full ${checked ? "bg-cyan-200 text-background" : "bg-white/40"}`}>
+        <span className={`flex h-4 w-4 items-center justify-center rounded-full ${checked ? "bg-cyan-200 text-background" : "bg-card"}`}>
           {checked && <Check size={11} />}
         </span>
       </span>
@@ -281,11 +281,11 @@ function EmployeeMetric({
   };
 
   return (
-    <GlassCard className="border-white/10 bg-white/[0.025]">
+    <GlassCard className="border-border bg-card">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
-          <div className="mt-2 truncate text-lg font-bold capitalize text-white">{value}</div>
+          <div className="mt-2 truncate text-lg font-bold capitalize text-foreground">{value}</div>
         </div>
         <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${colors[tone]}`}>
           <Icon size={17} />
@@ -297,9 +297,9 @@ function EmployeeMetric({
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.025] px-3 py-2">
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card px-3 py-2">
       <span className="text-xs font-semibold text-muted-foreground">{label}</span>
-      <span className="truncate text-right text-sm font-semibold text-white/82">{value}</span>
+      <span className="truncate text-right text-sm font-semibold text-muted-foreground">{value}</span>
     </div>
   );
 }
@@ -316,7 +316,7 @@ function QuickLink({
   return (
     <Link
       to={to}
-      className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.025] px-3 py-2 text-sm font-semibold text-white/72 transition hover:border-white/18 hover:bg-white/[0.055] hover:text-white"
+      className="flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-muted-foreground transition hover:border-border hover:bg-card hover:text-foreground"
     >
       <Icon size={16} />
       {label}

@@ -143,7 +143,7 @@ function ValidCard({ data }: { data: VerifyData }) {
                   className="h-32 w-32 rounded-full object-cover sm:h-36 sm:w-36"
                 />
               ) : (
-                <div className="flex h-32 w-32 items-center justify-center rounded-full bg-[linear-gradient(135deg,#0b1024,#18213c)] text-4xl font-black text-white sm:h-36 sm:w-36">
+                <div className="flex h-32 w-32 items-center justify-center rounded-full bg-[linear-gradient(135deg,#0b1024,#18213c)] text-4xl font-black text-foreground sm:h-36 sm:w-36">
                   {initials}
                 </div>
               )}
@@ -153,7 +153,7 @@ function ValidCard({ data }: { data: VerifyData }) {
             </div>
           </div>
 
-          <h1 className="mt-5 flex max-w-full items-center justify-center gap-2 text-balance text-3xl font-black leading-tight text-white drop-shadow-[0_0_26px_rgba(34,211,238,.2)] sm:text-4xl">
+          <h1 className="mt-5 flex max-w-full items-center justify-center gap-2 text-balance text-3xl font-black leading-tight text-foreground drop-shadow-[0_0_26px_rgba(34,211,238,.2)] sm:text-4xl">
             {data.full_name}
             <BadgeCheck className="shrink-0 text-cyan-300 drop-shadow-[0_0_16px_rgba(34,211,238,.65)]" size={25} />
           </h1>
@@ -185,7 +185,7 @@ function ValidCard({ data }: { data: VerifyData }) {
               <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-cyan-100/45">
                 Verification Status
               </div>
-              <div className="mt-1 text-lg font-extrabold text-white">Verified</div>
+              <div className="mt-1 text-lg font-extrabold text-foreground">Verified</div>
             </div>
             <Radio className="text-emerald-300" size={19} />
           </div>
@@ -197,11 +197,11 @@ function ValidCard({ data }: { data: VerifyData }) {
 
         <div className="trust-banner mt-5">
           <div className="relative z-10 flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-emerald-300 shadow-[inset_0_0_20px_rgba(255,255,255,.08)]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-card text-emerald-300 shadow-[inset_0_0_20px_rgba(255,255,255,.08)]">
               <ShieldCheck size={21} />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-sm font-bold text-white">
+              <div className="text-sm font-bold text-foreground">
                 This employee is officially verified by ASLENIX
               </div>
               <div className="mt-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-100/55">
@@ -268,7 +268,7 @@ function Detail({
       </div>
       <div className="min-w-0 flex-1">
         <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-100/45">{label}</div>
-        <div className={`mt-1 truncate text-sm font-bold text-white ${mono ? "font-mono" : ""} ${className || ""}`}>
+        <div className={`mt-1 truncate text-sm font-bold text-foreground ${mono ? "font-mono" : ""} ${className || ""}`}>
           {value}
         </div>
       </div>
@@ -279,7 +279,7 @@ function Detail({
 
 function StatusMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,.06)]">
+    <div className="rounded-2xl border border-border bg-card p-3 shadow-[inset_0_1px_0_rgba(255,255,255,.06)]">
       <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-cyan-100/45">{label}</div>
       <div className="mt-1 truncate text-sm font-extrabold text-emerald-200">{value}</div>
     </div>

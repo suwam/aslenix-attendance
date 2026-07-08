@@ -115,7 +115,7 @@ function CalendarPage() {
                   Events only. These do not mark holidays on the calendar.
                 </p>
               </div>
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-white shadow-[0_0_28px_rgba(125,92,255,.35)]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-foreground shadow-[0_0_28px_rgba(125,92,255,.35)]">
                 <Sparkles size={14} />
               </div>
             </div>
@@ -125,7 +125,7 @@ function CalendarPage() {
                 {sortedEvents.map((event, index) => (
                   <div
                     key={event.id}
-                    className="group min-w-0 rounded-xl border border-white/10 bg-white/[0.035] p-3 transition hover:-translate-y-0.5 hover:border-primary/30 hover:bg-white/[0.055] hover:shadow-[0_18px_52px_-34px_var(--primary)] sm:p-4"
+                    className="group min-w-0 rounded-xl border border-border bg-card p-3 transition hover:-translate-y-0.5 hover:border-primary/30 hover:bg-card hover:shadow-[0_18px_52px_-34px_var(--primary)] sm:p-4"
                   >
                     <div className="flex items-start gap-3">
                       <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary shadow-[0_0_18px_-12px_var(--primary)]">
@@ -135,7 +135,7 @@ function CalendarPage() {
                         </span>
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-semibold text-white">{event.title}</div>
+                        <div className="truncate text-sm font-semibold text-foreground">{event.title}</div>
                         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                           <span>{event.bsDate} BS</span>
                           {index === 0 && (
@@ -174,14 +174,14 @@ function CalendarPage() {
                 ))}
               </div>
             ) : (
-              <div className="rounded-xl border border-dashed border-white/10 px-4 py-10 text-center text-sm text-muted-foreground">
+              <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
                 No events added yet.
               </div>
             )}
 
             {isAdmin && (
               <div className="mt-4 space-y-3 rounded-xl border border-accent/15 bg-accent/5 p-3">
-                <div className="flex items-center gap-2 text-xs font-semibold text-white">
+                <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
                   <Plus size={13} className="text-accent" />
                   Admin event controls
                 </div>

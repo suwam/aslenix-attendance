@@ -99,7 +99,7 @@ function ApprovalsPage() {
             <button
               key={f.k}
               onClick={() => setFilter(f.k)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${filter === f.k ? "text-white" : "glass text-muted-foreground hover:text-foreground"}`}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${filter === f.k ? "text-foreground" : "glass text-muted-foreground hover:text-foreground"}`}
               style={
                 filter === f.k
                   ? { background: "var(--gradient-brand)", boxShadow: "var(--shadow-neon-red)" }
@@ -149,7 +149,7 @@ function ApprovalsPage() {
                     />
                   ) : (
                     <div
-                      className="h-12 w-12 rounded-full flex items-center justify-center text-white font-semibold"
+                      className="h-12 w-12 rounded-full flex items-center justify-center text-foreground font-semibold"
                       style={{ background: "var(--gradient-brand)" }}
                     >
                       {u.full_name

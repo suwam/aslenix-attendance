@@ -160,7 +160,7 @@ function NotifPage() {
           <Loader2 className="animate-spin text-primary" />
         </div>
       ) : rows.length === 0 ? (
-        <GlassCard className="border-white/10 bg-white/[0.025] py-16 text-center text-muted-foreground">
+        <GlassCard className="border-border bg-card py-16 text-center text-muted-foreground">
           <Inbox size={28} className="mx-auto mb-3 text-primary" />
           You're all caught up.
         </GlassCard>
@@ -209,11 +209,11 @@ function NotificationMetric({
   };
 
   return (
-    <GlassCard className="border-white/10 bg-white/[0.025]">
+    <GlassCard className="border-border bg-card">
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
-          <div className="mt-3 text-3xl font-bold tabular-nums text-white">{value}</div>
+          <div className="mt-3 text-3xl font-bold tabular-nums text-foreground">{value}</div>
         </div>
         <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${colors[tone]}`}>
           <Icon size={19} />
@@ -296,10 +296,10 @@ function NotificationTimelineItem({
 
   return (
     <li
-      className={`group relative flex gap-4 rounded-xl border p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/18 hover:bg-white/[0.055] ${
+      className={`group relative flex gap-4 rounded-xl border p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:bg-card ${
         !notification.is_read
-          ? "border-white/14 bg-white/[0.045] shadow-[0_0_30px_rgba(103,232,249,0.08),inset_0_1px_0_rgba(255,255,255,0.08)]"
-          : "border-white/8 bg-white/[0.025] opacity-80"
+          ? "border-border bg-card shadow-[0_0_30px_rgba(103,232,249,0.08),inset_0_1px_0_rgba(255,255,255,0.08)]"
+          : "border-border bg-card opacity-80"
       }`}
     >
       <div className="relative z-10 flex shrink-0 flex-col items-center">
@@ -330,13 +330,13 @@ function NotificationTimelineItem({
                 </span>
               )}
             </div>
-            <h2 className="truncate text-sm font-bold text-white/92">{notification.title}</h2>
+            <h2 className="truncate text-sm font-bold text-muted-foreground">{notification.title}</h2>
             <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{notification.message}</p>
           </div>
           <time
             dateTime={notification.created_at}
             title={absoluteTime}
-            className="whitespace-nowrap text-xs font-semibold text-white/52"
+            className="whitespace-nowrap text-xs font-semibold text-muted-foreground"
           >
             {relativeTime}
           </time>
@@ -357,7 +357,7 @@ function NotificationAction({ label, onClick }: { label: string; onClick: () => 
     <button
       type="button"
       onClick={onClick}
-      className="rounded-full border border-white/10 bg-white/[0.035] px-2.5 py-1 text-[11px] font-semibold text-white/62 transition-colors hover:border-white/18 hover:bg-white/[0.07] hover:text-white"
+      className="rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-semibold text-muted-foreground transition-colors hover:border-border hover:bg-card hover:text-foreground"
     >
       {label}
     </button>
@@ -380,7 +380,7 @@ function NotificationDetailDialog({
 
   return (
     <Dialog open={Boolean(notification)} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-hidden border-white/10 bg-background/95 p-0 sm:max-w-xl">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-hidden border-border bg-background/95 p-0 sm:max-w-xl">
         {notification && (
           <div className="relative">
             <div
@@ -406,14 +406,14 @@ function NotificationDetailDialog({
                       </span>
                       <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] ${
                         notification.is_read
-                          ? "border-white/10 bg-white/[0.04] text-white/50"
+                          ? "border-border bg-card text-muted-foreground"
                           : "border-cyan-300/20 bg-cyan-300/10 text-cyan-100"
                       }`}
                       >
                         {notification.is_read ? "Read" : "New"}
                       </span>
                     </div>
-                    <DialogTitle className="mt-2 text-xl font-bold text-white">{notification.title}</DialogTitle>
+                    <DialogTitle className="mt-2 text-xl font-bold text-foreground">{notification.title}</DialogTitle>
                     <DialogDescription className="mt-1 text-sm text-muted-foreground">
                       {createdAt}
                     </DialogDescription>
@@ -421,9 +421,9 @@ function NotificationDetailDialog({
                 </div>
               </DialogHeader>
               <div className="space-y-4">
-                <div className="rounded-xl border border-white/10 bg-white/[0.035] p-4">
-                  <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/42">Details</div>
-                  <p className="mt-2 text-sm leading-6 text-white/78">
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Details</div>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
                     {notification.message || "No extra details were provided."}
                   </p>
                 </div>
@@ -442,9 +442,9 @@ function NotificationDetailDialog({
 
 function NotificationDetailField({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.025] p-3">
-      <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/38">{label}</div>
-      <div className="mt-1 text-sm font-semibold text-white/82">{value}</div>
+    <div className="rounded-xl border border-border bg-card p-3">
+      <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
+      <div className="mt-1 text-sm font-semibold text-muted-foreground">{value}</div>
     </div>
   );
 }

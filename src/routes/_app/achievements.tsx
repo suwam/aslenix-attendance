@@ -445,11 +445,11 @@ function AchievementsPage() {
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
             <div>
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-white shadow-[0_0_34px_rgba(125,92,255,.36)]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-foreground shadow-[0_0_34px_rgba(125,92,255,.36)]">
                   <Sparkles size={22} />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-white">Achievement Vault</h2>
+                  <h2 className="text-2xl font-bold text-foreground">Achievement Vault</h2>
                   <p className="text-sm text-muted-foreground">
                     Your approved badges, live progress, and current milestones.
                   </p>
@@ -463,13 +463,13 @@ function AchievementsPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <div className="rounded-2xl border border-border bg-card p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-sm font-semibold text-white">Recent rewards</div>
+                  <div className="text-sm font-semibold text-foreground">Recent rewards</div>
                   <div className="text-xs text-muted-foreground">Latest badges on your profile</div>
                 </div>
-                <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-muted-foreground">
+                <div className="rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground">
                   {featuredBadges.length}
                 </div>
               </div>
@@ -479,23 +479,23 @@ function AchievementsPage() {
                     const Icon = badge.icon;
                     const meta = badge.tier ? tierMeta[badge.tier] : null;
                     return (
-                      <div key={badge.key} className="flex items-center gap-3 rounded-xl bg-white/[0.035] p-3">
+                      <div key={badge.key} className="flex items-center gap-3 rounded-xl bg-card p-3">
                         <div
                           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${
                             meta?.gradient || "from-cyan-400 via-violet-500 to-pink-500"
-                          } text-white`}
+                          } text-foreground`}
                         >
                           <Icon size={17} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-semibold text-white">{badge.title}</div>
+                          <div className="truncate text-sm font-semibold text-foreground">{badge.title}</div>
                           <div className="truncate text-xs text-muted-foreground">{badge.subtitle}</div>
                         </div>
                       </div>
                     );
                   })
                 ) : (
-                  <div className="rounded-xl border border-dashed border-white/10 p-4 text-sm text-muted-foreground">
+                  <div className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
                     Approved rewards will appear here.
                   </div>
                 )}
@@ -516,14 +516,14 @@ function AchievementsPage() {
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 shadow-[0_0_34px_rgba(78,220,255,.3)]">
-                  <BadgeCheck size={21} className="text-white" />
+                  <BadgeCheck size={21} className="text-foreground" />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold">Official Badges</h2>
                   <p className="text-sm text-muted-foreground">Approved by admin</p>
                 </div>
               </div>
-              <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-muted-foreground">
+              <div className="rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground">
                 {approvedOfficialBadges.length} official
               </div>
             </div>
@@ -546,14 +546,14 @@ function AchievementsPage() {
                   <div
                     className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${meta.gradient} ${meta.glow}`}
                   >
-                    <TierIcon size={21} className="text-white drop-shadow-[0_0_10px_rgba(255,255,255,.7)]" />
+                    <TierIcon size={21} className="text-foreground drop-shadow-[0_0_10px_rgba(255,255,255,.7)]" />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold">{meta.title}</h2>
                     <p className="text-sm text-muted-foreground">{meta.label}</p>
                   </div>
                 </div>
-                <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-muted-foreground">
+                <div className="rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground">
                   {badges.filter((badge) => badge.tier === tier && badge.value >= badge.target).length}/3 unlocked
                 </div>
               </div>
@@ -575,8 +575,8 @@ function AchievementsPage() {
 
 function VaultStat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-      <div className="text-2xl font-bold text-white">{value}</div>
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="text-2xl font-bold text-foreground">{value}</div>
       <div className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
     </div>
   );
@@ -594,7 +594,7 @@ function AchievementCelebration({
 
   return (
     <Dialog open={Boolean(badge)} onOpenChange={onOpenChange}>
-      <DialogContent className="overflow-hidden border-white/10 bg-background/95 p-0 sm:max-w-md">
+      <DialogContent className="overflow-hidden border-border bg-background/95 p-0 sm:max-w-md">
         {badge && (
           <div className="relative">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(33,212,253,.24),transparent_34%),radial-gradient(circle_at_20%_35%,rgba(255,45,111,.2),transparent_26%),radial-gradient(circle_at_80%_45%,rgba(139,92,246,.22),transparent_30%)]" />
@@ -607,7 +607,7 @@ function AchievementCelebration({
               ))}
             </div>
             <div className="relative px-6 pb-6 pt-8 text-center">
-              <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-3xl border border-white/20 bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-white shadow-[0_0_55px_rgba(125,92,255,.45)]">
+              <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-3xl border border-border bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-foreground shadow-[0_0_55px_rgba(125,92,255,.45)]">
                 <div
                   className={`flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${
                     meta?.gradient || "from-cyan-400 via-violet-500 to-pink-500"
@@ -620,7 +620,7 @@ function AchievementCelebration({
                 <div className="mb-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
                   Badge unlocked
                 </div>
-                <DialogTitle className="text-2xl font-bold text-white">{badge.title}</DialogTitle>
+                <DialogTitle className="text-2xl font-bold text-foreground">{badge.title}</DialogTitle>
                 <DialogDescription className="max-w-xs text-muted-foreground">
                   {badge.subtitle}
                 </DialogDescription>
@@ -647,13 +647,13 @@ function OfficialBadgeCard({ badge }: { badge: string }) {
         <div className="achievement-icon bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 shadow-[0_0_34px_rgba(78,220,255,.3)]">
           <BadgeCheck size={24} />
         </div>
-        <div className="rounded-full border border-white/10 bg-black/25 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-white/70">
+        <div className="rounded-full border border-border bg-card px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Approved
         </div>
       </div>
 
       <div className="relative z-10 mt-5">
-        <h3 className="text-lg font-bold text-white">{badge}</h3>
+        <h3 className="text-lg font-bold text-foreground">{badge}</h3>
         <p className="mt-1 min-h-10 text-sm text-muted-foreground">
           Official achievement approved by admin
         </p>
@@ -662,9 +662,9 @@ function OfficialBadgeCard({ badge }: { badge: string }) {
       <div className="relative z-10 mt-5">
         <div className="mb-2 flex items-center justify-between text-xs">
           <span className="text-muted-foreground">Progress</span>
-          <span className="font-semibold text-white">1/1</span>
+          <span className="font-semibold text-foreground">1/1</span>
         </div>
-        <div className="h-2 overflow-hidden rounded-full bg-white/10">
+        <div className="h-2 overflow-hidden rounded-full bg-card">
           <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-500" />
         </div>
       </div>
@@ -690,24 +690,24 @@ function AchievementCard({ badge }: { badge: BadgeDefinition }) {
         >
           <Icon size={24} />
         </div>
-        <div className="rounded-full border border-white/10 bg-black/25 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-white/70">
+        <div className="rounded-full border border-border bg-card px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           {unlocked ? "Unlocked" : "Locked"}
         </div>
       </div>
 
       <div className="relative z-10 mt-5">
-        <h3 className="text-lg font-bold text-white">{badge.title}</h3>
+        <h3 className="text-lg font-bold text-foreground">{badge.title}</h3>
         <p className="mt-1 min-h-10 text-sm text-muted-foreground">{badge.subtitle}</p>
       </div>
 
       <div className="relative z-10 mt-5">
         <div className="mb-2 flex items-center justify-between text-xs">
           <span className="text-muted-foreground">Progress</span>
-          <span className="font-semibold text-white">
+          <span className="font-semibold text-foreground">
             {Math.min(badge.value, badge.target)}/{badge.target}
           </span>
         </div>
-        <div className="h-2 overflow-hidden rounded-full bg-white/10">
+        <div className="h-2 overflow-hidden rounded-full bg-card">
           <div
             className={`h-full rounded-full bg-gradient-to-r ${meta.gradient} transition-all duration-700`}
             style={{ width: `${progress}%` }}
@@ -716,8 +716,8 @@ function AchievementCard({ badge }: { badge: BadgeDefinition }) {
       </div>
 
       {!unlocked && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center rounded-[inherit] bg-black/18 opacity-0 backdrop-blur-[1px] transition-opacity group-hover:opacity-100">
-          <Lock className="text-white/80 drop-shadow-[0_0_12px_rgba(255,255,255,.65)]" size={26} />
+        <div className="absolute inset-0 z-20 flex items-center justify-center rounded-[inherit] bg-card opacity-0 backdrop-blur-[1px] transition-opacity group-hover:opacity-100">
+          <Lock className="text-muted-foreground drop-shadow-[0_0_12px_rgba(255,255,255,.65)]" size={26} />
         </div>
       )}
     </article>
@@ -735,12 +735,12 @@ function MetricCard({
 }) {
   return (
     <GlassCard className="achievement-metric">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-white shadow-[0_0_24px_rgba(125,92,255,.35)]">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-foreground shadow-[0_0_24px_rgba(125,92,255,.35)]">
         <Icon size={19} />
       </div>
       <div>
         <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-        <div className="mt-1 text-2xl font-bold tabular-nums text-white">{value}</div>
+        <div className="mt-1 text-2xl font-bold tabular-nums text-foreground">{value}</div>
       </div>
     </GlassCard>
   );

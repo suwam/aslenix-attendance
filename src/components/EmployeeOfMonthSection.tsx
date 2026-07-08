@@ -231,7 +231,7 @@ function WinnerCard({ winner }: { winner: EmployeeRank }) {
               Top employee
             </div>
             <h3 className="text-2xl font-bold">{winner.name}</h3>
-            <p className="text-sm text-white/65">{winner.department} · {winner.position}</p>
+            <p className="text-sm text-foreground/65">{winner.department} · {winner.position}</p>
             <div className="mt-2">
               <EligibilityBadge eligible={winner.isEomEligible} />
             </div>
@@ -287,7 +287,7 @@ function Leaderboard({ rows }: { rows: EmployeeRank[] }) {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold">{row.name}</span>
                 {row.badges.slice(0, 2).map((badge) => (
-                  <span key={badge} className="rounded-full bg-white/6 px-2 py-0.5 text-[10px] text-white/70">
+                  <span key={badge} className="rounded-full bg-card px-2 py-0.5 text-[10px] text-muted-foreground">
                     {badge}
                   </span>
                 ))}
@@ -322,10 +322,10 @@ function WinnerMetric({
   icon: typeof Trophy;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+    <div className="rounded-2xl border border-border bg-card p-3">
       <Icon size={16} className="mb-2 text-amber-200" />
       <div className="text-xl font-bold tabular-nums">{value}</div>
-      <div className="text-[10px] uppercase tracking-wider text-white/55">{label}</div>
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
     </div>
   );
 }
@@ -334,10 +334,10 @@ function AnalyticsBar({ label, value }: { label: string; value: number }) {
   return (
     <div className="eom-analytics-bar">
       <div className="eom-analytics-bar-label mb-1 flex justify-between text-xs">
-        <span className="text-white/70">{label}</span>
-        <span className="font-semibold text-white">{value}%</span>
+        <span className="text-muted-foreground">{label}</span>
+        <span className="font-semibold text-foreground">{value}%</span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-white/10">
+      <div className="h-2 overflow-hidden rounded-full bg-card">
         <div className="eom-progress h-full rounded-full" style={{ width: `${Math.min(100, value)}%` }} />
       </div>
     </div>
@@ -351,7 +351,7 @@ function MiniBar({ label, value, detail }: { label: string; value: number; detai
         <span>{label}</span>
         <span>{detail ?? `${value}%`}</span>
       </div>
-      <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+      <div className="h-1.5 overflow-hidden rounded-full bg-card">
         <div className="eom-progress h-full rounded-full" style={{ width: `${Math.min(100, value)}%` }} />
       </div>
     </div>
@@ -383,7 +383,7 @@ function Avatar({ employee, size = "md" }: { employee: EmployeeRank; size?: "md"
       className={`${className} rounded-2xl object-cover ring-2 ring-amber-200/50`}
     />
   ) : (
-    <div className={`${className} flex shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-pink-500 via-violet-500 to-cyan-400 font-bold text-white shadow-[0_0_26px_rgba(125,92,255,.35)]`}>
+    <div className={`${className} flex shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-pink-500 via-violet-500 to-cyan-400 font-bold text-foreground shadow-[0_0_26px_rgba(125,92,255,.35)]`}>
       {initials}
     </div>
   );

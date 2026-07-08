@@ -140,7 +140,7 @@ function MyLeaves() {
       />
 
       <div className="mb-6">
-        <h3 className="mb-3 text-sm font-semibold text-white">Leave Balances</h3>
+        <h3 className="mb-3 text-sm font-semibold text-foreground">Leave Balances</h3>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
           {TYPES.map((t) => {
             const bal = balances.find((b) => b.leave_type === t.v);
@@ -148,9 +148,9 @@ function MyLeaves() {
             const used = bal ? Number(bal.used) : 0;
             const remaining = total - used;
             return (
-              <GlassCard key={t.v} className="p-3 border-white/10 bg-white/[0.025]">
+              <GlassCard key={t.v} className="p-3 border-border bg-card">
                 <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{t.l}</div>
-                <div className="mt-1 flex items-baseline gap-1 text-2xl font-bold text-white">
+                <div className="mt-1 flex items-baseline gap-1 text-2xl font-bold text-foreground">
                   {remaining} <span className="text-xs font-normal text-muted-foreground">left</span>
                 </div>
                 <div className="mt-1.5 flex justify-between text-[10px] text-muted-foreground">
@@ -170,35 +170,35 @@ function MyLeaves() {
       </div>
 
       {open && (
-        <GlassCard className="mb-6 overflow-hidden border-white/10 bg-white/[0.025] p-0">
-          <div className="border-b border-white/10 bg-white/[0.025] px-6 py-5">
+        <GlassCard className="mb-6 overflow-hidden border-border bg-card p-0">
+          <div className="border-b border-border bg-card px-6 py-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
                   <FileText size={15} />
                   New leave request
                 </div>
-                <h2 className="text-xl font-bold text-white">Time-off request form</h2>
+                <h2 className="text-xl font-bold text-foreground">Time-off request form</h2>
               </div>
-              <div className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-xs text-muted-foreground">
+              <div className="rounded-full border border-border bg-card px-3 py-1.5 text-xs text-muted-foreground">
                 HR approval required
               </div>
             </div>
           </div>
 
           <form onSubmit={submit} className="grid grid-cols-1 gap-5 p-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <div className="rounded-2xl border border-border bg-card p-4">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <CalendarClock size={22} />
               </div>
-              <div className="text-lg font-semibold text-white">Request details</div>
+              <div className="text-lg font-semibold text-foreground">Request details</div>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 Select your leave type and dates. Add a concise reason so HR can review quickly.
               </p>
               {form.start_date && (form.is_half_day || form.end_date) && (
-                <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.035] p-3">
+                <div className="mt-4 rounded-xl border border-border bg-card p-3">
                   <div className="text-xs uppercase tracking-wider text-muted-foreground">Duration</div>
-                  <div className="mt-1 text-2xl font-bold text-white">
+                  <div className="mt-1 text-2xl font-bold text-foreground">
                     {getLeaveDays(form.start_date, form.is_half_day ? form.start_date : form.end_date, form.is_half_day)} {form.is_half_day ? "day" : "days"}
                   </div>
                 </div>
@@ -207,12 +207,12 @@ function MyLeaves() {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <Label className="mb-2 block text-sm font-semibold text-white">Type</Label>
+                <Label className="mb-2 block text-sm font-semibold text-foreground">Type</Label>
                 <Select
                   value={form.leave_type}
                   onValueChange={(v) => setForm({ ...form, leave_type: v })}
                 >
-                  <SelectTrigger className="rounded-xl border-white/10 bg-black/20">
+                  <SelectTrigger className="rounded-xl border-border bg-card">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -225,12 +225,12 @@ function MyLeaves() {
                 </Select>
               </div>
               <div className="sm:col-span-2">
-                <Label className="mb-2 block text-sm font-semibold text-white">Leave Duration</Label>
+                <Label className="mb-2 block text-sm font-semibold text-foreground">Leave Duration</Label>
                 <Select
                   value={form.is_half_day ? "half" : "full"}
                   onValueChange={(v) => setForm({ ...form, is_half_day: v === "half" })}
                 >
-                  <SelectTrigger className="rounded-xl border-white/10 bg-black/20">
+                  <SelectTrigger className="rounded-xl border-border bg-card">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -240,32 +240,32 @@ function MyLeaves() {
                 </Select>
               </div>
               <div>
-                <Label className="mb-2 block text-sm font-semibold text-white">{form.is_half_day ? "Leave date (BS)" : "Start date (BS)"}</Label>
+                <Label className="mb-2 block text-sm font-semibold text-foreground">{form.is_half_day ? "Leave date (BS)" : "Start date (BS)"}</Label>
                 <BSDateInput
                   required
                   value={form.start_date}
                   onChange={(value) => setForm({ ...form, start_date: value })}
-                  inputClassName="rounded-xl border-white/10 bg-black/20"
+                  inputClassName="rounded-xl border-border bg-card"
                 />
               </div>
               {!form.is_half_day ? (
                 <div>
-                  <Label className="mb-2 block text-sm font-semibold text-white">End date (BS)</Label>
+                  <Label className="mb-2 block text-sm font-semibold text-foreground">End date (BS)</Label>
                   <BSDateInput
                     required
                     value={form.end_date}
                     onChange={(value) => setForm({ ...form, end_date: value })}
-                    inputClassName="rounded-xl border-white/10 bg-black/20"
+                    inputClassName="rounded-xl border-border bg-card"
                   />
                 </div>
               ) : (
                 <div>
-                  <Label className="mb-2 block text-sm font-semibold text-white">Half-Day Session</Label>
+                  <Label className="mb-2 block text-sm font-semibold text-foreground">Half-Day Session</Label>
                   <Select
                     value={form.half_day_session}
                     onValueChange={(v) => setForm({ ...form, half_day_session: v })}
                   >
-                    <SelectTrigger className="rounded-xl border-white/10 bg-black/20">
+                    <SelectTrigger className="rounded-xl border-border bg-card">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -276,13 +276,13 @@ function MyLeaves() {
                 </div>
               )}
               <div className="sm:col-span-2">
-                <Label className="mb-2 block text-sm font-semibold text-white">Reason</Label>
+                <Label className="mb-2 block text-sm font-semibold text-foreground">Reason</Label>
                 <Textarea
                   rows={4}
                   value={form.reason}
                   onChange={(e) => setForm({ ...form, reason: e.target.value })}
                   placeholder="Add context for this request..."
-                  className="rounded-2xl border-white/10 bg-black/20"
+                  className="rounded-2xl border-border bg-card"
                 />
               </div>
               <div className="sm:col-span-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -304,14 +304,14 @@ function MyLeaves() {
           <Loader2 className="animate-spin text-primary" />
         </div>
       ) : rows.length === 0 ? (
-        <GlassCard className="border-white/10 bg-white/[0.025] py-16 text-center text-muted-foreground">
+        <GlassCard className="border-border bg-card py-16 text-center text-muted-foreground">
           <Sparkles size={24} className="mx-auto mb-3 text-primary" />
           No leave requests yet.
         </GlassCard>
       ) : (
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           {rows.map((r) => (
-            <GlassCard key={r.id} className="border-white/10 bg-white/[0.025]">
+            <GlassCard key={r.id} className="border-border bg-card">
               <div className="flex flex-col gap-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
@@ -321,7 +321,7 @@ function MyLeaves() {
                       </span>
                       <LeaveStatusPill status={r.status} />
                     </div>
-                    <div className="mt-3 text-lg font-semibold text-white">
+                    <div className="mt-3 text-lg font-semibold text-foreground">
                       {formatNepaliDate(r.start_date, "DD MMMM YYYY")} BS to{" "}
                       {formatNepaliDate(r.end_date, "DD MMMM YYYY")} BS
                     </div>
@@ -330,13 +330,13 @@ function MyLeaves() {
                       {r.is_half_day && r.half_day_session && ` (${r.half_day_session === 'morning' ? 'Morning' : 'Afternoon'})`}
                     </div>
                   </div>
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/[0.04] text-primary">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-card text-primary">
                     <CalendarDays size={19} />
                   </div>
                 </div>
 
                 {r.reason && (
-                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm leading-6 text-muted-foreground">
+                  <div className="rounded-2xl border border-border bg-card p-4 text-sm leading-6 text-muted-foreground">
                     {r.reason}
                   </div>
                 )}
@@ -378,11 +378,11 @@ function LeaveMetric({
   };
 
   return (
-    <GlassCard className="border-white/10 bg-white/[0.025]">
+    <GlassCard className="border-border bg-card">
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
-          <div className="mt-3 text-3xl font-bold tabular-nums text-white">{value}</div>
+          <div className="mt-3 text-3xl font-bold tabular-nums text-foreground">{value}</div>
         </div>
         <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${colors[tone]}`}>
           <Icon size={19} />
@@ -399,7 +399,7 @@ function LeaveStatusPill({ status }: { status: string }) {
       : status === "rejected"
         ? "border-destructive/20 bg-destructive/10 text-destructive"
         : status === "cancelled"
-          ? "border-white/10 bg-white/[0.04] text-muted-foreground"
+          ? "border-border bg-card text-muted-foreground"
           : "border-warning/20 bg-warning/10 text-warning";
 
   const Icon =

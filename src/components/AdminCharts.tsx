@@ -258,7 +258,7 @@ export default function AdminCharts({
             <h3 className="text-lg font-bold tracking-tight">Departments</h3>
             <p className="mt-1 text-xs text-muted-foreground">Employee distribution</p>
           </div>
-          <span className="rounded-full border border-white/10 bg-white/[0.055] px-3 py-1 text-[11px] font-bold text-white/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+          <span className="rounded-full border border-border bg-card px-3 py-1 text-[11px] font-bold text-foreground/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
             {departmentRows.length} Departments
           </span>
         </div>
@@ -336,8 +336,8 @@ export default function AdminCharts({
                     onBlur={() => setActiveDepartmentIndex(null)}
                     className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-all duration-200 ${
                       isActive
-                        ? "border-white/18 bg-white/[0.075] shadow-[0_10px_28px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.1)]"
-                        : "border-white/8 bg-white/[0.025] hover:border-white/14 hover:bg-white/[0.055]"
+                        ? "border-border bg-card shadow-[0_10px_28px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.1)]"
+                        : "border-border bg-card hover:border-border hover:bg-card"
                     } ${isMuted ? "opacity-55" : "opacity-100"}`}
                     aria-label={`${department.name}: ${department.value} employees, ${department.percentage}% of total`}
                   >
@@ -346,13 +346,13 @@ export default function AdminCharts({
                       style={{ backgroundColor: department.color, color: department.color }}
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-xs font-bold text-white/90">{department.name}</span>
-                      <span className="mt-0.5 block text-[10px] font-medium uppercase tracking-[0.12em] text-white/38">
+                      <span className="block truncate text-xs font-bold text-muted-foreground">{department.name}</span>
+                      <span className="mt-0.5 block text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                         {department.percentage}% of workforce
                       </span>
                     </span>
                     <span className="text-right">
-                      <span className="block text-sm font-extrabold tabular-nums text-white">{department.value}</span>
+                      <span className="block text-sm font-extrabold tabular-nums text-foreground">{department.value}</span>
                       <span className="block text-[10px] font-semibold text-muted-foreground">Employees</span>
                     </span>
                   </button>
@@ -389,7 +389,7 @@ export default function AdminCharts({
                 className={`rounded-full border px-3 py-1.5 text-[11px] font-bold transition-all duration-200 ${
                   activityFilter === filter.value
                     ? "border-cyan-300/35 bg-cyan-300/12 text-cyan-100 shadow-[0_0_18px_rgba(103,232,249,0.14)]"
-                    : "border-white/10 bg-white/[0.035] text-white/58 hover:border-white/18 hover:bg-white/[0.06] hover:text-white/82"
+                    : "border-border bg-card text-muted-foreground hover:border-border hover:bg-card hover:text-muted-foreground"
                 }`}
               >
                 {filter.label}
@@ -414,7 +414,7 @@ export default function AdminCharts({
                   />
                 ))
               ) : (
-                <li className="rounded-xl border border-white/10 bg-white/[0.035] px-4 py-6 text-center text-sm text-muted-foreground">
+                <li className="rounded-xl border border-border bg-card px-4 py-6 text-center text-sm text-muted-foreground">
                   No activity for this filter.
                 </li>
               )}
@@ -509,9 +509,9 @@ const ACTIVITY_META: Record<ActivityKind, {
 
 function ActivitySummaryPill({ label, value, className = "" }: { label: string; value: number; className?: string }) {
   return (
-    <div className={`rounded-lg border border-white/10 bg-white/[0.035] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] ${className}`}>
-      <div className="text-[10px] font-semibold uppercase tracking-[0.13em] text-white/42">{label}</div>
-      <div className="mt-1 text-base font-extrabold leading-none text-white tabular-nums">{value}</div>
+    <div className={`rounded-lg border border-border bg-card px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] ${className}`}>
+      <div className="text-[10px] font-semibold uppercase tracking-[0.13em] text-muted-foreground">{label}</div>
+      <div className="mt-1 text-base font-extrabold leading-none text-foreground tabular-nums">{value}</div>
     </div>
   );
 }
@@ -539,10 +539,10 @@ function ActivityTimelineItem({
 
   return (
     <li
-      className={`group relative flex gap-4 rounded-xl border p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/18 hover:bg-white/[0.055] ${
+      className={`group relative flex gap-4 rounded-xl border p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:bg-card ${
         newest
-          ? "border-white/14 bg-white/[0.045] shadow-[0_0_30px_rgba(103,232,249,0.08),inset_0_1px_0_rgba(255,255,255,0.08)]"
-          : "border-white/8 bg-white/[0.025]"
+          ? "border-border bg-card shadow-[0_0_30px_rgba(103,232,249,0.08),inset_0_1px_0_rgba(255,255,255,0.08)]"
+          : "border-border bg-card"
       }`}
     >
       <div className="relative z-10 flex shrink-0 flex-col items-center">
@@ -575,7 +575,7 @@ function ActivityTimelineItem({
                 </span>
               )}
             </div>
-            <h4 className="truncate text-sm font-bold text-white/92">{groupedTitle}</h4>
+            <h4 className="truncate text-sm font-bold text-muted-foreground">{groupedTitle}</h4>
             <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{subtitle}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2 md:justify-end">
@@ -583,7 +583,7 @@ function ActivityTimelineItem({
             <time
               dateTime={item.createdAt}
               title={absoluteTime}
-              className="whitespace-nowrap text-xs font-semibold text-white/52"
+              className="whitespace-nowrap text-xs font-semibold text-muted-foreground"
             >
               {relativeTime}
             </time>
@@ -604,7 +604,7 @@ function ActivityAction({ label, onClick }: { label: string; onClick?: () => voi
     <button
       type="button"
       onClick={onClick}
-      className="rounded-full border border-white/10 bg-white/[0.035] px-2.5 py-1 text-[11px] font-semibold text-white/62 transition-colors hover:border-white/18 hover:bg-white/[0.07] hover:text-white"
+      className="rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-semibold text-muted-foreground transition-colors hover:border-border hover:bg-card hover:text-foreground"
     >
       {label}
     </button>
@@ -627,7 +627,7 @@ function ActivityDetailDialog({
 
   return (
     <Dialog open={Boolean(item)} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-hidden border-white/10 bg-background/95 p-0 sm:max-w-xl">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-hidden border-border bg-background/95 p-0 sm:max-w-xl">
         {item && meta && priority && (
           <div className="relative">
             <div
@@ -658,7 +658,7 @@ function ActivityDetailDialog({
                         {priority.label} priority
                       </span>
                     </div>
-                    <DialogTitle className="mt-2 text-xl font-bold text-white">{item.groupedTitle || item.title}</DialogTitle>
+                    <DialogTitle className="mt-2 text-xl font-bold text-foreground">{item.groupedTitle || item.title}</DialogTitle>
                     <DialogDescription className="mt-1 text-sm text-muted-foreground">
                       {meta.label} from {item.employeeName}
                     </DialogDescription>
@@ -666,9 +666,9 @@ function ActivityDetailDialog({
                 </div>
               </DialogHeader>
               <div className="space-y-4">
-                <div className="rounded-xl border border-white/10 bg-white/[0.035] p-4">
-                  <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/42">Details</div>
-                  <p className="mt-2 text-sm leading-6 text-white/78">{item.message || "No extra details were provided."}</p>
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Details</div>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.message || "No extra details were provided."}</p>
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <ActivityDetailField label="Employee" value={item.employeeName} />
@@ -687,9 +687,9 @@ function ActivityDetailDialog({
 
 function ActivityDetailField({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.025] p-3">
-      <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/38">{label}</div>
-      <div className="mt-1 text-sm font-semibold text-white/82">{value}</div>
+    <div className="rounded-xl border border-border bg-card p-3">
+      <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
+      <div className="mt-1 text-sm font-semibold text-muted-foreground">{value}</div>
     </div>
   );
 }
@@ -700,7 +700,7 @@ function EmployeeAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string 
   }
 
   return (
-    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-gradient-to-br from-cyan-300/20 via-blue-400/15 to-violet-400/20 text-[11px] font-extrabold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
+    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-gradient-to-br from-cyan-300/20 via-blue-400/15 to-violet-400/20 text-[11px] font-extrabold text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
       {initials(name)}
     </div>
   );
@@ -916,12 +916,12 @@ function DepartmentTooltip({ active, payload }: any) {
   if (!row) return null;
 
   return (
-    <div className="min-w-48 rounded-xl border border-white/10 bg-[#101827]/95 p-3 text-xs text-white shadow-[0_18px_60px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
-      <div className="mb-2 flex items-center gap-2 border-b border-white/10 pb-2">
+    <div className="min-w-48 rounded-xl border border-border bg-[#101827]/95 p-3 text-xs text-foreground shadow-[0_18px_60px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
+      <div className="mb-2 flex items-center gap-2 border-b border-border pb-2">
         <span className="h-2.5 w-2.5 rounded-full shadow-[0_0_14px_currentColor]" style={{ backgroundColor: row.color, color: row.color }} />
         <div>
           <div className="font-bold">{row.name}</div>
-          <div className="text-[11px] text-white/50">Department share</div>
+          <div className="text-[11px] text-muted-foreground">Department share</div>
         </div>
       </div>
       <TooltipRow label="Employee count" value={row.value} color={row.color} />
@@ -956,8 +956,8 @@ function WeeklySummaryTile({ label, value, tone }: { label: string; value: strin
   }[tone];
 
   return (
-    <div className={`rounded-lg border border-white/10 bg-gradient-to-br ${toneClass} px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]`}>
-      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/48">{label}</div>
+    <div className={`rounded-lg border border-border bg-gradient-to-br ${toneClass} px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]`}>
+      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
       <div className="mt-1 text-lg font-bold tabular-nums leading-none">{value}</div>
     </div>
   );
@@ -969,11 +969,11 @@ function WeeklyAttendanceTooltip({ active, payload }: any) {
   if (!row) return null;
 
   return (
-    <div className="min-w-52 rounded-xl border border-white/10 bg-[#101827]/95 p-3 text-xs text-white shadow-[0_18px_60px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
-      <div className="mb-2 flex items-center justify-between gap-4 border-b border-white/10 pb-2">
+    <div className="min-w-52 rounded-xl border border-border bg-[#101827]/95 p-3 text-xs text-foreground shadow-[0_18px_60px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
+      <div className="mb-2 flex items-center justify-between gap-4 border-b border-border pb-2">
         <div>
           <div className="font-semibold">{row.day}{row.isToday ? " · Today" : ""}</div>
-          <div className="text-[11px] text-white/50">{row.date ? formatNepaliDate(row.date, "DD MMM YYYY") + " BS" : "Weekly snapshot"}</div>
+          <div className="text-[11px] text-muted-foreground">{row.date ? formatNepaliDate(row.date, "DD MMM YYYY") + " BS" : "Weekly snapshot"}</div>
         </div>
         <div className="rounded-full bg-cyan-300/10 px-2 py-1 font-bold text-cyan-100 tabular-nums">{row.attendancePct ?? 0}%</div>
       </div>
@@ -983,7 +983,7 @@ function WeeklyAttendanceTooltip({ active, payload }: any) {
       <TooltipRow label="WFH" value={row.wfh ?? 0} color={ATTENDANCE_COLORS.wfh} />
       <TooltipRow label="Absent" value={row.absent ?? 0} color={ATTENDANCE_COLORS.absent} />
       <TooltipRow label="Attendance percentage" value={`${row.attendancePct ?? 0}%`} />
-      {row.noData && <div className="mt-2 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1.5 text-[11px] text-white/58">No attendance records captured for this day.</div>}
+      {row.noData && <div className="mt-2 rounded-lg border border-border bg-card px-2 py-1.5 text-[11px] text-muted-foreground">No attendance records captured for this day.</div>}
     </div>
   );
 }
@@ -991,11 +991,11 @@ function WeeklyAttendanceTooltip({ active, payload }: any) {
 function TooltipRow({ label, value, color }: { label: string; value: string | number; color?: string }) {
   return (
     <div className="flex items-center justify-between gap-4 py-1">
-      <span className="flex items-center gap-2 text-white/62">
+      <span className="flex items-center gap-2 text-muted-foreground">
         {color && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />}
         {label}
       </span>
-      <strong className="tabular-nums text-white">{value}</strong>
+      <strong className="tabular-nums text-foreground">{value}</strong>
     </div>
   );
 }

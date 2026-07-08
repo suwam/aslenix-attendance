@@ -637,14 +637,14 @@ function EmployeeDashboard() {
         <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-hidden rounded-[28px] border-0 bg-transparent p-0 shadow-[0_30px_100px_rgba(0,0,0,.55)] sm:max-w-2xl">
           <div className="relative rounded-[28px] bg-gradient-to-br from-[#ff3b7f] via-[#7b61ff] to-[#4f9cff] p-[1px] shadow-[0_0_42px_rgba(123,97,255,.26)]">
             <div className="absolute inset-0 rounded-[28px] bg-gradient-to-br from-[#ff3b7f]/22 via-[#7b61ff]/18 to-[#4f9cff]/22 blur-2xl" />
-            <div className="relative overflow-hidden rounded-[27px] border border-white/10 bg-[#080a14]/95 p-5 text-white backdrop-blur-2xl sm:p-6">
+            <div className="relative overflow-hidden rounded-[27px] border border-border bg-[#080a14]/95 p-5 text-foreground backdrop-blur-2xl sm:p-6">
               <div className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-[#4f9cff]/16 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-28 -left-20 h-56 w-56 rounded-full bg-[#ff3b7f]/12 blur-3xl" />
 
               <DialogHeader className="relative text-left">
                 <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex items-start gap-4">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-white shadow-[0_0_34px_rgba(125,92,255,.4)]">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-foreground shadow-[0_0_34px_rgba(125,92,255,.4)]">
                       <MessageSquare size={24} />
                     </div>
                     <div className="min-w-0">
@@ -653,15 +653,15 @@ function EmployeeDashboard() {
                           HR Review
                         </span>
                         {latestImprovement?.rating && (
-                          <span className="rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/70">
+                          <span className="rounded-full border border-border bg-card px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
                             {latestImprovement.rating}
                           </span>
                         )}
                       </div>
-                      <DialogTitle className="text-2xl font-black leading-tight text-white sm:text-3xl">
+                      <DialogTitle className="text-2xl font-black leading-tight text-foreground sm:text-3xl">
                         Weekly improvement note
                       </DialogTitle>
-                      <DialogDescription className="mt-2 text-sm font-medium leading-6 text-white/68 sm:text-base">
+                      <DialogDescription className="mt-2 text-sm font-medium leading-6 text-muted-foreground sm:text-base">
                         {latestImprovement?.week_start
                           ? `Your HR review for the week of ${formatNepaliDate(latestImprovement.week_start, "DD MMM YYYY")} BS`
                           : "Your latest HR weekly review"}
@@ -672,26 +672,26 @@ function EmployeeDashboard() {
               </DialogHeader>
 
               <div className="relative grid gap-4">
-                <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.08)] sm:p-5">
-                  <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-white/48">
+                <div className="rounded-2xl border border-border bg-card p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.08)] sm:p-5">
+                  <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
                     <Target size={14} className="text-cyan-200" />
                     Focus Area
                   </div>
-                  <p className="max-h-[38dvh] overflow-y-auto whitespace-pre-wrap pr-1 text-base font-medium leading-7 text-white/88 [scrollbar-color:rgba(103,232,249,0.35)_rgba(255,255,255,0.06)] [scrollbar-width:thin]">
+                  <p className="max-h-[38dvh] overflow-y-auto whitespace-pre-wrap pr-1 text-base font-medium leading-7 text-muted-foreground [scrollbar-color:rgba(103,232,249,0.35)_rgba(255,255,255,0.06)] [scrollbar-width:thin]">
                     {latestImprovement?.improvements || "No improvement note was added for this week."}
                   </p>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                    <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/45">Next Step</div>
-                    <div className="mt-1 text-sm font-semibold leading-6 text-white/80">
+                  <div className="rounded-2xl border border-border bg-card p-4">
+                    <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Next Step</div>
+                    <div className="mt-1 text-sm font-semibold leading-6 text-muted-foreground">
                       Review the note and apply it to this week's focus tasks.
                     </div>
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                    <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/45">Visibility</div>
-                    <div className="mt-1 text-sm font-semibold leading-6 text-white/80">
+                  <div className="rounded-2xl border border-border bg-card p-4">
+                    <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Visibility</div>
+                    <div className="mt-1 text-sm font-semibold leading-6 text-muted-foreground">
                       This reminder appears once until you acknowledge it.
                     </div>
                   </div>
@@ -701,7 +701,7 @@ function EmployeeDashboard() {
               <DialogFooter className="relative mt-5 flex-col gap-3 sm:flex-row sm:justify-end sm:space-x-0">
                 <Button
                   onClick={dismissImprovement}
-                  className="h-12 rounded-xl border-0 bg-[linear-gradient(135deg,#ff3b7f,#7b61ff,#4f9cff)] px-6 font-bold text-white shadow-[0_0_24px_rgba(123,97,255,.36)] transition-shadow hover:shadow-[0_0_34px_rgba(79,156,255,.55)] focus-visible:ring-[#4f9cff]"
+                  className="h-12 rounded-xl border-0 bg-[linear-gradient(135deg,#ff3b7f,#7b61ff,#4f9cff)] px-6 font-bold text-foreground shadow-[0_0_24px_rgba(123,97,255,.36)] transition-shadow hover:shadow-[0_0_34px_rgba(79,156,255,.55)] focus-visible:ring-[#4f9cff]"
                 >
                   <CheckCheck size={16} className="mr-2" />
                   Got it
@@ -712,16 +712,16 @@ function EmployeeDashboard() {
         </DialogContent>
       </Dialog>
 
-      <main className="-mx-4 min-h-screen w-[calc(100%+2rem)] space-y-4 overflow-hidden rounded-none bg-[#050711] p-3 text-white sm:mx-0 sm:w-auto sm:space-y-6 sm:rounded-[32px] sm:p-6 lg:p-8">
+      <main className="-mx-4 min-h-screen w-[calc(100%+2rem)] space-y-4 overflow-hidden rounded-none bg-[#050711] p-3 text-foreground sm:mx-0 sm:w-auto sm:space-y-6 sm:rounded-[32px] sm:p-6 lg:p-8">
         <motion.section
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-[32px] border border-white/10 bg-[radial-gradient(circle_at_15%_15%,rgba(34,211,238,.25),transparent_30%),radial-gradient(circle_at_80%_0%,rgba(236,72,153,.22),transparent_32%),linear-gradient(135deg,rgba(15,23,42,.92),rgba(8,13,24,.96))] p-5 shadow-[0_32px_110px_rgba(0,0,0,.55)] sm:p-7 lg:p-9"
+          className="relative overflow-hidden rounded-[32px] border border-border bg-[radial-gradient(circle_at_15%_15%,rgba(34,211,238,.25),transparent_30%),radial-gradient(circle_at_80%_0%,rgba(236,72,153,.22),transparent_32%),linear-gradient(135deg,rgba(15,23,42,.92),rgba(8,13,24,.96))] p-5 shadow-[0_32px_110px_rgba(0,0,0,.55)] sm:p-7 lg:p-9"
         >
           <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent_0_30%,rgba(255,255,255,.09)_45%,transparent_60%)] opacity-40" />
           <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
             <div className="flex flex-col gap-5 sm:flex-row">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-br from-cyan-300 via-violet-500 to-pink-500 text-2xl font-black shadow-[0_0_42px_rgba(34,211,238,.22)]">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-cyan-300 via-violet-500 to-pink-500 text-2xl font-black shadow-[0_0_42px_rgba(34,211,238,.22)]">
                 {profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" /> : initials(profile?.full_name || firstName)}
               </div>
               <div className="min-w-0">
@@ -741,9 +741,9 @@ function EmployeeDashboard() {
               </div>
             </div>
             <div className="grid gap-3">
-              <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-xl">
+              <div className="rounded-3xl border border-border bg-card p-4 backdrop-blur-xl">
                 <div className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-100/70">Live Clock</div>
-                <LiveClock className="mt-2 text-3xl font-black text-white" />
+                <LiveClock className="mt-2 text-3xl font-black text-foreground" />
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <HeroMini label="Streak" value={`${attendanceStreak}d`} />
@@ -768,16 +768,16 @@ function EmployeeDashboard() {
               </div>
               <div className="min-w-0">
                 <div className="text-[11px] font-black uppercase tracking-[0.18em] text-cyan-100/60">Attendance</div>
-                <div className="mt-1 text-2xl font-black leading-tight text-white">Quick check-in</div>
+                <div className="mt-1 text-2xl font-black leading-tight text-foreground">Quick check-in</div>
                 <div className="mt-1 text-sm font-semibold text-slate-400">{status}</div>
               </div>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <Button onClick={checkIn} disabled={busy || isWeeklyOff || Boolean(today)} className="h-14 rounded-2xl bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-500 text-base font-black text-white shadow-[0_0_34px_rgba(34,211,238,.18)] transition hover:scale-[1.01]">
+              <Button onClick={checkIn} disabled={busy || isWeeklyOff || Boolean(today)} className="h-14 rounded-2xl bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-500 text-base font-black text-foreground shadow-[0_0_34px_rgba(34,211,238,.18)] transition hover:scale-[1.01]">
                 <LogIn size={18} className="mr-2" /> Check In
               </Button>
-              <Button onClick={checkOut} disabled={busy || !today || Boolean(today?.check_out_time)} variant="outline" className="h-14 rounded-2xl border-white/15 bg-white/[0.06] text-base font-black text-white hover:bg-white/[0.1]">
+              <Button onClick={checkOut} disabled={busy || !today || Boolean(today?.check_out_time)} variant="outline" className="h-14 rounded-2xl border-border bg-card text-base font-black text-foreground hover:bg-card">
                 <LogOut size={18} className="mr-2" /> Check Out
               </Button>
             </div>
@@ -825,7 +825,7 @@ function EmployeeDashboard() {
             <SectionTitle icon={ClipboardList} eyebrow="Today" title="Tasks command center" action={`${filteredTasks.length} visible`} />
             <div className="mt-4 flex flex-wrap gap-2">
               {(["all", "active", "overdue"] as const).map((filter) => (
-                <button key={filter} onClick={() => setTaskFilter(filter)} className={`rounded-full border px-3 py-1.5 text-xs font-bold capitalize ${taskFilter === filter ? "border-cyan-300/35 bg-cyan-300/15 text-cyan-100" : "border-white/10 bg-white/[0.04] text-white/55"}`}>
+                <button key={filter} onClick={() => setTaskFilter(filter)} className={`rounded-full border px-3 py-1.5 text-xs font-bold capitalize ${taskFilter === filter ? "border-cyan-300/35 bg-cyan-300/15 text-cyan-100" : "border-border bg-card text-muted-foreground"}`}>
                   {filter}
                 </button>
               ))}
@@ -953,7 +953,7 @@ function EmployeeDashboard() {
             </div>
             {isAdmin ? (
               <div className="employee-action-row employee-action-row-top">
-                <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-sm font-semibold text-muted-foreground">
+                <div className="rounded-2xl border border-border bg-card px-4 py-3 text-sm font-semibold text-muted-foreground">
                   Admin attendance is not required.
                 </div>
               </div>
@@ -1150,7 +1150,7 @@ function GlassPanel({ children, className = "" }: { children: React.ReactNode; c
       initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
-      className={`relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.045] shadow-[0_24px_80px_rgba(0,0,0,.38),inset_0_1px_0_rgba(255,255,255,.08)] backdrop-blur-xl ${className}`}
+      className={`relative overflow-hidden rounded-[28px] border border-border bg-card shadow-[0_24px_80px_rgba(0,0,0,.38),inset_0_1px_0_rgba(255,255,255,.08)] backdrop-blur-xl ${className}`}
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(34,211,238,.12),transparent_34%),radial-gradient(circle_at_100%_0%,rgba(236,72,153,.1),transparent_34%)]" />
       <div className="relative">{children}</div>
@@ -1160,7 +1160,7 @@ function GlassPanel({ children, className = "" }: { children: React.ReactNode; c
 
 function Badge({ icon: Icon, label }: { icon: typeof Sparkles; label: string }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] text-white/72">
+    <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] text-muted-foreground">
       <Icon size={13} className="text-cyan-200" />
       {label}
     </span>
@@ -1169,7 +1169,7 @@ function Badge({ icon: Icon, label }: { icon: typeof Sparkles; label: string }) 
 
 function HeroChip({ icon: Icon, label }: { icon: typeof Sparkles; label: string }) {
   return (
-    <span className="inline-flex min-h-10 items-center gap-2 rounded-full border border-white/10 bg-white/[0.07] px-3 py-2 text-xs font-bold text-white/78 backdrop-blur-xl">
+    <span className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-xs font-bold text-muted-foreground backdrop-blur-xl">
       <Icon size={14} className="text-cyan-200" />
       {label}
     </span>
@@ -1178,9 +1178,9 @@ function HeroChip({ icon: Icon, label }: { icon: typeof Sparkles; label: string 
 
 function HeroMini({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-3 text-center backdrop-blur-xl">
-      <div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/40">{label}</div>
-      <div className="mt-1 text-xl font-black text-white">{value}</div>
+    <div className="rounded-2xl border border-border bg-card p-3 text-center backdrop-blur-xl">
+      <div className="text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
+      <div className="mt-1 text-xl font-black text-foreground">{value}</div>
     </div>
   );
 }
@@ -1188,12 +1188,12 @@ function HeroMini({ label, value }: { label: string; value: string }) {
 function MetricCard({ icon: Icon, title, value, detail, tone }: { icon: typeof Sparkles; title: string; value: string; detail: string; tone: "cyan" | "purple" | "pink" | "green" }) {
   const colors = { cyan: "from-cyan-300 to-blue-500", purple: "from-violet-300 to-purple-600", pink: "from-pink-300 to-rose-600", green: "from-emerald-300 to-teal-600" };
   return (
-    <motion.article whileHover={{ y: -4 }} className="rounded-[26px] border border-white/10 bg-white/[0.045] p-5 shadow-[0_22px_70px_rgba(0,0,0,.34)] backdrop-blur-xl">
-      <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${colors[tone]} text-white shadow-[0_0_30px_rgba(34,211,238,.16)]`}>
+    <motion.article whileHover={{ y: -4 }} className="rounded-[26px] border border-border bg-card p-5 shadow-[0_22px_70px_rgba(0,0,0,.34)] backdrop-blur-xl">
+      <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${colors[tone]} text-foreground shadow-[0_0_30px_rgba(34,211,238,.16)]`}>
         <Icon size={20} />
       </div>
-      <div className="mt-5 text-xs font-black uppercase tracking-[0.16em] text-white/42">{title}</div>
-      <div className="mt-2 text-3xl font-black text-white">{value}</div>
+      <div className="mt-5 text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">{title}</div>
+      <div className="mt-2 text-3xl font-black text-foreground">{value}</div>
       <div className="mt-2 text-sm font-semibold text-slate-400">{detail}</div>
     </motion.article>
   );
@@ -1208,10 +1208,10 @@ function SectionTitle({ icon: Icon, eyebrow, title, action }: { icon: typeof Spa
         </div>
         <div className="min-w-0">
           <div className="text-[11px] font-black uppercase tracking-[0.16em] text-cyan-100/55">{eyebrow}</div>
-          <h2 className="mt-1 text-xl font-black text-white sm:text-2xl">{title}</h2>
+          <h2 className="mt-1 text-xl font-black text-foreground sm:text-2xl">{title}</h2>
         </div>
       </div>
-      {action && <span className="shrink-0 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-black text-white/70">{action}</span>}
+      {action && <span className="shrink-0 rounded-full border border-border bg-card px-3 py-1 text-xs font-black text-muted-foreground">{action}</span>}
     </div>
   );
 }
@@ -1220,10 +1220,10 @@ function RadialScore({ score }: { score: number }) {
   return (
     <div className="grid place-items-center">
       <div className="relative grid h-56 w-56 place-items-center rounded-full bg-[conic-gradient(from_180deg,#22d3ee_calc(var(--score)*1%),rgba(255,255,255,.08)_0)] p-4" style={{ ["--score" as string]: score }}>
-        <div className="grid h-full w-full place-items-center rounded-full border border-white/10 bg-[#080d18]">
+        <div className="grid h-full w-full place-items-center rounded-full border border-border bg-[#080d18]">
           <div className="text-center">
             <div className="text-5xl font-black">{score}</div>
-            <div className="mt-1 text-xs font-black uppercase tracking-[0.16em] text-white/45">AI Score</div>
+            <div className="mt-1 text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">AI Score</div>
           </div>
         </div>
       </div>
@@ -1234,18 +1234,18 @@ function RadialScore({ score }: { score: number }) {
 function ProgressLine({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div>
-      <div className="mb-2 flex justify-between text-sm font-bold text-white/78"><span>{label}</span><span>{value}%</span></div>
-      <div className="h-2 overflow-hidden rounded-full bg-white/10"><motion.div initial={{ width: 0 }} animate={{ width: `${value}%` }} className="h-full rounded-full" style={{ background: color }} /></div>
+      <div className="mb-2 flex justify-between text-sm font-bold text-muted-foreground"><span>{label}</span><span>{value}%</span></div>
+      <div className="h-2 overflow-hidden rounded-full bg-card"><motion.div initial={{ width: 0 }} animate={{ width: `${value}%` }} className="h-full rounded-full" style={{ background: color }} /></div>
     </div>
   );
 }
 
 function InfoTile({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3"><div className="text-[10px] font-black uppercase tracking-[0.14em] text-white/38">{label}</div><div className="mt-1 truncate text-lg font-black text-white">{value}</div></div>;
+  return <div className="rounded-2xl border border-border bg-card p-3"><div className="text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground">{label}</div><div className="mt-1 truncate text-lg font-black text-foreground">{value}</div></div>;
 }
 
 function HeatmapGrid({ days }: { days: HeatmapDay[] }) {
-  const colors: Record<HeatmapDay["status"], string> = { present: "bg-emerald-400", late: "bg-violet-400", absent: "bg-rose-400", holiday: "bg-cyan-300", none: "bg-white/10" };
+  const colors: Record<HeatmapDay["status"], string> = { present: "bg-emerald-400", late: "bg-violet-400", absent: "bg-rose-400", holiday: "bg-cyan-300", none: "bg-card" };
   return <div className="mt-5 grid grid-cols-15 gap-1.5">{days.map((day) => <span key={day.date} title={`${day.date}: ${humanize(day.status)}`} className={`group relative aspect-square rounded-md ${colors[day.status]} shadow-[0_0_16px_rgba(34,211,238,.12)]`} />)}</div>;
 }
 
@@ -1253,17 +1253,17 @@ function TaskCommandCard({ task, nowTick, onComplete, ...props }: any) {
   const countdown = getTaskCountdown(task.deadline, nowTick);
   const priority = countdown.state === "overdue" ? "High" : countdown.state === "soon" ? "Medium" : "Normal";
   return (
-    <motion.article whileHover={{ y: -2 }} {...props} className="cursor-grab rounded-2xl border border-white/10 bg-white/[0.045] p-4 active:cursor-grabbing">
-      <div className="flex items-start justify-between gap-3"><div className="min-w-0"><h3 className="truncate font-black text-white">{task.title}</h3><p className="mt-1 truncate text-sm font-semibold text-slate-400">{task.project_name || task.project || "Aslenix Workstream"}</p></div><span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2 py-1 text-[10px] font-black uppercase text-cyan-100">{priority}</span></div>
-      <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-white/50"><span>{task.deadline ? format(new Date(task.deadline), "h:mm a") : "No due time"}</span><span>{humanize(task.status || "pending")}</span><span>{countdown.label}</span></div>
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-pink-400" style={{ width: `${task.progress || 0}%` }} /></div>
-      <button onClick={onComplete} className="mt-3 rounded-full border border-white/10 bg-white/[0.05] px-3 py-1.5 text-xs font-black text-white/72 hover:bg-white/[0.09]">Mark complete</button>
+    <motion.article whileHover={{ y: -2 }} {...props} className="cursor-grab rounded-2xl border border-border bg-card p-4 active:cursor-grabbing">
+      <div className="flex items-start justify-between gap-3"><div className="min-w-0"><h3 className="truncate font-black text-foreground">{task.title}</h3><p className="mt-1 truncate text-sm font-semibold text-slate-400">{task.project_name || task.project || "Aslenix Workstream"}</p></div><span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2 py-1 text-[10px] font-black uppercase text-cyan-100">{priority}</span></div>
+      <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-muted-foreground"><span>{task.deadline ? format(new Date(task.deadline), "h:mm a") : "No due time"}</span><span>{humanize(task.status || "pending")}</span><span>{countdown.label}</span></div>
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-card"><div className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-pink-400" style={{ width: `${task.progress || 0}%` }} /></div>
+      <button onClick={onComplete} className="mt-3 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-black text-muted-foreground hover:bg-card">Mark complete</button>
     </motion.article>
   );
 }
 
 function EmptyState({ icon: Icon, title, text }: { icon: typeof Activity; title: string; text: string }) {
-  return <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.025] p-6 text-center"><Icon className="mx-auto text-cyan-200" size={24} /><div className="mt-3 font-black">{title}</div><div className="mt-1 text-sm text-slate-400">{text}</div></div>;
+  return <div className="rounded-2xl border border-dashed border-border bg-card p-6 text-center"><Icon className="mx-auto text-cyan-200" size={24} /><div className="mt-3 font-black">{title}</div><div className="mt-1 text-sm text-slate-400">{text}</div></div>;
 }
 
 function ChartPanel({ title, icon: Icon, children }: { title: string; icon: typeof Sparkles; children: React.ReactNode }) {
@@ -1271,17 +1271,17 @@ function ChartPanel({ title, icon: Icon, children }: { title: string; icon: type
 }
 
 function ProjectCard({ project }: { project: any }) {
-  return <motion.article whileHover={{ y: -4 }} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4"><h3 className="font-black">{project.name}</h3><p className="mt-1 text-sm font-semibold text-slate-400">{project.status} · {project.deadline}</p><div className="mt-4 h-2 rounded-full bg-white/10"><div className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-pink-400" style={{ width: `${project.progress}%` }} /></div><div className="mt-3 flex items-center justify-between"><span className="text-sm font-black">{project.progress}%</span><div className="flex -space-x-2">{project.members.map((m: string) => <span key={m} className="grid h-7 w-7 place-items-center rounded-full border border-white/15 bg-white/[0.08] text-[10px] font-black">{m}</span>)}</div></div></motion.article>;
+  return <motion.article whileHover={{ y: -4 }} className="rounded-2xl border border-border bg-card p-4"><h3 className="font-black">{project.name}</h3><p className="mt-1 text-sm font-semibold text-slate-400">{project.status} · {project.deadline}</p><div className="mt-4 h-2 rounded-full bg-card"><div className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-pink-400" style={{ width: `${project.progress}%` }} /></div><div className="mt-3 flex items-center justify-between"><span className="text-sm font-black">{project.progress}%</span><div className="flex -space-x-2">{project.members.map((m: string) => <span key={m} className="grid h-7 w-7 place-items-center rounded-full border border-border bg-card text-[10px] font-black">{m}</span>)}</div></div></motion.article>;
 }
 
 function AchievementBadge({ badge }: { badge: any }) {
   const Icon = badge.icon;
-  return <motion.div whileHover={{ scale: 1.03 }} className={`rounded-2xl border p-3 text-center ${badge.active ? "border-cyan-300/20 bg-cyan-300/10" : "border-white/10 bg-white/[0.035] opacity-55"}`}><Icon className="mx-auto text-cyan-100" size={22} /><div className="mt-2 text-xs font-black text-white/78">{badge.label}</div></motion.div>;
+  return <motion.div whileHover={{ scale: 1.03 }} className={`rounded-2xl border p-3 text-center ${badge.active ? "border-cyan-300/20 bg-cyan-300/10" : "border-border bg-card opacity-55"}`}><Icon className="mx-auto text-cyan-100" size={22} /><div className="mt-2 text-xs font-black text-muted-foreground">{badge.label}</div></motion.div>;
 }
 
 function LeaderboardRow({ member, rank }: { member: TeamLeader; rank: number }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+    <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3">
       <div className="relative h-11 w-11 shrink-0">
         {member.avatarUrl ? (
           <img src={member.avatarUrl} alt="" className="h-11 w-11 rounded-2xl object-cover ring-2 ring-cyan-300/35" />
@@ -1290,7 +1290,7 @@ function LeaderboardRow({ member, rank }: { member: TeamLeader; rank: number }) 
             {initials(member.name)}
           </div>
         )}
-        <span className="absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full border border-white/20 bg-[#080d18] text-[10px] font-black text-cyan-100">
+        <span className="absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full border border-border bg-[#080d18] text-[10px] font-black text-cyan-100">
           {rank}
         </span>
       </div>
@@ -1304,7 +1304,7 @@ function LeaderboardRow({ member, rank }: { member: TeamLeader; rank: number }) 
 }
 
 function InsightCard({ text }: { text: string }) {
-  return <div className="flex gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3"><Sparkles className="mt-0.5 shrink-0 text-cyan-200" size={16} /><span className="text-sm font-semibold leading-6 text-white/74">{text}</span></div>;
+  return <div className="flex gap-3 rounded-2xl border border-border bg-card p-3"><Sparkles className="mt-0.5 shrink-0 text-cyan-200" size={16} /><span className="text-sm font-semibold leading-6 text-muted-foreground">{text}</span></div>;
 }
 
 function MoodTrackerPanel({ mood, history, onSave }: { mood: string; history: MoodLog[]; onSave: (value: string) => void }) {
@@ -1324,20 +1324,20 @@ function MoodTrackerPanel({ mood, history, onSave }: { mood: string; history: Mo
             key={item.value}
             onClick={() => onSave(item.value)}
             className={`rounded-2xl border p-3 text-center transition hover:-translate-y-1 ${
-              mood === item.value ? "border-cyan-300/40 bg-cyan-300/15 shadow-[0_0_24px_rgba(34,211,238,.14)]" : "border-white/10 bg-white/[0.04]"
+              mood === item.value ? "border-cyan-300/40 bg-cyan-300/15 shadow-[0_0_24px_rgba(34,211,238,.14)]" : "border-border bg-card"
             }`}
             aria-label={`Save mood as ${item.label}`}
             type="button"
           >
             <div className="text-2xl">{item.emoji}</div>
-            <div className="mt-1 text-[10px] font-bold text-white/62">{item.label}</div>
+            <div className="mt-1 text-[10px] font-bold text-muted-foreground">{item.label}</div>
           </button>
         ))}
       </div>
-      <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+      <div className="mt-4 rounded-2xl border border-border bg-card p-3">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <div className="text-sm font-black text-white/82">{current.label} today</div>
+            <div className="text-sm font-black text-muted-foreground">{current.label} today</div>
             <div className="mt-1 text-xs font-semibold text-slate-400">{history.length ? `${history.length} saved mood logs` : "Save today's mood to start the trend"}</div>
           </div>
           <div className="text-3xl">{current.emoji}</div>
@@ -1348,13 +1348,13 @@ function MoodTrackerPanel({ mood, history, onSave }: { mood: string; history: Mo
               <span
                 key={`${item.log_date}-${item.mood}`}
                 title={`${item.log_date}: ${getMoodMeta(item.mood).label}`}
-                className="grid h-9 flex-1 place-items-center rounded-xl border border-white/10 bg-white/[0.045] text-lg"
+                className="grid h-9 flex-1 place-items-center rounded-xl border border-border bg-card text-lg"
               >
                 {getMoodMeta(item.mood).emoji}
               </span>
             ))
           ) : (
-            <div className="w-full rounded-xl border border-dashed border-white/15 p-3 text-center text-xs font-semibold text-slate-400">
+            <div className="w-full rounded-xl border border-dashed border-border p-3 text-center text-xs font-semibold text-slate-400">
               No mood history yet
             </div>
           )}
@@ -1365,12 +1365,12 @@ function MoodTrackerPanel({ mood, history, onSave }: { mood: string; history: Mo
 }
 
 function ActionCard({ to, icon: Icon, label }: { to: "/tasks" | "/standup" | "/my-leaves" | "/my-attendance" | "/meetings"; icon: typeof Sparkles; label: string }) {
-  return <Link to={to} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 font-black text-white/78 transition hover:-translate-y-1 hover:border-cyan-300/25 hover:bg-white/[0.07]"><Icon className="mb-3 text-cyan-200" size={22} />{label}</Link>;
+  return <Link to={to} className="rounded-2xl border border-border bg-card p-4 font-black text-muted-foreground transition hover:-translate-y-1 hover:border-cyan-300/25 hover:bg-card"><Icon className="mb-3 text-cyan-200" size={22} />{label}</Link>;
 }
 
 function LeaveRing({ label, value, total }: { label: string; value: number; total: number }) {
   const pct = Math.round((value / total) * 100);
-  return <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-center"><div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-[conic-gradient(#22d3ee_calc(var(--pct)*1%),rgba(255,255,255,.1)_0)]" style={{ ["--pct" as string]: pct }}><div className="grid h-14 w-14 place-items-center rounded-full bg-[#080d18] text-sm font-black">{value}</div></div><div className="mt-2 text-xs font-black text-white/68">{label}</div></div>;
+  return <div className="rounded-2xl border border-border bg-card p-3 text-center"><div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-[conic-gradient(#22d3ee_calc(var(--pct)*1%),rgba(255,255,255,.1)_0)]" style={{ ["--pct" as string]: pct }}><div className="grid h-14 w-14 place-items-center rounded-full bg-[#080d18] text-sm font-black">{value}</div></div><div className="mt-2 text-xs font-black text-muted-foreground">{label}</div></div>;
 }
 
 function ActivityTimelinePanel({ items }: { items: ActivityItem[] }) {
@@ -1403,9 +1403,9 @@ function ActivityTimelinePanel({ items }: { items: ActivityItem[] }) {
 
 function TimelineStat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-center">
-      <div className="text-lg font-black text-white">{value}</div>
-      <div className="mt-1 text-[10px] font-black uppercase tracking-[0.12em] text-white/38">{label}</div>
+    <div className="rounded-2xl border border-border bg-card p-3 text-center">
+      <div className="text-lg font-black text-foreground">{value}</div>
+      <div className="mt-1 text-[10px] font-black uppercase tracking-[0.12em] text-muted-foreground">{label}</div>
     </div>
   );
 }
@@ -1419,7 +1419,7 @@ function ModernTimelineItem({ item, isLatest }: { item: ActivityItem; isLatest: 
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true }}
       className={`relative flex gap-3 rounded-2xl border p-3 transition hover:-translate-y-0.5 ${
-        isLatest ? "border-cyan-300/24 bg-cyan-300/10" : "border-white/10 bg-white/[0.035] hover:bg-white/[0.055]"
+        isLatest ? "border-cyan-300/24 bg-cyan-300/10" : "border-border bg-card hover:bg-card"
       }`}
     >
       <div className={`relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border ${meta.badgeClass}`}>
@@ -1429,7 +1429,7 @@ function ModernTimelineItem({ item, isLatest }: { item: ActivityItem; isLatest: 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="truncate text-base font-black text-white/90">{item.text}</div>
+            <div className="truncate text-base font-black text-muted-foreground">{item.text}</div>
             <div className="mt-1 text-xs font-semibold text-slate-400">
               {formatNepaliDate(item.when, "DD MMM")} BS · {format(new Date(item.when), "h:mm a")}
             </div>
@@ -1444,7 +1444,7 @@ function ModernTimelineItem({ item, isLatest }: { item: ActivityItem; isLatest: 
 }
 
 function NotificationCard({ title, text }: { title: string; text: string }) {
-  return <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3"><div className="font-black">{title}</div><div className="mt-1 text-sm font-semibold leading-6 text-slate-400">{text}</div></div>;
+  return <div className="rounded-2xl border border-border bg-card p-3"><div className="font-black">{title}</div><div className="mt-1 text-sm font-semibold leading-6 text-slate-400">{text}</div></div>;
 }
 
 function CloudLikeIcon(props: React.ComponentProps<typeof Sparkles>) {
@@ -1555,40 +1555,40 @@ function NotificationPopup({
         {notification && (
           <div className="relative rounded-[28px] bg-gradient-to-br from-[#ff3b7f] via-[#7b61ff] to-[#4f9cff] p-[1px] shadow-[0_0_42px_rgba(123,97,255,.34)]">
             <div className="absolute inset-0 rounded-[28px] bg-gradient-to-br from-[#ff3b7f]/30 via-[#7b61ff]/25 to-[#4f9cff]/30 blur-2xl" />
-            <div className="relative overflow-hidden rounded-[27px] border border-white/10 bg-[#080a14]/90 p-5 text-white backdrop-blur-2xl sm:p-7">
+            <div className="relative overflow-hidden rounded-[27px] border border-border bg-[#080a14]/90 p-5 text-foreground backdrop-blur-2xl sm:p-7">
               <div className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-[#4f9cff]/20 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-28 -left-20 h-56 w-56 rounded-full bg-[#ff3b7f]/15 blur-3xl" />
 
               <DialogHeader className="relative items-center text-center">
-                <div className="mb-4 flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/90 shadow-[inset_0_1px_0_rgba(255,255,255,.08)]">
+                <div className="mb-4 flex w-fit items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground shadow-[inset_0_1px_0_rgba(255,255,255,.08)]">
                   <span className="h-2 w-2 rounded-full bg-[#4f9cff] shadow-[0_0_14px_rgba(79,156,255,.95)]" />
                   {isRescheduled ? "Meeting Rescheduled" : "Upcoming Meeting"}
                 </div>
 
                 <div className="relative mb-5 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-[#ff3b7f] via-[#7b61ff] to-[#4f9cff] shadow-[0_0_46px_rgba(123,97,255,.48)] sm:h-28 sm:w-28">
                   <div className="absolute inset-0 animate-ping rounded-full bg-[#7b61ff]/20" />
-                  <div className="relative flex h-[82%] w-[82%] items-center justify-center rounded-full border border-white/20 bg-black/20 backdrop-blur-md">
-                    <CalendarClock className="h-11 w-11 animate-pulse text-white sm:h-12 sm:w-12" strokeWidth={1.7} />
+                  <div className="relative flex h-[82%] w-[82%] items-center justify-center rounded-full border border-border bg-card backdrop-blur-md">
+                    <CalendarClock className="h-11 w-11 animate-pulse text-foreground sm:h-12 sm:w-12" strokeWidth={1.7} />
                   </div>
                 </div>
 
-                <DialogTitle className="max-w-xl text-2xl font-black leading-tight text-white sm:text-4xl">
+                <DialogTitle className="max-w-xl text-2xl font-black leading-tight text-foreground sm:text-4xl">
                   {isRescheduled ? "Your meeting schedule changed" : "You have an upcoming meeting"}
                 </DialogTitle>
-                <DialogDescription className="mt-3 max-w-xl text-base font-semibold leading-7 text-white/85 sm:text-lg">
+                <DialogDescription className="mt-3 max-w-xl text-base font-semibold leading-7 text-muted-foreground sm:text-lg">
                   {meetingName}
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="relative mt-6 grid gap-3 rounded-2xl border border-white/10 bg-white/[0.055] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.08)] sm:grid-cols-2 sm:p-5">
+              <div className="relative mt-6 grid gap-3 rounded-2xl border border-border bg-card p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.08)] sm:grid-cols-2 sm:p-5">
                 <MeetingPopupDetail icon={Calendar} label="Date" value={`${format(meetingTime, "EEEE")}, ${formatNepaliDate(meetingTime, "DD MMMM YYYY")} BS`} />
                 <MeetingPopupDetail icon={Clock} label="Time" value={format(meetingTime, "h:mm a")} />
                 <MeetingPopupDetail icon={MapPin} label="Location" value={location} />
                 <MeetingPopupDetail icon={Users} label="Attendees" value="All Team Members" />
               </div>
 
-              <div className="relative mt-4 rounded-2xl border border-[#7b61ff]/30 bg-white/[0.065] p-4 text-center shadow-[0_0_28px_rgba(123,97,255,.16),inset_0_1px_0_rgba(255,255,255,.08)]">
-                <div className="text-xs font-bold uppercase tracking-[0.18em] text-white/55">Starts In</div>
+              <div className="relative mt-4 rounded-2xl border border-[#7b61ff]/30 bg-card p-4 text-center shadow-[0_0_28px_rgba(123,97,255,.16),inset_0_1px_0_rgba(255,255,255,.08)]">
+                <div className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">Starts In</div>
                 <div className="mt-2 grid grid-cols-3 gap-2">
                   <CountdownUnit value={countdown.days} label="Days" />
                   <CountdownUnit value={countdown.hours} label="Hours" />
@@ -1596,9 +1596,9 @@ function NotificationPopup({
                 </div>
               </div>
 
-              <div className="relative mt-5 rounded-2xl border border-white/10 bg-black/20 p-4">
-                <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/45">Agenda</div>
-                <p className="mt-2 max-h-[28dvh] overflow-y-auto whitespace-pre-wrap break-words pr-1 text-sm leading-6 text-white/72 [scrollbar-color:rgba(143,186,255,0.35)_transparent] [scrollbar-width:thin]">
+              <div className="relative mt-5 rounded-2xl border border-border bg-card p-4">
+                <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Agenda</div>
+                <p className="mt-2 max-h-[28dvh] overflow-y-auto whitespace-pre-wrap break-words pr-1 text-sm leading-6 text-muted-foreground [scrollbar-color:rgba(143,186,255,0.35)_transparent] [scrollbar-width:thin]">
                   {meeting?.agenda?.trim() ||
                     (isRescheduled
                       ? "The meeting schedule has been updated. Please review the meeting details and come prepared."
@@ -1609,14 +1609,14 @@ function NotificationPopup({
               <DialogFooter className="relative mt-5 flex-col gap-3 sm:flex-row sm:space-x-0">
                 <Button
                   variant="outline"
-                  className="h-12 rounded-xl border-white/15 bg-white/[0.045] text-white hover:border-white/30 hover:bg-white/[0.09] focus-visible:ring-[#7b61ff]"
+                  className="h-12 rounded-xl border-border bg-card text-foreground hover:border-border hover:bg-card focus-visible:ring-[#7b61ff]"
                   onClick={onClose}
                 >
                   Remind Me Later
                 </Button>
                 <Button
                   asChild
-                  className="h-12 rounded-xl border-0 bg-[linear-gradient(135deg,#ff3b7f,#7b61ff,#4f9cff)] px-6 font-bold text-white shadow-[0_0_24px_rgba(123,97,255,.36)] transition-shadow hover:shadow-[0_0_34px_rgba(79,156,255,.55)] focus-visible:ring-[#4f9cff]"
+                  className="h-12 rounded-xl border-0 bg-[linear-gradient(135deg,#ff3b7f,#7b61ff,#4f9cff)] px-6 font-bold text-foreground shadow-[0_0_24px_rgba(123,97,255,.36)] transition-shadow hover:shadow-[0_0_34px_rgba(79,156,255,.55)] focus-visible:ring-[#4f9cff]"
                 >
                   <Link to="/meetings" onClick={onClose}>
                     <CheckCheck size={16} className="mr-2" />
@@ -1642,13 +1642,13 @@ function MeetingPopupDetail({
   value: string;
 }) {
   return (
-    <div className="flex min-w-0 items-center gap-3 rounded-xl border border-white/10 bg-black/20 p-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.08] text-[#8fbaff]">
+    <div className="flex min-w-0 items-center gap-3 rounded-xl border border-border bg-card p-3">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-card text-[#8fbaff]">
         <Icon size={18} />
       </div>
       <div className="min-w-0">
-        <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/45">{label}</div>
-        <div className="mt-1 truncate text-sm font-semibold text-white sm:text-base">{value}</div>
+        <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
+        <div className="mt-1 truncate text-sm font-semibold text-foreground sm:text-base">{value}</div>
       </div>
     </div>
   );
@@ -1656,11 +1656,11 @@ function MeetingPopupDetail({
 
 function CountdownUnit({ value, label }: { value: number; label: string }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-black/25 px-2 py-3">
-      <div className="font-mono text-2xl font-black leading-none text-white sm:text-3xl">
+    <div className="rounded-xl border border-border bg-card px-2 py-3">
+      <div className="font-mono text-2xl font-black leading-none text-foreground sm:text-3xl">
         {String(value).padStart(2, "0")}
       </div>
-      <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">{label}</div>
+      <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">{label}</div>
     </div>
   );
 }
@@ -2047,8 +2047,8 @@ function getActivityMeta(item: ActivityItem) {
   }
   return {
     icon: Activity,
-    badgeClass: "border-white/15 bg-white/[0.06] text-white/78",
-    pillClass: "border-white/10 bg-white/[0.06] text-white/64",
+    badgeClass: "border-border bg-card text-muted-foreground",
+    pillClass: "border-border bg-card text-muted-foreground",
   };
 }
 

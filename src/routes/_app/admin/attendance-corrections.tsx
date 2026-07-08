@@ -116,7 +116,7 @@ function AttendanceCorrectionsPage() {
               <CalendarClock size={21} />
             </div>
             <div>
-              <div className="text-lg font-semibold text-white">Correction Review Queue</div>
+              <div className="text-lg font-semibold text-foreground">Correction Review Queue</div>
               <div className="text-sm text-muted-foreground">
                 Pending employee requests appear here for HR/Admin review.
               </div>
@@ -138,7 +138,7 @@ function AttendanceCorrectionsPage() {
               onClick={() => setFilter(item.key)}
               className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
                 filter === item.key
-                  ? "text-white"
+                  ? "text-foreground"
                   : "glass text-muted-foreground hover:text-foreground"
               }`}
               style={
@@ -160,7 +160,7 @@ function AttendanceCorrectionsPage() {
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search employee or reason..."
-            className="h-11 w-full rounded-xl border border-white/10 bg-white/[0.035] pl-9 pr-3 text-sm text-white outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/15"
+            className="h-11 w-full rounded-xl border border-border bg-card pl-9 pr-3 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/15"
           />
         </div>
       </div>
@@ -215,10 +215,10 @@ function CorrectionCard({
   onReject: () => void;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-4 shadow-xl shadow-black/10 transition hover:border-primary/25 hover:bg-white/[0.06]">
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-xl shadow-black/10 transition hover:border-primary/25 hover:bg-card">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <div className="text-base font-semibold text-white">{request.employee_name}</div>
+          <div className="text-base font-semibold text-foreground">{request.employee_name}</div>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <Clock size={13} />
             <span>
@@ -242,7 +242,7 @@ function CorrectionCard({
         <CorrectionValue label="Location" value={request.requested_work_location || "No change"} />
       </div>
 
-      <div className="mt-4 rounded-xl border border-white/5 bg-black/20 p-3 text-sm leading-relaxed">
+      <div className="mt-4 rounded-xl border border-border bg-card p-3 text-sm leading-relaxed">
         <span className="text-muted-foreground">Employee reason: </span>
         <span className="font-medium text-foreground">{request.reason}</span>
       </div>
@@ -267,7 +267,7 @@ function CorrectionCard({
           </div>
         </div>
       ) : request.admin_comment ? (
-        <div className="mt-4 rounded-xl border border-white/5 bg-white/[0.035] p-3 text-xs text-muted-foreground">
+        <div className="mt-4 rounded-xl border border-border bg-card p-3 text-xs text-muted-foreground">
           Admin note: {request.admin_comment}
         </div>
       ) : null}
@@ -277,9 +277,9 @@ function CorrectionCard({
 
 function CorrectionValue({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-white/5 bg-black/20 p-3">
+    <div className="rounded-xl border border-border bg-card p-3">
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="mt-1 font-semibold text-white">{value}</div>
+      <div className="mt-1 font-semibold text-foreground">{value}</div>
     </div>
   );
 }
@@ -310,11 +310,11 @@ function MetricBadge({
   const classes = {
     warning: "border-warning/20 bg-warning/10 text-warning",
     success: "border-success/20 bg-success/10 text-success",
-    muted: "border-white/10 bg-white/[0.04] text-muted-foreground",
+    muted: "border-border bg-card text-muted-foreground",
   };
   return (
     <div className={`rounded-xl border px-3 py-2 text-right ${classes[tone]}`}>
-      <div className="text-lg font-bold leading-none text-white">{value}</div>
+      <div className="text-lg font-bold leading-none text-foreground">{value}</div>
       <div className="mt-1 text-[10px] font-semibold uppercase tracking-wider">{label}</div>
     </div>
   );

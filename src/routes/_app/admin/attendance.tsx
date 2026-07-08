@@ -239,7 +239,7 @@ function AttendancePage() {
         <GlassCard className="mb-5">
           <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <div className="flex items-center gap-2 text-lg font-semibold text-white">
+              <div className="flex items-center gap-2 text-lg font-semibold text-foreground">
                 <CalendarClock size={19} className="text-primary" />
                 Pending correction requests
               </div>
@@ -251,10 +251,10 @@ function AttendancePage() {
           </div>
           <div className="grid gap-3 lg:grid-cols-2">
             {correctionRequests.map((request) => (
-              <div key={request.id} className="rounded-xl border border-white/10 bg-white/[0.035] p-4">
+              <div key={request.id} className="rounded-xl border border-border bg-card p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <div className="font-semibold text-white">{request.employee_name}</div>
+                    <div className="font-semibold text-foreground">{request.employee_name}</div>
                     <div className="mt-1 text-xs text-muted-foreground">
                       Requested {format(new Date(request.created_at), "HH:mm")} · {request.reason}
                     </div>
@@ -305,7 +305,7 @@ function AttendancePage() {
                         {r.avatar_url ? (
                           <img src={r.avatar_url} className="h-9 w-9 rounded-full object-cover" />
                         ) : (
-                          <div className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold text-white" style={{ background: "var(--gradient-brand)" }}>
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold text-foreground" style={{ background: "var(--gradient-brand)" }}>
                             {initials(r.full_name)}
                           </div>
                         )}
@@ -365,8 +365,8 @@ function AttendancePage() {
       </GlassCard>
 
       <Dialog open={Boolean(editing)} onOpenChange={(open) => !open && setEditing(null)}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto border-white/10 bg-background/95 p-0 shadow-[0_0_80px_-28px_oklch(0.65_0.27_22)] sm:max-w-4xl">
-          <div className="relative overflow-hidden rounded-t-xl border-b border-white/10 bg-[radial-gradient(circle_at_20%_0%,oklch(0.65_0.27_22/.22),transparent_34%),radial-gradient(circle_at_90%_10%,oklch(0.6_0.25_260/.24),transparent_36%),oklch(1_0_0/.035)] p-5 sm:p-6">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto border-border bg-background/95 p-0 shadow-[0_0_80px_-28px_oklch(0.65_0.27_22)] sm:max-w-4xl">
+          <div className="relative overflow-hidden rounded-t-xl border-b border-border bg-[radial-gradient(circle_at_20%_0%,oklch(0.65_0.27_22/.22),transparent_34%),radial-gradient(circle_at_90%_10%,oklch(0.6_0.25_260/.24),transparent_36%),oklch(1_0_0/.035)] p-5 sm:p-6">
             <DialogHeader>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
@@ -379,9 +379,9 @@ function AttendancePage() {
                     Review the original record, apply the correction, and preserve the reason in history.
                   </div>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-black/25 px-4 py-3 text-right">
+                <div className="rounded-xl border border-border bg-card px-4 py-3 text-right">
                   <div className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Record date</div>
-                  <div className="mt-1 font-semibold text-white">{formatNepaliDate(date, "ddd DD, MMMM YYYY")} BS</div>
+                  <div className="mt-1 font-semibold text-foreground">{formatNepaliDate(date, "ddd DD, MMMM YYYY")} BS</div>
                 </div>
               </div>
             </DialogHeader>
@@ -389,17 +389,17 @@ function AttendancePage() {
 
           <div className="space-y-5 p-5 sm:p-6">
             <div className="grid gap-3 lg:grid-cols-[1.1fr_1.5fr]">
-              <div className="rounded-xl border border-white/10 bg-white/[0.035] p-4">
+              <div className="rounded-xl border border-border bg-card p-4">
                 <div className="flex items-center gap-3">
                   {editing?.avatar_url ? (
                     <img src={editing.avatar_url} className="h-12 w-12 rounded-full object-cover" />
                   ) : (
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full text-sm font-semibold text-white" style={{ background: "var(--gradient-brand)" }}>
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full text-sm font-semibold text-foreground" style={{ background: "var(--gradient-brand)" }}>
                       {initials(editing?.full_name)}
                     </div>
                   )}
                   <div className="min-w-0">
-                    <div className="font-semibold text-white">{editing?.full_name}</div>
+                    <div className="font-semibold text-foreground">{editing?.full_name}</div>
                     <div className="truncate text-xs text-muted-foreground">{editing?.email}</div>
                   </div>
                 </div>
@@ -414,7 +414,7 @@ function AttendancePage() {
               <div className="rounded-xl border border-primary/20 bg-primary/[0.035] p-4 shadow-[inset_0_1px_0_oklch(1_0_0/.08)]">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-sm font-semibold text-white">Corrected values</div>
+                    <div className="text-sm font-semibold text-foreground">Corrected values</div>
                     <div className="text-xs text-muted-foreground">These values will become the active attendance record.</div>
                   </div>
                   <Pill className="bg-primary/15 text-primary" label="live edit" />
@@ -452,8 +452,8 @@ function AttendancePage() {
                       onClick={() => setForm({ ...form, status })}
                       className={`rounded-xl border px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.12em] transition ${
                         form.status === status
-                          ? "border-primary/40 bg-primary/15 text-white shadow-[0_0_26px_-14px_oklch(0.65_0.27_22)]"
-                          : "border-white/10 bg-black/20 text-muted-foreground hover:border-white/20 hover:text-white"
+                          ? "border-primary/40 bg-primary/15 text-foreground shadow-[0_0_26px_-14px_oklch(0.65_0.27_22)]"
+                          : "border-border bg-card text-muted-foreground hover:border-border hover:text-foreground"
                       }`}
                     >
                       {status.replace("_", " ")}
@@ -464,7 +464,7 @@ function AttendancePage() {
             </div>
 
             <div className="rounded-xl border border-warning/20 bg-warning/[0.045] p-4">
-              <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
+              <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
                 <FileText size={16} className="text-warning" />
                 Reason for audit history
               </div>
@@ -472,12 +472,12 @@ function AttendancePage() {
                 value={form.reason}
                 onChange={(e) => setForm({ ...form, reason: e.target.value })}
                 placeholder="Explain why this record is being corrected"
-                className="min-h-28 border-warning/20 bg-black/25"
+                className="min-h-28 border-warning/20 bg-card"
               />
             </div>
           </div>
 
-          <DialogFooter className="border-t border-white/10 bg-black/20 px-5 py-4 sm:px-6">
+          <DialogFooter className="border-t border-border bg-card px-5 py-4 sm:px-6">
             <Button variant="outline" onClick={() => setEditing(null)}>
               Cancel
             </Button>
@@ -489,7 +489,7 @@ function AttendancePage() {
       </Dialog>
 
       <Dialog open={confirming} onOpenChange={setConfirming}>
-        <DialogContent className="w-[calc(100vw-2rem)] border-white/10 bg-background/95 sm:max-w-md">
+        <DialogContent className="w-[calc(100vw-2rem)] border-border bg-background/95 sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Confirm attendance update</DialogTitle>
           </DialogHeader>
@@ -516,7 +516,7 @@ function AttendancePage() {
       </Dialog>
 
       <Dialog open={Boolean(historyRow)} onOpenChange={(open) => !open && setHistoryRow(null)}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto border-white/10 bg-background/95 sm:max-w-3xl">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto border-border bg-background/95 sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>Attendance History</DialogTitle>
           </DialogHeader>
@@ -526,15 +526,15 @@ function AttendancePage() {
               <Loader2 className="animate-spin text-primary" />
             </div>
           ) : history.length === 0 ? (
-            <div className="rounded-xl border border-white/10 bg-white/[0.035] p-6 text-center text-muted-foreground">
+            <div className="rounded-xl border border-border bg-card p-6 text-center text-muted-foreground">
               No previous modifications.
             </div>
           ) : (
             <div className="space-y-3">
               {history.map((item) => (
-                <div key={item.id} className="rounded-xl border border-white/10 bg-white/[0.035] p-4">
+                <div key={item.id} className="rounded-xl border border-border bg-card p-4">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="font-semibold text-white">{item.source === "employee_request" ? "Correction request approved" : "Admin edit"}</div>
+                    <div className="font-semibold text-foreground">{item.source === "employee_request" ? "Correction request approved" : "Admin edit"}</div>
                     <div className="text-xs text-muted-foreground">{format(new Date(item.created_at), "MMM d, yyyy HH:mm")}</div>
                   </div>
                   <div className="mt-2 text-xs text-muted-foreground">Edited by {item.edited_by_name}</div>
@@ -542,7 +542,7 @@ function AttendancePage() {
                     <Snapshot title="Original" value={item.original_value} />
                     <Snapshot title="Updated" value={item.updated_value} />
                   </div>
-                  <div className="mt-3 rounded-lg bg-black/20 p-3 text-sm">
+                  <div className="mt-3 rounded-lg bg-card p-3 text-sm">
                     <span className="text-muted-foreground">Reason: </span>
                     {item.reason}
                   </div>
@@ -584,34 +584,34 @@ function EditedBadge() {
 
 function DiffRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg bg-black/20 px-3 py-2">
+    <div className="flex items-center justify-between gap-3 rounded-lg bg-card px-3 py-2">
       <span className="text-muted-foreground">{label}</span>
-      <span className="text-right font-medium text-white">{value}</span>
+      <span className="text-right font-medium text-foreground">{value}</span>
     </div>
   );
 }
 
 function EditSnapshot({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2">
       <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
         <span className="text-primary">{icon}</span>
         <span>{label}</span>
       </div>
-      <span className="text-right text-sm font-semibold text-white">{value}</span>
+      <span className="text-right text-sm font-semibold text-foreground">{value}</span>
     </div>
   );
 }
 
 function Snapshot({ title, value }: { title: string; value: Record<string, unknown> }) {
   return (
-    <div className="rounded-lg bg-black/20 p-3">
+    <div className="rounded-lg bg-card p-3">
       <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</div>
       <div className="space-y-1 text-xs">
         {["check_in_time", "check_out_time", "status", "work_location", "work_hours"].map((key) => (
           <div key={key} className="flex justify-between gap-3">
             <span className="text-muted-foreground">{key.replaceAll("_", " ")}</span>
-            <span className="text-right text-white">{formatSnapshotValue(key, value[key])}</span>
+            <span className="text-right text-foreground">{formatSnapshotValue(key, value[key])}</span>
           </div>
         ))}
       </div>

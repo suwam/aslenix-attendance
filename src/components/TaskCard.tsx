@@ -157,7 +157,7 @@ export function TaskCard({
               return (
                 <div
                   key={name}
-                  className="h-6 w-6 rounded-full border border-background flex items-center justify-center text-[10px] font-semibold text-white"
+                  className="h-6 w-6 rounded-full border border-background flex items-center justify-center text-[10px] font-semibold text-foreground"
                   style={{ background: "var(--gradient-brand)" }}
                 >
                   {initials}

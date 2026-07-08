@@ -180,9 +180,9 @@ function CheckInPage() {
                     </div>
                     <LiveClock />
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-right">
+                  <div className="rounded-2xl border border-border bg-card px-4 py-3 text-right">
                     <div className="text-xs uppercase tracking-wider text-muted-foreground">Today</div>
-                    <div className="mt-1 font-semibold text-white">{formatNepaliDate(new Date(), "ddd DD, MMMM YYYY")} BS</div>
+                    <div className="mt-1 font-semibold text-foreground">{formatNepaliDate(new Date(), "ddd DD, MMMM YYYY")} BS</div>
                   </div>
                 </div>
 
@@ -202,11 +202,11 @@ function CheckInPage() {
                   </div>
                 ) : !today ? (
                   <div className="space-y-5 py-4 text-center">
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-white shadow-[0_0_34px_rgba(125,92,255,.38)]">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-foreground shadow-[0_0_34px_rgba(125,92,255,.38)]">
                       <LogIn size={28} />
                     </div>
                     <div>
-                      <div className="text-2xl font-bold text-white">Ready to start?</div>
+                      <div className="text-2xl font-bold text-foreground">Ready to start?</div>
                       <div className="mt-1 text-sm text-muted-foreground">
                         Mark your attendance when you arrive at the office.
                       </div>
@@ -226,7 +226,7 @@ function CheckInPage() {
                       <ShieldCheck size={28} />
                     </div>
                     <div>
-                      <div className="text-2xl font-bold text-white">You are checked in</div>
+                      <div className="text-2xl font-bold text-foreground">You are checked in</div>
                       <div className="mt-2 text-sm text-muted-foreground">
                         Started at{" "}
                         <span className="font-semibold text-foreground">
@@ -272,10 +272,10 @@ function CheckInPage() {
         <GlassCard className="h-fit">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-xl font-bold text-white">Past 7 days</h2>
+              <h2 className="text-xl font-bold text-foreground">Past 7 days</h2>
               <p className="text-sm text-muted-foreground">Check-in, checkout, and worked hours</p>
             </div>
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/[0.04] text-primary">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-card text-primary">
               <TimerReset size={20} />
             </div>
           </div>
@@ -308,12 +308,12 @@ function CheckInMetric({
 }) {
   return (
     <GlassCard className="flex items-center gap-3 p-4">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-white shadow-[0_0_22px_rgba(125,92,255,.3)]">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-foreground shadow-[0_0_22px_rgba(125,92,255,.3)]">
         <Icon size={18} />
       </div>
       <div className="min-w-0">
         <div className="text-xs uppercase tracking-wider text-muted-foreground">{label}</div>
-        <div className="mt-1 truncate text-xl font-bold text-white">{value}</div>
+        <div className="mt-1 truncate text-xl font-bold text-foreground">{value}</div>
       </div>
     </GlassCard>
   );
@@ -324,14 +324,14 @@ function AttendanceHistoryRow({ day }: { day: ReturnType<typeof buildLastSevenDa
   const status = getDayStatus(day);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 transition hover:bg-white/[0.055]">
+    <div className="rounded-2xl border border-border bg-card p-4 transition hover:bg-card">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${status.iconClass}`}>
             <status.icon size={18} />
           </div>
           <div>
-            <div className="font-semibold text-white">{day.label}</div>
+            <div className="font-semibold text-foreground">{day.label}</div>
             <div className="text-xs text-muted-foreground">{formatNepaliDate(day.date, "DD MMMM YYYY")} BS</div>
           </div>
         </div>
@@ -351,9 +351,9 @@ function AttendanceHistoryRow({ day }: { day: ReturnType<typeof buildLastSevenDa
 
 function HistoryTime({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-black/20 p-3">
+    <div className="rounded-xl bg-card p-3">
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="mt-1 font-semibold tabular-nums text-white">{value}</div>
+      <div className="mt-1 font-semibold tabular-nums text-foreground">{value}</div>
     </div>
   );
 }
@@ -387,8 +387,8 @@ function getDayStatus(day: ReturnType<typeof buildLastSevenDays>[number]) {
     return {
       label: "No record",
       icon: Clock3,
-      iconClass: "border border-white/10 bg-white/[0.04] text-muted-foreground",
-      pillClass: "border-white/10 bg-white/[0.04] text-muted-foreground",
+      iconClass: "border border-border bg-card text-muted-foreground",
+      pillClass: "border-border bg-card text-muted-foreground",
     };
   }
 

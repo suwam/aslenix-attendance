@@ -239,7 +239,7 @@ function AdminMeetingsPage() {
         title="Meetings"
         subtitle="Schedule meetings and notify employees once"
         actions={
-          <div className="rounded-full border border-white/10 bg-white/[0.035] px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+          <div className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground">
             {employeeCount} employees
           </div>
         }
@@ -253,35 +253,35 @@ function AdminMeetingsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[420px_minmax(0,1fr)]">
-        <GlassCard className="border-white/10 bg-white/[0.025]">
+        <GlassCard className="border-border bg-card">
           <form onSubmit={createMeeting} className="space-y-4">
             <div className="mb-2">
-              <h2 className="text-lg font-semibold text-white">Schedule meeting</h2>
+              <h2 className="text-lg font-semibold text-foreground">Schedule meeting</h2>
               <p className="text-sm text-muted-foreground">Employees receive one notification for each schedule.</p>
             </div>
             <div>
-              <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+              <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
                 <Video size={14} className="text-primary" />
                 Title
               </Label>
               <Input value={form.title} onChange={(e) => update("title", e.target.value)} placeholder="Weekly planning sync" />
             </div>
             <div>
-              <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+              <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
                 <CalendarClock size={14} className="text-primary" />
                 Meeting date (BS)
               </Label>
               <BSDateInput value={form.meeting_date_bs} onChange={(value) => update("meeting_date_bs", value)} />
             </div>
             <div>
-              <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+              <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
                 <Clock size={14} className="text-primary" />
                 Meeting time
               </Label>
               <GlassTimeInput value={form.meeting_clock} onChange={(value) => update("meeting_clock", value)} />
             </div>
             <div>
-              <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+              <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
                 <MapPin size={14} className="text-primary" />
                 Location
               </Label>
@@ -292,7 +292,7 @@ function AdminMeetingsPage() {
               />
             </div>
             <div>
-              <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+              <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
                 <LinkIcon size={14} className="text-primary" />
                 Meeting link
               </Label>
@@ -303,7 +303,7 @@ function AdminMeetingsPage() {
               />
             </div>
             <div>
-              <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+              <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
                 <NotebookText size={14} className="text-primary" />
                 Agenda
               </Label>
@@ -323,7 +323,7 @@ function AdminMeetingsPage() {
         <div className="space-y-3">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-white">Meeting timeline</h2>
+              <h2 className="text-lg font-semibold text-foreground">Meeting timeline</h2>
               <p className="text-sm text-muted-foreground">Newest scheduled meetings first</p>
             </div>
           </div>
@@ -332,7 +332,7 @@ function AdminMeetingsPage() {
               <Loader2 className="animate-spin text-primary" />
             </div>
           ) : meetings.length === 0 ? (
-            <GlassCard className="border-white/10 bg-white/[0.025] py-16 text-center text-muted-foreground">
+            <GlassCard className="border-border bg-card py-16 text-center text-muted-foreground">
               <Inbox size={28} className="mx-auto mb-3 text-primary" />
               No meetings scheduled.
             </GlassCard>
@@ -357,42 +357,42 @@ function AdminMeetingsPage() {
           <form onSubmit={saveMeetingChanges} className="space-y-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="md:col-span-2">
-                <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+                <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
                   <Video size={14} className="text-primary" />
                   Title
                 </Label>
                 <Input value={editForm.title} onChange={(e) => updateEdit("title", e.target.value)} />
               </div>
               <div>
-                <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+                <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
                   <CalendarClock size={14} className="text-primary" />
                   Meeting date (BS)
                 </Label>
                 <BSDateInput value={editForm.meeting_date_bs} onChange={(value) => updateEdit("meeting_date_bs", value)} />
               </div>
               <div>
-                <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+                <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
                   <Clock size={14} className="text-primary" />
                   Meeting time
                 </Label>
                 <GlassTimeInput value={editForm.meeting_clock} onChange={(value) => updateEdit("meeting_clock", value)} />
               </div>
               <div>
-                <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+                <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
                   <MapPin size={14} className="text-primary" />
                   Location
                 </Label>
                 <Input value={editForm.location} onChange={(e) => updateEdit("location", e.target.value)} />
               </div>
               <div className="md:col-span-2">
-                <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+                <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
                   <LinkIcon size={14} className="text-primary" />
                   Meeting link
                 </Label>
                 <Input value={editForm.meeting_link} onChange={(e) => updateEdit("meeting_link", e.target.value)} />
               </div>
               <div className="md:col-span-2">
-                <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-white">
+                <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
                   <NotebookText size={14} className="text-primary" />
                   Agenda
                 </Label>
@@ -421,14 +421,14 @@ function MeetingCard({
 }) {
   const past = isPast(new Date(meeting.meeting_time));
   return (
-    <GlassCard className={`flex flex-col gap-4 border-white/10 bg-white/[0.025] sm:flex-row sm:items-start ${past ? "opacity-75" : ""}`}>
+    <GlassCard className={`flex flex-col gap-4 border-border bg-card sm:flex-row sm:items-start ${past ? "opacity-75" : ""}`}>
       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
         <CalendarClock size={19} />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <div className="truncate text-lg font-semibold text-white">{meeting.title}</div>
+            <div className="truncate text-lg font-semibold text-foreground">{meeting.title}</div>
             <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <Clock size={14} />
@@ -442,12 +442,12 @@ function MeetingCard({
               )}
             </div>
           </div>
-          <span className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold ${past ? "border-white/10 bg-white/[0.04] text-muted-foreground" : "border-primary/20 bg-primary/10 text-primary"}`}>
+          <span className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold ${past ? "border-border bg-card text-muted-foreground" : "border-primary/20 bg-primary/10 text-primary"}`}>
             {past ? "Past" : "Upcoming"}
           </span>
         </div>
         {meeting.agenda && (
-          <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3 text-sm leading-6 text-muted-foreground">
+          <div className="mt-4 rounded-2xl border border-border bg-card p-3 text-sm leading-6 text-muted-foreground">
             {meeting.agenda}
           </div>
         )}
@@ -501,11 +501,11 @@ function MeetingMetric({
   };
 
   return (
-    <GlassCard className="border-white/10 bg-white/[0.025]">
+    <GlassCard className="border-border bg-card">
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
-          <div className="mt-3 text-3xl font-bold tabular-nums text-white">{value}</div>
+          <div className="mt-3 text-3xl font-bold tabular-nums text-foreground">{value}</div>
         </div>
         <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${colors[tone]}`}>
           <Icon size={19} />
