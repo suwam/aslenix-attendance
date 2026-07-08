@@ -213,6 +213,71 @@ export type Database = {
           },
         ];
       };
+      holidays: {
+        Row: {
+          created_at: string;
+          date: string;
+          id: string;
+          is_active: boolean;
+          name: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          date: string;
+          id?: string;
+          is_active?: boolean;
+          name: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          date?: string;
+          id?: string;
+          is_active?: boolean;
+          name?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      leave_balances: {
+        Row: {
+          balance: number;
+          created_at: string;
+          id: string;
+          leave_type: Database["public"]["Enums"]["leave_type"];
+          updated_at: string;
+          used: number;
+          user_id: string;
+        };
+        Insert: {
+          balance?: number;
+          created_at?: string;
+          id?: string;
+          leave_type: Database["public"]["Enums"]["leave_type"];
+          updated_at?: string;
+          used?: number;
+          user_id: string;
+        };
+        Update: {
+          balance?: number;
+          created_at?: string;
+          id?: string;
+          leave_type?: Database["public"]["Enums"]["leave_type"];
+          updated_at?: string;
+          used?: number;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "leave_balances_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["user_id"];
+          }
+        ];
+      };
       leave_requests: {
         Row: {
           admin_comment: string | null;
@@ -846,9 +911,9 @@ export type Database = {
     Enums: {
       app_role: "super_admin" | "admin" | "hr_manager" | "employee" | "viewer";
       approval_status: "pending" | "approved" | "rejected" | "suspended";
-      attendance_status: "present" | "late" | "absent" | "leave" | "half_day" | "wfh";
+      attendance_status: "present" | "late" | "absent" | "leave" | "half_day" | "wfh" | "holiday" | "weekend";
       leave_status: "pending" | "approved" | "rejected" | "cancelled";
-      leave_type: "sick" | "casual" | "vacation" | "emergency" | "wfh";
+      leave_type: "sick" | "casual" | "vacation" | "emergency" | "wfh" | "holiday" | "weekend";
       qr_status: "active" | "inactive" | "revoked";
       task_complexity: "small" | "medium" | "large" | "epic";
       task_priority: "low" | "medium" | "high" | "urgent";
@@ -980,9 +1045,9 @@ export const Constants = {
     Enums: {
       app_role: ["super_admin", "admin", "hr_manager", "employee", "viewer"],
       approval_status: ["pending", "approved", "rejected", "suspended"],
-      attendance_status: ["present", "late", "absent", "leave", "half_day", "wfh"],
+      attendance_status: ["present", "late", "absent", "leave", "half_day", "wfh" | "holiday" | "weekend"],
       leave_status: ["pending", "approved", "rejected", "cancelled"],
-      leave_type: ["sick", "casual", "vacation", "emergency", "wfh"],
+      leave_type: ["sick", "casual", "vacation", "emergency", "wfh" | "holiday" | "weekend"],
       qr_status: ["active", "inactive", "revoked"],
       task_complexity: ["small", "medium", "large", "epic"],
       task_priority: ["low", "medium", "high", "urgent"],
@@ -990,3 +1055,4 @@ export const Constants = {
     },
   },
 } as const;
+

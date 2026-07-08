@@ -45,6 +45,7 @@ const TYPES = [
 function MyLeaves() {
   const { user } = useAuth();
   const [rows, setRows] = useState<any[]>([]);
+  const [balances, setBalances] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
@@ -60,12 +61,16 @@ function MyLeaves() {
   const load = async () => {
     if (!user) return;
     setLoading(true);
-    const { data } = await supabase
-      .from("leave_requests")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-    setRows(data ?? []);
+    const [balanceData, requestsData] = await Promise.all([
+      supabase.from("leave_balances").select("*").eq("user_id", user.id),
+      supabase
+        .from("leave_requests")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+    ]);
+    setRows(requestsData.data ?? []);
+    setBalances(balanceData.data ?? []);
     setLoading(false);
   };
   useEffect(() => {
@@ -133,6 +138,30 @@ function MyLeaves() {
           </Button>
         }
       />
+
+      <div className="mb-6">
+        <h3 className="mb-3 text-sm font-semibold text-white">Leave Balances</h3>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+          {TYPES.map((t) => {
+            const bal = balances.find((b) => b.leave_type === t.v);
+            const total = bal ? Number(bal.balance) : 0;
+            const used = bal ? Number(bal.used) : 0;
+            const remaining = total - used;
+            return (
+              <GlassCard key={t.v} className="p-3 border-white/10 bg-white/[0.025]">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{t.l}</div>
+                <div className="mt-1 flex items-baseline gap-1 text-2xl font-bold text-white">
+                  {remaining} <span className="text-xs font-normal text-muted-foreground">left</span>
+                </div>
+                <div className="mt-1.5 flex justify-between text-[10px] text-muted-foreground">
+                  <span>Total: {total}</span>
+                  <span>Used: {used}</span>
+                </div>
+              </GlassCard>
+            );
+          })}
+        </div>
+      </div>
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <LeaveMetric label="Pending requests" value={pendingCount} icon={Clock} tone="amber" />

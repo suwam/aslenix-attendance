@@ -6,10 +6,13 @@ import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Check, X } from "lucide-react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { BSDateInput } from "@/components/BSDateInput";
+import { Label } from "@/components/ui/label";
+import { Loader2, Check, X, Edit3 } from "lucide-react";
 import { toast } from "sonner";
 import { differenceInDays, formatDistanceToNowStrict } from "date-fns";
-import { formatNepaliDate } from "@/lib/nepali-calendar";
+import { bsInputToAdDateString, formatNepaliDate } from "@/lib/nepali-calendar";
 
 export const Route = createFileRoute("/_app/admin/leaves")({ component: LeavesPage });
 
@@ -21,6 +24,10 @@ function LeavesPage() {
   const [loading, setLoading] = useState(true);
   const [comments, setComments] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
+  
+  const [editingLeave, setEditingLeave] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState({ start_date: "", end_date: "" });
+  const [editBusy, setEditBusy] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -89,22 +96,38 @@ function LeavesPage() {
 
   const decide = async (id: string, status: "approved" | "rejected") => {
     setBusy(id);
-    const row = allRows.find((r) => r.id === id);
-    const { error } = await supabase
-      .from("leave_requests")
-      .update({ status, admin_comment: comments[id] || null, reviewed_by: user?.id })
-      .eq("id", id);
+    const rpcName = status === "approved" ? "approve_leave_request" : "reject_leave_request";
+    const { error } = await supabase.rpc(rpcName, {
+      p_leave_id: id,
+      p_admin_id: user?.id,
+      p_comment: comments[id] || null
+    });
+    
     setBusy(null);
     if (error) return toast.error(error.message);
-    if (row) {
-      await supabase.from("notifications").insert({
-        user_id: row.user_id,
-        title: `Leave ${status}`,
-        message: `Your ${row.leave_type} leave from ${row.start_date} to ${row.end_date} was ${status}.`,
-        type: status === "approved" ? "success" : "warning",
-      });
-    }
+    
     toast.success(`Leave ${status}`);
+    load();
+  };
+
+  const submitModification = async () => {
+    if (!editingLeave) return;
+    const startDate = bsInputToAdDateString(editForm.start_date);
+    const endDate = bsInputToAdDateString(editingLeave.is_half_day ? editForm.start_date : editForm.end_date);
+    if (!startDate || (!editingLeave.is_half_day && !endDate)) return toast.error("Enter valid BS dates in YYYY-MM-DD format");
+
+    setEditBusy(true);
+    const { error } = await supabase.rpc("modify_leave_request", {
+      p_leave_id: editingLeave.id,
+      p_admin_id: user?.id,
+      p_new_start: startDate,
+      p_new_end: endDate
+    });
+    setEditBusy(false);
+
+    if (error) return toast.error(error.message);
+    toast.success("Leave dates modified successfully");
+    setEditingLeave(null);
     load();
   };
 
@@ -291,7 +314,23 @@ function LeavesPage() {
                     </div>
                   ) : (
                     <div className="rounded-3xl bg-white/5 p-5">
-                      <div className="mb-3 text-sm font-semibold text-white">Review summary</div>
+                      <div className="mb-3 flex items-center justify-between">
+                        <div className="text-sm font-semibold text-white">Review summary</div>
+                        {r.status === "approved" && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-8 rounded-lg text-xs"
+                            onClick={() => {
+                              setEditingLeave(r);
+                              setEditForm({ start_date: "", end_date: "" });
+                            }}
+                          >
+                            <Edit3 size={13} className="mr-1.5" />
+                            Edit Dates
+                          </Button>
+                        )}
+                      </div>
                       <div className="space-y-3 text-sm text-muted-foreground">
                         <div>
                           <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Comment</div>
@@ -310,6 +349,49 @@ function LeavesPage() {
           ))}
         </div>
       )}
+
+      {/* Edit Dates Dialog */}
+      <Dialog open={!!editingLeave} onOpenChange={(open) => !open && setEditingLeave(null)}>
+        <DialogContent className="border-white/10 bg-background/95 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modify Leave Dates</DialogTitle>
+            <div className="text-sm text-muted-foreground">
+              Update the approved dates for this leave request. This will recalculate the leave balance and attendance automatically.
+            </div>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div>
+              <Label className="mb-2 block text-sm font-semibold text-white">
+                {editingLeave?.is_half_day ? "New leave date (BS)" : "New start date (BS)"}
+              </Label>
+              <BSDateInput
+                required
+                value={editForm.start_date}
+                onChange={(v) => setEditForm({ ...editForm, start_date: v })}
+                inputClassName="rounded-xl border-white/10 bg-black/20"
+              />
+            </div>
+            {!editingLeave?.is_half_day && (
+              <div>
+                <Label className="mb-2 block text-sm font-semibold text-white">New end date (BS)</Label>
+                <BSDateInput
+                  required
+                  value={editForm.end_date}
+                  onChange={(v) => setEditForm({ ...editForm, end_date: v })}
+                  inputClassName="rounded-xl border-white/10 bg-black/20"
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter className="flex-row justify-end space-x-2">
+            <Button variant="outline" onClick={() => setEditingLeave(null)}>Cancel</Button>
+            <Button onClick={submitModification} disabled={editBusy} className="neon-button rounded-xl">
+              {editBusy && <Loader2 size={14} className="mr-2 animate-spin" />}
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
