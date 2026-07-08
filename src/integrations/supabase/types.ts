@@ -283,7 +283,9 @@ export type Database = {
           admin_comment: string | null;
           created_at: string;
           end_date: string;
+          half_day_session: string | null;
           id: string;
+          is_half_day: boolean;
           leave_type: Database["public"]["Enums"]["leave_type"];
           reason: string | null;
           reviewed_by: string | null;
@@ -296,7 +298,9 @@ export type Database = {
           admin_comment?: string | null;
           created_at?: string;
           end_date: string;
+          half_day_session?: string | null;
           id?: string;
+          is_half_day?: boolean;
           leave_type: Database["public"]["Enums"]["leave_type"];
           reason?: string | null;
           reviewed_by?: string | null;
@@ -309,7 +313,9 @@ export type Database = {
           admin_comment?: string | null;
           created_at?: string;
           end_date?: string;
+          half_day_session?: string | null;
           id?: string;
+          is_half_day?: boolean;
           leave_type?: Database["public"]["Enums"]["leave_type"];
           reason?: string | null;
           reviewed_by?: string | null;
@@ -846,9 +852,17 @@ export type Database = {
         Args: { _admin_comment?: string | null; _request_id: string };
         Returns: Database["public"]["Tables"]["attendance"]["Row"];
       };
+      approve_leave_request: {
+        Args: { p_admin_id: string; p_comment: string; p_leave_id: string };
+        Returns: undefined;
+      };
       attendance_edit_snapshot: {
         Args: { _row: Database["public"]["Tables"]["attendance"]["Row"] };
         Returns: Json;
+      };
+      cancel_leave_request: {
+        Args: { p_comment: string; p_leave_id: string; p_user_id: string };
+        Returns: undefined;
       };
       calculate_attendance_work_hours: {
         Args: { _check_in: string | null; _check_out: string | null };
@@ -887,9 +901,22 @@ export type Database = {
         Returns: boolean;
       };
       is_admin: { Args: { _user_id: string }; Returns: boolean };
+      modify_leave_request: {
+        Args: {
+          p_admin_id: string;
+          p_leave_id: string;
+          p_new_end: string;
+          p_new_start: string;
+        };
+        Returns: undefined;
+      };
       reject_attendance_correction_request: {
         Args: { _admin_comment?: string | null; _request_id: string };
         Returns: Database["public"]["Tables"]["attendance_correction_requests"]["Row"];
+      };
+      reject_leave_request: {
+        Args: { p_admin_id: string; p_comment: string; p_leave_id: string };
+        Returns: undefined;
       };
       verify_employee_qr: {
         Args: { _token: string };
@@ -1045,9 +1072,9 @@ export const Constants = {
     Enums: {
       app_role: ["super_admin", "admin", "hr_manager", "employee", "viewer"],
       approval_status: ["pending", "approved", "rejected", "suspended"],
-      attendance_status: ["present", "late", "absent", "leave", "half_day", "wfh" | "holiday" | "weekend"],
+      attendance_status: ["present", "late", "absent", "leave", "half_day", "wfh", "holiday", "weekend"],
       leave_status: ["pending", "approved", "rejected", "cancelled"],
-      leave_type: ["sick", "casual", "vacation", "emergency", "wfh" | "holiday" | "weekend"],
+      leave_type: ["sick", "casual", "vacation", "emergency", "wfh", "holiday", "weekend"],
       qr_status: ["active", "inactive", "revoked"],
       task_complexity: ["small", "medium", "large", "epic"],
       task_priority: ["low", "medium", "high", "urgent"],

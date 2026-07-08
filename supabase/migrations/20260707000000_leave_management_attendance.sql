@@ -6,7 +6,7 @@ ALTER TYPE public.attendance_status ADD VALUE IF NOT EXISTS 'holiday';
 ALTER TYPE public.attendance_status ADD VALUE IF NOT EXISTS 'weekend';
 
 -- 1. Create holidays table
-CREATE TABLE public.holidays (
+CREATE TABLE IF NOT EXISTS public.holidays (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   date DATE NOT NULL UNIQUE,
@@ -17,13 +17,26 @@ CREATE TABLE public.holidays (
 
 ALTER TABLE public.holidays ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "view all holidays" ON public.holidays FOR SELECT USING (auth.uid() IS NOT NULL);
-CREATE POLICY "admins manage holidays" ON public.holidays FOR ALL USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'holidays' AND policyname = 'view all holidays'
+  ) THEN
+    CREATE POLICY "view all holidays" ON public.holidays FOR SELECT USING (auth.uid() IS NOT NULL);
+  END IF;
 
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'holidays' AND policyname = 'admins manage holidays'
+  ) THEN
+    CREATE POLICY "admins manage holidays" ON public.holidays FOR ALL USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+  END IF;
+END $$;
+
+DROP TRIGGER IF EXISTS trg_holidays_updated ON public.holidays;
 CREATE TRIGGER trg_holidays_updated BEFORE UPDATE ON public.holidays FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 -- 2. Create leave_balances table
-CREATE TABLE public.leave_balances (
+CREATE TABLE IF NOT EXISTS public.leave_balances (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   leave_type public.leave_type NOT NULL,
@@ -36,10 +49,28 @@ CREATE TABLE public.leave_balances (
 
 ALTER TABLE public.leave_balances ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "view own leave balances" ON public.leave_balances FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "admins view all leave balances" ON public.leave_balances FOR SELECT USING (public.is_admin(auth.uid()));
-CREATE POLICY "admins manage leave balances" ON public.leave_balances FOR ALL USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'leave_balances' AND policyname = 'view own leave balances'
+  ) THEN
+    CREATE POLICY "view own leave balances" ON public.leave_balances FOR SELECT USING (auth.uid() = user_id);
+  END IF;
 
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'leave_balances' AND policyname = 'admins view all leave balances'
+  ) THEN
+    CREATE POLICY "admins view all leave balances" ON public.leave_balances FOR SELECT USING (public.is_admin(auth.uid()));
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'leave_balances' AND policyname = 'admins manage leave balances'
+  ) THEN
+    CREATE POLICY "admins manage leave balances" ON public.leave_balances FOR ALL USING (public.is_admin(auth.uid())) WITH CHECK (public.is_admin(auth.uid()));
+  END IF;
+END $$;
+
+DROP TRIGGER IF EXISTS trg_leave_balances_updated ON public.leave_balances;
 CREATE TRIGGER trg_leave_balances_updated BEFORE UPDATE ON public.leave_balances FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 -- 3. Leave Approval RPC
@@ -299,8 +330,13 @@ BEGIN
   IF to_regnamespace('cron') IS NULL THEN
     RAISE NOTICE 'cron schema is not available; skipping auto attendance processor cron registration';
   ELSE
-    -- Unschedule if exists to replace
-    PERFORM cron.unschedule('auto-attendance-processor');
+    -- Unschedule if exists to replace. Some pg_cron versions raise when the
+    -- name is absent, so tolerate that case for idempotent migration retries.
+    BEGIN
+      PERFORM cron.unschedule('auto-attendance-processor');
+    EXCEPTION WHEN OTHERS THEN
+      NULL;
+    END;
     -- Run every day at 00:05 AM for the previous day
     PERFORM cron.schedule(
       'auto-attendance-processor',
