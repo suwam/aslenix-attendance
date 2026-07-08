@@ -135,7 +135,7 @@
     font-weight: 700; 
   }
   input, textarea, select {
-    background-color: #ffffff;
+    background-color: #111827;
     border: 1px solid #E5E7EB;
   }
   input:focus, textarea:focus, select:focus {
@@ -615,12 +615,7 @@
     padding: clamp(18px, 2.2vw, 28px);
   }
 
-  .employee-dashboard-header h1 {
-    margin-top: 6px;
-    font-size: clamp(2rem, 4vw, 4rem);
-    line-height: 0.98;
-    letter-spacing: 0;
-  }
+  
 
   .employee-dashboard-header p {
     margin-top: 10px;
@@ -856,7 +851,7 @@
     line-height: 1;
     letter-spacing: 0;
     white-space: nowrap;
-    color: rgba(248, 251, 255, 0.9);
+    color: #4B5563;
   }
 
   .employee-kpi-card small {
@@ -1183,7 +1178,7 @@
   .employee-meeting-card,
   .employee-insight-item {
     border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.045);
+    background: #F9FAFB;
     border-radius: 16px;
     transition: transform 0.2s ease, border-color 0.2s ease;
   }
@@ -1359,7 +1354,7 @@
     gap: 12px;
     min-height: 72px;
     padding: 14px;
-    color: rgba(248, 251, 255, 0.9);
+    color: #4B5563;
     font-weight: 800;
   }
 
@@ -1369,34 +1364,18 @@
   }
 
   .employee-dashboard {
-    background:
-      radial-gradient(circle at 7% 0%, rgba(255, 45, 111, 0.26), transparent 28%),
-      radial-gradient(circle at 78% 6%, rgba(33, 212, 253, 0.22), transparent 33%),
-      radial-gradient(circle at 48% 42%, rgba(139, 92, 246, 0.14), transparent 36%),
-      linear-gradient(135deg, #050816 0%, #07101f 42%, #061927 100%);
+    background: var(--color-background);
   }
 
   .employee-dashboard::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background:
-      radial-gradient(circle, rgba(33, 212, 253, 0.28) 0 1px, transparent 1.5px) 0 0 / 96px 96px,
-      radial-gradient(circle, rgba(255, 45, 111, 0.22) 0 1px, transparent 1.5px) 48px 52px / 112px 112px;
-    opacity: 0.38;
-    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.82), transparent 86%);
+    display: none;
   }
 
   .employee-dashboard-header {
     position: relative;
     overflow: hidden;
-    border-color: rgba(103, 232, 249, 0.22);
-    background:
-      linear-gradient(120deg, rgba(255, 45, 111, 0.14), transparent 28%),
-      radial-gradient(circle at 84% 18%, rgba(33, 212, 253, 0.2), transparent 30%),
-      linear-gradient(145deg, rgba(17, 26, 50, 0.9), rgba(5, 12, 30, 0.82));
+    border-color: rgba(0, 0, 0, 0.06);
+    background: #ffffff;
   }
 
   .employee-dashboard-header::before {
@@ -1535,1058 +1514,7 @@
     position: relative;
     overflow: hidden;
     border-color: rgba(103, 232, 249, 0.17);
-    background:
-      radial-gradient(circle at 50% 0%, rgba(33, 212, 253, 0.14), transparent 42%),
-      linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.035));
-  }
-
-  .employee-quick-action::before {
-    content: "";
-    position: absolute;
-    inset: auto 18px 0;
-    height: 2px;
-    border-radius: 999px;
-    background: linear-gradient(90deg, transparent, #21d4fd, #ff2d6f, transparent);
-    opacity: 0;
-    transition: opacity 0.2s ease;
-  }
-
-  .employee-quick-action:hover::before {
-    opacity: 0.8;
-  }
-
-  .employee-quick-action svg {
-    padding: 8px;
-    width: 36px;
-    height: 36px;
-    border-radius: 12px;
-    background: rgba(33, 212, 253, 0.1);
-    color: #7df3ff;
-    box-shadow: 0 0 24px rgba(33, 212, 253, 0.14);
-  }
-
-  .employee-quick-panel {
-    position: relative;
-    border-color: rgba(125, 243, 255, 0.24);
-    background:
-      radial-gradient(circle at 0% 0%, rgba(33, 212, 253, 0.2), transparent 34%),
-      radial-gradient(circle at 98% 96%, rgba(255, 45, 111, 0.16), transparent 36%),
-      linear-gradient(145deg, rgba(18, 27, 52, 0.92), rgba(5, 10, 27, 0.9));
-    box-shadow:
-      0 30px 90px rgba(0, 0, 0, 0.48),
-      0 0 80px rgba(33, 212, 253, 0.09),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  }
-
-  .employee-quick-panel::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    border-radius: inherit;
-    background:
-      linear-gradient(120deg, rgba(255, 255, 255, 0.12), transparent 24%),
-      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.026) 0 1px, transparent 1px 72px);
-    opacity: 0.52;
-  }
-
-  .employee-quick-panel .employee-panel-heading {
-    align-items: center;
-    margin-bottom: 26px;
-  }
-
-  .employee-quick-panel .employee-panel-heading h2 {
-    font-size: clamp(1.75rem, 3vw, 2.5rem);
-  }
-
-  .employee-quick-panel .employee-panel-heading > svg {
-    width: 34px;
-    height: 34px;
-    padding: 8px;
-    border-radius: 12px;
-    border: 1px solid rgba(125, 243, 255, 0.18);
-    background: rgba(33, 212, 253, 0.08);
-    color: #f8fbff;
-    box-shadow: 0 0 28px rgba(33, 212, 253, 0.12);
-  }
-
-  .employee-quick-panel .employee-quick-grid {
-    gap: 18px;
-  }
-
-  .employee-quick-panel .employee-quick-action {
-    min-height: 150px;
-    border-radius: 18px;
-    gap: 16px;
-    border-color: rgba(125, 243, 255, 0.2);
-    background:
-      radial-gradient(circle at 50% 0%, rgba(33, 212, 253, 0.2), transparent 45%),
-      radial-gradient(circle at 100% 100%, rgba(255, 45, 111, 0.1), transparent 40%),
-      linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.035));
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.1),
-      0 18px 42px rgba(0, 0, 0, 0.24);
-  }
-
-  .employee-quick-panel .employee-quick-action::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    border-radius: inherit;
-    background: linear-gradient(120deg, transparent 18%, rgba(255, 255, 255, 0.12), transparent 42%);
-    opacity: 0;
-    transform: translateX(-35%);
-    transition: opacity 0.25s ease, transform 0.45s ease;
-  }
-
-  .employee-quick-panel .employee-quick-action:hover {
-    transform: translateY(-5px);
-    border-color: rgba(125, 243, 255, 0.34);
-    box-shadow:
-      0 24px 60px rgba(0, 0, 0, 0.34),
-      0 0 42px rgba(33, 212, 253, 0.14),
-      inset 0 1px 0 rgba(255, 255, 255, 0.14);
-  }
-
-  .employee-quick-panel .employee-quick-action:hover::after {
-    opacity: 1;
-    transform: translateX(35%);
-  }
-
-  .employee-quick-panel .employee-quick-action svg {
-    width: 54px;
-    height: 54px;
-    padding: 13px;
-    border-radius: 18px;
-    background:
-      radial-gradient(circle at 30% 18%, rgba(255, 255, 255, 0.2), transparent 36%),
-      linear-gradient(135deg, rgba(33, 212, 253, 0.2), rgba(255, 45, 111, 0.12));
-    color: #7df3ff;
-    box-shadow:
-      0 0 34px rgba(33, 212, 253, 0.18),
-      inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  }
-
-  .employee-quick-panel .employee-quick-action span {
-    position: relative;
-    z-index: 1;
-    color: #f8fbff;
-    font-size: clamp(1rem, 1.45vw, 1.25rem);
-    font-weight: 900;
-    letter-spacing: 0;
-    text-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  }
-
-  .employee-kpi-grid {
-    align-items: stretch;
-  }
-
-  .employee-kpi-card {
-    isolation: isolate;
-    grid-template-columns: 56px minmax(0, 1fr);
-    align-items: start;
-    gap: 18px;
-    min-height: 148px;
-    padding: 24px 24px 22px;
-  }
-
-  .employee-kpi-card::after,
-  .employee-kpi-card > * {
-    position: relative;
-    z-index: 1;
-  }
-
-  .employee-kpi-icon {
-    width: 54px;
-    height: 54px;
-    border-radius: 16px;
-  }
-
-  .employee-kpi-copy {
-    min-width: 0;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 14px;
-  }
-
-  .employee-kpi-copy > span {
-    color: rgba(231, 238, 255, 0.78);
-    font-size: clamp(0.92rem, 0.95vw, 1.05rem);
-    font-weight: 850;
-    line-height: 1.28;
-    text-wrap: balance;
-  }
-
-  .employee-kpi-value {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-    min-width: 0;
-  }
-
-  .employee-kpi-card strong {
-    max-width: 100%;
-    font-size: clamp(2.35rem, 3.1vw, 3.35rem);
-    line-height: 0.96;
-    letter-spacing: 0;
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-
-  .employee-kpi-card small {
-    color: rgba(226, 232, 240, 0.72);
-    font-size: clamp(0.82rem, 0.82vw, 0.92rem);
-    font-weight: 850;
-    line-height: 1.25;
-    text-wrap: balance;
-  }
-
-  .employee-kpi-card.amber .employee-kpi-value {
-    min-height: 74px;
-    justify-content: center;
-  }
-
-  .employee-kpi-card.amber strong {
-    display: block;
-    font-size: clamp(2.4rem, 3vw, 3.1rem);
-  }
-
-  @media (min-width: 1181px) and (max-width: 1480px) {
-    .employee-kpi-card {
-      grid-template-columns: 48px minmax(0, 1fr);
-      gap: 14px;
-      padding-inline: 20px;
-    }
-
-    .employee-kpi-icon {
-      width: 48px;
-      height: 48px;
-    }
-
-    .employee-kpi-card strong {
-      font-size: clamp(2.15rem, 2.8vw, 2.85rem);
-    }
-  }
-
-  .employee-task-card,
-  .employee-meeting-card,
-  .employee-insight-item {
-    border-color: rgba(103, 232, 249, 0.14);
-    background:
-      linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.032)),
-      rgba(5, 8, 22, 0.26);
-  }
-
-  .employee-task-card h3,
-  .employee-meeting-card h3 {
-    color: #f8fbff;
-  }
-
-  .employee-secondary-button,
-  .employee-pill-link {
-    border-color: rgba(33, 212, 253, 0.32);
-    background: linear-gradient(135deg, rgba(33, 212, 253, 0.12), rgba(255, 45, 111, 0.06));
-    color: #bbf7ff;
-  }
-
-  .employee-heatmap {
-    grid-template-columns: repeat(15, minmax(22px, 1fr));
-    padding: 14px;
-    border-radius: 16px;
-    border: 1px solid rgba(103, 232, 249, 0.12);
-    background: rgba(255, 255, 255, 0.035);
-  }
-
-  .heatmap-cell {
-    border-radius: 7px;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 10px 20px rgba(0, 0, 0, 0.16);
-  }
-
-  .heatmap-cell.present { background: linear-gradient(135deg, #20e596, #20c46b); }
-  .heatmap-cell.late { background: linear-gradient(135deg, #ffe45c, #ffb703); }
-  .heatmap-cell.absent { background: linear-gradient(135deg, #ff6b8a, #ff2d6f); }
-  .heatmap-cell.holiday { background: linear-gradient(135deg, #8da2be, #5f728d); }
-
-  .employee-timeline-item > span {
-    background: linear-gradient(135deg, #21d4fd, #ff2d6f);
-  }
-
-  .employee-insights {
-    border-color: rgba(255, 45, 111, 0.22);
-    background:
-      radial-gradient(circle at 0% 0%, rgba(255, 45, 111, 0.17), transparent 32%),
-      radial-gradient(circle at 88% 20%, rgba(33, 212, 253, 0.16), transparent 35%),
-      linear-gradient(145deg, rgba(16, 25, 48, 0.92), rgba(5, 10, 26, 0.84));
-  }
-
-  .employee-insight-item {
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  }
-
-  .employee-insight-item svg {
-    color: #ff78a7;
-  }
-
-  .employee-dashboard {
-    --dashboard-bg: #020617;
-    --dashboard-midnight: #041b4d;
-    --dashboard-cyan: #22d3ee;
-    --dashboard-pink: #ec4899;
-    --dashboard-purple: #8b5cf6;
-    --dashboard-teal: #2dd4bf;
-    --dashboard-border: rgba(34, 211, 238, 0.18);
-    --dashboard-muted: rgba(203, 213, 225, 0.72);
-    background:
-      radial-gradient(circle at 9% 0%, rgba(236, 72, 153, 0.34), transparent 29%),
-      radial-gradient(circle at 83% 3%, rgba(34, 211, 238, 0.28), transparent 32%),
-      radial-gradient(circle at 58% 46%, rgba(139, 92, 246, 0.16), transparent 36%),
-      radial-gradient(circle at 18% 88%, rgba(45, 212, 191, 0.1), transparent 30%),
-      linear-gradient(135deg, #020617 0%, #03112f 44%, #041b4d 100%);
-  }
-
-  .employee-dashboard::before {
-    background-image:
-      linear-gradient(rgba(34, 211, 238, 0.06) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(236, 72, 153, 0.045) 1px, transparent 1px);
-    background-size: 44px 44px;
-    opacity: 0.36;
-  }
-
-  .employee-dashboard::after {
-    background:
-      radial-gradient(circle at 0% 10%, rgba(236, 72, 153, 0.18), transparent 28%),
-      radial-gradient(circle at 100% 9%, rgba(34, 211, 238, 0.16), transparent 30%),
-      linear-gradient(115deg, transparent 0 34%, rgba(255, 255, 255, 0.035) 45%, transparent 58%);
-    opacity: 0.8;
-  }
-
-  .employee-dashboard-header,
-  .employee-panel,
-  .employee-kpi-card,
-  .employee-task-card,
-  .employee-meeting-card,
-  .employee-insight-item,
-  .employee-mini-metric,
-  .employee-quick-action {
-    border-color: var(--dashboard-border);
-    background:
-      radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.1), transparent 30%),
-      radial-gradient(circle at 100% 0%, rgba(236, 72, 153, 0.08), transparent 30%),
-      linear-gradient(145deg, rgba(4, 27, 77, 0.62), rgba(2, 6, 23, 0.76));
-    box-shadow:
-      0 24px 70px rgba(0, 0, 0, 0.42),
-      0 0 0 1px rgba(255, 255, 255, 0.045) inset,
-      0 0 36px rgba(34, 211, 238, 0.075),
-      0 0 42px rgba(236, 72, 153, 0.055);
-    backdrop-filter: blur(24px) saturate(155%);
-    -webkit-backdrop-filter: blur(24px) saturate(155%);
-  }
-
-  .employee-dashboard-header {
-    border-color: rgba(34, 211, 238, 0.24);
-    background:
-      radial-gradient(circle at 0% 0%, rgba(236, 72, 153, 0.2), transparent 35%),
-      radial-gradient(circle at 100% 0%, rgba(34, 211, 238, 0.18), transparent 38%),
-      linear-gradient(145deg, rgba(4, 27, 77, 0.72), rgba(2, 6, 23, 0.8));
-    box-shadow:
-      0 28px 86px rgba(0, 0, 0, 0.46),
-      0 0 54px rgba(34, 211, 238, 0.1),
-      0 0 62px rgba(236, 72, 153, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 0.09);
-  }
-
-  .employee-dashboard-header::before,
-  .employee-panel::before,
-  .employee-kpi-card::after {
-    background:
-      linear-gradient(120deg, rgba(236, 72, 153, 0.16), transparent 34%, rgba(34, 211, 238, 0.14) 72%, transparent),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 42%);
-    opacity: 0.55;
-  }
-
-  .employee-panel::after {
-    background:
-      linear-gradient(135deg, rgba(34, 211, 238, 0.07), transparent 38%, rgba(236, 72, 153, 0.06)),
-      radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.1), transparent 32%);
-  }
-
-  .employee-dashboard-header h1 {
-    background: linear-gradient(90deg, #ffffff 0%, #d9fbff 42%, #f9a8d4 76%, #c4b5fd 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    text-shadow: 0 24px 72px rgba(34, 211, 238, 0.18);
-  }
-
-  .employee-dashboard-header p,
-  .employee-task-card p,
-  .employee-meeting-card p,
-  .employee-empty-state p,
-  .employee-timeline-item p,
-  .employee-work-ring span,
-  .employee-week-progress > div:first-child,
-  .employee-task-meta {
-    color: var(--dashboard-muted);
-  }
-
-  .employee-dashboard-kicker,
-  .employee-panel-heading span,
-  .employee-kpi-copy > span {
-    color: #67e8f9;
-    text-shadow: 0 0 24px rgba(34, 211, 238, 0.34);
-  }
-
-  .employee-panel-heading h2,
-  .employee-kpi-card h3,
-  .employee-task-card h3,
-  .employee-meeting-card h3,
-  .employee-timeline-item strong,
-  .employee-insight-item {
-    color: #f8fafc;
-  }
-
-  .employee-search,
-  .employee-icon-button,
-  .employee-avatar,
-  .employee-muted-pill {
-    border-color: rgba(34, 211, 238, 0.2);
-    background:
-      linear-gradient(135deg, rgba(4, 27, 77, 0.58), rgba(2, 6, 23, 0.5)),
-      rgba(255, 255, 255, 0.035);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.09),
-      0 12px 34px rgba(0, 0, 0, 0.28),
-      0 0 24px rgba(34, 211, 238, 0.06);
-  }
-
-  .employee-avatar,
-  .employee-award-icon,
-  .employee-timeline-item > span {
-    background: linear-gradient(135deg, var(--dashboard-cyan), var(--dashboard-purple) 52%, var(--dashboard-pink));
-    box-shadow:
-      0 0 30px rgba(34, 211, 238, 0.28),
-      0 0 34px rgba(236, 72, 153, 0.18),
-      inset 0 1px 0 rgba(255, 255, 255, 0.22);
-  }
-
-  .employee-award-card {
-    border-color: rgba(236, 72, 153, 0.22);
-    background:
-      radial-gradient(circle at 0% 0%, rgba(236, 72, 153, 0.18), transparent 35%),
-      linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(34, 211, 238, 0.075));
-    box-shadow:
-      0 20px 54px rgba(0, 0, 0, 0.3),
-      0 0 38px rgba(236, 72, 153, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  }
-
-  .employee-award-score {
-    color: #f0f9ff;
-    background:
-      linear-gradient(135deg, rgba(34, 211, 238, 0.14), rgba(236, 72, 153, 0.13)),
-      rgba(255, 255, 255, 0.045);
-    border: 1px solid rgba(34, 211, 238, 0.18);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 0 28px rgba(34, 211, 238, 0.08);
-  }
-
-  .employee-kpi-card {
-    border-color: rgba(34, 211, 238, 0.19);
-    background:
-      radial-gradient(circle at 0% 16%, color-mix(in srgb, var(--kpi-accent) 18%, transparent), transparent 36%),
-      radial-gradient(circle at 100% 0%, rgba(236, 72, 153, 0.08), transparent 32%),
-      linear-gradient(145deg, rgba(4, 27, 77, 0.66), rgba(2, 6, 23, 0.78));
-  }
-
-  .employee-kpi-card::before {
-    background: linear-gradient(180deg, var(--kpi-accent, #22d3ee), rgba(236, 72, 153, 0.82));
-    box-shadow:
-      0 0 24px color-mix(in srgb, var(--kpi-accent, #22d3ee) 70%, transparent),
-      0 0 36px rgba(236, 72, 153, 0.24);
-  }
-
-  .employee-kpi-card.green { --kpi-accent: var(--dashboard-teal); }
-  .employee-kpi-card.blue { --kpi-accent: var(--dashboard-cyan); }
-  .employee-kpi-card.amber { --kpi-accent: var(--dashboard-purple); }
-  .employee-kpi-card.pink { --kpi-accent: var(--dashboard-pink); }
-
-  .employee-kpi-icon {
-    color: color-mix(in srgb, var(--kpi-accent) 82%, white);
-    background:
-      radial-gradient(circle at 30% 20%, color-mix(in srgb, var(--kpi-accent) 24%, transparent), transparent 52%),
-      rgba(255, 255, 255, 0.055);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.1),
-      0 0 30px color-mix(in srgb, var(--kpi-accent) 20%, transparent);
-  }
-
-  .employee-kpi-card strong {
-    background: linear-gradient(90deg, #ffffff, color-mix(in srgb, var(--kpi-accent) 72%, #ffffff));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    text-shadow: 0 0 28px color-mix(in srgb, var(--kpi-accent) 24%, transparent);
-  }
-
-  .employee-kpi-card small {
-    color: rgba(203, 213, 225, 0.78);
-  }
-
-  .employee-attendance-panel {
-    background:
-      radial-gradient(circle at 72% 12%, rgba(34, 211, 238, 0.17), transparent 34%),
-      radial-gradient(circle at 0% 0%, rgba(236, 72, 153, 0.1), transparent 32%),
-      linear-gradient(145deg, rgba(4, 27, 77, 0.68), rgba(2, 6, 23, 0.82));
-  }
-
-  .employee-status-dot {
-    background: linear-gradient(135deg, rgba(34, 211, 238, 0.13), rgba(236, 72, 153, 0.1));
-    border-color: rgba(34, 211, 238, 0.2);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 22px rgba(34, 211, 238, 0.1);
-  }
-
-  .employee-status-dot span {
-    background: #22d3ee;
-    box-shadow: 0 0 18px rgba(34, 211, 238, 0.82);
-  }
-
-  .employee-mini-metric {
-    border-color: rgba(34, 211, 238, 0.16);
-    background:
-      linear-gradient(135deg, rgba(34, 211, 238, 0.085), rgba(236, 72, 153, 0.05)),
-      rgba(255, 255, 255, 0.045);
-  }
-
-  .employee-mini-metric strong,
-  .employee-work-ring strong {
-    color: #ffffff;
-    text-shadow: 0 0 26px rgba(34, 211, 238, 0.18);
-  }
-
-  .employee-work-ring {
-    background:
-      radial-gradient(circle at center, rgba(4, 27, 77, 0.9) 0 56%, transparent 57%),
-      conic-gradient(from -90deg, var(--dashboard-cyan) var(--work-progress), rgba(15, 23, 42, 0.74) 0),
-      linear-gradient(135deg, rgba(236, 72, 153, 0.34), rgba(34, 211, 238, 0.34));
-    box-shadow:
-      0 0 42px rgba(34, 211, 238, 0.18),
-      0 0 48px rgba(236, 72, 153, 0.11),
-      0 22px 64px rgba(0, 0, 0, 0.35);
-  }
-
-  .employee-progress-track {
-    background: rgba(148, 163, 184, 0.14);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  }
-
-  .employee-progress-track span {
-    background: linear-gradient(90deg, var(--dashboard-cyan), var(--dashboard-purple), var(--dashboard-pink));
-    box-shadow: 0 0 20px rgba(34, 211, 238, 0.36), 0 0 24px rgba(236, 72, 153, 0.18);
-  }
-
-  .employee-action-row .neon-button,
-  .employee-action-row button,
-  .employee-secondary-button,
-  .employee-pill-link {
-    border-color: rgba(34, 211, 238, 0.3);
-    background:
-      linear-gradient(135deg, rgba(34, 211, 238, 0.18), rgba(59, 130, 246, 0.15)),
-      rgba(255, 255, 255, 0.045);
-    color: #cffafe;
-    box-shadow:
-      0 12px 30px rgba(0, 0, 0, 0.22),
-      0 0 24px rgba(34, 211, 238, 0.09),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  }
-
-  .employee-action-row .neon-button:hover,
-  .employee-action-row button:hover,
-  .employee-secondary-button:hover,
-  .employee-pill-link:hover {
-    border-color: rgba(34, 211, 238, 0.46);
-    background:
-      linear-gradient(135deg, rgba(34, 211, 238, 0.28), rgba(59, 130, 246, 0.22)),
-      rgba(255, 255, 255, 0.06);
-    box-shadow:
-      0 18px 42px rgba(0, 0, 0, 0.28),
-      0 0 34px rgba(34, 211, 238, 0.18),
-      inset 0 1px 0 rgba(255, 255, 255, 0.13);
-  }
-
-  .employee-quick-panel {
-    background:
-      radial-gradient(circle at 16% 0%, rgba(236, 72, 153, 0.15), transparent 34%),
-      radial-gradient(circle at 88% 6%, rgba(34, 211, 238, 0.16), transparent 34%),
-      linear-gradient(145deg, rgba(4, 27, 77, 0.68), rgba(2, 6, 23, 0.82));
-  }
-
-  .employee-quick-panel::before {
-    background:
-      radial-gradient(circle at 14% 0%, rgba(236, 72, 153, 0.2), transparent 42%),
-      radial-gradient(circle at 86% 0%, rgba(34, 211, 238, 0.2), transparent 44%);
-  }
-
-  .employee-quick-action {
-    border-color: rgba(34, 211, 238, 0.18);
-  }
-
-  .employee-quick-action::before {
-    background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.68), rgba(236, 72, 153, 0.62), transparent);
-  }
-
-  .employee-quick-action::after {
-    background: linear-gradient(110deg, transparent, rgba(255, 255, 255, 0.12), transparent);
-  }
-
-  .employee-quick-action svg,
-  .employee-quick-panel .employee-panel-heading > svg,
-  .employee-empty-state svg,
-  .employee-insight-item svg {
-    color: #67e8f9;
-    background:
-      linear-gradient(135deg, rgba(34, 211, 238, 0.14), rgba(236, 72, 153, 0.1)),
-      rgba(255, 255, 255, 0.04);
-    box-shadow: 0 0 28px rgba(34, 211, 238, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  }
-
-  .employee-quick-panel .employee-quick-action:hover,
-  .employee-kpi-card:hover,
-  .employee-panel:hover,
-  .employee-task-card:hover,
-  .employee-meeting-card:hover {
-    border-color: rgba(34, 211, 238, 0.34);
-    box-shadow:
-      0 30px 90px rgba(0, 0, 0, 0.48),
-      0 0 48px rgba(34, 211, 238, 0.14),
-      0 0 58px rgba(236, 72, 153, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 0.11);
-  }
-
-  .employee-task-card,
-  .employee-meeting-card {
-    border-color: rgba(34, 211, 238, 0.14);
-    background:
-      radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.075), transparent 34%),
-      linear-gradient(145deg, rgba(4, 27, 77, 0.5), rgba(2, 6, 23, 0.58));
-  }
-
-  .employee-priority.high {
-    border-color: rgba(236, 72, 153, 0.32);
-    background: rgba(236, 72, 153, 0.13);
-    color: #f9a8d4;
-  }
-
-  .employee-priority.medium {
-    border-color: rgba(139, 92, 246, 0.32);
-    background: rgba(139, 92, 246, 0.13);
-    color: #c4b5fd;
-  }
-
-  .employee-priority.normal,
-  .employee-muted-pill {
-    border-color: rgba(34, 211, 238, 0.24);
-    background: rgba(34, 211, 238, 0.09);
-    color: #a5f3fc;
-  }
-
-  .heatmap-cell {
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.12),
-      0 10px 20px rgba(0, 0, 0, 0.16);
-  }
-
-  .heatmap-cell.present { background: linear-gradient(135deg, var(--dashboard-teal), #14b8a6); box-shadow: 0 0 16px rgba(45, 212, 191, 0.28); }
-  .heatmap-cell.late { background: linear-gradient(135deg, var(--dashboard-purple), #6366f1); box-shadow: 0 0 16px rgba(139, 92, 246, 0.25); }
-  .heatmap-cell.absent { background: linear-gradient(135deg, #f472b6, var(--dashboard-pink)); box-shadow: 0 0 16px rgba(236, 72, 153, 0.26); }
-  .heatmap-cell.holiday { background: linear-gradient(135deg, #334155, #1e3a8a); }
-  .heatmap-cell.none { background: rgba(148, 163, 184, 0.12); }
-
-  .employee-timeline-item > span {
-    background: linear-gradient(135deg, var(--dashboard-cyan), var(--dashboard-pink));
-  }
-
-  .employee-timeline-item:not(:last-child)::after {
-    background: linear-gradient(180deg, rgba(34, 211, 238, 0.34), rgba(236, 72, 153, 0.06));
-  }
-
-  .employee-insights {
-    background:
-      radial-gradient(circle at 12% 0%, rgba(236, 72, 153, 0.14), transparent 34%),
-      radial-gradient(circle at 88% 0%, rgba(34, 211, 238, 0.14), transparent 34%),
-      linear-gradient(145deg, rgba(4, 27, 77, 0.66), rgba(2, 6, 23, 0.8));
-  }
-
-  .employee-insight-item {
-    border-color: rgba(34, 211, 238, 0.15);
-  }
-
-  .employee-dashboard {
-    --dashboard-bg: #080008;
-    --dashboard-wine: #240012;
-    --dashboard-panel-navy: #0d1a2a;
-    --dashboard-panel-deep: #080d18;
-    --dashboard-border: rgba(95, 124, 160, 0.28);
-    --dashboard-cyan: #8ecbff;
-    --dashboard-hot-cyan: #22d3ee;
-    --dashboard-pink: #ec4899;
-    --dashboard-purple: #8b5cf6;
-    --dashboard-muted: rgba(171, 195, 224, 0.82);
-    background:
-      radial-gradient(circle at 0% 0%, rgba(236, 72, 153, 0.22), transparent 28%),
-      radial-gradient(circle at 88% 0%, rgba(34, 211, 238, 0.1), transparent 31%),
-      radial-gradient(circle at 50% 42%, rgba(4, 27, 77, 0.28), transparent 42%),
-      linear-gradient(180deg, #240012 0%, #10000a 26%, #070915 58%, #020617 100%);
-  }
-
-  .employee-dashboard::before {
-    background-image:
-      linear-gradient(rgba(142, 203, 255, 0.035) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(236, 72, 153, 0.03) 1px, transparent 1px);
-    background-size: 58px 58px;
-    opacity: 0.28;
-  }
-
-  .employee-dashboard::after {
-    background:
-      radial-gradient(circle at 9% 12%, rgba(236, 72, 153, 0.16), transparent 26%),
-      radial-gradient(circle at 84% 9%, rgba(142, 203, 255, 0.12), transparent 26%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 36%);
-    opacity: 0.65;
-  }
-
-  .employee-dashboard-header {
-    border-color: rgba(95, 124, 160, 0.24);
-    background:
-      radial-gradient(circle at 7% 0%, rgba(236, 72, 153, 0.13), transparent 34%),
-      radial-gradient(circle at 92% 2%, rgba(34, 211, 238, 0.08), transparent 36%),
-      linear-gradient(145deg, rgba(13, 26, 42, 0.86), rgba(8, 13, 24, 0.9));
-    box-shadow:
-      0 26px 72px rgba(0, 0, 0, 0.46),
-      0 0 0 1px rgba(255, 255, 255, 0.035) inset,
-      0 0 46px rgba(236, 72, 153, 0.06);
-  }
-
-  .employee-dashboard-header::before {
-    background:
-      linear-gradient(135deg, rgba(236, 72, 153, 0.08), transparent 38%, rgba(142, 203, 255, 0.07)),
-      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.024) 0 1px, transparent 1px 64px);
-    opacity: 0.48;
-  }
-
-  .employee-dashboard-header h1 {
-    background: none;
-    color: #ffffff;
-    text-shadow:
-      0 2px 0 rgba(142, 203, 255, 0.22),
-      0 18px 55px rgba(236, 72, 153, 0.12);
-  }
-
-  .employee-dashboard-header p {
-    color: #9fc1e8;
-  }
-
-  .employee-dashboard-kicker,
-  .employee-panel-heading span,
-  .employee-kpi-copy > span {
-    color: #9fcfff;
-    text-shadow: 0 0 20px rgba(142, 203, 255, 0.24);
-  }
-
-  .employee-panel,
-  .employee-kpi-card,
-  .employee-task-card,
-  .employee-meeting-card,
-  .employee-insight-item,
-  .employee-mini-metric,
-  .employee-quick-action {
-    border-color: rgba(95, 124, 160, 0.24);
-    background:
-      radial-gradient(circle at 0% 0%, rgba(142, 203, 255, 0.06), transparent 30%),
-      radial-gradient(circle at 100% 0%, rgba(236, 72, 153, 0.055), transparent 30%),
-      linear-gradient(145deg, rgba(13, 26, 42, 0.82), rgba(8, 13, 24, 0.88));
-    box-shadow:
-      0 24px 64px rgba(0, 0, 0, 0.38),
-      0 0 0 1px rgba(255, 255, 255, 0.035) inset,
-      0 0 36px rgba(34, 211, 238, 0.035),
-      0 0 38px rgba(236, 72, 153, 0.035);
-  }
-
-  .employee-panel::before,
-  .employee-kpi-card::after {
-    background:
-      linear-gradient(135deg, rgba(142, 203, 255, 0.08), transparent 36%, rgba(236, 72, 153, 0.06)),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 42%);
-    opacity: 0.5;
-  }
-
-  .employee-panel:hover,
-  .employee-kpi-card:hover,
-  .employee-task-card:hover,
-  .employee-meeting-card:hover,
-  .employee-quick-panel .employee-quick-action:hover {
-    border-color: rgba(142, 203, 255, 0.34);
-    box-shadow:
-      0 28px 78px rgba(0, 0, 0, 0.46),
-      0 0 38px rgba(142, 203, 255, 0.1),
-      0 0 44px rgba(236, 72, 153, 0.065),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  }
-
-  .employee-panel-heading h2,
-  .employee-kpi-card h3,
-  .employee-task-card h3,
-  .employee-meeting-card h3,
-  .employee-timeline-item strong,
-  .employee-insight-item,
-  .employee-quick-panel .employee-quick-action span {
-    color: #f8fbff;
-  }
-
-  .employee-task-card p,
-  .employee-meeting-card p,
-  .employee-empty-state p,
-  .employee-timeline-item p,
-  .employee-work-ring span,
-  .employee-week-progress > div:first-child,
-  .employee-task-meta,
-  .employee-kpi-card small {
-    color: var(--dashboard-muted);
-  }
-
-  .employee-kpi-card {
-    background:
-      radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--kpi-accent) 12%, transparent), transparent 34%),
-      linear-gradient(145deg, rgba(13, 26, 42, 0.84), rgba(8, 13, 24, 0.9));
-  }
-
-  .employee-kpi-card.green { --kpi-accent: #34d399; }
-  .employee-kpi-card.blue { --kpi-accent: #8ecbff; }
-  .employee-kpi-card.amber { --kpi-accent: #8b5cf6; }
-  .employee-kpi-card.pink { --kpi-accent: #ec4899; }
-
-  .employee-kpi-card::before {
-    background: linear-gradient(180deg, var(--kpi-accent), #ec4899);
-    box-shadow:
-      0 0 20px color-mix(in srgb, var(--kpi-accent) 58%, transparent),
-      0 0 28px rgba(236, 72, 153, 0.2);
-  }
-
-  .employee-kpi-icon,
-  .employee-quick-action svg,
-  .employee-quick-panel .employee-panel-heading > svg,
-  .employee-empty-state svg,
-  .employee-insight-item svg {
-    color: #ffffff;
-    background: linear-gradient(135deg, #22d3ee, #8b5cf6 52%, #ec4899);
-    box-shadow:
-      0 0 30px rgba(34, 211, 238, 0.16),
-      0 0 28px rgba(236, 72, 153, 0.14),
-      inset 0 1px 0 rgba(255, 255, 255, 0.16);
-  }
-
-  .employee-kpi-card strong,
-  .employee-work-ring strong,
-  .employee-mini-metric strong {
-    background: none;
-    color: #ffffff;
-    text-shadow:
-      0 1px 0 rgba(142, 203, 255, 0.16),
-      0 0 22px rgba(142, 203, 255, 0.12);
-  }
-
-  .employee-search,
-  .employee-icon-button,
-  .employee-avatar,
-  .employee-muted-pill,
-  .employee-award-score,
-  .employee-secondary-button,
-  .employee-pill-link,
-  .employee-action-row .neon-button,
-  .employee-action-row button {
-    border-color: rgba(95, 124, 160, 0.26);
-    background:
-      linear-gradient(135deg, rgba(13, 26, 42, 0.72), rgba(8, 13, 24, 0.72)),
-      rgba(255, 255, 255, 0.035);
-    color: #cfe9ff;
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.075),
-      0 12px 30px rgba(0, 0, 0, 0.25);
-  }
-
-  .employee-action-row .neon-button,
-  .employee-action-row button {
-    background: linear-gradient(135deg, rgba(34, 211, 238, 0.3), rgba(59, 130, 246, 0.26));
-    border-color: rgba(142, 203, 255, 0.34);
-    box-shadow:
-      0 14px 36px rgba(0, 0, 0, 0.28),
-      0 0 28px rgba(34, 211, 238, 0.14),
-      inset 0 1px 0 rgba(255, 255, 255, 0.13);
-  }
-
-  .employee-award-card,
-  .employee-quick-panel,
-  .employee-insights,
-  .employee-attendance-panel {
-    border-color: rgba(95, 124, 160, 0.26);
-    background:
-      radial-gradient(circle at 0% 0%, rgba(236, 72, 153, 0.1), transparent 34%),
-      radial-gradient(circle at 88% 8%, rgba(142, 203, 255, 0.075), transparent 36%),
-      linear-gradient(145deg, rgba(13, 26, 42, 0.86), rgba(8, 13, 24, 0.92));
-  }
-
-  .employee-work-ring {
-    background:
-      radial-gradient(circle at center, rgba(13, 26, 42, 0.96) 0 56%, transparent 57%),
-      conic-gradient(from -90deg, #8ecbff var(--work-progress), rgba(20, 31, 49, 0.9) 0),
-      linear-gradient(135deg, rgba(236, 72, 153, 0.2), rgba(142, 203, 255, 0.2));
-    box-shadow:
-      0 0 36px rgba(142, 203, 255, 0.12),
-      0 22px 58px rgba(0, 0, 0, 0.36);
-  }
-
-  .employee-progress-track {
-    background: rgba(95, 124, 160, 0.17);
-  }
-
-  .employee-progress-track span {
-    background: linear-gradient(90deg, #8ecbff, #8b5cf6, #ec4899);
-    box-shadow: 0 0 18px rgba(142, 203, 255, 0.28);
-  }
-
-  .employee-attendance-panel,
-  .employee-quick-panel {
-    border-color: rgba(142, 203, 255, 0.3);
-    box-shadow:
-      0 28px 84px rgba(0, 0, 0, 0.48),
-      0 0 0 1px rgba(255, 255, 255, 0.04) inset,
-      0 0 44px rgba(142, 203, 255, 0.08),
-      0 0 58px rgba(236, 72, 153, 0.06);
-  }
-
-  .employee-attendance-panel::after,
-  .employee-quick-panel::before {
-    background:
-      radial-gradient(circle at 9% 7%, rgba(142, 203, 255, 0.16), transparent 36%),
-      radial-gradient(circle at 90% 18%, rgba(236, 72, 153, 0.12), transparent 34%),
-      linear-gradient(135deg, rgba(255, 255, 255, 0.045), transparent 40%);
-    opacity: 0.72;
-  }
-
-  .employee-attendance-details .employee-mini-metric {
-    border-color: rgba(142, 203, 255, 0.22);
-    background:
-      radial-gradient(circle at 0% 0%, rgba(142, 203, 255, 0.09), transparent 38%),
-      linear-gradient(145deg, rgba(7, 17, 32, 0.72), rgba(5, 9, 18, 0.74));
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.08),
-      0 14px 38px rgba(0, 0, 0, 0.24);
-  }
-
-  .employee-week-progress {
-    border-color: rgba(142, 203, 255, 0.2);
-    background:
-      linear-gradient(135deg, rgba(142, 203, 255, 0.075), rgba(236, 72, 153, 0.045)),
-      rgba(255, 255, 255, 0.035);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  }
-
-  .employee-attendance-panel {
-    border-color: rgba(255, 139, 184, 0.34);
-    background:
-      radial-gradient(circle at 8% 10%, rgba(255, 110, 168, 0.2), transparent 34%),
-      radial-gradient(circle at 72% 0%, rgba(168, 85, 247, 0.16), transparent 36%),
-      radial-gradient(circle at 100% 70%, rgba(255, 74, 112, 0.12), transparent 34%),
-      linear-gradient(145deg, rgba(34, 22, 49, 0.92), rgba(17, 17, 36, 0.9));
-    box-shadow:
-      0 30px 86px rgba(11, 8, 24, 0.52),
-      0 0 46px rgba(255, 87, 145, 0.16),
-      0 0 64px rgba(168, 85, 247, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.13);
-  }
-
-  .employee-attendance-panel::after {
-    background:
-      linear-gradient(112deg, transparent 0 24%, rgba(255, 255, 255, 0.12) 38%, transparent 52%),
-      radial-gradient(circle at 10% 12%, rgba(255, 190, 214, 0.18), transparent 32%),
-      linear-gradient(135deg, rgba(255, 82, 139, 0.1), transparent 38%, rgba(168, 85, 247, 0.12));
-    opacity: 0.78;
-  }
-
-  .employee-attendance-panel .employee-panel-heading span {
-    color: #ffbdd4;
-    text-shadow: 0 0 22px rgba(255, 92, 151, 0.34);
-  }
-
-  .employee-attendance-panel .employee-panel-heading h2 {
-    color: #fff7fb;
-    text-shadow: 0 16px 44px rgba(255, 80, 139, 0.18);
-  }
-
-  .employee-attendance-panel .employee-action-row .neon-button {
-    border-color: rgba(255, 166, 204, 0.46);
-    background:
-      linear-gradient(135deg, rgba(255, 126, 182, 0.94) 0%, rgba(244, 63, 94, 0.9) 45%, rgba(147, 51, 234, 0.9) 100%);
-    color: #fff8fb;
-    box-shadow:
-      0 16px 36px rgba(244, 63, 94, 0.24),
-      0 0 32px rgba(236, 72, 153, 0.2),
-      0 0 34px rgba(168, 85, 247, 0.16),
-      inset 0 1px 0 rgba(255, 255, 255, 0.28);
-  }
-
-  .employee-attendance-panel .employee-action-row button:not(.neon-button) {
-    border-color: rgba(196, 181, 253, 0.42);
-    background:
-      linear-gradient(135deg, rgba(126, 34, 206, 0.3), rgba(219, 39, 119, 0.2)),
-      rgba(255, 255, 255, 0.055);
-    color: #fce7f3;
-    box-shadow:
-      0 14px 34px rgba(17, 11, 34, 0.32),
-      0 0 26px rgba(168, 85, 247, 0.14),
-      inset 0 1px 0 rgba(255, 255, 255, 0.14);
-  }
-
-  .employee-attendance-panel .employee-action-row .neon-button:hover,
-  .employee-attendance-panel .employee-action-row button:not(.neon-button):hover {
-    border-color: rgba(255, 205, 226, 0.58);
-    filter: brightness(1.06) saturate(1.05);
-    box-shadow:
-      0 20px 42px rgba(244, 63, 94, 0.28),
-      0 0 40px rgba(236, 72, 153, 0.24),
-      0 0 38px rgba(168, 85, 247, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  }
-
-  .employee-progress-track {
-    height: 8px;
-    background:
-      linear-gradient(90deg, rgba(142, 203, 255, 0.12), rgba(236, 72, 153, 0.1)),
-      rgba(95, 124, 160, 0.2);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.07),
-      inset 0 0 12px rgba(0, 0, 0, 0.22);
-  }
-
-  .employee-progress-track > div,
-  .employee-progress-track > span {
-    display: block;
-    height: 100%;
-    min-width: 8px;
-    border-radius: inherit;
-    background: linear-gradient(90deg, #8ecbff, #22d3ee 42%, #8b5cf6 72%, #ec4899);
-    box-shadow:
-      0 0 16px rgba(142, 203, 255, 0.42),
-      0 0 22px rgba(236, 72, 153, 0.18);
-  }
-
-  .employee-quick-panel .employee-quick-action {
-    background:
-      radial-gradient(circle at 50% 0%, rgba(142, 203, 255, 0.16), transparent 42%),
-      radial-gradient(circle at 100% 100%, rgba(236, 72, 153, 0.1), transparent 36%),
-      linear-gradient(145deg, rgba(13, 26, 42, 0.84), rgba(8, 13, 24, 0.86));
+    background: #ffffff;
   }
 
   .employee-quick-panel .employee-quick-action svg {
@@ -2601,43 +1529,13 @@
     isolation: isolate;
     border-radius: 24px;
     border: 1px solid transparent;
-    background:
-      linear-gradient(145deg, rgba(13, 26, 42, 0.88), rgba(8, 13, 24, 0.9)) padding-box,
-      linear-gradient(135deg, rgba(142, 203, 255, 0.5), rgba(139, 92, 246, 0.28), rgba(236, 72, 153, 0.45)) border-box;
-    box-shadow:
-      0 30px 92px rgba(0, 0, 0, 0.5),
-      0 0 0 1px rgba(255, 255, 255, 0.045) inset,
-      0 0 52px rgba(142, 203, 255, 0.09),
-      0 0 58px rgba(236, 72, 153, 0.07);
+    background: #ffffff;
+    box-shadow: 0 10px 30px rgba(15,23,42,.06);
   }
 
-  .employee-heatmap-panel::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    border-radius: inherit;
-    background:
-      radial-gradient(circle at 5% 0%, rgba(34, 211, 238, 0.17), transparent 33%),
-      radial-gradient(circle at 96% 2%, rgba(236, 72, 153, 0.14), transparent 34%),
-      radial-gradient(circle at 38% 100%, rgba(139, 92, 246, 0.1), transparent 38%),
-      repeating-radial-gradient(circle at 18% 28%, rgba(142, 203, 255, 0.14) 0 1px, transparent 1px 22px);
-    opacity: 0.72;
-  }
+  .employee-heatmap-panel::before { display: none; }
 
-  .employee-heatmap-panel::after {
-    content: "";
-    position: absolute;
-    inset: -1px;
-    z-index: 0;
-    pointer-events: none;
-    border-radius: inherit;
-    background: linear-gradient(110deg, transparent 0 28%, rgba(142, 203, 255, 0.14), rgba(236, 72, 153, 0.12), transparent 58%);
-    opacity: 0;
-    transform: translateX(-34%);
-    animation: heatmap-border-shimmer 5.6s ease-in-out infinite;
-  }
+  .employee-heatmap-panel::after { display: none; }
 
   .employee-heatmap-panel > * {
     position: relative;
@@ -2665,7 +1563,7 @@
     height: 28px;
     padding: 6px;
     border-radius: 10px;
-    color: #ffffff;
+    color: #111827;
     background: linear-gradient(135deg, #22d3ee, #8b5cf6 52%, #ec4899);
     box-shadow: 0 0 24px rgba(34, 211, 238, 0.2), 0 0 22px rgba(236, 72, 153, 0.14);
   }
@@ -2688,8 +1586,8 @@
     padding: 0 11px;
     border-radius: 999px;
     border: 1px solid rgba(142, 203, 255, 0.18);
-    background: rgba(255, 255, 255, 0.045);
-    color: rgba(219, 234, 254, 0.86);
+    background: #F9FAFB;
+    color: #4B5563;
     font-size: 0.78rem;
     font-weight: 850;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.075), 0 0 22px rgba(142, 203, 255, 0.045);
@@ -2697,7 +1595,7 @@
 
   .employee-heatmap-summary-pill strong,
   .employee-heatmap-stats strong {
-    color: #ffffff;
+    color: #111827;
   }
 
   .employee-heatmap-summary-pill.present,
@@ -2799,9 +1697,7 @@
     padding: 10px 12px;
     border-radius: 12px;
     border: 1px solid rgba(142, 203, 255, 0.22);
-    background:
-      radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.12), transparent 45%),
-      linear-gradient(145deg, rgba(13, 26, 42, 0.96), rgba(8, 13, 24, 0.96));
+    background: #ffffff;
     box-shadow: 0 18px 46px rgba(0, 0, 0, 0.45), 0 0 26px rgba(142, 203, 255, 0.12);
     color: #dbeafe;
     opacity: 0;
@@ -2811,7 +1707,7 @@
   }
 
   .heatmap-tooltip strong {
-    color: #ffffff;
+    color: #111827;
     font-size: 0.78rem;
   }
 
@@ -3954,7 +2850,7 @@
   .recognition-field-panel {
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.09);
-    background: rgba(255, 255, 255, 0.045);
+    background: #F9FAFB;
     padding: 14px;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   }

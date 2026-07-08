@@ -100,7 +100,7 @@ function LeavesPage() {
     const { error } = await supabase.rpc(rpcName, {
       p_leave_id: id,
       p_admin_id: user?.id,
-      p_comment: comments[id] || null
+      p_comment: comments[id] || ""
     });
     
     setBusy(null);
