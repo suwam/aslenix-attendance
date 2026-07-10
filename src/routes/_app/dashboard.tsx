@@ -702,16 +702,17 @@ function EmployeeDashboard() {
             </Button>
           </DialogFooter>
         </DialogContent>
-          <main className="-mx-4 min-h-screen w-[calc(100%+2rem)] space-y-6 overflow-hidden rounded-none bg-[#F6F8FC] p-3 text-[#0F172A] sm:mx-0 sm:w-auto sm:space-y-8 sm:rounded-[32px] sm:p-6 lg:p-8">
+      </Dialog>
+      <main className="-mx-4 min-h-screen w-[calc(100%+2rem)] space-y-6 overflow-hidden rounded-none bg-[#F6F8FC] p-3 text-[#0F172A] sm:mx-0 sm:w-auto sm:space-y-8 sm:rounded-[32px] sm:p-6 lg:p-8">
         <motion.section
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-[18px] bg-[linear-gradient(135deg,#0F172A_0%,#1E293B_60%,#312E81_100%)] p-8 sm:p-10 lg:p-12 shadow-[0_8px_30px_rgba(15,23,42,0.15)] text-white border-0"
+          className="relative overflow-hidden rounded-[18px] bg-[linear-gradient(135deg,#EEF2FF_0%,#FFFFFF_60%,#F8FAFC_100%)] p-8 sm:p-10 lg:p-12 shadow-[0_8px_24px_rgba(15,23,42,0.06)] border border-[#E2E8F0]"
         >
-          <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent_0_30%,rgba(255,255,255,.05)_45%,transparent_60%)] opacity-30" />
+          <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent_0_30%,rgba(79,70,229,.03)_45%,transparent_60%)] opacity-30" />
           <div className="relative grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 border-white/20 bg-slate-800 text-2xl font-bold shadow-md">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 border-white bg-white text-2xl font-bold text-[#4F46E5] shadow-sm">
                 {profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" /> : initials(profile?.full_name || firstName)}
               </div>
               <div className="min-w-0">
@@ -719,21 +720,21 @@ function EmployeeDashboard() {
                   <Badge icon={Sparkles} label="AI HRMS" />
                   <Badge icon={MapPin} label="Aslenix Tech & Solution" />
                 </div>
-                <h1 className="max-w-3xl text-3xl font-bold leading-none tracking-tight text-white sm:text-5xl lg:text-6xl">Hello, {firstName}</h1>
-                <p className="mt-3 max-w-2xl text-sm font-medium leading-relaxed text-slate-300 sm:text-base">
+                <h1 className="max-w-3xl text-3xl font-bold leading-none tracking-tight text-[#0F172A] sm:text-5xl lg:text-6xl">Hello, {firstName}</h1>
+                <p className="mt-3 max-w-2xl text-sm font-medium leading-relaxed text-[#64748B] sm:text-base">
                   {profile?.position || "Employee"} · {profile?.department || "Team Member"} · {quote}
                 </p>
                 <div className="mt-5 flex flex-wrap gap-3">
-                  <HeroChip icon={BadgeCheck} label={status} className="bg-[#EEF2FF] text-[#4338CA] border border-indigo-200/20" />
-                  <HeroChip icon={Calendar} label={`${nepaliToday} BS`} className="bg-[#F8FAFC]/90 text-[#475569] border border-slate-200/30" />
-                  <HeroChip icon={CloudLikeIcon} label="Kathmandu · 24°C" className="bg-[#ECFEFF] text-[#0EA5E9] border border-cyan-200/20" />
+                  <HeroChip icon={BadgeCheck} label={status} className="bg-[#EEF2FF] text-[#4338CA] border border-indigo-200/50" />
+                  <HeroChip icon={Calendar} label={`${nepaliToday} BS`} className="bg-[#F8FAFC] text-[#475569] border border-slate-200/50" />
+                  <HeroChip icon={CloudLikeIcon} label="Kathmandu · 24°C" className="bg-[#ECFEFF] text-[#0EA5E9] border border-cyan-200/50" />
                 </div>
               </div>
             </div>
             <div className="grid gap-3">
-              <div className="rounded-[18px] border border-white/10 bg-white/10 p-5 shadow-[0_8px_32px_rgba(15,23,42,0.12)] backdrop-blur-md text-white">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-300">Live Clock</div>
-                <LiveClock className="mt-2 text-3xl font-bold text-white tracking-tight" />
+              <div className="rounded-[18px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#64748B]">Live Clock</div>
+                <LiveClock className="mt-2 text-3xl font-bold text-[#0F172A] tracking-tight" />
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <HeroMini label="Streak" value={`${attendanceStreak}d`} />
@@ -829,7 +830,7 @@ function EmployeeDashboard() {
             </div>
             <div className="mt-4 grid gap-3">
               {filteredTasks.length ? filteredTasks.map((task) => (
-                <TaskCommandCard key={task.id} task={task} nowTick={nowTick} draggable onDragStart={() => setDraggedTaskId(task.id)} onDragOver={(event) => event.preventDefault()} onDrop={() => handleTaskDrop(task.id)} onComplete={() => markTaskComplete(task)} />
+                <TaskCommandCard key={task.id} task={task} nowTick={nowTick} />
               )) : <EmptyState icon={CheckCircle2} title="No tasks in this filter" text="Your work queue is calm." />}
             </div>
           </GlassPanel>
@@ -1158,8 +1159,8 @@ function GlassPanel({ children, className = "" }: { children: React.ReactNode; c
 
 function Badge({ icon: Icon, label }: { icon: any; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white">
-      <Icon size={12} className="text-white/80" />
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-100 bg-indigo-50/80 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#4F46E5]">
+      <Icon size={12} className="text-[#4F46E5]/80" />
       {label}
     </span>
   );
@@ -1176,9 +1177,9 @@ function HeroChip({ icon: Icon, label, className = "" }: { icon: any; label: str
 
 function HeroMini({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[14px] border border-white/10 bg-white/5 p-3 text-center backdrop-blur-md text-white">
-      <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-300">{label}</div>
-      <div className="mt-1 text-lg font-bold text-white">{value}</div>
+    <div className="rounded-[14px] border border-[#E2E8F0] bg-white p-3 text-center shadow-sm">
+      <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#64748B]">{label}</div>
+      <div className="mt-1 text-lg font-bold text-[#0F172A]">{value}</div>
     </div>
   );
 }
@@ -2249,7 +2250,7 @@ function getNotificationMeeting(notification: NotificationRow | null, meetings: 
 }
 
 function isMeetingNotification(notification: NotificationRow) {
-  const text = `${notification.type || ""} ${notification.title || ""} ${notification.message || ""}`;
+  const text = `${(notification as any).type || ""} ${notification.title || ""} ${notification.message || ""}`;
   return /meeting/i.test(text);
 }
 
