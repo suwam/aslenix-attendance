@@ -405,7 +405,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {!isAdmin && currentPath !== "/messages" && (
           <Link
             to="/messages"
-            className="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-violet-500 to-cyan-400 text-foreground shadow-[0_16px_45px_rgba(124,58,237,0.45)] ring-1 ring-white/20 transition hover:-translate-y-1 hover:scale-105 sm:bottom-6 sm:right-6"
+            className="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-r from-[#C4DAFF] to-[#E5CCFF] text-[#0F172A] shadow-md ring-1 ring-[#E2E8F0]/50 transition hover:-translate-y-1 hover:scale-105 sm:bottom-6 sm:right-6"
             style={{ animation: "message-float 3.2s ease-in-out infinite" }}
             aria-label="Open messages"
           >

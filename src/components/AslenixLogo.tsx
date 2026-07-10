@@ -30,15 +30,15 @@ export function AslenixLogo({
         />
       </div>
       {showText && (
-        <div className="flex flex-col leading-none">
+        <div className="flex flex-col leading-none items-center">
           <span
-            className={`${text} font-bold gradient-text tracking-tight`}
+            className={`${text} font-bold tracking-[0.1em] text-[#0F172A]`}
             style={{ fontFamily: "var(--font-display)" }}
           >
             ASLENIX
           </span>
-          <span className="text-[9px] font-medium text-muted-foreground tracking-[0.25em] uppercase">
-            Attendance
+          <span className="text-[9px] font-bold text-[#1E293B] tracking-[0.2em] uppercase mt-1">
+            TECH & SOLUTION
           </span>
         </div>
       )}

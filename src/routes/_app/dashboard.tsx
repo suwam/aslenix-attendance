@@ -638,12 +638,12 @@ function EmployeeDashboard() {
           <DialogHeader className="relative text-left">
             <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-[#4F46E5] shadow-sm">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#EEF2FF] text-[#6B8AE5] shadow-sm">
                   <MessageSquare size={22} />
                 </div>
                 <div className="min-w-0">
                   <div className="mb-2 flex flex-wrap gap-2">
-                    <span className="rounded-full bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#4F46E5]">
+                    <span className="rounded-full bg-[#EEF2FF] border border-[#C4DAFF] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#6B8AE5]">
                       HR Review
                     </span>
                     {latestImprovement?.rating && (
@@ -695,7 +695,7 @@ function EmployeeDashboard() {
           <DialogFooter className="relative mt-6 flex-col gap-3 sm:flex-row sm:justify-end sm:space-x-0">
             <Button
               onClick={dismissImprovement}
-              className="h-11 rounded-[14px] border-0 bg-gradient-to-r from-[#4F46E5] to-[#6366F1] px-6 font-bold text-white shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 hover:from-[#4338CA] hover:to-[#4338CA] focus-visible:ring-[#4F46E5]"
+              className="h-11 rounded-[14px] border-0 bg-gradient-to-r from-[#C4DAFF] to-[#E5CCFF] px-6 font-bold text-[#0F172A] shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 hover:from-[#B1CDFA] hover:to-[#D8B4FE]"
             >
               <CheckCheck size={16} className="mr-2" />
               Got it
@@ -703,7 +703,7 @@ function EmployeeDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <main className="-mx-4 min-h-screen w-[calc(100%+2rem)] space-y-6 overflow-hidden rounded-none bg-[#F6F8FC] p-3 text-[#0F172A] sm:mx-0 sm:w-auto sm:space-y-8 sm:rounded-[32px] sm:p-6 lg:p-8">
+      <main className="min-h-screen min-w-0 max-w-full flex-1 space-y-6 overflow-x-hidden bg-[#F6F8FC] p-4 text-[#0F172A] sm:space-y-8 sm:p-6 lg:p-8">
         <motion.section
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
@@ -725,7 +725,7 @@ function EmployeeDashboard() {
                   {profile?.position || "Employee"} · {profile?.department || "Team Member"} · {quote}
                 </p>
                 <div className="mt-5 flex flex-wrap gap-3">
-                  <HeroChip icon={BadgeCheck} label={status} className="bg-[#EEF2FF] text-[#4338CA] border border-indigo-200/50" />
+                  <HeroChip icon={BadgeCheck} label={status} className="bg-[#EEF2FF] text-[#4338CA] border border-[#C4DAFF]/50" />
                   <HeroChip icon={Calendar} label={`${nepaliToday} BS`} className="bg-[#F8FAFC] text-[#475569] border border-slate-200/50" />
                   <HeroChip icon={CloudLikeIcon} label="Kathmandu · 24°C" className="bg-[#ECFEFF] text-[#0EA5E9] border border-cyan-200/50" />
                 </div>
@@ -764,7 +764,7 @@ function EmployeeDashboard() {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <Button onClick={checkIn} disabled={busy || isWeeklyOff || Boolean(today)} className="h-12 rounded-[14px] bg-gradient-to-r from-[#4F46E5] to-[#6366F1] hover:from-[#4338CA] hover:to-[#4338CA] text-sm font-bold text-white shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
+              <Button onClick={checkIn} disabled={busy || isWeeklyOff || Boolean(today)} className="h-12 rounded-[14px] bg-gradient-to-r from-[#C4DAFF] to-[#E5CCFF] hover:from-[#B1CDFA] hover:to-[#D8B4FE] text-sm font-bold text-[#0F172A] shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
                 <LogIn size={16} className="mr-2" /> Check In
               </Button>
               <Button onClick={checkOut} disabled={busy || !today || Boolean(today?.check_out_time)} variant="outline" className="h-12 rounded-[14px] border-[#E2E8F0] bg-white text-sm font-bold text-[#0F172A] hover:bg-[#F8FAFC] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
@@ -795,7 +795,7 @@ function EmployeeDashboard() {
               <RadialScore score={employeeScore} />
               <div className="space-y-4">
                 {scoreBreakdown.map((item) => <ProgressLine key={item.label} {...item} />)}
-                <div className="rounded-xl border border-indigo-100/50 bg-[#EEF2FF]/40 p-4 text-xs font-semibold leading-relaxed text-[#4338CA]">{aiSummary}</div>
+                <div className="rounded-xl border border-[#C4DAFF]/50 bg-[#EEF2FF]/40 p-4 text-xs font-semibold leading-relaxed text-[#5E7CCC]">{aiSummary}</div>
               </div>
             </div>
           </GlassPanel>
@@ -820,7 +820,7 @@ function EmployeeDashboard() {
                   onClick={() => setTaskFilter(filter)} 
                   className={`rounded-full px-3 py-1 text-xs font-semibold capitalize transition-all duration-200 ${
                     taskFilter === filter 
-                      ? "bg-indigo-50 border border-indigo-200 text-[#4F46E5]" 
+                      ? "bg-[#EEF2FF] border border-[#C4DAFF] text-[#6B8AE5]" 
                       : "bg-[#F8FAFC] border border-[#E2E8F0] text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A]"
                   }`}
                 >
@@ -837,9 +837,9 @@ function EmployeeDashboard() {
         </section>
 
         <section className="grid gap-6 xl:grid-cols-2 2xl:grid-cols-4">
-          <ChartPanel title="Weekly productivity" icon={BarChart3}><ResponsiveContainer width="100%" height={230}><BarChart data={chartData.weekly}><XAxis dataKey="day" stroke="#94a3b8" fontSize={11} /><YAxis stroke="#94a3b8" fontSize={11} /><Tooltip contentStyle={chartTooltipStyle} /><Bar dataKey="score" radius={[8,8,0,0]} fill="#4F46E5" /></BarChart></ResponsiveContainer></ChartPanel>
-          <ChartPanel title="Monthly productivity" icon={TrendingUp}><ResponsiveContainer width="100%" height={230}><LineChart data={chartData.monthly}><XAxis dataKey="day" stroke="#94a3b8" fontSize={11} /><YAxis stroke="#94a3b8" fontSize={11} /><Tooltip contentStyle={chartTooltipStyle} /><Line type="monotone" dataKey="score" stroke="#8B5CF6" strokeWidth={3} dot={false} /></LineChart></ResponsiveContainer></ChartPanel>
-          <ChartPanel title="Focus hours" icon={PieChartIcon}><ResponsiveContainer width="100%" height={230}><PieChart><Pie data={chartData.focus} innerRadius={62} outerRadius={88} paddingAngle={3} dataKey="value">{chartData.focus.map((entry, index) => <Cell key={entry.name} fill={["#4F46E5", "#8B5CF6", "#F97316"][index]} />)}</Pie><Tooltip contentStyle={chartTooltipStyle} /></PieChart></ResponsiveContainer></ChartPanel>
+          <ChartPanel title="Weekly productivity" icon={BarChart3}><ResponsiveContainer width="100%" height={230}><BarChart data={chartData.weekly}><XAxis dataKey="day" stroke="#94a3b8" fontSize={11} /><YAxis stroke="#94a3b8" fontSize={11} /><Tooltip contentStyle={chartTooltipStyle} /><Bar dataKey="score" radius={[8,8,0,0]} fill="#A7C5FF" /></BarChart></ResponsiveContainer></ChartPanel>
+          <ChartPanel title="Monthly productivity" icon={TrendingUp}><ResponsiveContainer width="100%" height={230}><LineChart data={chartData.monthly}><XAxis dataKey="day" stroke="#94a3b8" fontSize={11} /><YAxis stroke="#94a3b8" fontSize={11} /><Tooltip contentStyle={chartTooltipStyle} /><Line type="monotone" dataKey="score" stroke="#D8B4FE" strokeWidth={3} dot={false} /></LineChart></ResponsiveContainer></ChartPanel>
+          <ChartPanel title="Focus hours" icon={PieChartIcon}><ResponsiveContainer width="100%" height={230}><PieChart><Pie data={chartData.focus} innerRadius={62} outerRadius={88} paddingAngle={3} dataKey="value">{chartData.focus.map((entry, index) => <Cell key={entry.name} fill={["#A7C5FF", "#D8B4FE", "#F97316"][index]} />)}</Pie><Tooltip contentStyle={chartTooltipStyle} /></PieChart></ResponsiveContainer></ChartPanel>
           <ChartPanel title="Task completion trend" icon={CheckCircle2}><ResponsiveContainer width="100%" height={230}><LineChart data={chartData.tasks}><XAxis dataKey="day" stroke="#94a3b8" fontSize={11} /><YAxis stroke="#94a3b8" fontSize={11} /><Tooltip contentStyle={chartTooltipStyle} /><Line type="monotone" dataKey="completed" stroke="#10B981" strokeWidth={3} dot={{ r: 3, fill: "#10B981" }} /></LineChart></ResponsiveContainer></ChartPanel>
         </section>
 
@@ -1159,7 +1159,7 @@ function GlassPanel({ children, className = "" }: { children: React.ReactNode; c
 
 function Badge({ icon: Icon, label }: { icon: any; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-100 bg-indigo-50/80 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#4F46E5]">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#C4DAFF] bg-[#EEF2FF]/80 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#6B8AE5]">
       <Icon size={12} className="text-[#4F46E5]/80" />
       {label}
     </span>
@@ -1296,7 +1296,7 @@ function TaskCommandCard({ task, nowTick, onComplete, ...props }: any) {
   const priorityColors = {
     High: "bg-red-50 text-red-600 border border-red-100",
     Medium: "bg-amber-50 text-amber-700 border border-amber-100",
-    Normal: "bg-indigo-50 text-indigo-600 border border-indigo-100",
+    Normal: "bg-[#EEF2FF] text-[#6B8AE5] border border-[#C4DAFF]",
   };
 
   return (
@@ -1357,7 +1357,7 @@ function ProjectCard({ project }: { project: any }) {
       <h3 className="font-bold text-[#0F172A] text-sm sm:text-base">{project.name}</h3>
       <p className="mt-1 text-xs font-normal text-[#64748B]">{project.status} · {project.deadline}</p>
       <div className="mt-4 h-1.5 rounded-full bg-[#F1F5F9]">
-        <div className="h-full rounded-full bg-gradient-to-r from-[#4F46E5] to-[#6366F1]" style={{ width: `${project.progress}%` }} />
+        <div className="h-full rounded-full bg-gradient-to-r from-[#C4DAFF] to-[#E5CCFF]" style={{ width: `${project.progress}%` }} />
       </div>
       <div className="mt-4 flex items-center justify-between">
         <span className="text-xs font-bold text-[#0F172A]">{project.progress}%</span>
@@ -1380,11 +1380,11 @@ function AchievementBadge({ badge }: { badge: any }) {
       whileHover={{ scale: 1.02, y: -1 }} 
       className={`rounded-[14px] border p-4 text-center transition-all duration-200 ${
         badge.active 
-          ? "border-indigo-100 bg-indigo-50/50 text-[#4F46E5] shadow-sm" 
+          ? "border-[#C4DAFF]/60 bg-[#EEF2FF] text-[#6B8AE5] shadow-sm" 
           : "border-[#E2E8F0] bg-white opacity-60 text-[#64748B]"
       }`}
     >
-      <Icon className={`mx-auto ${badge.active ? "text-[#4F46E5]" : "text-[#64748B]/70"}`} size={22} />
+      <Icon className={`mx-auto ${badge.active ? "text-[#8CAAF0]" : "text-[#64748B]/70"}`} size={22} />
       <div className="mt-2 text-xs font-semibold text-[#0F172A]">{badge.label}</div>
     </motion.div>
   );
@@ -1397,7 +1397,7 @@ function LeaderboardRow({ member, rank }: { member: TeamLeader; rank: number }) 
         {member.avatarUrl ? (
           <img src={member.avatarUrl} alt="" className="h-10 w-10 rounded-xl object-cover ring-2 ring-[#E2E8F0]" />
         ) : (
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-50 text-sm font-bold text-[#4F46E5]">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#F1F5F9] text-sm font-bold text-[#6B8AE5]">
             {initials(member.name)}
           </div>
         )}
@@ -1409,7 +1409,7 @@ function LeaderboardRow({ member, rank }: { member: TeamLeader; rank: number }) 
         <div className="truncate font-semibold text-[#0F172A] text-sm">{member.name}</div>
         <div className="text-xs font-normal text-[#64748B]">{member.department}</div>
       </div>
-      <div className="font-bold text-[#4F46E5] text-sm">{member.score} pts</div>
+      <div className="font-bold text-[#6B8AE5] text-sm">{member.score} pts</div>
     </div>
   );
 }
@@ -1417,7 +1417,7 @@ function LeaderboardRow({ member, rank }: { member: TeamLeader; rank: number }) 
 function InsightCard({ text }: { text: string }) {
   return (
     <div className="flex gap-3 rounded-[14px] border border-[#E2E8F0] bg-white p-4 shadow-sm">
-      <Sparkles className="mt-0.5 shrink-0 text-[#4F46E5]" size={16} />
+      <Sparkles className="mt-0.5 shrink-0 text-[#A7C5FF]" size={16} />
       <span className="text-xs font-medium leading-5 text-[#64748B]">{text}</span>
     </div>
   );
@@ -1441,7 +1441,7 @@ function MoodTrackerPanel({ mood, history, onSave }: { mood: string; history: Mo
             onClick={() => onSave(item.value)}
             className={`rounded-xl border p-2.5 text-center transition hover:-translate-y-0.5 ${
               mood === item.value 
-                ? "border-indigo-200 bg-indigo-50 text-[#4F46E5] shadow-sm" 
+                ? "border-[#C4DAFF] bg-[#EEF2FF] text-[#6B8AE5] shadow-sm" 
                 : "border-[#E2E8F0] bg-white hover:bg-[#F8FAFC]"
             }`}
             aria-label={`Save mood as ${item.label}`}
@@ -1486,9 +1486,9 @@ function ActionCard({ to, icon: Icon, label }: { to: "/tasks" | "/standup" | "/m
   return (
     <Link 
       to={to} 
-      className="flex flex-col rounded-[14px] border border-[#E2E8F0] bg-white p-5 font-semibold text-[#0F172A] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50/10 hover:shadow-md"
+      className="flex flex-col rounded-[14px] border border-[#E2E8F0] bg-white p-5 font-semibold text-[#0F172A] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#C4DAFF] hover:bg-[#EEF2FF]/50 hover:shadow-md"
     >
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-[#4F46E5] mb-3">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EEF2FF] text-[#6B8AE5] mb-3">
         <Icon size={20} />
       </div>
       <span className="text-sm">{label}</span>
@@ -1559,11 +1559,11 @@ function ModernTimelineItem({ item, isLatest }: { item: ActivityItem; isLatest: 
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true }}
       className={`relative flex gap-3 rounded-[14px] border p-3 transition hover:-translate-y-0.5 ${
-        isLatest ? "border-indigo-100 bg-indigo-50/50" : "border-[#E2E8F0] bg-white hover:bg-white"
+        isLatest ? "border-[#C4DAFF] bg-[#EEF2FF]/50" : "border-[#E2E8F0] bg-white hover:bg-white"
       }`}
     >
       <div className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${meta.badgeClass}`}>
-        {isLatest && <span className="absolute inset-0 animate-ping rounded-xl bg-indigo-300/10" />}
+        {isLatest && <span className="absolute inset-0 animate-ping rounded-xl bg-[#C4DAFF]/30" />}
         <Icon className="relative" size={16} />
       </div>
       <div className="min-w-0 flex-1">
