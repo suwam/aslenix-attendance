@@ -634,94 +634,84 @@ function EmployeeDashboard() {
           else setImprovementOpen(true);
         }}
       >
-        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-hidden rounded-[28px] border-0 bg-transparent p-0 shadow-[0_30px_100px_rgba(0,0,0,.55)] sm:max-w-2xl">
-          <div className="relative rounded-[28px] bg-gradient-to-br from-[#ff3b7f] via-[#7b61ff] to-[#4f9cff] p-[1px] shadow-[0_0_42px_rgba(123,97,255,.26)]">
-            <div className="absolute inset-0 rounded-[28px] bg-gradient-to-br from-[#ff3b7f]/22 via-[#7b61ff]/18 to-[#4f9cff]/22 blur-2xl" />
-            <div className="relative overflow-hidden rounded-[27px] border border-border bg-[#080a14]/95 p-5 text-foreground backdrop-blur-2xl sm:p-6">
-              <div className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-[#4f9cff]/16 blur-3xl" />
-              <div className="pointer-events-none absolute -bottom-28 -left-20 h-56 w-56 rounded-full bg-[#ff3b7f]/12 blur-3xl" />
-
-              <DialogHeader className="relative text-left">
-                <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-foreground shadow-[0_0_34px_rgba(125,92,255,.4)]">
-                      <MessageSquare size={24} />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="mb-2 flex flex-wrap gap-2">
-                        <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-cyan-100">
-                          HR Review
-                        </span>
-                        {latestImprovement?.rating && (
-                          <span className="rounded-full border border-border bg-card px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                            {latestImprovement.rating}
-                          </span>
-                        )}
-                      </div>
-                      <DialogTitle className="text-2xl font-black leading-tight text-foreground sm:text-3xl">
-                        Weekly improvement note
-                      </DialogTitle>
-                      <DialogDescription className="mt-2 text-sm font-medium leading-6 text-muted-foreground sm:text-base">
-                        {latestImprovement?.week_start
-                          ? `Your HR review for the week of ${formatNepaliDate(latestImprovement.week_start, "DD MMM YYYY")} BS`
-                          : "Your latest HR weekly review"}
-                      </DialogDescription>
-                    </div>
-                  </div>
+        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto rounded-[18px] border border-[#E2E8F0] bg-white p-6 shadow-2xl sm:max-w-2xl text-[#0F172A]">
+          <DialogHeader className="relative text-left">
+            <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-[#4F46E5] shadow-sm">
+                  <MessageSquare size={22} />
                 </div>
-              </DialogHeader>
-
-              <div className="relative grid gap-4">
-                <div className="rounded-2xl border border-border bg-card p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.08)] sm:p-5">
-                  <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                    <Target size={14} className="text-cyan-200" />
-                    Focus Area
+                <div className="min-w-0">
+                  <div className="mb-2 flex flex-wrap gap-2">
+                    <span className="rounded-full bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#4F46E5]">
+                      HR Review
+                    </span>
+                    {latestImprovement?.rating && (
+                      <span className="rounded-full bg-[#F8FAFC] border border-[#E2E8F0] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#64748B]">
+                        {latestImprovement.rating}
+                      </span>
+                    )}
                   </div>
-                  <p className="max-h-[38dvh] overflow-y-auto whitespace-pre-wrap pr-1 text-base font-medium leading-7 text-muted-foreground [scrollbar-color:rgba(103,232,249,0.35)_rgba(255,255,255,0.06)] [scrollbar-width:thin]">
-                    {latestImprovement?.improvements || "No improvement note was added for this week."}
-                  </p>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-border bg-card p-4">
-                    <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Next Step</div>
-                    <div className="mt-1 text-sm font-semibold leading-6 text-muted-foreground">
-                      Review the note and apply it to this week's focus tasks.
-                    </div>
-                  </div>
-                  <div className="rounded-2xl border border-border bg-card p-4">
-                    <div className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Visibility</div>
-                    <div className="mt-1 text-sm font-semibold leading-6 text-muted-foreground">
-                      This reminder appears once until you acknowledge it.
-                    </div>
-                  </div>
+                  <DialogTitle className="text-xl font-bold leading-snug text-[#0F172A] sm:text-2xl">
+                    Weekly improvement note
+                  </DialogTitle>
+                  <DialogDescription className="mt-1.5 text-sm font-medium leading-relaxed text-[#64748B]">
+                    {latestImprovement?.week_start
+                      ? `Your HR review for the week of ${formatNepaliDate(latestImprovement.week_start, "DD MMM YYYY")} BS`
+                      : "Your latest HR weekly review"}
+                  </DialogDescription>
                 </div>
               </div>
+            </div>
+          </DialogHeader>
 
-              <DialogFooter className="relative mt-5 flex-col gap-3 sm:flex-row sm:justify-end sm:space-x-0">
-                <Button
-                  onClick={dismissImprovement}
-                  className="h-12 rounded-xl border-0 bg-[linear-gradient(135deg,#ff3b7f,#7b61ff,#4f9cff)] px-6 font-bold text-foreground shadow-[0_0_24px_rgba(123,97,255,.36)] transition-shadow hover:shadow-[0_0_34px_rgba(79,156,255,.55)] focus-visible:ring-[#4f9cff]"
-                >
-                  <CheckCheck size={16} className="mr-2" />
-                  Got it
-                </Button>
-              </DialogFooter>
+          <div className="relative grid gap-4">
+            <div className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-5 shadow-sm">
+              <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-[#64748B]">
+                <Target size={14} className="text-[#4F46E5]" />
+                Focus Area
+              </div>
+              <p className="max-h-[38dvh] overflow-y-auto whitespace-pre-wrap pr-1 text-sm font-normal leading-relaxed text-[#0F172A] [scrollbar-color:#CBD5E1_transparent] [scrollbar-width:thin]">
+                {latestImprovement?.improvements || "No improvement note was added for this week."}
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
+                <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#64748B]">Next Step</div>
+                <div className="mt-1 text-xs font-normal leading-relaxed text-[#64748B]">
+                  Review the note and apply it to this week's focus tasks.
+                </div>
+              </div>
+              <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
+                <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#64748B]">Visibility</div>
+                <div className="mt-1 text-xs font-normal leading-relaxed text-[#64748B]">
+                  This reminder appears once until you acknowledge it.
+                </div>
+              </div>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
 
-      <main className="-mx-4 min-h-screen w-[calc(100%+2rem)] space-y-4 overflow-hidden rounded-none bg-[#050711] p-3 text-foreground sm:mx-0 sm:w-auto sm:space-y-6 sm:rounded-[32px] sm:p-6 lg:p-8">
+          <DialogFooter className="relative mt-6 flex-col gap-3 sm:flex-row sm:justify-end sm:space-x-0">
+            <Button
+              onClick={dismissImprovement}
+              className="h-11 rounded-[14px] border-0 bg-gradient-to-r from-[#4F46E5] to-[#6366F1] px-6 font-bold text-white shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 hover:from-[#4338CA] hover:to-[#4338CA] focus-visible:ring-[#4F46E5]"
+            >
+              <CheckCheck size={16} className="mr-2" />
+              Got it
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+          <main className="-mx-4 min-h-screen w-[calc(100%+2rem)] space-y-6 overflow-hidden rounded-none bg-[#F6F8FC] p-3 text-[#0F172A] sm:mx-0 sm:w-auto sm:space-y-8 sm:rounded-[32px] sm:p-6 lg:p-8">
         <motion.section
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-[32px] border border-border bg-[radial-gradient(circle_at_15%_15%,rgba(34,211,238,.25),transparent_30%),radial-gradient(circle_at_80%_0%,rgba(236,72,153,.22),transparent_32%),linear-gradient(135deg,rgba(15,23,42,.92),rgba(8,13,24,.96))] p-5 shadow-[0_32px_110px_rgba(0,0,0,.55)] sm:p-7 lg:p-9"
+          className="relative overflow-hidden rounded-[18px] bg-[linear-gradient(135deg,#0F172A_0%,#1E293B_60%,#312E81_100%)] p-8 sm:p-10 lg:p-12 shadow-[0_8px_30px_rgba(15,23,42,0.15)] text-white border-0"
         >
-          <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent_0_30%,rgba(255,255,255,.09)_45%,transparent_60%)] opacity-40" />
-          <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <div className="flex flex-col gap-5 sm:flex-row">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-cyan-300 via-violet-500 to-pink-500 text-2xl font-black shadow-[0_0_42px_rgba(34,211,238,.22)]">
+          <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent_0_30%,rgba(255,255,255,.05)_45%,transparent_60%)] opacity-30" />
+          <div className="relative grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 border-white/20 bg-slate-800 text-2xl font-bold shadow-md">
                 {profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" /> : initials(profile?.full_name || firstName)}
               </div>
               <div className="min-w-0">
@@ -729,21 +719,21 @@ function EmployeeDashboard() {
                   <Badge icon={Sparkles} label="AI HRMS" />
                   <Badge icon={MapPin} label="Aslenix Tech & Solution" />
                 </div>
-                <h1 className="max-w-3xl text-4xl font-black leading-none tracking-tight sm:text-6xl lg:text-7xl">Hello, {firstName}</h1>
-                <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-slate-300 sm:text-base">
+                <h1 className="max-w-3xl text-3xl font-bold leading-none tracking-tight text-white sm:text-5xl lg:text-6xl">Hello, {firstName}</h1>
+                <p className="mt-3 max-w-2xl text-sm font-medium leading-relaxed text-slate-300 sm:text-base">
                   {profile?.position || "Employee"} · {profile?.department || "Team Member"} · {quote}
                 </p>
-                <div className="mt-5 flex flex-wrap gap-2">
-                  <HeroChip icon={BadgeCheck} label={status} />
-                  <HeroChip icon={Calendar} label={`${nepaliToday} BS`} />
-                  <HeroChip icon={CloudLikeIcon} label="Kathmandu · 24°C" />
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <HeroChip icon={BadgeCheck} label={status} className="bg-[#EEF2FF] text-[#4338CA] border border-indigo-200/20" />
+                  <HeroChip icon={Calendar} label={`${nepaliToday} BS`} className="bg-[#F8FAFC]/90 text-[#475569] border border-slate-200/30" />
+                  <HeroChip icon={CloudLikeIcon} label="Kathmandu · 24°C" className="bg-[#ECFEFF] text-[#0EA5E9] border border-cyan-200/20" />
                 </div>
               </div>
             </div>
             <div className="grid gap-3">
-              <div className="rounded-3xl border border-border bg-card p-4 backdrop-blur-xl">
-                <div className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-100/70">Live Clock</div>
-                <LiveClock className="mt-2 text-3xl font-black text-foreground" />
+              <div className="rounded-[18px] border border-white/10 bg-white/10 p-5 shadow-[0_8px_32px_rgba(15,23,42,0.12)] backdrop-blur-md text-white">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-300">Live Clock</div>
+                <LiveClock className="mt-2 text-3xl font-bold text-white tracking-tight" />
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <HeroMini label="Streak" value={`${attendanceStreak}d`} />
@@ -758,27 +748,26 @@ function EmployeeDashboard() {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="relative overflow-hidden rounded-[28px] border border-cyan-300/20 bg-[linear-gradient(135deg,rgba(8,145,178,.16),rgba(124,58,237,.12),rgba(236,72,153,.12))] p-4 shadow-[0_24px_80px_rgba(34,211,238,.12)] backdrop-blur-xl sm:p-5"
+          className="relative overflow-hidden rounded-[18px] border border-[#E2E8F0] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.08)]"
         >
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_0%,rgba(34,211,238,.18),transparent_36%),radial-gradient(circle_at_95%_0%,rgba(236,72,153,.14),transparent_34%)]" />
-          <div className="relative grid gap-4 xl:grid-cols-[minmax(220px,.8fr)_minmax(300px,1fr)_minmax(360px,1.2fr)] xl:items-center">
-            <div className="flex items-center gap-3">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-cyan-200/25 bg-cyan-300/12 text-cyan-100 shadow-[0_0_34px_rgba(34,211,238,.22)]">
-                <ShieldCheck size={24} />
+          <div className="relative grid gap-6 xl:grid-cols-[minmax(220px,.8fr)_minmax(300px,1fr)_minmax(360px,1.2fr)] xl:items-center">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                <ShieldCheck size={22} />
               </div>
               <div className="min-w-0">
-                <div className="text-[11px] font-black uppercase tracking-[0.18em] text-cyan-100/60">Attendance</div>
-                <div className="mt-1 text-2xl font-black leading-tight text-foreground">Quick check-in</div>
-                <div className="mt-1 text-sm font-semibold text-slate-400">{status}</div>
+                <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#64748B]">Attendance</div>
+                <div className="mt-1 text-lg font-bold leading-tight text-[#0F172A]">Quick check-in</div>
+                <div className="mt-0.5 text-sm font-medium text-[#64748B]">{status}</div>
               </div>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <Button onClick={checkIn} disabled={busy || isWeeklyOff || Boolean(today)} className="h-14 rounded-2xl bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-500 text-base font-black text-foreground shadow-[0_0_34px_rgba(34,211,238,.18)] transition hover:scale-[1.01]">
-                <LogIn size={18} className="mr-2" /> Check In
+              <Button onClick={checkIn} disabled={busy || isWeeklyOff || Boolean(today)} className="h-12 rounded-[14px] bg-gradient-to-r from-[#4F46E5] to-[#6366F1] hover:from-[#4338CA] hover:to-[#4338CA] text-sm font-bold text-white shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
+                <LogIn size={16} className="mr-2" /> Check In
               </Button>
-              <Button onClick={checkOut} disabled={busy || !today || Boolean(today?.check_out_time)} variant="outline" className="h-14 rounded-2xl border-border bg-card text-base font-black text-foreground hover:bg-card">
-                <LogOut size={18} className="mr-2" /> Check Out
+              <Button onClick={checkOut} disabled={busy || !today || Boolean(today?.check_out_time)} variant="outline" className="h-12 rounded-[14px] border-[#E2E8F0] bg-white text-sm font-bold text-[#0F172A] hover:bg-[#F8FAFC] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
+                <LogOut size={16} className="mr-2" /> Check Out
               </Button>
             </div>
 
@@ -791,7 +780,7 @@ function EmployeeDashboard() {
           </div>
         </motion.section>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard icon={BadgeCheck} title="Attendance" value={`${monthStats.present} days`} detail={`${attendanceRate}% rate · ${attendanceStreak} day streak`} tone="cyan" />
           <MetricCard icon={Gauge} title="Productivity" value={`${taskStats.score}%`} detail={`+${Math.max(0, taskStats.score - 72)}% trend · team avg 82%`} tone="purple" />
           <MetricCard icon={Target} title="Tasks" value={`${taskStats.completed}/${taskStats.total}`} detail={`${taskStats.pending} pending · ${taskStats.overdue} overdue`} tone="pink" />
@@ -801,11 +790,11 @@ function EmployeeDashboard() {
         <section className="grid gap-6">
           <GlassPanel className="p-5 sm:p-6">
             <SectionTitle icon={Bot} eyebrow="AI Performance" title="Overall employee score" action={`${employeeScore}/100`} />
-            <div className="mt-6 grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+            <div className="mt-6 grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-center">
               <RadialScore score={employeeScore} />
               <div className="space-y-4">
                 {scoreBreakdown.map((item) => <ProgressLine key={item.label} {...item} />)}
-                <div className="rounded-2xl border border-cyan-300/15 bg-cyan-300/10 p-4 text-sm font-semibold leading-6 text-cyan-50/85">{aiSummary}</div>
+                <div className="rounded-xl border border-indigo-100/50 bg-[#EEF2FF]/40 p-4 text-xs font-semibold leading-relaxed text-[#4338CA]">{aiSummary}</div>
               </div>
             </div>
           </GlassPanel>
@@ -815,7 +804,7 @@ function EmployeeDashboard() {
           <GlassPanel className="p-5 sm:p-6">
             <SectionTitle icon={Activity} eyebrow="Last 15 Days" title="Attendance heatmap" action={`${heatmapSummary.rate}%`} />
             <HeatmapGrid days={heatmapDays} />
-            <div className="mt-5 grid grid-cols-3 gap-3">
+            <div className="mt-6 grid grid-cols-3 gap-3">
               <InfoTile label="Current Streak" value={`${attendanceStreak}d`} />
               <InfoTile label="Best Streak" value={`${heatmapSummary.bestStreak}d`} />
               <InfoTile label="Holidays" value={`${heatmapSummary.holiday}`} />
@@ -825,7 +814,15 @@ function EmployeeDashboard() {
             <SectionTitle icon={ClipboardList} eyebrow="Today" title="Tasks command center" action={`${filteredTasks.length} visible`} />
             <div className="mt-4 flex flex-wrap gap-2">
               {(["all", "active", "overdue"] as const).map((filter) => (
-                <button key={filter} onClick={() => setTaskFilter(filter)} className={`rounded-full border px-3 py-1.5 text-xs font-bold capitalize ${taskFilter === filter ? "border-cyan-300/35 bg-cyan-300/15 text-cyan-100" : "border-border bg-card text-muted-foreground"}`}>
+                <button 
+                  key={filter} 
+                  onClick={() => setTaskFilter(filter)} 
+                  className={`rounded-full px-3 py-1 text-xs font-semibold capitalize transition-all duration-200 ${
+                    taskFilter === filter 
+                      ? "bg-indigo-50 border border-indigo-200 text-[#4F46E5]" 
+                      : "bg-[#F8FAFC] border border-[#E2E8F0] text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A]"
+                  }`}
+                >
                   {filter}
                 </button>
               ))}
@@ -839,10 +836,10 @@ function EmployeeDashboard() {
         </section>
 
         <section className="grid gap-6 xl:grid-cols-2 2xl:grid-cols-4">
-          <ChartPanel title="Weekly productivity" icon={BarChart3}><ResponsiveContainer width="100%" height={230}><BarChart data={chartData.weekly}><XAxis dataKey="day" stroke="#94a3b8" fontSize={11} /><YAxis stroke="#94a3b8" fontSize={11} /><Tooltip contentStyle={chartTooltipStyle} /><Bar dataKey="score" radius={[8,8,0,0]} fill="#22d3ee" /></BarChart></ResponsiveContainer></ChartPanel>
-          <ChartPanel title="Monthly productivity" icon={TrendingUp}><ResponsiveContainer width="100%" height={230}><LineChart data={chartData.monthly}><XAxis dataKey="day" stroke="#94a3b8" fontSize={11} /><YAxis stroke="#94a3b8" fontSize={11} /><Tooltip contentStyle={chartTooltipStyle} /><Line type="monotone" dataKey="score" stroke="#ec4899" strokeWidth={3} dot={false} /></LineChart></ResponsiveContainer></ChartPanel>
-          <ChartPanel title="Focus hours" icon={PieChartIcon}><ResponsiveContainer width="100%" height={230}><PieChart><Pie data={chartData.focus} innerRadius={62} outerRadius={88} paddingAngle={3} dataKey="value">{chartData.focus.map((entry, index) => <Cell key={entry.name} fill={["#22d3ee", "#8b5cf6", "#ec4899"][index]} />)}</Pie><Tooltip contentStyle={chartTooltipStyle} /></PieChart></ResponsiveContainer></ChartPanel>
-          <ChartPanel title="Task completion trend" icon={CheckCircle2}><ResponsiveContainer width="100%" height={230}><LineChart data={chartData.tasks}><XAxis dataKey="day" stroke="#94a3b8" fontSize={11} /><YAxis stroke="#94a3b8" fontSize={11} /><Tooltip contentStyle={chartTooltipStyle} /><Line type="monotone" dataKey="completed" stroke="#34d399" strokeWidth={3} dot={{ r: 3, fill: "#34d399" }} /></LineChart></ResponsiveContainer></ChartPanel>
+          <ChartPanel title="Weekly productivity" icon={BarChart3}><ResponsiveContainer width="100%" height={230}><BarChart data={chartData.weekly}><XAxis dataKey="day" stroke="#94a3b8" fontSize={11} /><YAxis stroke="#94a3b8" fontSize={11} /><Tooltip contentStyle={chartTooltipStyle} /><Bar dataKey="score" radius={[8,8,0,0]} fill="#4F46E5" /></BarChart></ResponsiveContainer></ChartPanel>
+          <ChartPanel title="Monthly productivity" icon={TrendingUp}><ResponsiveContainer width="100%" height={230}><LineChart data={chartData.monthly}><XAxis dataKey="day" stroke="#94a3b8" fontSize={11} /><YAxis stroke="#94a3b8" fontSize={11} /><Tooltip contentStyle={chartTooltipStyle} /><Line type="monotone" dataKey="score" stroke="#8B5CF6" strokeWidth={3} dot={false} /></LineChart></ResponsiveContainer></ChartPanel>
+          <ChartPanel title="Focus hours" icon={PieChartIcon}><ResponsiveContainer width="100%" height={230}><PieChart><Pie data={chartData.focus} innerRadius={62} outerRadius={88} paddingAngle={3} dataKey="value">{chartData.focus.map((entry, index) => <Cell key={entry.name} fill={["#4F46E5", "#8B5CF6", "#F97316"][index]} />)}</Pie><Tooltip contentStyle={chartTooltipStyle} /></PieChart></ResponsiveContainer></ChartPanel>
+          <ChartPanel title="Task completion trend" icon={CheckCircle2}><ResponsiveContainer width="100%" height={230}><LineChart data={chartData.tasks}><XAxis dataKey="day" stroke="#94a3b8" fontSize={11} /><YAxis stroke="#94a3b8" fontSize={11} /><Tooltip contentStyle={chartTooltipStyle} /><Line type="monotone" dataKey="completed" stroke="#10B981" strokeWidth={3} dot={{ r: 3, fill: "#10B981" }} /></LineChart></ResponsiveContainer></ChartPanel>
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
@@ -1138,10 +1135,12 @@ function EmployeeDashboard() {
 }
 
 const chartTooltipStyle = {
-  background: "rgba(8,13,24,.94)",
-  border: "1px solid rgba(255,255,255,.12)",
-  borderRadius: 14,
-  color: "#fff",
+  background: "#ffffff",
+  border: "1px solid #E2E8F0",
+  borderRadius: 8,
+  boxShadow: "0 4px 12px rgba(15,23,42,0.06)",
+  color: "#0F172A",
+  fontSize: 12,
 };
 
 function GlassPanel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -1150,27 +1149,26 @@ function GlassPanel({ children, className = "" }: { children: React.ReactNode; c
       initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
-      className={`relative overflow-hidden rounded-[28px] border border-border bg-card shadow-[0_24px_80px_rgba(0,0,0,.38),inset_0_1px_0_rgba(255,255,255,.08)] backdrop-blur-xl ${className}`}
+      className={`relative overflow-hidden rounded-[18px] border border-[#E2E8F0] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.08)] ${className}`}
     >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(34,211,238,.12),transparent_34%),radial-gradient(circle_at_100%_0%,rgba(236,72,153,.1),transparent_34%)]" />
       <div className="relative">{children}</div>
     </motion.article>
   );
 }
 
-function Badge({ icon: Icon, label }: { icon: typeof Sparkles; label: string }) {
+function Badge({ icon: Icon, label }: { icon: any; label: string }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.16em] text-muted-foreground">
-      <Icon size={13} className="text-cyan-200" />
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-white">
+      <Icon size={12} className="text-white/80" />
       {label}
     </span>
   );
 }
 
-function HeroChip({ icon: Icon, label }: { icon: typeof Sparkles; label: string }) {
+function HeroChip({ icon: Icon, label, className = "" }: { icon: any; label: string; className?: string }) {
   return (
-    <span className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-xs font-bold text-muted-foreground backdrop-blur-xl">
-      <Icon size={14} className="text-cyan-200" />
+    <span className={`inline-flex min-h-10 items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold shadow-sm transition-all duration-200 hover:scale-102 ${className}`}>
+      <Icon size={14} className="shrink-0" />
       {label}
     </span>
   );
@@ -1178,40 +1176,49 @@ function HeroChip({ icon: Icon, label }: { icon: typeof Sparkles; label: string 
 
 function HeroMini({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-3 text-center backdrop-blur-xl">
-      <div className="text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
-      <div className="mt-1 text-xl font-black text-foreground">{value}</div>
+    <div className="rounded-[14px] border border-white/10 bg-white/5 p-3 text-center backdrop-blur-md text-white">
+      <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-300">{label}</div>
+      <div className="mt-1 text-lg font-bold text-white">{value}</div>
     </div>
   );
 }
 
-function MetricCard({ icon: Icon, title, value, detail, tone }: { icon: typeof Sparkles; title: string; value: string; detail: string; tone: "cyan" | "purple" | "pink" | "green" }) {
-  const colors = { cyan: "from-cyan-300 to-blue-500", purple: "from-violet-300 to-purple-600", pink: "from-pink-300 to-rose-600", green: "from-emerald-300 to-teal-600" };
+function MetricCard({ icon: Icon, title, value, detail, tone }: { icon: any; title: string; value: string; detail: string; tone: "cyan" | "purple" | "pink" | "green" }) {
+  const badgeColors = {
+    cyan: "bg-blue-50 text-blue-600",
+    purple: "bg-purple-50 text-purple-600",
+    pink: "bg-orange-50 text-orange-600",
+    green: "bg-emerald-50 text-emerald-600",
+  };
   return (
-    <motion.article whileHover={{ y: -4 }} className="rounded-[26px] border border-border bg-card p-5 shadow-[0_22px_70px_rgba(0,0,0,.34)] backdrop-blur-xl">
-      <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${colors[tone]} text-foreground shadow-[0_0_30px_rgba(34,211,238,.16)]`}>
-        <Icon size={20} />
+    <motion.article 
+      whileHover={{ y: -2 }} 
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className="rounded-[18px] border border-[#E2E8F0] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.08)] transition-all duration-300"
+    >
+      <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${badgeColors[tone]}`}>
+        <Icon size={22} />
       </div>
-      <div className="mt-5 text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">{title}</div>
-      <div className="mt-2 text-3xl font-black text-foreground">{value}</div>
-      <div className="mt-2 text-sm font-semibold text-slate-400">{detail}</div>
+      <div className="mt-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#64748B]">{title}</div>
+      <div className="mt-1 text-3xl font-bold text-[#0F172A]">{value}</div>
+      <div className="mt-2 text-xs font-normal text-[#64748B]">{detail}</div>
     </motion.article>
   );
 }
 
-function SectionTitle({ icon: Icon, eyebrow, title, action }: { icon: typeof Sparkles; eyebrow: string; title: string; action?: string }) {
+function SectionTitle({ icon: Icon, eyebrow, title, action }: { icon: any; eyebrow: string; title: string; action?: string }) {
   return (
     <div className="flex items-start justify-between gap-4">
       <div className="flex min-w-0 items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10 text-cyan-100">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EEF2FF] text-[#4F46E5]">
           <Icon size={18} />
         </div>
         <div className="min-w-0">
-          <div className="text-[11px] font-black uppercase tracking-[0.16em] text-cyan-100/55">{eyebrow}</div>
-          <h2 className="mt-1 text-xl font-black text-foreground sm:text-2xl">{title}</h2>
+          <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#64748B]">{eyebrow}</div>
+          <h2 className="mt-1 text-lg font-semibold tracking-tight text-[#0F172A] sm:text-xl">{title}</h2>
         </div>
       </div>
-      {action && <span className="shrink-0 rounded-full border border-border bg-card px-3 py-1 text-xs font-black text-muted-foreground">{action}</span>}
+      {action && <span className="shrink-0 rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-1 text-xs font-semibold text-[#64748B]">{action}</span>}
     </div>
   );
 }
@@ -1219,11 +1226,11 @@ function SectionTitle({ icon: Icon, eyebrow, title, action }: { icon: typeof Spa
 function RadialScore({ score }: { score: number }) {
   return (
     <div className="grid place-items-center">
-      <div className="relative grid h-56 w-56 place-items-center rounded-full bg-[conic-gradient(from_180deg,#22d3ee_calc(var(--score)*1%),rgba(255,255,255,.08)_0)] p-4" style={{ ["--score" as string]: score }}>
-        <div className="grid h-full w-full place-items-center rounded-full border border-border bg-[#080d18]">
+      <div className="relative grid h-48 w-48 place-items-center rounded-full bg-[conic-gradient(from_180deg,#4F46E5_calc(var(--score)*1%),#E2E8F0_0)] p-3" style={{ ["--score" as string]: score }}>
+        <div className="grid h-full w-full place-items-center rounded-full border border-[#E2E8F0] bg-white shadow-sm">
           <div className="text-center">
-            <div className="text-5xl font-black">{score}</div>
-            <div className="mt-1 text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">AI Score</div>
+            <div className="text-4xl font-bold text-[#0F172A]">{score}</div>
+            <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#64748B]">AI Score</div>
           </div>
         </div>
       </div>
@@ -1234,77 +1241,185 @@ function RadialScore({ score }: { score: number }) {
 function ProgressLine({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div>
-      <div className="mb-2 flex justify-between text-sm font-bold text-muted-foreground"><span>{label}</span><span>{value}%</span></div>
-      <div className="h-2 overflow-hidden rounded-full bg-card"><motion.div initial={{ width: 0 }} animate={{ width: `${value}%` }} className="h-full rounded-full" style={{ background: color }} /></div>
+      <div className="mb-1 flex justify-between text-xs font-semibold text-[#64748B]">
+        <span>{label}</span>
+        <span className="text-[#0F172A]">{value}%</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-[#F1F5F9]">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${value}%` }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="h-full rounded-full"
+          style={{ background: color }}
+        />
+      </div>
     </div>
   );
 }
 
 function InfoTile({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-2xl border border-border bg-card p-3"><div className="text-[10px] font-black uppercase tracking-[0.14em] text-muted-foreground">{label}</div><div className="mt-1 truncate text-lg font-black text-foreground">{value}</div></div>;
+  return (
+    <div className="rounded-[14px] border border-[#E2E8F0] bg-white p-4 shadow-sm">
+      <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#64748B]">{label}</div>
+      <div className="mt-1 truncate text-base font-bold text-[#0F172A]">{value}</div>
+    </div>
+  );
 }
 
 function HeatmapGrid({ days }: { days: HeatmapDay[] }) {
-  const colors: Record<HeatmapDay["status"], string> = { present: "bg-emerald-400", late: "bg-violet-400", absent: "bg-rose-400", holiday: "bg-cyan-300", none: "bg-card" };
-  return <div className="mt-5 grid grid-cols-15 gap-1.5">{days.map((day) => <span key={day.date} title={`${day.date}: ${humanize(day.status)}`} className={`group relative aspect-square rounded-md ${colors[day.status]} shadow-[0_0_16px_rgba(34,211,238,.12)]`} />)}</div>;
+  const colors: Record<HeatmapDay["status"], string> = {
+    present: "bg-[#10B981]",
+    late: "bg-[#F59E0B]",
+    absent: "bg-[#EF4444]",
+    holiday: "bg-[#0EA5E9]",
+    none: "bg-[#F1F5F9] border border-[#E2E8F0]",
+  };
+  return (
+    <div className="mt-5 grid grid-cols-15 gap-2">
+      {days.map((day) => (
+        <span
+          key={day.date}
+          title={`${day.date}: ${humanize(day.status)}`}
+          className={`group relative aspect-square rounded-md ${colors[day.status]} transition-transform duration-200 hover:scale-110 shadow-sm`}
+        />
+      ))}
+    </div>
+  );
 }
 
 function TaskCommandCard({ task, nowTick, onComplete, ...props }: any) {
   const countdown = getTaskCountdown(task.deadline, nowTick);
   const priority = countdown.state === "overdue" ? "High" : countdown.state === "soon" ? "Medium" : "Normal";
+  
+  const priorityColors = {
+    High: "bg-red-50 text-red-600 border border-red-100",
+    Medium: "bg-amber-50 text-amber-700 border border-amber-100",
+    Normal: "bg-indigo-50 text-indigo-600 border border-indigo-100",
+  };
+
   return (
-    <motion.article whileHover={{ y: -2 }} {...props} className="cursor-grab rounded-2xl border border-border bg-card p-4 active:cursor-grabbing">
-      <div className="flex items-start justify-between gap-3"><div className="min-w-0"><h3 className="truncate font-black text-foreground">{task.title}</h3><p className="mt-1 truncate text-sm font-semibold text-slate-400">{task.project_name || task.project || "Aslenix Workstream"}</p></div><span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2 py-1 text-[10px] font-black uppercase text-cyan-100">{priority}</span></div>
-      <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-muted-foreground"><span>{task.deadline ? format(new Date(task.deadline), "h:mm a") : "No due time"}</span><span>{humanize(task.status || "pending")}</span><span>{countdown.label}</span></div>
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-card"><div className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-pink-400" style={{ width: `${task.progress || 0}%` }} /></div>
-      <button onClick={onComplete} className="mt-3 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-black text-muted-foreground hover:bg-card">Mark complete</button>
+    <motion.article 
+      whileHover={{ y: -2 }} 
+      {...props} 
+      className="cursor-grab rounded-[14px] border border-[#E2E8F0] bg-white p-5 active:cursor-grabbing shadow-sm hover:shadow-md transition-all duration-200"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="truncate font-bold text-[#0F172A] text-sm sm:text-base">{task.title}</h3>
+          <p className="mt-1 truncate text-xs font-normal text-[#64748B]">{task.project_name || task.project || "Aslenix Workstream"}</p>
+        </div>
+        <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase ${priorityColors[priority]}`}>
+          {priority}
+        </span>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2 text-xs font-normal text-[#64748B]">
+        <span>{task.deadline ? format(new Date(task.deadline), "h:mm a") : "No due time"}</span>
+        <span>·</span>
+        <span>{humanize(task.status || "pending")}</span>
+        <span>·</span>
+        <span className={countdown.state === "overdue" ? "text-red-500 font-medium" : ""}>{countdown.label}</span>
+      </div>
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#F1F5F9]">
+        <div className="h-full rounded-full bg-gradient-to-r from-[#4F46E5] to-[#6366F1]" style={{ width: `${task.progress || 0}%` }} />
+      </div>
+      <button 
+        onClick={onComplete} 
+        className="mt-4 rounded-lg border border-[#E2E8F0] bg-white px-3 py-1.5 text-xs font-semibold text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A] transition-colors duration-200"
+      >
+        Mark complete
+      </button>
     </motion.article>
   );
 }
 
-function EmptyState({ icon: Icon, title, text }: { icon: typeof Activity; title: string; text: string }) {
-  return <div className="rounded-2xl border border-dashed border-border bg-card p-6 text-center"><Icon className="mx-auto text-cyan-200" size={24} /><div className="mt-3 font-black">{title}</div><div className="mt-1 text-sm text-slate-400">{text}</div></div>;
+function EmptyState({ icon: Icon, title, text }: { icon: any; title: string; text: string }) {
+  return (
+    <div className="rounded-[14px] border border-dashed border-[#E2E8F0] bg-[#F8FAFC] p-8 text-center">
+      <Icon className="mx-auto text-[#64748B]/60" size={24} />
+      <div className="mt-3 font-bold text-[#0F172A] text-sm">{title}</div>
+      <div className="mt-1 text-xs text-[#64748B]">{text}</div>
+    </div>
+  );
 }
 
-function ChartPanel({ title, icon: Icon, children }: { title: string; icon: typeof Sparkles; children: React.ReactNode }) {
+function ChartPanel({ title, icon: Icon, children }: { title: string; icon: any; children: React.ReactNode }) {
   return <GlassPanel className="p-5 sm:p-6"><SectionTitle icon={Icon} eyebrow="Analytics" title={title} /><div className="mt-5">{children}</div></GlassPanel>;
 }
 
 function ProjectCard({ project }: { project: any }) {
-  return <motion.article whileHover={{ y: -4 }} className="rounded-2xl border border-border bg-card p-4"><h3 className="font-black">{project.name}</h3><p className="mt-1 text-sm font-semibold text-slate-400">{project.status} · {project.deadline}</p><div className="mt-4 h-2 rounded-full bg-card"><div className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-pink-400" style={{ width: `${project.progress}%` }} /></div><div className="mt-3 flex items-center justify-between"><span className="text-sm font-black">{project.progress}%</span><div className="flex -space-x-2">{project.members.map((m: string) => <span key={m} className="grid h-7 w-7 place-items-center rounded-full border border-border bg-card text-[10px] font-black">{m}</span>)}</div></div></motion.article>;
+  return (
+    <motion.article 
+      whileHover={{ y: -2 }} 
+      className="rounded-[14px] border border-[#E2E8F0] bg-white p-5 shadow-sm hover:shadow-md transition-all duration-200"
+    >
+      <h3 className="font-bold text-[#0F172A] text-sm sm:text-base">{project.name}</h3>
+      <p className="mt-1 text-xs font-normal text-[#64748B]">{project.status} · {project.deadline}</p>
+      <div className="mt-4 h-1.5 rounded-full bg-[#F1F5F9]">
+        <div className="h-full rounded-full bg-gradient-to-r from-[#4F46E5] to-[#6366F1]" style={{ width: `${project.progress}%` }} />
+      </div>
+      <div className="mt-4 flex items-center justify-between">
+        <span className="text-xs font-bold text-[#0F172A]">{project.progress}%</span>
+        <div className="flex -space-x-2">
+          {project.members.map((m: string) => (
+            <span key={m} className="grid h-7 w-7 place-items-center rounded-full border border-[#E2E8F0] bg-white text-[10px] font-bold text-[#64748B]">
+              {m}
+            </span>
+          ))}
+        </div>
+      </div>
+    </motion.article>
+  );
 }
 
 function AchievementBadge({ badge }: { badge: any }) {
   const Icon = badge.icon;
-  return <motion.div whileHover={{ scale: 1.03 }} className={`rounded-2xl border p-3 text-center ${badge.active ? "border-cyan-300/20 bg-cyan-300/10" : "border-border bg-card opacity-55"}`}><Icon className="mx-auto text-cyan-100" size={22} /><div className="mt-2 text-xs font-black text-muted-foreground">{badge.label}</div></motion.div>;
+  return (
+    <motion.div 
+      whileHover={{ scale: 1.02, y: -1 }} 
+      className={`rounded-[14px] border p-4 text-center transition-all duration-200 ${
+        badge.active 
+          ? "border-indigo-100 bg-indigo-50/50 text-[#4F46E5] shadow-sm" 
+          : "border-[#E2E8F0] bg-white opacity-60 text-[#64748B]"
+      }`}
+    >
+      <Icon className={`mx-auto ${badge.active ? "text-[#4F46E5]" : "text-[#64748B]/70"}`} size={22} />
+      <div className="mt-2 text-xs font-semibold text-[#0F172A]">{badge.label}</div>
+    </motion.div>
+  );
 }
 
 function LeaderboardRow({ member, rank }: { member: TeamLeader; rank: number }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3">
-      <div className="relative h-11 w-11 shrink-0">
+    <div className="flex items-center gap-3 rounded-[14px] border border-[#E2E8F0] bg-white p-3 shadow-sm">
+      <div className="relative h-10 w-10 shrink-0">
         {member.avatarUrl ? (
-          <img src={member.avatarUrl} alt="" className="h-11 w-11 rounded-2xl object-cover ring-2 ring-cyan-300/35" />
+          <img src={member.avatarUrl} alt="" className="h-10 w-10 rounded-xl object-cover ring-2 ring-[#E2E8F0]" />
         ) : (
-          <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-cyan-300 to-pink-500 text-sm font-black">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-indigo-50 text-sm font-bold text-[#4F46E5]">
             {initials(member.name)}
           </div>
         )}
-        <span className="absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full border border-border bg-[#080d18] text-[10px] font-black text-cyan-100">
+        <span className="absolute -bottom-1.5 -right-1.5 grid h-5 w-5 place-items-center rounded-full border border-[#E2E8F0] bg-[#F8FAFC] text-[10px] font-bold text-[#64748B]">
           {rank}
         </span>
       </div>
       <div className="min-w-0 flex-1">
-        <div className="truncate font-black">{member.name}</div>
-        <div className="text-xs font-semibold text-slate-400">{member.department}</div>
+        <div className="truncate font-semibold text-[#0F172A] text-sm">{member.name}</div>
+        <div className="text-xs font-normal text-[#64748B]">{member.department}</div>
       </div>
-      <div className="font-black text-cyan-100">{member.score}</div>
+      <div className="font-bold text-[#4F46E5] text-sm">{member.score} pts</div>
     </div>
   );
 }
 
 function InsightCard({ text }: { text: string }) {
-  return <div className="flex gap-3 rounded-2xl border border-border bg-card p-3"><Sparkles className="mt-0.5 shrink-0 text-cyan-200" size={16} /><span className="text-sm font-semibold leading-6 text-muted-foreground">{text}</span></div>;
+  return (
+    <div className="flex gap-3 rounded-[14px] border border-[#E2E8F0] bg-white p-4 shadow-sm">
+      <Sparkles className="mt-0.5 shrink-0 text-[#4F46E5]" size={16} />
+      <span className="text-xs font-medium leading-5 text-[#64748B]">{text}</span>
+    </div>
+  );
 }
 
 function MoodTrackerPanel({ mood, history, onSave }: { mood: string; history: MoodLog[]; onSave: (value: string) => void }) {
@@ -1323,24 +1438,26 @@ function MoodTrackerPanel({ mood, history, onSave }: { mood: string; history: Mo
           <button
             key={item.value}
             onClick={() => onSave(item.value)}
-            className={`rounded-2xl border p-3 text-center transition hover:-translate-y-1 ${
-              mood === item.value ? "border-cyan-300/40 bg-cyan-300/15 shadow-[0_0_24px_rgba(34,211,238,.14)]" : "border-border bg-card"
+            className={`rounded-xl border p-2.5 text-center transition hover:-translate-y-0.5 ${
+              mood === item.value 
+                ? "border-indigo-200 bg-indigo-50 text-[#4F46E5] shadow-sm" 
+                : "border-[#E2E8F0] bg-white hover:bg-[#F8FAFC]"
             }`}
             aria-label={`Save mood as ${item.label}`}
             type="button"
           >
-            <div className="text-2xl">{item.emoji}</div>
-            <div className="mt-1 text-[10px] font-bold text-muted-foreground">{item.label}</div>
+            <div className="text-xl">{item.emoji}</div>
+            <div className="mt-1 text-[9px] font-semibold text-[#64748B]">{item.label}</div>
           </button>
         ))}
       </div>
-      <div className="mt-4 rounded-2xl border border-border bg-card p-3">
+      <div className="mt-4 rounded-[14px] border border-[#E2E8F0] bg-white p-4 shadow-sm">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <div className="text-sm font-black text-muted-foreground">{current.label} today</div>
-            <div className="mt-1 text-xs font-semibold text-slate-400">{history.length ? `${history.length} saved mood logs` : "Save today's mood to start the trend"}</div>
+            <div className="text-xs font-bold text-[#0F172A]">{current.label} today</div>
+            <div className="mt-1 text-[10px] font-normal text-[#64748B]">{history.length ? `${history.length} saved mood logs` : "Save today's mood to start the trend"}</div>
           </div>
-          <div className="text-3xl">{current.emoji}</div>
+          <div className="text-2xl">{current.emoji}</div>
         </div>
         <div className="mt-4 flex items-end gap-2">
           {recent.length ? (
@@ -1348,13 +1465,13 @@ function MoodTrackerPanel({ mood, history, onSave }: { mood: string; history: Mo
               <span
                 key={`${item.log_date}-${item.mood}`}
                 title={`${item.log_date}: ${getMoodMeta(item.mood).label}`}
-                className="grid h-9 flex-1 place-items-center rounded-xl border border-border bg-card text-lg"
+                className="grid h-8 flex-1 place-items-center rounded-lg border border-[#E2E8F0] bg-white text-base shadow-sm"
               >
                 {getMoodMeta(item.mood).emoji}
               </span>
             ))
           ) : (
-            <div className="w-full rounded-xl border border-dashed border-border p-3 text-center text-xs font-semibold text-slate-400">
+            <div className="w-full rounded-lg border border-dashed border-[#E2E8F0] p-3 text-center text-xs font-semibold text-[#64748B]">
               No mood history yet
             </div>
           )}
@@ -1364,13 +1481,35 @@ function MoodTrackerPanel({ mood, history, onSave }: { mood: string; history: Mo
   );
 }
 
-function ActionCard({ to, icon: Icon, label }: { to: "/tasks" | "/standup" | "/my-leaves" | "/my-attendance" | "/meetings"; icon: typeof Sparkles; label: string }) {
-  return <Link to={to} className="rounded-2xl border border-border bg-card p-4 font-black text-muted-foreground transition hover:-translate-y-1 hover:border-cyan-300/25 hover:bg-card"><Icon className="mb-3 text-cyan-200" size={22} />{label}</Link>;
+function ActionCard({ to, icon: Icon, label }: { to: "/tasks" | "/standup" | "/my-leaves" | "/my-attendance" | "/meetings"; icon: any; label: string }) {
+  return (
+    <Link 
+      to={to} 
+      className="flex flex-col rounded-[14px] border border-[#E2E8F0] bg-white p-5 font-semibold text-[#0F172A] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50/10 hover:shadow-md"
+    >
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-[#4F46E5] mb-3">
+        <Icon size={20} />
+      </div>
+      <span className="text-sm">{label}</span>
+    </Link>
+  );
 }
 
 function LeaveRing({ label, value, total }: { label: string; value: number; total: number }) {
   const pct = Math.round((value / total) * 100);
-  return <div className="rounded-2xl border border-border bg-card p-3 text-center"><div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-[conic-gradient(#22d3ee_calc(var(--pct)*1%),rgba(255,255,255,.1)_0)]" style={{ ["--pct" as string]: pct }}><div className="grid h-14 w-14 place-items-center rounded-full bg-[#080d18] text-sm font-black">{value}</div></div><div className="mt-2 text-xs font-black text-muted-foreground">{label}</div></div>;
+  return (
+    <div className="rounded-[14px] border border-[#E2E8F0] bg-white p-4 text-center shadow-sm">
+      <div 
+        className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[conic-gradient(#4F46E5_calc(var(--pct)*1%),#F1F5F9_0)]" 
+        style={{ ["--pct" as string]: pct }}
+      >
+        <div className="grid h-12 w-12 place-items-center rounded-full bg-white text-xs font-bold text-[#0F172A] shadow-inner">
+          {value}
+        </div>
+      </div>
+      <div className="mt-3 text-xs font-semibold text-[#64748B]">{label}</div>
+    </div>
+  );
 }
 
 function ActivityTimelinePanel({ items }: { items: ActivityItem[] }) {
@@ -1388,7 +1527,7 @@ function ActivityTimelinePanel({ items }: { items: ActivityItem[] }) {
       </div>
       <div className="mt-5">
         {items.length ? (
-          <div className="relative space-y-3 before:absolute before:bottom-6 before:left-[22px] before:top-6 before:w-px before:bg-gradient-to-b before:from-cyan-300/70 before:via-white/10 before:to-transparent">
+          <div className="relative space-y-3 before:absolute before:bottom-6 before:left-[22px] before:top-6 before:w-px before:bg-gradient-to-b before:from-[#4F46E5]/40 before:via-slate-200 before:to-transparent">
             {items.map((item, index) => (
               <ModernTimelineItem key={`${item.kind}-${item.when}-${index}`} item={item} isLatest={index === 0} />
             ))}
@@ -1403,9 +1542,9 @@ function ActivityTimelinePanel({ items }: { items: ActivityItem[] }) {
 
 function TimelineStat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-3 text-center">
-      <div className="text-lg font-black text-foreground">{value}</div>
-      <div className="mt-1 text-[10px] font-black uppercase tracking-[0.12em] text-muted-foreground">{label}</div>
+    <div className="rounded-[14px] border border-[#E2E8F0] bg-white p-3 text-center shadow-sm">
+      <div className="text-base font-bold text-[#0F172A]">{value}</div>
+      <div className="mt-1 text-[9px] font-bold uppercase tracking-[0.12em] text-[#64748B]">{label}</div>
     </div>
   );
 }
@@ -1418,23 +1557,23 @@ function ModernTimelineItem({ item, isLatest }: { item: ActivityItem; isLatest: 
       initial={{ opacity: 0, x: -10 }}
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true }}
-      className={`relative flex gap-3 rounded-2xl border p-3 transition hover:-translate-y-0.5 ${
-        isLatest ? "border-cyan-300/24 bg-cyan-300/10" : "border-border bg-card hover:bg-card"
+      className={`relative flex gap-3 rounded-[14px] border p-3 transition hover:-translate-y-0.5 ${
+        isLatest ? "border-indigo-100 bg-indigo-50/50" : "border-[#E2E8F0] bg-white hover:bg-white"
       }`}
     >
-      <div className={`relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border ${meta.badgeClass}`}>
-        {isLatest && <span className="absolute inset-0 animate-ping rounded-2xl bg-cyan-300/10" />}
-        <Icon className="relative" size={18} />
+      <div className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${meta.badgeClass}`}>
+        {isLatest && <span className="absolute inset-0 animate-ping rounded-xl bg-indigo-300/10" />}
+        <Icon className="relative" size={16} />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="truncate text-base font-black text-muted-foreground">{item.text}</div>
-            <div className="mt-1 text-xs font-semibold text-slate-400">
+            <div className="truncate text-sm font-semibold text-[#0F172A]">{item.text}</div>
+            <div className="mt-0.5 text-xs font-normal text-[#64748B]">
               {formatNepaliDate(item.when, "DD MMM")} BS · {format(new Date(item.when), "h:mm a")}
             </div>
           </div>
-          <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] ${meta.pillClass}`}>
+          <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] ${meta.pillClass}`}>
             {item.kind}
           </span>
         </div>
@@ -1444,7 +1583,12 @@ function ModernTimelineItem({ item, isLatest }: { item: ActivityItem; isLatest: 
 }
 
 function NotificationCard({ title, text }: { title: string; text: string }) {
-  return <div className="rounded-2xl border border-border bg-card p-3"><div className="font-black">{title}</div><div className="mt-1 text-sm font-semibold leading-6 text-slate-400">{text}</div></div>;
+  return (
+    <div className="rounded-[14px] border border-[#E2E8F0] bg-white p-4 shadow-sm">
+      <div className="font-semibold text-sm text-[#0F172A]">{title}</div>
+      <div className="mt-1 text-xs font-normal leading-relaxed text-[#64748B]">{text}</div>
+    </div>
+  );
 }
 
 function CloudLikeIcon(props: React.ComponentProps<typeof Sparkles>) {
