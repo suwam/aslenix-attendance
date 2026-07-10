@@ -67,7 +67,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, isSameDay, subDays } from "date-fns";
-import { productivityScore } from "@/lib/tasks-utils";
+import { productivityScore, STATUS_LABELS } from "@/lib/tasks-utils";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
 import { formatWorkHours } from "@/lib/work-hours";
 import { formatNepaliDate, getCurrentNepaliMonthRange } from "@/lib/nepali-calendar";
@@ -123,7 +123,7 @@ const QUOTES = [
   "Great teams move with clarity, care, and consistency.",
   "Your best work today is one deliberate step away.",
 ];
-// Remove hardcoded PROJECTS array
+
 const BADGES = [
   { label: "Employee of the Month", icon: Crown, active: true },
   { label: "Productivity Hero", icon: Trophy, active: true },
@@ -153,7 +153,6 @@ function EmployeeDashboard() {
   });
   const [recent, setRecent] = useState<ActivityItem[]>([]);
   const [focusTasks, setFocusTasks] = useState<any[]>([]);
-  const [activeProjects, setActiveProjects] = useState<any[]>([]);
   const [meetings, setMeetings] = useState<any[]>([]);
   const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
   const [teamLeaders, setTeamLeaders] = useState<TeamLeader[]>([]);
@@ -296,39 +295,6 @@ function EmployeeDashboard() {
         })
         .slice(0, 3),
     );
-
-    const projectMap = new Map();
-    taskRows.forEach((task) => {
-      const pName = task.project_name || task.project || "Aslenix Workstream";
-      if (!projectMap.has(pName)) {
-        projectMap.set(pName, {
-          name: pName,
-          total: 0,
-          completed: 0,
-          deadline: task.deadline,
-          members: new Set([initials(profile?.full_name || firstName)]),
-          status: task.status === "in_progress" ? "Development" : "Design QA",
-        });
-      }
-      const p = projectMap.get(pName);
-      p.total++;
-      if (isDashboardTaskComplete(task)) p.completed++;
-      if (task.deadline && (!p.deadline || new Date(task.deadline) > new Date(p.deadline))) {
-        p.deadline = task.deadline;
-      }
-    });
-
-    const dynamicProjects = Array.from(projectMap.values())
-      .map((p) => ({
-        name: p.name,
-        progress: Math.round((p.completed / Math.max(1, p.total)) * 100),
-        deadline: p.deadline ? format(new Date(p.deadline), "dd MMM") : "Ongoing",
-        members: Array.from(p.members).slice(0, 3),
-        status: p.progress === 100 ? "Completed" : p.status,
-      }))
-      .sort((a, b) => b.progress - a.progress)
-      .slice(0, 3);
-    setActiveProjects(dynamicProjects);
 
     const { data: meetingRows } = await supabase
       .from("meetings")
@@ -585,18 +551,12 @@ function EmployeeDashboard() {
     weeklyHoursProgress < 100 ? "Weekly hours are below target." : "Weekly hours are on target.",
     scoreBreakdown[3].value < 80 ? "Focus time needs improvement." : "Focus time is healthy.",
   ];
-  const notifications: { title: string; text: string }[] = [
+  const notifications = [
     { title: "Task reminders", text: taskStats.pending ? `${taskStats.pending} pending tasks in your queue.` : "No pending task reminders." },
-  ];
-  if (activeProjects.length > 0) {
-    notifications.push(
-      { title: "Project updates", text: `${activeProjects[0].name} is at ${activeProjects[0].progress}%.` },
-    );
-  }
-  notifications.push(
+    { title: "Project updates", text: focusTasks.length ? `${focusTasks[0].title} is at ${focusTasks[0].progress || 0}%.` : "No active projects." },
     { title: "Team mentions", text: todayMeetings.length ? "You have meeting activity today." : "No new team mentions." },
     { title: "HR announcements", text: latestImprovement?.improvements ? "New weekly review available." : "No new HR announcements." },
-  );
+  ];
   const quote = QUOTES[new Date().getDate() % QUOTES.length];
 
   const dismissImprovement = () => {
@@ -880,12 +840,24 @@ function EmployeeDashboard() {
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-          <GlassPanel className="p-5 sm:p-6"><SectionTitle icon={Briefcase} eyebrow="Projects" title="Active contribution" action={`${activeProjects.length} live`} />
-            {activeProjects.length > 0 ? (
-              <div className="mt-5 grid gap-4 lg:grid-cols-3">{activeProjects.map((project) => <ProjectCard key={project.name} project={project} />)}</div>
-            ) : (
-              <div className="mt-5 flex h-[140px] items-center justify-center rounded-[14px] border border-dashed border-[#E2E8F0] bg-slate-50 text-sm text-[#64748B]">No active projects</div>
-            )}
+          <GlassPanel className="p-5 sm:p-6">
+            <SectionTitle icon={Briefcase} eyebrow="Projects" title="Active contribution" action={`${focusTasks.length} live`} />
+            <div className="mt-5 grid gap-4 lg:grid-cols-3">
+              {focusTasks.length > 0 ? focusTasks.map((task) => (
+                <ProjectCard 
+                  key={task.id} 
+                  project={{
+                    name: task.title,
+                    progress: task.progress || 0,
+                    deadline: task.deadline ? format(new Date(task.deadline), "dd MMM") : "No deadline",
+                    members: [initials(firstName)],
+                    status: STATUS_LABELS[task.status as keyof typeof STATUS_LABELS] || task.status
+                  }} 
+                />
+              )) : (
+                <EmptyState icon={Briefcase} title="No active contributions" text="You have no active tasks currently." />
+              )}
+            </div>
           </GlassPanel>
           <GlassPanel className="p-5 sm:p-6"><SectionTitle icon={Award} eyebrow="Gamification" title="Achievements" /><div className="mt-5 grid grid-cols-2 gap-3">{BADGES.map((badge) => <AchievementBadge key={badge.label} badge={badge} />)}</div></GlassPanel>
         </section>
