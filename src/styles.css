@@ -4,8 +4,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ASLENIX — Dark futuristic enterprise theme.
-   Neon red → blue gradient, glassmorphism, premium dashboard. */
+/* ASLENIX — Premium SaaS Dashboard Theme. */
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -53,66 +52,66 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --color-neon-red: var(--neon-red);
   --color-neon-blue: var(--neon-blue);
-  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-display: "Inter", system-ui, sans-serif;
   --font-sans: "Inter", system-ui, sans-serif;
 }
 
 :root {
   --radius: 1.125rem; /* 18px */
 
-  --background: #F9FAFB;
-  --foreground: #111827;
+  --background: #F6F8FC;
+  --foreground: #0F172A;
 
   --card: #ffffff;
-  --card-foreground: #111827;
+  --card-foreground: #0F172A;
   --popover: #ffffff;
-  --popover-foreground: #111827;
+  --popover-foreground: #0F172A;
 
-  --primary: hsl(245 100% 88%);
-  --primary-foreground: #111827;
-  --secondary: #F3F4F6;
-  --secondary-foreground: #4B5563;
+  --primary: #4F46E5;
+  --primary-foreground: #ffffff;
+  --secondary: #F8FAFC;
+  --secondary-foreground: #64748B;
 
-  --muted: #F3F4F6;
-  --muted-foreground: #6B7280;
-  --accent: hsl(210 100% 85%);
-  --accent-foreground: #111827;
+  --muted: #F1F5F9;
+  --muted-foreground: #64748B;
+  --accent: #EEF2FF;
+  --accent-foreground: #4338CA;
 
-  --destructive: #ef4444;
+  --destructive: #EF4444;
   --destructive-foreground: #ffffff;
-  --success: #10b981;
+  --success: #10B981;
   --success-foreground: #ffffff;
-  --warning: #f59e0b;
+  --warning: #F59E0B;
   --warning-foreground: #ffffff;
 
-  --border: #E5E7EB;
-  --input: #E5E7EB;
-  --ring: hsl(245 100% 88%);
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #4F46E5;
 
-  --neon-red: hsl(210 100% 85%);
-  --neon-blue: hsl(245 100% 88%);
+  --neon-red: #4F46E5;
+  --neon-blue: #6366F1;
 
-  --chart-1: hsl(210 100% 85%);
-  --chart-2: hsl(245 100% 88%);
-  --chart-3: hsl(280 100% 85%);
-  --chart-4: hsl(200 100% 85%);
-  --chart-5: hsl(260 100% 88%);
+  --chart-1: #4F46E5;
+  --chart-2: #8B5CF6;
+  --chart-3: #F97316;
+  --chart-4: #10B981;
+  --chart-5: #0EA5E9;
 
   --sidebar: #ffffff;
-  --sidebar-foreground: #111827;
-  --sidebar-primary: hsl(245 100% 88%);
-  --sidebar-primary-foreground: #111827;
-  --sidebar-accent: linear-gradient(135deg, hsl(210 100% 85%) 0%, hsl(245 100% 88%) 50%, hsl(280 100% 85%) 100%);
-  --sidebar-accent-foreground: #ffffff;
-  --sidebar-border: rgba(0,0,0,0.06);
-  --sidebar-ring: hsl(245 100% 88%);
+  --sidebar-foreground: #0F172A;
+  --sidebar-primary: #4F46E5;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #EEF2FF;
+  --sidebar-accent-foreground: #4F46E5;
+  --sidebar-border: #E2E8F0;
+  --sidebar-ring: #4F46E5;
 
-  --gradient-brand: linear-gradient(135deg, hsl(210 100% 85%) 0%, hsl(245 100% 88%) 50%, hsl(280 100% 85%) 100%);
+  --gradient-brand: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
   --gradient-brand-soft: transparent;
   --gradient-bg: none;
   --shadow-neon-red: none;
   --shadow-neon-blue: none;
-  --shadow-glass: 0 10px 30px rgba(15,23,42,.06);
+  --shadow-glass: 0 8px 24px rgba(15,23,42,0.08);
 }
 
 .light {
