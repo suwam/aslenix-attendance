@@ -53,8 +53,8 @@ export function TaskAdminEditor({
 
   if (!canEdit) {
     return (
-      <section className="rounded-lg border border-white/10 bg-white/[0.04] p-5 shadow-xl shadow-black/10 backdrop-blur-xl">
-        <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
+      <section className="rounded-lg border border-[#f1f0ee]/10 bg-[#f1f0ee]/[0.04] p-5 shadow-xl shadow-black/10 backdrop-blur-xl">
+        <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-[#f1f0ee]">
           <Shield size={15} className="text-cyan-300" />
           Read-Only Task Fields
         </div>
@@ -73,36 +73,36 @@ export function TaskAdminEditor({
   }
 
   return (
-    <section className="rounded-lg border border-white/10 bg-white/[0.055] p-5 shadow-xl shadow-black/10 backdrop-blur-xl">
-      <h2 className="mb-4 text-sm font-semibold text-white">Admin Controls</h2>
+    <section className="rounded-lg border border-[#f1f0ee]/10 bg-[#f1f0ee]/[0.055] p-5 shadow-xl shadow-black/10 backdrop-blur-xl">
+      <h2 className="mb-4 text-sm font-semibold text-[#f1f0ee]">Admin Controls</h2>
       <div className="grid gap-3">
         <input
           value={form.title}
           onChange={(event) => setForm({ ...form, title: event.target.value })}
-          className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-300/60"
+          className="rounded-md border border-[#f1f0ee]/10 bg-black/30 px-3 py-2 text-sm text-[#f1f0ee] outline-none transition focus:border-cyan-300/60"
         />
         <textarea
           value={form.description}
           onChange={(event) => setForm({ ...form, description: event.target.value })}
-          className="min-h-28 rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-300/60"
+          className="min-h-28 rounded-md border border-[#f1f0ee]/10 bg-black/30 px-3 py-2 text-sm text-[#f1f0ee] outline-none transition focus:border-cyan-300/60"
         />
         <div className="grid gap-3 sm:grid-cols-2">
           <input
             type="date"
             value={form.deadline}
             onChange={(event) => setForm({ ...form, deadline: event.target.value })}
-            className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+            className="rounded-md border border-[#f1f0ee]/10 bg-black/30 px-3 py-2 text-sm text-[#f1f0ee]"
           />
           <input
             value={form.assignedTo}
             onChange={(event) => setForm({ ...form, assignedTo: event.target.value })}
-            className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+            className="rounded-md border border-[#f1f0ee]/10 bg-black/30 px-3 py-2 text-sm text-[#f1f0ee]"
             aria-label="Assigned employee id"
           />
           <select
             value={form.priority}
             onChange={(event) => setForm({ ...form, priority: event.target.value as TaskPriority })}
-            className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+            className="rounded-md border border-[#f1f0ee]/10 bg-black/30 px-3 py-2 text-sm text-[#f1f0ee]"
           >
             {priorities.map((value) => (
               <option key={value} value={value}>
@@ -113,7 +113,7 @@ export function TaskAdminEditor({
           <select
             value={form.status}
             onChange={(event) => setForm({ ...form, status: event.target.value as TaskStatus })}
-            className="rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+            className="rounded-md border border-[#f1f0ee]/10 bg-black/30 px-3 py-2 text-sm text-[#f1f0ee]"
           >
             {statuses.map((value) => (
               <option key={value} value={value}>
@@ -125,18 +125,18 @@ export function TaskAdminEditor({
         <button
           onClick={save}
           disabled={busy}
-          className="inline-flex items-center justify-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-md bg-[#f1f0ee] px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-100 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Save size={14} />
           Save admin changes
         </button>
       </div>
-      <div className="mt-5 border-t border-white/10 pt-5">
+      <div className="mt-5 border-t border-[#f1f0ee]/10 pt-5">
         <textarea
           value={reviewComment}
           onChange={(event) => setReviewComment(event.target.value)}
           placeholder="Review comment visible to employee..."
-          className="min-h-24 w-full rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none transition focus:border-amber-300/60"
+          className="min-h-24 w-full rounded-md border border-[#f1f0ee]/10 bg-black/30 px-3 py-2 text-sm text-[#f1f0ee] outline-none transition focus:border-amber-300/60"
         />
         <div className="mt-3 flex flex-wrap gap-2">
           <button
@@ -181,13 +181,13 @@ function ReadOnly({ label, value, multiline = false }: { label: string; value: s
         <textarea
           value={value}
           disabled
-          className="min-h-24 resize-none rounded-md border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-300"
+          className="min-h-24 resize-none rounded-md border border-[#f1f0ee]/10 bg-black/20 px-3 py-2 text-sm text-slate-300"
         />
       ) : (
         <input
           value={value}
           disabled
-          className="rounded-md border border-white/10 bg-black/20 px-3 py-2 text-sm text-slate-300"
+          className="rounded-md border border-[#f1f0ee]/10 bg-black/20 px-3 py-2 text-sm text-slate-300"
         />
       )}
     </label>

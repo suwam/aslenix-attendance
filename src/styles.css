@@ -62,13 +62,13 @@
   --background: #F6F8FC;
   --foreground: #0F172A;
 
-  --card: #ffffff;
+  --card: #f1f0ee;
   --card-foreground: #0F172A;
-  --popover: #ffffff;
+  --popover: #f1f0ee;
   --popover-foreground: #0F172A;
 
   --primary: #4F46E5;
-  --primary-foreground: #ffffff;
+  --primary-foreground: #f1f0ee;
   --secondary: #F8FAFC;
   --secondary-foreground: #64748B;
 
@@ -78,11 +78,11 @@
   --accent-foreground: #4338CA;
 
   --destructive: #EF4444;
-  --destructive-foreground: #ffffff;
+  --destructive-foreground: #f1f0ee;
   --success: #10B981;
-  --success-foreground: #ffffff;
+  --success-foreground: #f1f0ee;
   --warning: #F59E0B;
-  --warning-foreground: #ffffff;
+  --warning-foreground: #f1f0ee;
 
   --border: #E2E8F0;
   --input: #E2E8F0;
@@ -97,10 +97,10 @@
   --chart-4: #10B981;
   --chart-5: #0EA5E9;
 
-  --sidebar: #ffffff;
+  --sidebar: #f1f0ee;
   --sidebar-foreground: #0F172A;
   --sidebar-primary: #4F46E5;
-  --sidebar-primary-foreground: #ffffff;
+  --sidebar-primary-foreground: #f1f0ee;
   --sidebar-accent: #EEF2FF;
   --sidebar-accent-foreground: #4F46E5;
   --sidebar-border: #E2E8F0;
@@ -145,13 +145,13 @@
 
 @layer components {
   .glass {
-    background: #ffffff;
+    background: #f1f0ee;
     border-radius: 18px;
     border: 1px solid rgba(0,0,0,.06);
     box-shadow: 0 10px 30px rgba(15,23,42,.06);
   }
   .glass-strong {
-    background: #ffffff;
+    background: #f1f0ee;
     border-radius: 18px;
     border: 1px solid rgba(0,0,0,.06);
     box-shadow: 0 10px 30px rgba(15,23,42,.06);
@@ -164,7 +164,7 @@
   }
   .gradient-border {
     position: relative;
-    background: #ffffff padding-box, var(--gradient-brand) border-box;
+    background: #f1f0ee padding-box, var(--gradient-brand) border-box;
     border: 1px solid transparent;
   }
   .neon-button {
@@ -535,7 +535,7 @@
     display: inline-block;
     max-width: min(44vw, 420px);
     overflow: hidden;
-    color: white;
+    color: #f1f0ee;
     font-family: var(--font-display);
     letter-spacing: 0.22em;
     padding-right: 0.14em;
@@ -600,7 +600,7 @@
   .employee-panel,
   .employee-kpi-card {
     border: 1px solid #e5e7eb;
-    background: #ffffff;
+    background: #f1f0ee;
     border-radius: 16px;
     box-shadow: 0 8px 30px rgba(0,0,0,.08);
   }
@@ -674,7 +674,7 @@
     font-size: clamp(1.55rem, 2.4vw, 2.35rem) !important;
     font-weight: 900 !important;
     line-height: 1 !important;
-    background: linear-gradient(90deg, #ffffff, #7df3ff 48%, #ff78a7);
+    background: linear-gradient(90deg, #f1f0ee, #7df3ff 48%, #ff78a7);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -753,7 +753,7 @@
     height: 54px;
     border-radius: 16px;
     background: linear-gradient(135deg, #facc15, #fb7185, #8b5cf6);
-    color: white;
+    color: #f1f0ee;
     box-shadow: 0 14px 36px rgba(250, 204, 21, 0.24);
   }
 
@@ -1374,7 +1374,7 @@
     position: relative;
     overflow: hidden;
     border-color: rgba(0, 0, 0, 0.06);
-    background: #ffffff;
+    background: #f1f0ee;
   }
 
   .employee-dashboard-header::before {
@@ -1394,7 +1394,7 @@
   }
 
   .employee-dashboard-header h1 {
-    background: linear-gradient(90deg, #ffffff, #dff8ff 42%, #ff78a7 100%);
+    background: linear-gradient(90deg, #f1f0ee, #dff8ff 42%, #ff78a7 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -1465,7 +1465,7 @@
   .employee-kpi-card.pink { --kpi-accent: #ff3d8b; }
 
   .employee-kpi-card strong {
-    background: linear-gradient(90deg, #ffffff, color-mix(in srgb, var(--kpi-accent) 62%, white));
+    background: linear-gradient(90deg, #f1f0ee, color-mix(in srgb, var(--kpi-accent) 62%, #f1f0ee));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -1513,7 +1513,7 @@
     position: relative;
     overflow: hidden;
     border-color: rgba(103, 232, 249, 0.17);
-    background: #ffffff;
+    background: #f1f0ee;
   }
 
   .employee-quick-panel .employee-quick-action svg {
@@ -1528,7 +1528,7 @@
     isolation: isolate;
     border-radius: 24px;
     border: 1px solid transparent;
-    background: #ffffff;
+    background: #f1f0ee;
     box-shadow: 0 10px 30px rgba(15,23,42,.06);
   }
 
@@ -1696,7 +1696,7 @@
     padding: 10px 12px;
     border-radius: 12px;
     border: 1px solid rgba(142, 203, 255, 0.22);
-    background: #ffffff;
+    background: #f1f0ee;
     box-shadow: 0 18px 46px rgba(0, 0, 0, 0.45), 0 0 26px rgba(142, 203, 255, 0.12);
     color: #dbeafe;
     opacity: 0;
@@ -1925,7 +1925,7 @@
     align-items: center;
     justify-content: center;
     border-radius: 16px;
-    color: white;
+    color: #f1f0ee;
     box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.28);
     transition: transform .28s ease, filter .28s ease;
   }
@@ -2114,12 +2114,12 @@
   }
   .eom-rank-medal.bronze {
     background: linear-gradient(135deg, #d8955c, #8b5cf6);
-    color: white;
+    color: #f1f0ee;
     box-shadow: 0 0 28px -14px oklch(0.72 0.14 55 / 0.9);
   }
   .eom-rank-medal.neutral {
     background: linear-gradient(135deg, oklch(0.74 0.08 205 / 0.92), oklch(0.54 0.12 260 / 0.92));
-    color: white;
+    color: #f1f0ee;
     box-shadow: 0 0 28px -16px oklch(0.74 0.08 205 / 0.82);
   }
   .eom-contender-metric {
@@ -2173,7 +2173,7 @@
     align-items: center;
     justify-content: center;
     border-radius: 18px;
-    color: white;
+    color: #f1f0ee;
     background: linear-gradient(135deg, #f6c453, #ff7a59 48%, #8b5cf6);
     box-shadow: 0 0 36px oklch(0.86 0.17 85 / 0.45);
   }
@@ -2186,7 +2186,7 @@
     border: 1px solid oklch(1 0 0 / 0.1);
     background: oklch(1 0 0 / 0.07);
     padding: 7px 10px;
-    color: white;
+    color: #f1f0ee;
     font-size: 12px;
     box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.08);
     white-space: normal;
@@ -2237,7 +2237,7 @@
     font-weight: 800;
   }
   .eom-rank-first {
-    color: white;
+    color: #f1f0ee;
     background: linear-gradient(135deg, #f6c453, #ff4ecd);
     box-shadow: 0 0 24px oklch(0.86 0.17 85 / 0.34);
   }
@@ -2267,7 +2267,7 @@
     backdrop-filter: blur(16px);
   }
   .eom-productivity-average b {
-    color: white;
+    color: #f1f0ee;
     font-size: 0.95rem;
     font-variant-numeric: tabular-nums;
   }
@@ -2362,7 +2362,7 @@
       radial-gradient(circle at top left, rgb(255 45 111 / 0.14), transparent 38%),
       rgb(7 13 28 / 0.92);
     padding: 0.75rem;
-    color: white;
+    color: #f1f0ee;
     box-shadow: 0 18px 50px rgb(0 0 0 / 0.35);
     backdrop-filter: blur(18px);
   }
@@ -2384,7 +2384,7 @@
     color: rgb(203 213 225);
   }
   .eom-productivity-tooltip-row b {
-    color: white;
+    color: #f1f0ee;
     font-variant-numeric: tabular-nums;
   }
   .eom-productivity-tooltip-status {
@@ -2477,7 +2477,7 @@
   .eom-attendance-kpi b {
     margin-top: 0.32rem;
     display: block;
-    color: white;
+    color: #f1f0ee;
     font-size: 1rem;
     font-variant-numeric: tabular-nums;
     line-height: 1.1;
@@ -2516,7 +2516,7 @@
       radial-gradient(circle at top left, rgb(33 212 253 / 0.14), transparent 38%),
       rgb(7 13 28 / 0.92);
     padding: 0.75rem;
-    color: white;
+    color: #f1f0ee;
     box-shadow: 0 18px 50px rgb(0 0 0 / 0.35);
     backdrop-filter: blur(18px);
   }
@@ -2538,7 +2538,7 @@
     color: rgb(203 213 225);
   }
   .eom-attendance-tooltip-row b {
-    color: white;
+    color: #f1f0ee;
     font-variant-numeric: tabular-nums;
   }
   .eom-attendance-tooltip-status {
@@ -2765,7 +2765,7 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 20px;
     text-align: left;
-    color: white;
+    color: #f1f0ee;
     transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
   }
 
@@ -2960,7 +2960,7 @@
   }
 
   .recognition-score b {
-    color: white;
+    color: #f1f0ee;
     font-size: 1rem;
   }
 
@@ -3003,7 +3003,7 @@
     border: 1px solid rgba(255, 255, 255, 0.12);
     padding: 24px;
     text-align: center;
-    color: white;
+    color: #f1f0ee;
     box-shadow: 0 20px 70px rgba(0, 0, 0, 0.32);
   }
 
@@ -3106,7 +3106,7 @@
     width: 100%;
     min-height: 54px;
     border-radius: 18px;
-    color: white;
+    color: #f1f0ee;
     font-weight: 900;
     box-shadow: 0 16px 46px rgba(0, 0, 0, 0.28);
     transition: transform 160ms ease, box-shadow 160ms ease;
@@ -3236,7 +3236,7 @@
     align-items: center;
     justify-content: center;
     border-radius: 13px;
-    color: white;
+    color: #f1f0ee;
     background: linear-gradient(135deg, #21d4fd, #8b5cf6 50%, #ff2d6f);
     box-shadow: 0 0 24px oklch(0.66 0.25 280 / 0.32);
   }
@@ -3300,7 +3300,7 @@
     justify-content: center;
     border-radius: 10px;
     background: linear-gradient(135deg, #21d4fd, #8b5cf6 48%, #ff2d6f);
-    color: white;
+    color: #f1f0ee;
     font-size: 11px;
     font-weight: 800;
     box-shadow: 0 0 24px oklch(0.66 0.25 280 / 0.35);
@@ -3352,7 +3352,7 @@
       linear-gradient(180deg, oklch(1 0 0 / 0.055), oklch(1 0 0 / 0.026)),
       oklch(0.13 0.025 265 / 0.64);
     padding: 14px 16px;
-    color: white;
+    color: #f1f0ee;
     text-align: left;
     transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
   }
@@ -3399,7 +3399,7 @@
   .eom-review-employee-pill.active {
     border-color: oklch(0.74 0.23 205 / 0.36);
     background: linear-gradient(135deg, oklch(0.74 0.23 205 / 0.18), oklch(0.72 0.26 340 / 0.14));
-    color: white;
+    color: #f1f0ee;
     transform: translateY(-1px);
   }
   .eom-review-name-button {
@@ -3629,7 +3629,7 @@
     border: 1px solid oklch(1 0 0 / 0.1);
     background: linear-gradient(135deg, oklch(0.62 0.25 240 / 0.16), oklch(0.68 0.25 340 / 0.14));
     padding: 6px 9px;
-    color: white;
+    color: #f1f0ee;
     font-size: 12px;
     font-weight: 600;
     white-space: nowrap;
@@ -3683,7 +3683,7 @@
     font-weight: 800;
   }
   .admin-achievement-rank.top {
-    color: white;
+    color: #f1f0ee;
     background: linear-gradient(135deg, #f6c453, #ff4ecd);
     box-shadow: 0 0 24px oklch(0.86 0.17 85 / 0.34);
   }
@@ -3856,7 +3856,7 @@
       radial-gradient(circle at top left, rgb(33 212 253 / 0.14), transparent 38%),
       rgb(7 13 28 / 0.92);
     padding: 0.75rem;
-    color: white;
+    color: #f1f0ee;
     box-shadow: 0 18px 50px rgb(0 0 0 / 0.35);
     backdrop-filter: blur(18px);
   }
@@ -3878,7 +3878,7 @@
     color: rgb(203 213 225);
   }
   .weekly-progress-tooltip-row b {
-    color: white;
+    color: #f1f0ee;
     font-variant-numeric: tabular-nums;
   }
   .weekly-progress-tooltip-status {
@@ -4205,7 +4205,7 @@
     font-weight: 800;
   }
   .weekly-rank.top {
-    color: white;
+    color: #f1f0ee;
     background: linear-gradient(135deg, #f6c453, #ff4ecd);
     box-shadow: 0 0 24px oklch(0.86 0.17 85 / 0.34);
   }
@@ -4629,7 +4629,7 @@
     font-weight: 800;
   }
   .productivity-rank-number.top {
-    color: white;
+    color: #f1f0ee;
     background: linear-gradient(135deg, #21d4fd, #8b5cf6 48%, #ff2d6f);
     box-shadow: 0 0 24px oklch(0.7 0.24 300 / 0.38);
   }

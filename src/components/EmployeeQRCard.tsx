@@ -99,7 +99,7 @@ export const EmployeeQRCard = forwardRef<HTMLDivElement, { profile: QRProfile; s
             <div className="text-[10px] text-muted-foreground truncate">{profile.email}</div>
           </div>
           <div
-            className="rounded-lg bg-white p-2 shrink-0"
+            className="rounded-lg bg-[#f1f0ee] p-2 shrink-0"
             style={{ filter: disabled ? "grayscale(1) opacity(0.5)" : undefined }}
           >
             <QRCodeCanvas

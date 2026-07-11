@@ -138,7 +138,7 @@ function NotifPage() {
         </GlassCard>
       ) : (
         <div className="max-h-[calc(100dvh-18rem)] overflow-y-auto pr-2 [scrollbar-color:rgba(103,232,249,0.35)_rgba(255,255,255,0.06)] [scrollbar-width:thin]">
-          <ul className="relative space-y-3 before:absolute before:left-[1.18rem] before:top-4 before:h-[calc(100%-2rem)] before:w-px before:bg-gradient-to-b before:from-cyan-300/30 before:via-white/10 before:to-transparent">
+          <ul className="relative space-y-3 before:absolute before:left-[1.18rem] before:top-4 before:h-[calc(100%-2rem)] before:w-px before:bg-gradient-to-b before:from-cyan-300/30 before:via-[#f1f0ee]/10 before:to-transparent">
             {rows.map((notification) => (
               <NotificationTimelineItem
                 key={notification.id}

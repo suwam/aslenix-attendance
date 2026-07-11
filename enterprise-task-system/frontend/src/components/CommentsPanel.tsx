@@ -18,8 +18,8 @@ export function CommentsPanel({
   }
 
   return (
-    <section className="rounded-lg border border-white/10 bg-white/[0.055] p-5 shadow-xl shadow-black/10 backdrop-blur-xl">
-      <h2 className="mb-4 text-sm font-semibold text-white">Comments</h2>
+    <section className="rounded-lg border border-[#f1f0ee]/10 bg-[#f1f0ee]/[0.055] p-5 shadow-xl shadow-black/10 backdrop-blur-xl">
+      <h2 className="mb-4 text-sm font-semibold text-[#f1f0ee]">Comments</h2>
       <div className="space-y-3">
         {comments.map((comment) => (
           <article
@@ -27,7 +27,7 @@ export function CommentsPanel({
             className={
               comment.isReviewComment
                 ? "rounded-md border border-amber-300/30 bg-amber-300/10 p-3"
-                : "rounded-md border border-white/10 bg-black/25 p-3"
+                : "rounded-md border border-[#f1f0ee]/10 bg-black/25 p-3"
             }
           >
             <div className="mb-1 flex justify-between gap-3 text-xs text-slate-500">
@@ -47,7 +47,7 @@ export function CommentsPanel({
           value={body}
           onChange={(event) => setBody(event.target.value)}
           placeholder="Add a comment..."
-          className="min-w-0 flex-1 rounded-md border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-cyan-300/60"
+          className="min-w-0 flex-1 rounded-md border border-[#f1f0ee]/10 bg-black/30 px-3 py-2 text-sm text-[#f1f0ee] outline-none transition placeholder:text-slate-600 focus:border-cyan-300/60"
         />
         <button
           onClick={submit}

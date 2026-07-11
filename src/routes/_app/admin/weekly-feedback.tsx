@@ -536,7 +536,7 @@ function WeeklyFeedbackPage() {
                   stroke="#ff2d6f"
                   strokeWidth={3}
                   dot={(props) => <PerformanceDot {...props} highWeek={highPoint.week} lowWeek={lowPoint.week} />}
-                  activeDot={{ r: 6, strokeWidth: 2, stroke: "#fff" }}
+                  activeDot={{ r: 6, strokeWidth: 2, stroke: "#f1f0ee" }}
                   isAnimationActive
                   animationDuration={900}
                 />
@@ -547,7 +547,7 @@ function WeeklyFeedbackPage() {
                   stroke="#21d4fd"
                   strokeWidth={2.4}
                   dot={{ r: 3, fill: "#21d4fd", stroke: "#07111f", strokeWidth: 1 }}
-                  activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }}
+                  activeDot={{ r: 5, strokeWidth: 2, stroke: "#f1f0ee" }}
                   isAnimationActive
                   animationDuration={1100}
                 />
@@ -1045,7 +1045,7 @@ function PerformanceDot(props: any) {
       cy={cy}
       r={radius}
       fill={fill}
-      stroke={isHigh || isLow ? "#ffffff" : "#07111f"}
+      stroke={isHigh || isLow ? "#f1f0ee" : "#07111f"}
       strokeWidth={isHigh || isLow ? 2 : 1}
       className={isHigh || isLow ? "weekly-highlight-dot" : ""}
     />

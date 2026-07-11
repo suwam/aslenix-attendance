@@ -36,10 +36,10 @@ export function ProgressUpdatePanel({
   }
 
   return (
-    <section className="rounded-lg border border-white/10 bg-white/[0.055] p-5 shadow-xl shadow-black/10 backdrop-blur-xl transition duration-300 hover:border-cyan-300/30">
+    <section className="rounded-lg border border-[#f1f0ee]/10 bg-[#f1f0ee]/[0.055] p-5 shadow-xl shadow-black/10 backdrop-blur-xl transition duration-300 hover:border-cyan-300/30">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold text-white">Progress Update</h2>
+          <h2 className="text-sm font-semibold text-[#f1f0ee]">Progress Update</h2>
           <p className="mt-1 text-xs text-slate-500">Employee-safe workspace for notes, progress, and review handoff.</p>
         </div>
         <span className="rounded-md border border-cyan-300/30 bg-cyan-300/10 px-2 py-1 font-mono text-sm text-cyan-100">
@@ -62,7 +62,7 @@ export function ProgressUpdatePanel({
         disabled={busy || isLockedForEmployee}
         onChange={(event) => setNote(event.target.value)}
         placeholder={changed ? "Required: describe what changed..." : "Add a progress update note..."}
-        className="mt-4 min-h-28 w-full rounded-md border border-white/10 bg-black/30 p-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-cyan-300/60 disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-4 min-h-28 w-full rounded-md border border-[#f1f0ee]/10 bg-black/30 p-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-cyan-300/60 disabled:cursor-not-allowed disabled:opacity-50"
       />
 
       {changed && !note.trim() && (
@@ -96,7 +96,7 @@ export function ProgressUpdatePanel({
       </div>
 
       {task.progressUpdates?.length > 0 && (
-        <div className="mt-5 border-t border-white/10 pt-4">
+        <div className="mt-5 border-t border-[#f1f0ee]/10 pt-4">
           <h3 className="mb-3 text-xs font-semibold uppercase text-slate-500">Progress Notes</h3>
           <div className="grid gap-2">
             {task.progressUpdates
@@ -105,7 +105,7 @@ export function ProgressUpdatePanel({
               .map((update) => (
                 <article
                   key={`${update.employeeId}-${update.createdAt}-${update.newProgress}`}
-                  className="rounded-md border border-white/10 bg-black/25 p-3"
+                  className="rounded-md border border-[#f1f0ee]/10 bg-black/25 p-3"
                 >
                   <div className="mb-1 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
                     <span className="font-medium text-cyan-200">

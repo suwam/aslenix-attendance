@@ -312,7 +312,7 @@ export default function AdminCharts({
                     />
                   ))}
                 </Pie>
-                <text x="50%" y="47%" textAnchor="middle" dominantBaseline="middle" fill="white" fontSize="30" fontWeight="800">
+                <text x="50%" y="47%" textAnchor="middle" dominantBaseline="middle" fill="#f1f0ee" fontSize="30" fontWeight="800">
                   {departmentTotal}
                 </text>
                 <text x="50%" y="59%" textAnchor="middle" dominantBaseline="middle" fill="rgba(226,232,240,0.62)" fontSize="11" fontWeight="700" letterSpacing="0.8">
@@ -401,7 +401,7 @@ export default function AdminCharts({
           <div className="text-sm text-muted-foreground py-8 text-center">No activity yet</div>
         ) : (
           <div className="max-h-[28rem] overflow-y-auto pr-2 [scrollbar-color:rgba(103,232,249,0.35)_rgba(255,255,255,0.06)] [scrollbar-width:thin]">
-            <ul className="relative space-y-3 before:absolute before:left-[1.18rem] before:top-4 before:h-[calc(100%-2rem)] before:w-px before:bg-gradient-to-b before:from-cyan-300/30 before:via-white/10 before:to-transparent">
+            <ul className="relative space-y-3 before:absolute before:left-[1.18rem] before:top-4 before:h-[calc(100%-2rem)] before:w-px before:bg-gradient-to-b before:from-cyan-300/30 before:via-[#f1f0ee]/10 before:to-transparent">
               {filteredActivityItems.length ? (
                 filteredActivityItems.map((item, index) => (
                   <ActivityTimelineItem
@@ -696,7 +696,7 @@ function ActivityDetailField({ label, value }: { label: string; value: string })
 
 function EmployeeAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string | null }) {
   if (avatarUrl) {
-    return <img src={avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover ring-1 ring-white/15" />;
+    return <img src={avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover ring-1 ring-[#f1f0ee]/15" />;
   }
 
   return (
@@ -1028,7 +1028,7 @@ function TrendDot(props: any) {
       cy={cy}
       r={payload?.isToday ? 4.5 : 3}
       fill={ATTENDANCE_COLORS.trend}
-      stroke={payload?.isToday ? "#ffffff" : "#07111f"}
+      stroke={payload?.isToday ? "#f1f0ee" : "#07111f"}
       strokeWidth={payload?.isToday ? 2 : 1.5}
       opacity={payload?.noData ? 0.55 : 1}
       filter={payload?.isToday ? "url(#todayGlow)" : undefined}

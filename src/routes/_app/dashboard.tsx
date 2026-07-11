@@ -630,7 +630,7 @@ function EmployeeDashboard() {
           else setImprovementOpen(true);
         }}
       >
-        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto rounded-[18px] border border-[#E2E8F0] bg-white p-6 shadow-2xl sm:max-w-2xl text-[#0F172A]">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto rounded-[18px] border border-[#E2E8F0] bg-[#f1f0ee] p-6 shadow-2xl sm:max-w-2xl text-[#0F172A]">
           <DialogHeader className="relative text-left">
             <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-start gap-4">
@@ -673,13 +673,13 @@ function EmployeeDashboard() {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
+              <div className="rounded-xl border border-[#E2E8F0] bg-[#f1f0ee] p-4 shadow-sm">
                 <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#64748B]">Next Step</div>
                 <div className="mt-1 text-xs font-normal leading-relaxed text-[#64748B]">
                   Review the note and apply it to this week's focus tasks.
                 </div>
               </div>
-              <div className="rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
+              <div className="rounded-xl border border-[#E2E8F0] bg-[#f1f0ee] p-4 shadow-sm">
                 <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#64748B]">Visibility</div>
                 <div className="mt-1 text-xs font-normal leading-relaxed text-[#64748B]">
                   This reminder appears once until you acknowledge it.
@@ -708,7 +708,7 @@ function EmployeeDashboard() {
           <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent_0_30%,rgba(79,70,229,.03)_45%,transparent_60%)] opacity-30" />
           <div className="relative grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 border-white bg-white text-2xl font-bold text-[#4F46E5] shadow-sm">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 border-[#f1f0ee] bg-[#f1f0ee] text-2xl font-bold text-[#4F46E5] shadow-sm">
                 {profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" /> : initials(profile?.full_name || firstName)}
               </div>
               <div className="min-w-0">
@@ -728,7 +728,7 @@ function EmployeeDashboard() {
               </div>
             </div>
             <div className="grid gap-3">
-              <div className="rounded-[18px] border border-[#E2E8F0] bg-white p-5 shadow-sm">
+              <div className="rounded-[18px] border border-[#E2E8F0] bg-[#f1f0ee] p-5 shadow-sm">
                 <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#64748B]">Live Clock</div>
                 <LiveClock className="mt-2 text-3xl font-bold text-[#0F172A] tracking-tight" />
               </div>
@@ -745,7 +745,7 @@ function EmployeeDashboard() {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="relative overflow-hidden rounded-[18px] border border-[#E2E8F0] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.08)]"
+          className="relative overflow-hidden rounded-[18px] border border-[#E2E8F0] bg-[#f1f0ee] p-6 shadow-[0_8px_24px_rgba(15,23,42,0.08)]"
         >
           <div className="relative grid gap-6 xl:grid-cols-[minmax(220px,.8fr)_minmax(300px,1fr)_minmax(360px,1.2fr)] xl:items-center">
             <div className="flex items-center gap-4">
@@ -763,7 +763,7 @@ function EmployeeDashboard() {
               <Button onClick={checkIn} disabled={busy || isWeeklyOff || Boolean(today)} className="h-12 rounded-[14px] bg-gradient-to-r from-[#C4DAFF] to-[#E5CCFF] hover:from-[#B1CDFA] hover:to-[#D8B4FE] text-sm font-bold text-[#0F172A] shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
                 <LogIn size={16} className="mr-2" /> Check In
               </Button>
-              <Button onClick={checkOut} disabled={busy || !today || Boolean(today?.check_out_time)} variant="outline" className="h-12 rounded-[14px] border-[#E2E8F0] bg-white text-sm font-bold text-[#0F172A] hover:bg-[#F8FAFC] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
+              <Button onClick={checkOut} disabled={busy || !today || Boolean(today?.check_out_time)} variant="outline" className="h-12 rounded-[14px] border-[#E2E8F0] bg-[#f1f0ee] text-sm font-bold text-[#0F172A] hover:bg-[#F8FAFC] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
                 <LogOut size={16} className="mr-2" /> Check Out
               </Button>
             </div>
@@ -1150,7 +1150,7 @@ function EmployeeDashboard() {
 }
 
 const chartTooltipStyle = {
-  background: "#ffffff",
+  background: "#f1f0ee",
   border: "1px solid #E2E8F0",
   borderRadius: 8,
   boxShadow: "0 4px 12px rgba(15,23,42,0.06)",
@@ -1164,7 +1164,7 @@ function GlassPanel({ children, className = "" }: { children: React.ReactNode; c
       initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
-      className={`relative overflow-hidden rounded-[18px] border border-[#E2E8F0] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.08)] ${className}`}
+      className={`relative overflow-hidden rounded-[18px] border border-[#E2E8F0] bg-[#f1f0ee] shadow-[0_8px_24px_rgba(15,23,42,0.08)] ${className}`}
     >
       <div className="relative">{children}</div>
     </motion.article>
@@ -1191,7 +1191,7 @@ function HeroChip({ icon: Icon, label, className = "" }: { icon: any; label: str
 
 function HeroMini({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[14px] border border-[#E2E8F0] bg-white p-3 text-center shadow-sm">
+    <div className="rounded-[14px] border border-[#E2E8F0] bg-[#f1f0ee] p-3 text-center shadow-sm">
       <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#64748B]">{label}</div>
       <div className="mt-1 text-lg font-bold text-[#0F172A]">{value}</div>
     </div>
@@ -1209,7 +1209,7 @@ function MetricCard({ icon: Icon, title, value, detail, tone }: { icon: any; tit
     <motion.article 
       whileHover={{ y: -2 }} 
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className="rounded-[18px] border border-[#E2E8F0] bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.08)] transition-all duration-300"
+      className="rounded-[18px] border border-[#E2E8F0] bg-[#f1f0ee] p-6 shadow-[0_8px_24px_rgba(15,23,42,0.08)] transition-all duration-300"
     >
       <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${badgeColors[tone]}`}>
         <Icon size={22} />
@@ -1242,7 +1242,7 @@ function RadialScore({ score }: { score: number }) {
   return (
     <div className="grid place-items-center">
       <div className="relative grid h-48 w-48 place-items-center rounded-full bg-[conic-gradient(from_180deg,#4F46E5_calc(var(--score)*1%),#E2E8F0_0)] p-3" style={{ ["--score" as string]: score }}>
-        <div className="grid h-full w-full place-items-center rounded-full border border-[#E2E8F0] bg-white shadow-sm">
+        <div className="grid h-full w-full place-items-center rounded-full border border-[#E2E8F0] bg-[#f1f0ee] shadow-sm">
           <div className="text-center">
             <div className="text-4xl font-bold text-[#0F172A]">{score}</div>
             <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#64748B]">AI Score</div>
@@ -1275,7 +1275,7 @@ function ProgressLine({ label, value, color }: { label: string; value: number; c
 
 function InfoTile({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[14px] border border-[#E2E8F0] bg-white p-4 shadow-sm">
+    <div className="rounded-[14px] border border-[#E2E8F0] bg-[#f1f0ee] p-4 shadow-sm">
       <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#64748B]">{label}</div>
       <div className="mt-1 truncate text-base font-bold text-[#0F172A]">{value}</div>
     </div>
@@ -1317,7 +1317,7 @@ function TaskCommandCard({ task, nowTick, onComplete, ...props }: any) {
     <motion.article 
       whileHover={{ y: -2 }} 
       {...props} 
-      className="cursor-grab rounded-[14px] border border-[#E2E8F0] bg-white p-5 active:cursor-grabbing shadow-sm hover:shadow-md transition-all duration-200"
+      className="cursor-grab rounded-[14px] border border-[#E2E8F0] bg-[#f1f0ee] p-5 active:cursor-grabbing shadow-sm hover:shadow-md transition-all duration-200"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -1340,7 +1340,7 @@ function TaskCommandCard({ task, nowTick, onComplete, ...props }: any) {
       </div>
       <button 
         onClick={onComplete} 
-        className="mt-4 rounded-lg border border-[#E2E8F0] bg-white px-3 py-1.5 text-xs font-semibold text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A] transition-colors duration-200"
+        className="mt-4 rounded-lg border border-[#E2E8F0] bg-[#f1f0ee] px-3 py-1.5 text-xs font-semibold text-[#64748B] hover:bg-[#F8FAFC] hover:text-[#0F172A] transition-colors duration-200"
       >
         Mark complete
       </button>
@@ -1366,7 +1366,7 @@ function ProjectCard({ project }: { project: any }) {
   return (
     <motion.article 
       whileHover={{ y: -2 }} 
-      className="rounded-[14px] border border-[#E2E8F0] bg-white p-5 shadow-sm hover:shadow-md transition-all duration-200"
+      className="rounded-[14px] border border-[#E2E8F0] bg-[#f1f0ee] p-5 shadow-sm hover:shadow-md transition-all duration-200"
     >
       <h3 className="font-bold text-[#0F172A] text-sm sm:text-base">{project.name}</h3>
       <p className="mt-1 text-xs font-normal text-[#64748B]">{project.status} · {project.deadline}</p>
@@ -1377,7 +1377,7 @@ function ProjectCard({ project }: { project: any }) {
         <span className="text-xs font-bold text-[#0F172A]">{project.progress}%</span>
         <div className="flex -space-x-2">
           {project.members.map((m: string) => (
-            <span key={m} className="grid h-7 w-7 place-items-center rounded-full border border-[#E2E8F0] bg-white text-[10px] font-bold text-[#64748B]">
+            <span key={m} className="grid h-7 w-7 place-items-center rounded-full border border-[#E2E8F0] bg-[#f1f0ee] text-[10px] font-bold text-[#64748B]">
               {m}
             </span>
           ))}
@@ -1395,7 +1395,7 @@ function AchievementBadge({ badge }: { badge: any }) {
       className={`rounded-[14px] border p-4 text-center transition-all duration-200 ${
         badge.active 
           ? "border-[#C4DAFF]/60 bg-[#EEF2FF] text-[#6B8AE5] shadow-sm" 
-          : "border-[#E2E8F0] bg-white opacity-60 text-[#64748B]"
+          : "border-[#E2E8F0] bg-[#f1f0ee] opacity-60 text-[#64748B]"
       }`}
     >
       <Icon className={`mx-auto ${badge.active ? "text-[#8CAAF0]" : "text-[#64748B]/70"}`} size={22} />
@@ -1406,7 +1406,7 @@ function AchievementBadge({ badge }: { badge: any }) {
 
 function LeaderboardRow({ member, rank }: { member: TeamLeader; rank: number }) {
   return (
-    <div className="flex items-center gap-3 rounded-[14px] border border-[#E2E8F0] bg-white p-3 shadow-sm">
+    <div className="flex items-center gap-3 rounded-[14px] border border-[#E2E8F0] bg-[#f1f0ee] p-3 shadow-sm">
       <div className="relative h-10 w-10 shrink-0">
         {member.avatarUrl ? (
           <img src={member.avatarUrl} alt="" className="h-10 w-10 rounded-xl object-cover ring-2 ring-[#E2E8F0]" />
@@ -1430,7 +1430,7 @@ function LeaderboardRow({ member, rank }: { member: TeamLeader; rank: number }) 
 
 function InsightCard({ text }: { text: string }) {
   return (
-    <div className="flex gap-3 rounded-[14px] border border-[#E2E8F0] bg-white p-4 shadow-sm">
+    <div className="flex gap-3 rounded-[14px] border border-[#E2E8F0] bg-[#f1f0ee] p-4 shadow-sm">
       <Sparkles className="mt-0.5 shrink-0 text-[#A7C5FF]" size={16} />
       <span className="text-xs font-medium leading-5 text-[#64748B]">{text}</span>
     </div>
@@ -1456,7 +1456,7 @@ function MoodTrackerPanel({ mood, history, onSave }: { mood: string; history: Mo
             className={`rounded-xl border p-2.5 text-center transition hover:-translate-y-0.5 ${
               mood === item.value 
                 ? "border-[#C4DAFF] bg-[#EEF2FF] text-[#6B8AE5] shadow-sm" 
-                : "border-[#E2E8F0] bg-white hover:bg-[#F8FAFC]"
+                : "border-[#E2E8F0] bg-[#f1f0ee] hover:bg-[#F8FAFC]"
             }`}
             aria-label={`Save mood as ${item.label}`}
             type="button"
@@ -1466,7 +1466,7 @@ function MoodTrackerPanel({ mood, history, onSave }: { mood: string; history: Mo
           </button>
         ))}
       </div>
-      <div className="mt-4 rounded-[14px] border border-[#E2E8F0] bg-white p-4 shadow-sm">
+      <div className="mt-4 rounded-[14px] border border-[#E2E8F0] bg-[#f1f0ee] p-4 shadow-sm">
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-xs font-bold text-[#0F172A]">{current.label} today</div>
@@ -1480,7 +1480,7 @@ function MoodTrackerPanel({ mood, history, onSave }: { mood: string; history: Mo
               <span
                 key={`${item.log_date}-${item.mood}`}
                 title={`${item.log_date}: ${getMoodMeta(item.mood).label}`}
-                className="grid h-8 flex-1 place-items-center rounded-lg border border-[#E2E8F0] bg-white text-base shadow-sm"
+                className="grid h-8 flex-1 place-items-center rounded-lg border border-[#E2E8F0] bg-[#f1f0ee] text-base shadow-sm"
               >
                 {getMoodMeta(item.mood).emoji}
               </span>
@@ -1500,7 +1500,7 @@ function ActionCard({ to, icon: Icon, label }: { to: "/tasks" | "/standup" | "/m
   return (
     <Link 
       to={to} 
-      className="flex flex-col rounded-[14px] border border-[#E2E8F0] bg-white p-5 font-semibold text-[#0F172A] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#C4DAFF] hover:bg-[#EEF2FF]/50 hover:shadow-md"
+      className="flex flex-col rounded-[14px] border border-[#E2E8F0] bg-[#f1f0ee] p-5 font-semibold text-[#0F172A] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#C4DAFF] hover:bg-[#EEF2FF]/50 hover:shadow-md"
     >
       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#EEF2FF] text-[#6B8AE5] mb-3">
         <Icon size={20} />
@@ -1513,12 +1513,12 @@ function ActionCard({ to, icon: Icon, label }: { to: "/tasks" | "/standup" | "/m
 function LeaveRing({ label, value, total }: { label: string; value: number; total: number }) {
   const pct = Math.round((value / total) * 100);
   return (
-    <div className="rounded-[14px] border border-[#E2E8F0] bg-white p-4 text-center shadow-sm">
+    <div className="rounded-[14px] border border-[#E2E8F0] bg-[#f1f0ee] p-4 text-center shadow-sm">
       <div 
         className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[conic-gradient(#4F46E5_calc(var(--pct)*1%),#F1F5F9_0)]" 
         style={{ ["--pct" as string]: pct }}
       >
-        <div className="grid h-12 w-12 place-items-center rounded-full bg-white text-xs font-bold text-[#0F172A] shadow-inner">
+        <div className="grid h-12 w-12 place-items-center rounded-full bg-[#f1f0ee] text-xs font-bold text-[#0F172A] shadow-inner">
           {value}
         </div>
       </div>
@@ -1557,7 +1557,7 @@ function ActivityTimelinePanel({ items }: { items: ActivityItem[] }) {
 
 function TimelineStat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-[14px] border border-[#E2E8F0] bg-white p-3 text-center shadow-sm">
+    <div className="rounded-[14px] border border-[#E2E8F0] bg-[#f1f0ee] p-3 text-center shadow-sm">
       <div className="text-base font-bold text-[#0F172A]">{value}</div>
       <div className="mt-1 text-[9px] font-bold uppercase tracking-[0.12em] text-[#64748B]">{label}</div>
     </div>
@@ -1573,7 +1573,7 @@ function ModernTimelineItem({ item, isLatest }: { item: ActivityItem; isLatest: 
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true }}
       className={`relative flex gap-3 rounded-[14px] border p-3 transition hover:-translate-y-0.5 ${
-        isLatest ? "border-[#C4DAFF] bg-[#EEF2FF]/50" : "border-[#E2E8F0] bg-white hover:bg-white"
+        isLatest ? "border-[#C4DAFF] bg-[#EEF2FF]/50" : "border-[#E2E8F0] bg-[#f1f0ee] hover:bg-[#f1f0ee]"
       }`}
     >
       <div className={`relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${meta.badgeClass}`}>
@@ -1599,7 +1599,7 @@ function ModernTimelineItem({ item, isLatest }: { item: ActivityItem; isLatest: 
 
 function NotificationCard({ title, text }: { title: string; text: string }) {
   return (
-    <div className="rounded-[14px] border border-[#E2E8F0] bg-white p-4 shadow-sm">
+    <div className="rounded-[14px] border border-[#E2E8F0] bg-[#f1f0ee] p-4 shadow-sm">
       <div className="font-semibold text-sm text-[#0F172A]">{title}</div>
       <div className="mt-1 text-xs font-normal leading-relaxed text-[#64748B]">{text}</div>
     </div>

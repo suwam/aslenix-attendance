@@ -152,13 +152,13 @@ function QRIdsPage() {
     if (!w) return;
     w.document.write(`
       <html><head><title>Print ${selected.employee_code}</title>
-      <style>body{font-family:system-ui;background:#0b1020;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;}
+      <style>body{font-family:system-ui;background:#0b1020;color:#f1f0ee;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;}
       .card{background:linear-gradient(140deg,#1a1f3a,#0a0e1f);padding:24px;border-radius:16px;width:340px;border:1px solid #ff2a5a55;}
       h1{font-size:18px;margin:0 0 4px;text-align:center;color:#ff2a5a;}
       .sub{font-size:10px;text-align:center;color:#aab;letter-spacing:2px;margin-bottom:16px;}
       .name{font-size:16px;text-align:center;font-weight:bold;}
       .pos{font-size:11px;color:#aab;text-align:center;margin-bottom:12px;}
-      .qr{background:#fff;padding:8px;border-radius:8px;display:flex;justify-content:center;}
+      .qr{background:#f1f0ee;padding:8px;border-radius:8px;display:flex;justify-content:center;}
       .id{font-family:monospace;text-align:center;margin-top:12px;font-size:13px;}
       .email{text-align:center;font-size:10px;color:#aab;}</style></head>
       <body><div class="card"><h1>ASLENIX</h1><div class="sub">DIGITAL EMPLOYEE ID</div>

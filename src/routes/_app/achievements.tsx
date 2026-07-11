@@ -602,7 +602,7 @@ function AchievementCelebration({
               {["h-2 w-2", "h-1.5 w-1.5", "h-2.5 w-2.5", "h-1 w-1"].map((size, index) => (
                 <span
                   key={index}
-                  className={`${size} rounded-full bg-white shadow-[0_0_20px_rgba(255,255,255,.7)]`}
+                  className={`${size} rounded-full bg-[#f1f0ee] shadow-[0_0_20px_rgba(255,255,255,.7)]`}
                 />
               ))}
             </div>

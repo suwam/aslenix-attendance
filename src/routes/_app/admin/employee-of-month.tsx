@@ -1204,7 +1204,7 @@ function AnalyticsPanel({ weekly, rows }: { weekly: any[]; rows: EmployeeRank[] 
               fill="url(#eomProductivity)"
               strokeWidth={3}
               dot={(props) => <EomProductivityDot {...props} highWeek={highWeek.week} lowWeek={lowWeek.week} target={productivityTarget} />}
-              activeDot={{ r: 6, stroke: "#fff", strokeWidth: 2 }}
+              activeDot={{ r: 6, stroke: "#f1f0ee", strokeWidth: 2 }}
               isAnimationActive
               animationDuration={900}
             />
@@ -1355,7 +1355,7 @@ function EomProductivityDot(props: any) {
       cy={cy}
       r={isHigh || isLow || metTarget ? 5 : 3.5}
       fill={fill}
-      stroke={isHigh || isLow || metTarget ? "#fff" : "#07111f"}
+      stroke={isHigh || isLow || metTarget ? "#f1f0ee" : "#07111f"}
       strokeWidth={isHigh || isLow || metTarget ? 2 : 1}
       className={metTarget || isHigh ? "eom-exceptional-dot" : ""}
     />

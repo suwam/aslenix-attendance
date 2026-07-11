@@ -18,9 +18,9 @@ export function AttachmentPreviewGrid({
   }
 
   return (
-    <section className="rounded-lg border border-white/10 bg-white/[0.055] p-5 shadow-xl shadow-black/10 backdrop-blur-xl">
+    <section className="rounded-lg border border-[#f1f0ee]/10 bg-[#f1f0ee]/[0.055] p-5 shadow-xl shadow-black/10 backdrop-blur-xl">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-white">Attachments</h2>
+        <h2 className="text-sm font-semibold text-[#f1f0ee]">Attachments</h2>
         <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-cyan-300/40 px-3 py-2 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-300/10">
           <UploadCloud size={14} />
           Upload
@@ -42,12 +42,12 @@ export function AttachmentPreviewGrid({
               href={file.fileUrl}
               target="_blank"
               rel="noreferrer"
-              className="grid gap-3 rounded-md border border-white/10 bg-black/25 p-3 text-sm text-slate-200 transition hover:border-cyan-300/40 sm:grid-cols-[auto_1fr]"
+              className="grid gap-3 rounded-md border border-[#f1f0ee]/10 bg-black/25 p-3 text-sm text-slate-200 transition hover:border-cyan-300/40 sm:grid-cols-[auto_1fr]"
             >
               {isImage ? (
-                <img src={file.fileUrl} alt="" className="h-14 w-14 rounded-md object-cover ring-1 ring-white/10" />
+                <img src={file.fileUrl} alt="" className="h-14 w-14 rounded-md object-cover ring-1 ring-[#f1f0ee]/10" />
               ) : (
-                <span className="flex h-14 w-14 items-center justify-center rounded-md bg-white/5 ring-1 ring-white/10">
+                <span className="flex h-14 w-14 items-center justify-center rounded-md bg-[#f1f0ee]/5 ring-1 ring-[#f1f0ee]/10">
                   <Icon size={20} className="text-cyan-300" />
                 </span>
               )}
