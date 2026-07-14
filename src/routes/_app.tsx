@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { AppShell } from "@/components/AppShell";
 import { AslenixLogo } from "@/components/AslenixLogo";
+import { DeviceRegistrationModal } from "@/components/device/DeviceRegistrationModal";
 
 export const Route = createFileRoute("/_app")({
   component: ProtectedLayout,
@@ -76,6 +77,7 @@ function ProtectedLayout() {
   return (
     <AppShell>
       <Outlet />
+      <DeviceRegistrationModal />
     </AppShell>
   );
 }
