@@ -58,6 +58,7 @@ function DeviceManagementPage() {
         (supabase as any)
           .from("employee_devices")
           .select("id,employee_id,device_fingerprint,browser,operating_system,device_name,status,registered_at,last_login")
+          .eq("status", "Active")
           .order("last_login", { ascending: false }),
         (supabase as any)
           .from("pending_device_requests")
@@ -276,7 +277,7 @@ function DeviceManagementPage() {
                             </div>
                           </div>
                         ))}
-                        {device && (
+                        {device?.status === "Active" && (
                           <Button
                             size="sm"
                             variant="outline"
