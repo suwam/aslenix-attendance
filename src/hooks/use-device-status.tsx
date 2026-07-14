@@ -3,12 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { startRegistration, startAuthentication } from "@simplewebauthn/browser";
-import { 
-  generateRegistrationOptions, 
-  verifyRegistrationResponse,
-  generateAuthenticationOptions,
-  verifyAuthenticationResponse 
-} from "@/actions/webauthn";
 
 export type DeviceStatus = "loading" | "unregistered" | "pending" | "approved" | "inactive" | "setup_biometrics";
 
@@ -38,6 +32,22 @@ export function useDeviceStatus() {
   const [localFingerprint, setLocalFingerprint] = useState("");
   const [deviceName, setDeviceName] = useState("");
   const [busy, setBusy] = useState(false);
+
+  const invokeWebAuthn = async <T,>(action: string, payload: Record<string, unknown>): Promise<T> => {
+    const { data, error } = await supabase.functions.invoke("webauthn", {
+      body: { action, payload },
+    });
+
+    if (error) {
+      throw new Error(error.message || "Biometric request failed");
+    }
+
+    if (data?.error) {
+      throw new Error(data.error);
+    }
+
+    return data as T;
+  };
 
   useEffect(() => {
     if (user) {
@@ -111,24 +121,20 @@ export function useDeviceStatus() {
       const rpID = window.location.hostname;
       const username = user.user_metadata?.full_name || user.email || "Employee";
 
-      const options = await generateRegistrationOptions({
-        data: {
-          userId: user.id,
-          deviceFingerprint: localFingerprint,
-          rpID,
-          username,
-        },
+      const { options } = await invokeWebAuthn<{ options: any }>("generate-registration-options", {
+        userId: user.id,
+        deviceFingerprint: localFingerprint,
+        rpID,
+        username,
       });
 
       const attResp = await startRegistration({ optionsJSON: options });
 
-      const verificationResp = await verifyRegistrationResponse({
-        data: {
-          userId: user.id,
-          deviceFingerprint: localFingerprint,
-          rpID,
-          response: attResp,
-        },
+      const verificationResp = await invokeWebAuthn<{ verified: boolean }>("verify-registration-response", {
+        userId: user.id,
+        deviceFingerprint: localFingerprint,
+        rpID,
+        response: attResp,
       });
 
       if (verificationResp.verified) {
@@ -150,23 +156,19 @@ export function useDeviceStatus() {
     try {
       const rpID = window.location.hostname;
       
-      const options = await generateAuthenticationOptions({
-        data: {
-          userId: user.id,
-          deviceFingerprint: localFingerprint,
-          rpID,
-        },
+      const { options } = await invokeWebAuthn<{ options: any }>("generate-authentication-options", {
+        userId: user.id,
+        deviceFingerprint: localFingerprint,
+        rpID,
       });
 
       const asseResp = await startAuthentication({ optionsJSON: options });
 
-      const verificationResp = await verifyAuthenticationResponse({
-        data: {
-          userId: user.id,
-          deviceFingerprint: localFingerprint,
-          rpID,
-          response: asseResp,
-        },
+      const verificationResp = await invokeWebAuthn<{ verified: boolean }>("verify-authentication-response", {
+        userId: user.id,
+        deviceFingerprint: localFingerprint,
+        rpID,
+        response: asseResp,
       });
 
       return !!verificationResp.verified;
