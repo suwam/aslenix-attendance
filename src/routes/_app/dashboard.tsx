@@ -143,7 +143,7 @@ const MOODS = [
 
 function EmployeeDashboard() {
   const { user, profile, isAdmin } = useAuth();
-  const { deviceStatus } = useDeviceStatus();
+  const { deviceStatus, setupBiometrics, busy: biometricsBusy } = useDeviceStatus();
   const [today, setToday] = useState<any>(null);
   const [monthStats, setMonthStats] = useState({ present: 0, late: 0, leave: 0, hours: 0 });
   const [taskStats, setTaskStats] = useState({
@@ -627,21 +627,35 @@ function EmployeeDashboard() {
 
   return (
     <>
-      {!isAdmin && deviceStatus === "setup_required" && (
-        <div className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-4 bg-[#EEF2FF] px-4 py-3 shadow-md border-b border-[#C4DAFF]">
-          <Fingerprint className="text-[#4F46E5] h-5 w-5 animate-pulse" />
-          <p className="text-sm font-medium text-[#4338CA]">
-            Biometric registration required for this device to mark attendance.
-          </p>
-          <Button 
-            size="sm" 
-            className="bg-[#4F46E5] text-white hover:bg-[#4338CA] shadow-sm ml-2 h-8"
-            onClick={() => window.location.href = '/check-in'}
-          >
-            Setup Now
-          </Button>
-        </div>
-      )}
+      <Dialog open={!isAdmin && deviceStatus === "setup_required"}>
+        <DialogContent className="sm:max-w-md [&>button]:hidden" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-[#4F46E5] text-xl">
+              <Fingerprint className="h-6 w-6 animate-pulse" />
+              Biometric Setup Required
+            </DialogTitle>
+            <DialogDescription className="text-base pt-3 text-slate-600">
+              Before you can check in, you need to register this device for attendance using your device's built-in biometrics (like Face ID, Touch ID, or Windows Hello).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-2">
+            <div className="bg-[#EEF2FF] rounded-lg p-4 border border-[#C4DAFF]">
+              <p className="text-sm text-[#4338CA]">
+                This is a one-time setup. Once registered, you won't need to authenticate with biometrics every day.
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="sm:justify-end mt-2">
+            <Button 
+              onClick={() => setupBiometrics()}
+              disabled={biometricsBusy}
+              className="w-full sm:w-auto bg-[#4F46E5] hover:bg-[#4338CA] text-white"
+            >
+              {biometricsBusy ? "Starting..." : "Start Setup"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <NotificationPopup
         notification={notificationPopup}
