@@ -33,7 +33,7 @@ type AuditLog = {
 
 function TrustedDevicesPage() {
   const { user } = useAuth();
-  const { localFingerprint, setupBiometrics } = useDeviceStatus();
+  const { localFingerprint, setupBiometrics, checkDevice } = useDeviceStatus();
   const [devices, setDevices] = useState<Device[]>([]);
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [maxDevices, setMaxDevices] = useState(2);
@@ -136,7 +136,11 @@ function TrustedDevicesPage() {
         action: "removed",
       });
       toast.success("Device removed");
+      if (device.device_fingerprint === localFingerprint) {
+        sessionStorage.removeItem("device_prompted");
+      }
       await load();
+      await checkDevice();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to remove device");
     } finally {
