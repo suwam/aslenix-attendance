@@ -116,19 +116,19 @@ function QRIdsPage() {
     if (!canvas) return;
     const { default: jsPDF } = await import("jspdf");
     const pdf = new jsPDF({ unit: "mm", format: [90, 130] });
-    pdf.setFillColor(15, 20, 35);
+    pdf.setFillColor(255, 255, 255);
     pdf.rect(0, 0, 90, 130, "F");
-    pdf.setTextColor(255, 255, 255);
+    pdf.setTextColor(15, 23, 42);
     pdf.setFontSize(14);
     pdf.text("ASLENIX", 45, 12, { align: "center" });
     pdf.setFontSize(8);
-    pdf.setTextColor(180, 180, 200);
+    pdf.setTextColor(100, 116, 139);
     pdf.text("DIGITAL EMPLOYEE ID", 45, 17, { align: "center" });
-    pdf.setTextColor(255, 255, 255);
+    pdf.setTextColor(15, 23, 42);
     pdf.setFontSize(12);
     pdf.text(selected.full_name, 45, 28, { align: "center" });
     pdf.setFontSize(9);
-    pdf.setTextColor(200, 200, 220);
+    pdf.setTextColor(71, 85, 105);
     pdf.text(selected.position || "—", 45, 34, { align: "center" });
     pdf.text(selected.department || "—", 45, 39, { align: "center" });
     const dataUrl = canvas.toDataURL("image/png");
@@ -152,8 +152,8 @@ function QRIdsPage() {
     if (!w) return;
     w.document.write(`
       <html><head><title>Print ${selected.employee_code}</title>
-      <style>body{font-family:system-ui;background:#0b1020;color:#f1f0ee;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;}
-      .card{background:linear-gradient(140deg,#1a1f3a,#0a0e1f);padding:24px;border-radius:16px;width:340px;border:1px solid #ff2a5a55;}
+      <style>body{font-family:system-ui;background:#f1f0ee;color:#0F172A;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;}
+      .card{background:#ffffff;padding:24px;border-radius:16px;width:340px;border:1px solid #e2e8f0;box-shadow:0 8px 30px rgba(0,0,0,0.12);}
       h1{font-size:18px;margin:0 0 4px;text-align:center;color:#ff2a5a;}
       .sub{font-size:10px;text-align:center;color:#aab;letter-spacing:2px;margin-bottom:16px;}
       .name{font-size:16px;text-align:center;font-weight:bold;}

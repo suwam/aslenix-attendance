@@ -39,8 +39,7 @@ export const EmployeeQRCard = forwardRef<HTMLDivElement, { profile: QRProfile; s
         ref={ref}
         className="rounded-2xl p-5 relative overflow-hidden"
         style={{
-          background:
-            "linear-gradient(140deg, oklch(0.16 0.04 260 / 0.95), oklch(0.10 0.02 260 / 0.95))",
+          background: "var(--card)",
           border: "1px solid color-mix(in oklab, var(--primary) 25%, transparent)",
           boxShadow: "var(--shadow-neon-red), var(--shadow-glass)",
           width: 320,
