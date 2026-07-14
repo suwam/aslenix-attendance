@@ -18,6 +18,7 @@ import { Route as AccountLockedRouteImport } from './routes/account-locked'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VerifyEmployeeQrTokenRouteImport } from './routes/verify-employee.$qrToken'
+import { Route as AppTrustedDevicesRouteImport } from './routes/_app/trusted-devices'
 import { Route as AppTasksRouteImport } from './routes/_app/tasks'
 import { Route as AppStandupRouteImport } from './routes/_app/standup'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
@@ -93,6 +94,11 @@ const VerifyEmployeeQrTokenRoute = VerifyEmployeeQrTokenRouteImport.update({
   id: '/verify-employee/$qrToken',
   path: '/verify-employee/$qrToken',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppTrustedDevicesRoute = AppTrustedDevicesRouteImport.update({
+  id: '/trusted-devices',
+  path: '/trusted-devices',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppTasksRoute = AppTasksRouteImport.update({
   id: '/tasks',
@@ -272,6 +278,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/standup': typeof AppStandupRoute
   '/tasks': typeof AppTasksRoute
+  '/trusted-devices': typeof AppTrustedDevicesRoute
   '/verify-employee/$qrToken': typeof VerifyEmployeeQrTokenRoute
   '/admin/achievements': typeof AppAdminAchievementsRoute
   '/admin/approvals': typeof AppAdminApprovalsRoute
@@ -313,6 +320,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/standup': typeof AppStandupRoute
   '/tasks': typeof AppTasksRoute
+  '/trusted-devices': typeof AppTrustedDevicesRoute
   '/verify-employee/$qrToken': typeof VerifyEmployeeQrTokenRoute
   '/admin/achievements': typeof AppAdminAchievementsRoute
   '/admin/approvals': typeof AppAdminApprovalsRoute
@@ -356,6 +364,7 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/standup': typeof AppStandupRoute
   '/_app/tasks': typeof AppTasksRoute
+  '/_app/trusted-devices': typeof AppTrustedDevicesRoute
   '/verify-employee/$qrToken': typeof VerifyEmployeeQrTokenRoute
   '/_app/admin/achievements': typeof AppAdminAchievementsRoute
   '/_app/admin/approvals': typeof AppAdminApprovalsRoute
@@ -399,6 +408,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/standup'
     | '/tasks'
+    | '/trusted-devices'
     | '/verify-employee/$qrToken'
     | '/admin/achievements'
     | '/admin/approvals'
@@ -440,6 +450,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/standup'
     | '/tasks'
+    | '/trusted-devices'
     | '/verify-employee/$qrToken'
     | '/admin/achievements'
     | '/admin/approvals'
@@ -482,6 +493,7 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/standup'
     | '/_app/tasks'
+    | '/_app/trusted-devices'
     | '/verify-employee/$qrToken'
     | '/_app/admin/achievements'
     | '/_app/admin/approvals'
@@ -579,6 +591,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/verify-employee/$qrToken'
       preLoaderRoute: typeof VerifyEmployeeQrTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/trusted-devices': {
+      id: '/_app/trusted-devices'
+      path: '/trusted-devices'
+      fullPath: '/trusted-devices'
+      preLoaderRoute: typeof AppTrustedDevicesRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/tasks': {
       id: '/_app/tasks'
@@ -814,6 +833,7 @@ interface AppRouteChildren {
   AppSettingsRoute: typeof AppSettingsRoute
   AppStandupRoute: typeof AppStandupRoute
   AppTasksRoute: typeof AppTasksRoute
+  AppTrustedDevicesRoute: typeof AppTrustedDevicesRoute
   AppAdminAchievementsRoute: typeof AppAdminAchievementsRoute
   AppAdminApprovalsRoute: typeof AppAdminApprovalsRoute
   AppAdminAttendanceRoute: typeof AppAdminAttendanceRoute
@@ -848,6 +868,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsRoute: AppSettingsRoute,
   AppStandupRoute: AppStandupRoute,
   AppTasksRoute: AppTasksRoute,
+  AppTrustedDevicesRoute: AppTrustedDevicesRoute,
   AppAdminAchievementsRoute: AppAdminAchievementsRoute,
   AppAdminApprovalsRoute: AppAdminApprovalsRoute,
   AppAdminAttendanceRoute: AppAdminAttendanceRoute,

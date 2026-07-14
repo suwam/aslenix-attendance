@@ -52,6 +52,152 @@ function CheckInPage() {
 
   const { deviceStatus, verifyBiometrics } = useDeviceStatus();
 
+  const load = async () => {
+    if (!user) return;
+    setLoading(true);
+    const historyStart = format(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000), "yyyy-MM-dd");
+    const [{ data: todayRow, error: todayError }, { data: historyRows, error: historyError }] = await Promise.all([
+      supabase
+        .from("attendance")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("date", todayDate)
+        .maybeSingle(),
+      supabase
+        .from("attendance")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("date", historyStart)
+        .lte("date", todayDate)
+        .order("date", { ascending: false }),
+    ]);
+
+    if (todayError) toast.error(todayError.message);
+    if (historyError) toast.error(historyError.message);
+    setToday((todayRow as AttendanceRow | null) ?? null);
+    setHistory((historyRows ?? []) as AttendanceRow[]);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    load();
+  }, [user]);
+
+  const requireTrustedDevice = async () => {
+    if (isAdmin) return true;
+    if (deviceStatus !== "approved") {
+      toast.error("Use an approved trusted device to mark attendance.");
+      return false;
+    }
+
+    return verifyBiometrics();
+  };
+
+  const checkIn = async () => {
+    if (!user) return;
+    if (isWeeklyOff) return toast.info("Saturday is a weekly off. Attendance is not required.");
+    setBusy(true);
+
+    const trusted = await requireTrustedDevice();
+    if (!trusted) {
+      setBusy(false);
+      return;
+    }
+
+    let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
+    try {
+      location = await getVerifiedAttendanceLocation();
+    } catch (error) {
+      setBusy(false);
+      return toast.error(error instanceof Error ? error.message : "Unable to verify location");
+    }
+
+    const { data: settings } = await supabase
+      .from("settings")
+      .select("late_after_time")
+      .limit(1)
+      .maybeSingle();
+    const now = new Date();
+    const lateTime = settings?.late_after_time || "09:15:00";
+    const [lateHour, lateMinute] = lateTime.split(":").map(Number);
+    const lateBoundary = new Date();
+    lateBoundary.setHours(lateHour || 9, lateMinute || 15, 0, 0);
+    const isLate = now > lateBoundary;
+    const { data: insertedToday, error } = await supabase
+      .from("attendance")
+      .insert({
+        user_id: user.id,
+        date: todayDate,
+        check_in_time: now.toISOString(),
+        check_in_latitude: location.latitude,
+        check_in_longitude: location.longitude,
+        check_in_accuracy_meters: location.accuracy,
+        status: isLate ? "late" : "present",
+        is_late: isLate,
+      })
+      .select()
+      .maybeSingle();
+
+    setBusy(false);
+    if (error || !insertedToday) return toast.error(error?.message ?? "Unable to check in");
+    setToday(insertedToday as AttendanceRow);
+    await load();
+    toast.success(isLate ? "Checked in (late)" : "Checked in");
+  };
+
+  const checkOut = async () => {
+    if (!user || !today) return;
+    setBusy(true);
+
+    const trusted = await requireTrustedDevice();
+    if (!trusted) {
+      setBusy(false);
+      return;
+    }
+
+    let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
+    try {
+      location = await getVerifiedAttendanceLocation();
+    } catch (error) {
+      setBusy(false);
+      return toast.error(error instanceof Error ? error.message : "Unable to verify location");
+    }
+
+    const now = new Date();
+    const { data: settings } = await supabase
+      .from("settings")
+      .select("office_end_time")
+      .limit(1)
+      .maybeSingle();
+    const isEarlyCheckout = isBeforeOfficeEnd(now, settings?.office_end_time);
+    const checkedInAt = new Date(today.check_in_time || now);
+    const hours = Math.round(((now.getTime() - checkedInAt.getTime()) / 3600000) * 100) / 100;
+    const { data: updatedToday, error } = await supabase
+      .from("attendance")
+      .update({
+        check_out_time: now.toISOString(),
+        check_out_latitude: location.latitude,
+        check_out_longitude: location.longitude,
+        check_out_accuracy_meters: location.accuracy,
+        is_early_checkout: isEarlyCheckout,
+        work_hours: hours,
+      })
+      .eq("id", today.id)
+      .select()
+      .maybeSingle();
+
+    setBusy(false);
+    if (error || !updatedToday) return toast.error(error?.message ?? "Unable to check out");
+    setToday(updatedToday as AttendanceRow);
+    await load();
+    toast.success(isEarlyCheckout ? "Checked out early" : "Checked out");
+  };
+
+  const lastSevenDays = buildLastSevenDays(history);
+  const checkedInDays = lastSevenDays.filter((day) => day.attendance?.check_in_time).length;
+  const completedDays = lastSevenDays.filter((day) => day.attendance?.check_out_time).length;
+  const totalHours = lastSevenDays.reduce((sum, day) => sum + Number(day.attendance?.work_hours ?? 0), 0);
+
   if (deviceStatus === 'loading' || (loading && !today)) {
     return (
       <>

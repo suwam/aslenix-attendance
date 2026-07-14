@@ -6,6 +6,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { logTrustedDeviceEvent } from "@/lib/trusted-devices";
 
 export const Route = createFileRoute("/_app/admin/devices")({ component: DeviceManagementPage });
 
@@ -20,6 +21,7 @@ type EmployeeDevice = {
   id: string;
   employee_id: string;
   employee?: EmployeeSummary;
+  passkey?: { credential_id: string } | null;
   device_fingerprint: string;
   browser: string;
   operating_system: string;
@@ -27,6 +29,7 @@ type EmployeeDevice = {
   status: "Active" | "Inactive";
   registered_at: string;
   last_login: string;
+  force_logout_at?: string | null;
 };
 
 type PendingDeviceRequest = {
@@ -39,39 +42,77 @@ type PendingDeviceRequest = {
   device_name: string;
   requested_at: string;
   status: "Pending" | "Approved" | "Rejected";
+  verification_method?: "Auto First Device" | "OTP" | "HR Approval" | "Replacement";
+  replace_device_id?: string | null;
+};
+
+type TrustedDeviceAuditLog = {
+  id: string;
+  employee_id: string;
+  action: string;
+  created_at: string;
+  metadata?: Record<string, unknown>;
 };
 
 type DevicePayload = {
   devices: EmployeeDevice[];
   pendingRequests: PendingDeviceRequest[];
+  auditLogs: TrustedDeviceAuditLog[];
 };
 
 function DeviceManagementPage() {
-  const [payload, setPayload] = useState<DevicePayload>({ devices: [], pendingRequests: [] });
+  const [payload, setPayload] = useState<DevicePayload>({ devices: [], pendingRequests: [], auditLogs: [] });
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [maxDevices, setMaxDevices] = useState(2);
 
   const load = async () => {
     setLoading(true);
     try {
-      const [{ data: deviceRows, error: devicesError }, { data: requestRows, error: requestsError }] = await Promise.all([
+      const [
+        { data: deviceRows, error: devicesError },
+        { data: requestRows, error: requestsError },
+        { data: passkeyRows, error: passkeysError },
+        { data: auditRows, error: auditError },
+        { data: settingsRow, error: settingsError },
+      ] = await Promise.all([
         (supabase as any)
           .from("employee_devices")
-          .select("id,employee_id,device_fingerprint,browser,operating_system,device_name,status,registered_at,last_login")
+          .select("id,employee_id,device_fingerprint,browser,operating_system,device_name,status,registered_at,last_login,force_logout_at")
           .eq("status", "Active")
           .order("last_login", { ascending: false }),
         (supabase as any)
           .from("pending_device_requests")
-          .select("id,employee_id,device_fingerprint,browser,operating_system,device_name,requested_at,status")
+          .select("id,employee_id,device_fingerprint,browser,operating_system,device_name,requested_at,status,verification_method,replace_device_id")
           .eq("status", "Pending")
           .order("requested_at", { ascending: false }),
+        (supabase as any)
+          .from("device_passkeys")
+          .select("employee_id,device_fingerprint,credential_id"),
+        (supabase as any)
+          .from("trusted_device_audit_logs")
+          .select("id,employee_id,action,created_at,metadata")
+          .order("created_at", { ascending: false })
+          .limit(50),
+        (supabase as any)
+          .from("device_security_settings")
+          .select("max_trusted_devices")
+          .eq("id", true)
+          .maybeSingle(),
       ]);
 
       if (devicesError) throw devicesError;
       if (requestsError) throw requestsError;
+      if (passkeysError) throw passkeysError;
+      if (auditError) throw auditError;
+      if (settingsError) throw settingsError;
 
       const devices = (deviceRows ?? []) as EmployeeDevice[];
       const pendingRequests = (requestRows ?? []) as PendingDeviceRequest[];
+      const passkeyMap = new Map(
+        (passkeyRows ?? []).map((passkey: any) => [`${passkey.employee_id}:${passkey.device_fingerprint}`, passkey]),
+      );
+      setMaxDevices(Number(settingsRow?.max_trusted_devices ?? 2));
       const employeeIds = [
         ...new Set([...devices.map((device) => device.employee_id), ...pendingRequests.map((request) => request.employee_id)]),
       ];
@@ -98,8 +139,13 @@ function DeviceManagementPage() {
       );
 
       setPayload({
-        devices: devices.map((device) => ({ ...device, employee: profileMap.get(device.employee_id) })),
+        devices: devices.map((device) => ({
+          ...device,
+          employee: profileMap.get(device.employee_id),
+          passkey: passkeyMap.get(`${device.employee_id}:${device.device_fingerprint}`) ?? null,
+        })),
         pendingRequests: pendingRequests.map((request) => ({ ...request, employee: profileMap.get(request.employee_id) })),
+        auditLogs: (auditRows ?? []) as TrustedDeviceAuditLog[],
       });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to load devices");
@@ -151,6 +197,31 @@ function DeviceManagementPage() {
     }
   };
 
+  const updateMaxDevices = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    await runAction(
+      "max-devices",
+      async () => {
+        const { error } = await (supabase as any)
+          .from("device_security_settings")
+          .update({ max_trusted_devices: maxDevices, updated_by: user?.id ?? null })
+          .eq("id", true);
+        if (error) throw error;
+        if (!user?.id) throw new Error("Unable to identify current admin");
+        await logTrustedDeviceEvent({
+          employeeId: user.id,
+          actorId: user?.id ?? null,
+          actorRole: "admin",
+          action: "max_devices_changed",
+          metadata: { maxTrustedDevices: maxDevices },
+        });
+      },
+      "Trusted device limit updated",
+    );
+  };
+
   const activeDevices = payload.devices.filter((device) => device.status === "Active").length;
 
   return (
@@ -162,6 +233,29 @@ function DeviceManagementPage() {
         <Metric icon={ShieldCheck} label="Active Devices" value={activeDevices} />
         <Metric icon={RefreshCw} label="Pending Requests" value={payload.pendingRequests.length} />
       </div>
+
+      <GlassCard className="flex flex-wrap items-end justify-between gap-4 p-5">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">Trusted Device Policy</h2>
+          <p className="text-sm text-muted-foreground">Default is 2 trusted devices per employee. HR can adjust the limit for the whole organization.</p>
+        </div>
+        <div className="flex items-end gap-3">
+          <label className="block">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Max Devices</span>
+            <input
+              type="number"
+              min={1}
+              max={5}
+              value={maxDevices}
+              onChange={(event) => setMaxDevices(Number(event.target.value))}
+              className="h-10 w-24 rounded-xl border border-border bg-card px-3 text-sm font-semibold text-foreground outline-none focus:border-primary"
+            />
+          </label>
+          <Button onClick={updateMaxDevices} disabled={Boolean(busy)}>
+            Save Policy
+          </Button>
+        </div>
+      </GlassCard>
 
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -198,6 +292,7 @@ function DeviceManagementPage() {
                     <Detail label="Registered Device" value={device?.device_name || "No active registered device"} subvalue={device?.device_fingerprint} />
                     <Detail label="Browser" value={device?.browser || "-"} />
                     <Detail label="Operating System" value={device?.operating_system || "-"} />
+                    <Detail label="Passkey Credential" value={device?.passkey?.credential_id ? "Registered" : "Missing"} subvalue={device?.passkey?.credential_id} />
                     <Detail label="Last Login" value={device ? formatDate(device.last_login) : "Never"} />
                   </div>
 
@@ -220,6 +315,22 @@ function DeviceManagementPage() {
                         Remove
                       </Button>
                     )}
+                    {device?.status === "Active" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          runAction(
+                            `force-${device.id}`,
+                            () => forceLogoutDevice(device),
+                            "Device forced to log out",
+                          )
+                        }
+                        disabled={Boolean(busy)}
+                      >
+                        Force Logout
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -239,6 +350,7 @@ function DeviceManagementPage() {
                             <div className="font-semibold text-foreground">{request.device_name}</div>
                             <div className="mt-1 text-xs text-muted-foreground">
                               {request.browser} · {request.operating_system} · {formatDate(request.requested_at)}
+                              {request.verification_method && ` · ${request.verification_method}`}
                             </div>
                           </div>
                           <div className="flex flex-wrap gap-2">
@@ -310,13 +422,52 @@ function DeviceManagementPage() {
 
 async function approveRequest(request: PendingDeviceRequest) {
   const now = new Date().toISOString();
-  const { error: inactiveError } = await (supabase as any)
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: settings } = await (supabase as any)
+    .from("device_security_settings")
+    .select("max_trusted_devices")
+    .eq("id", true)
+    .maybeSingle();
+  const maxTrustedDevices = Number(settings?.max_trusted_devices ?? 2);
+
+  const { data: activeDevices, error: activeError } = await (supabase as any)
     .from("employee_devices")
-    .update({ status: "Inactive" })
+    .select("id,device_fingerprint")
     .eq("employee_id", request.employee_id)
     .eq("status", "Active");
+  if (activeError) throw activeError;
 
-  if (inactiveError) throw inactiveError;
+  const replacingDevice = Boolean(request.replace_device_id);
+  if ((activeDevices ?? []).length >= maxTrustedDevices && !replacingDevice) {
+    throw new Error(`Employee already has ${maxTrustedDevices} trusted devices. Approve a replacement request instead.`);
+  }
+
+  if (request.replace_device_id) {
+    const { error: inactiveError } = await (supabase as any)
+      .from("employee_devices")
+      .update({
+        status: "Inactive",
+        removed_at: now,
+        removed_by: user?.id ?? null,
+        removal_reason: "Replaced by HR-approved trusted device",
+      })
+      .eq("id", request.replace_device_id)
+      .eq("employee_id", request.employee_id);
+
+    if (inactiveError) throw inactiveError;
+
+    await (supabase as any)
+      .from("device_passkeys")
+      .delete()
+      .eq("employee_id", request.employee_id)
+      .eq(
+        "device_fingerprint",
+        activeDevices?.find((device: any) => device.id === request.replace_device_id)?.device_fingerprint ?? "",
+      );
+  }
 
   const { error: upsertError } = await (supabase as any).from("employee_devices").upsert(
     {
@@ -334,16 +485,21 @@ async function approveRequest(request: PendingDeviceRequest) {
 
   if (upsertError) throw upsertError;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const { error: requestError } = await (supabase as any)
     .from("pending_device_requests")
     .update({ status: "Approved", reviewed_at: now, reviewed_by: user?.id ?? null })
     .eq("id", request.id);
 
   if (requestError) throw requestError;
+
+  await logTrustedDeviceEvent({
+    employeeId: request.employee_id,
+    actorId: user?.id ?? null,
+    actorRole: "admin",
+    action: request.replace_device_id ? "replaced" : "approved",
+    deviceFingerprint: request.device_fingerprint,
+    metadata: { requestId: request.id, replaceDeviceId: request.replace_device_id ?? null },
+  });
 }
 
 async function rejectRequest(requestId: string) {
@@ -356,15 +512,82 @@ async function rejectRequest(requestId: string) {
     .eq("id", requestId);
 
   if (error) throw error;
+
+  const { data: request } = await (supabase as any)
+    .from("pending_device_requests")
+    .select("employee_id,device_fingerprint")
+    .eq("id", requestId)
+    .maybeSingle();
+  if (request) {
+    await logTrustedDeviceEvent({
+      employeeId: request.employee_id,
+      actorId: user?.id ?? null,
+      actorRole: "admin",
+      action: "rejected",
+      deviceFingerprint: request.device_fingerprint,
+      metadata: { requestId },
+    });
+  }
 }
 
 async function removeDevice(deviceId: string) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: device } = await (supabase as any)
+    .from("employee_devices")
+    .select("employee_id,device_fingerprint")
+    .eq("id", deviceId)
+    .maybeSingle();
+
   const { error } = await (supabase as any)
     .from("employee_devices")
-    .update({ status: "Inactive" })
+    .update({
+      status: "Inactive",
+      removed_at: new Date().toISOString(),
+      removed_by: user?.id ?? null,
+      removal_reason: "Removed by HR",
+    })
     .eq("id", deviceId);
 
   if (error) throw error;
+
+  if (device) {
+    await (supabase as any)
+      .from("device_passkeys")
+      .delete()
+      .eq("employee_id", device.employee_id)
+      .eq("device_fingerprint", device.device_fingerprint);
+    await logTrustedDeviceEvent({
+      employeeId: device.employee_id,
+      deviceId,
+      actorId: user?.id ?? null,
+      actorRole: "admin",
+      action: "removed",
+      deviceFingerprint: device.device_fingerprint,
+    });
+  }
+}
+
+async function forceLogoutDevice(device: EmployeeDevice) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { error } = await (supabase as any)
+    .from("employee_devices")
+    .update({ force_logout_at: new Date().toISOString(), force_logout_by: user?.id ?? null })
+    .eq("id", device.id);
+
+  if (error) throw error;
+
+  await logTrustedDeviceEvent({
+    employeeId: device.employee_id,
+    deviceId: device.id,
+    actorId: user?.id ?? null,
+    actorRole: "admin",
+    action: "force_logout",
+    deviceFingerprint: device.device_fingerprint,
+  });
 }
 
 function Detail({ label, value, subvalue }: { label: string; value: string; subvalue?: string }) {

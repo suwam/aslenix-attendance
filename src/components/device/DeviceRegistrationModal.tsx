@@ -11,17 +11,20 @@ export function DeviceRegistrationModal() {
     localFingerprint,
     deviceName,
     setDeviceName,
+    trustedDevices,
+    maxTrustedDevices,
     busy,
     setupBiometrics,
     submitDeviceRegistration,
   } = useDeviceStatus();
 
   const [isOpen, setIsOpen] = useState(false);
+  const [replaceDeviceId, setReplaceDeviceId] = useState("");
 
   useEffect(() => {
     // Only pop up if we haven't prompted yet in this session
     const hasPrompted = sessionStorage.getItem("device_prompted");
-    if (!hasPrompted && (deviceStatus === "unregistered" || deviceStatus === "setup_biometrics")) {
+    if (!hasPrompted && (deviceStatus === "unregistered" || deviceStatus === "setup_biometrics" || deviceStatus === "replace_required")) {
       setIsOpen(true);
     }
   }, [deviceStatus]);
@@ -115,12 +118,64 @@ export function DeviceRegistrationModal() {
             </div>
 
             <Button
-              onClick={submitDeviceRegistration}
+              onClick={() => submitDeviceRegistration()}
               disabled={busy}
               className="w-full neon-button h-12 rounded-xl text-base font-semibold"
             >
               {busy ? <Loader2 size={18} className="mr-2 animate-spin" /> : <ShieldCheck size={18} className="mr-2" />}
               Submit Registration Request
+            </Button>
+          </div>
+        )}
+
+        {deviceStatus === "replace_required" && (
+          <div className="p-6 sm:p-2 space-y-6">
+            <div className="text-center space-y-4">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-warning/30 bg-warning/10 text-warning shadow-[0_0_34px_rgba(245,158,11,.15)]">
+                <ShieldCheck size={28} />
+              </div>
+              <h2 className="text-2xl font-bold text-foreground font-display">Device Limit Reached</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Your account allows {maxTrustedDevices} trusted devices. Choose one existing device to replace, then HR can approve this new device.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              {trustedDevices.map((device) => (
+                <button
+                  key={device.id}
+                  type="button"
+                  onClick={() => setReplaceDeviceId(device.id)}
+                  className={`w-full rounded-2xl border p-4 text-left transition ${
+                    replaceDeviceId === device.id ? "border-primary bg-primary/10" : "border-border bg-card/65 hover:border-primary/40"
+                  }`}
+                >
+                  <div className="font-semibold text-foreground">{device.device_name}</div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {device.operating_system} · {device.browser} · Last login {new Date(device.last_login).toLocaleDateString()}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-semibold text-foreground">New Device Name</label>
+              <input
+                type="text"
+                placeholder="e.g. New iPhone, Home Laptop"
+                value={deviceName}
+                onChange={(e) => setDeviceName(e.target.value)}
+                className="w-full h-11 px-3.5 rounded-xl border border-border bg-card text-foreground focus:outline-none focus:border-primary text-sm"
+              />
+            </div>
+
+            <Button
+              onClick={() => submitDeviceRegistration(replaceDeviceId)}
+              disabled={busy || !replaceDeviceId}
+              className="w-full neon-button h-12 rounded-xl text-base font-semibold"
+            >
+              {busy ? <Loader2 size={18} className="mr-2 animate-spin" /> : <ShieldCheck size={18} className="mr-2" />}
+              Request Replacement
             </Button>
           </div>
         )}

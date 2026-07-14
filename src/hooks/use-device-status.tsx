@@ -3,27 +3,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { startRegistration, startAuthentication } from "@simplewebauthn/browser";
+import {
+  getBrowserAndOS,
+  getTrustedDeviceFingerprint,
+  logTrustedDeviceEvent,
+} from "@/lib/trusted-devices";
 
-export type DeviceStatus = "loading" | "unregistered" | "pending" | "approved" | "inactive" | "setup_biometrics";
+export { getBrowserAndOS };
 
-export function getBrowserAndOS() {
-  const ua = navigator.userAgent;
-  let browser = "Unknown Browser";
-  let os = "Unknown OS";
+export type DeviceStatus = "loading" | "unregistered" | "pending" | "approved" | "inactive" | "setup_biometrics" | "replace_required";
 
-  if (ua.includes("Firefox")) browser = "Firefox";
-  else if (ua.includes("Chrome") && !ua.includes("Edg")) browser = "Chrome";
-  else if (ua.includes("Safari") && !ua.includes("Chrome")) browser = "Safari";
-  else if (ua.includes("Edg")) browser = "Edge";
-
-  if (ua.includes("Windows")) os = "Windows";
-  else if (ua.includes("Macintosh") || ua.includes("Mac OS")) os = "macOS";
-  else if (ua.includes("Linux")) os = "Linux";
-  else if (ua.includes("Android")) os = "Android";
-  else if (ua.includes("iPhone") || ua.includes("iPad")) os = "iOS";
-
-  return { browser, os };
-}
+export type TrustedDevice = {
+  id: string;
+  device_name: string;
+  device_fingerprint: string;
+  browser: string;
+  operating_system: string;
+  status: "Active" | "Inactive";
+  registered_at: string;
+  last_login: string;
+  force_logout_at?: string | null;
+};
 
 export function useDeviceStatus() {
   const { user, isAdmin } = useAuth();
@@ -31,6 +31,8 @@ export function useDeviceStatus() {
   const [pendingReq, setPendingReq] = useState<any | null>(null);
   const [localFingerprint, setLocalFingerprint] = useState("");
   const [deviceName, setDeviceName] = useState("");
+  const [trustedDevices, setTrustedDevices] = useState<TrustedDevice[]>([]);
+  const [maxTrustedDevices, setMaxTrustedDevices] = useState(2);
   const [busy, setBusy] = useState(false);
 
   const invokeWebAuthn = async <T,>(action: string, payload: Record<string, unknown>): Promise<T> => {
@@ -62,24 +64,36 @@ export function useDeviceStatus() {
       return;
     }
     
-    let fingerprint = localStorage.getItem("aslenix_device_fingerprint");
-    if (!fingerprint) {
-      fingerprint = typeof crypto.randomUUID === "function" 
-        ? crypto.randomUUID() 
-        : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      localStorage.setItem("aslenix_device_fingerprint", fingerprint);
-    }
+    const fingerprint = await getTrustedDeviceFingerprint();
     setLocalFingerprint(fingerprint);
 
-    const { data: devices } = await supabase
+    const [{ data: currentDevice }, { data: activeDevices }, { data: settings }] = await Promise.all([
+      supabase
       .from("employee_devices")
       .select("*")
       .eq("employee_id", user.id)
       .eq("device_fingerprint", fingerprint)
-      .maybeSingle();
+        .maybeSingle(),
+      (supabase as any)
+        .from("employee_devices")
+        .select("id,device_name,device_fingerprint,browser,operating_system,status,registered_at,last_login,force_logout_at")
+        .eq("employee_id", user.id)
+        .eq("status", "Active")
+        .order("last_login", { ascending: false }),
+      (supabase as any)
+        .from("device_security_settings")
+        .select("max_trusted_devices")
+        .eq("id", true)
+        .maybeSingle(),
+    ]);
 
-    if (devices) {
-      if (devices.status === "Active") {
+    const devices = (activeDevices ?? []) as TrustedDevice[];
+    const maxDevices = Number(settings?.max_trusted_devices ?? 2);
+    setTrustedDevices(devices);
+    setMaxTrustedDevices(maxDevices);
+
+    if (currentDevice) {
+      if (currentDevice.status === "Active" && !currentDevice.force_logout_at) {
         const { data: passkey } = await (supabase as any)
           .from("device_passkeys")
           .select("id")
@@ -88,6 +102,10 @@ export function useDeviceStatus() {
           .maybeSingle();
 
         if (passkey) {
+          await (supabase as any)
+            .from("employee_devices")
+            .update({ last_login: new Date().toISOString() })
+            .eq("id", currentDevice.id);
           setDeviceStatus("approved");
         } else {
           setDeviceStatus("setup_biometrics");
@@ -95,6 +113,43 @@ export function useDeviceStatus() {
       } else {
         setDeviceStatus("inactive");
       }
+      return;
+    }
+
+    if (devices.length === 0) {
+      const { browser, os } = getBrowserAndOS();
+      const name = deviceName.trim() || `${os} ${browser}`;
+      const { data: inserted, error } = await (supabase as any)
+        .from("employee_devices")
+        .insert({
+          employee_id: user.id,
+          device_fingerprint: fingerprint,
+          browser,
+          operating_system: os,
+          device_name: name,
+          status: "Active",
+        })
+        .select("id,device_name,device_fingerprint,browser,operating_system,status,registered_at,last_login,force_logout_at")
+        .single();
+
+      if (error) {
+        toast.error(error.message);
+        setDeviceStatus("unregistered");
+        return;
+      }
+
+      await logTrustedDeviceEvent({
+        employeeId: user.id,
+        deviceId: inserted.id,
+        deviceFingerprint: fingerprint,
+        actorRole: "system",
+        action: "auto_registered",
+        metadata: { browser, os, deviceName: name },
+      });
+
+      setTrustedDevices([inserted as TrustedDevice]);
+      setDeviceName(name);
+      setDeviceStatus("setup_biometrics");
       return;
     }
 
@@ -109,6 +164,8 @@ export function useDeviceStatus() {
     if (requests) {
       setDeviceStatus("pending");
       setPendingReq(requests);
+    } else if (devices.length >= maxDevices) {
+      setDeviceStatus("replace_required");
     } else {
       setDeviceStatus("unregistered");
     }
@@ -138,6 +195,11 @@ export function useDeviceStatus() {
       });
 
       if (verificationResp.verified) {
+        await logTrustedDeviceEvent({
+          employeeId: user.id,
+          deviceFingerprint: localFingerprint,
+          action: "passkey_registered",
+        });
         toast.success("Biometrics setup successfully!");
         setDeviceStatus("approved");
       } else {
@@ -171,6 +233,14 @@ export function useDeviceStatus() {
         response: asseResp,
       });
 
+      if (verificationResp.verified) {
+        await (supabase as any)
+          .from("employee_devices")
+          .update({ last_login: new Date().toISOString() })
+          .eq("employee_id", user.id)
+          .eq("device_fingerprint", localFingerprint);
+      }
+
       return !!verificationResp.verified;
     } catch (error: any) {
       toast.error("Biometric authentication failed: " + (error.message || "Unknown error"));
@@ -178,7 +248,7 @@ export function useDeviceStatus() {
     }
   };
 
-  const submitDeviceRegistration = async () => {
+  const submitDeviceRegistration = async (replaceDeviceId?: string) => {
     if (!user) return;
     if (!deviceName.trim()) return toast.error("Please enter a device name");
     setBusy(true);
@@ -189,10 +259,18 @@ export function useDeviceStatus() {
       browser,
       operating_system: os,
       device_name: deviceName.trim(),
-      status: "Pending"
+      status: "Pending",
+      verification_method: replaceDeviceId ? "Replacement" : "HR Approval",
+      replace_device_id: replaceDeviceId ?? null,
     });
     setBusy(false);
     if (error) return toast.error(error.message);
+    await logTrustedDeviceEvent({
+      employeeId: user.id,
+      deviceFingerprint: localFingerprint,
+      action: "registration_requested",
+      metadata: { browser, os, deviceName: deviceName.trim(), replaceDeviceId: replaceDeviceId ?? null },
+    });
     toast.success("Device registration request submitted successfully!");
     checkDevice();
   };
@@ -203,6 +281,8 @@ export function useDeviceStatus() {
     localFingerprint,
     deviceName,
     setDeviceName,
+    trustedDevices,
+    maxTrustedDevices,
     busy,
     setupBiometrics,
     verifyBiometrics,
