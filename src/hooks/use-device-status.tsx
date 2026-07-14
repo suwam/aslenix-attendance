@@ -32,8 +32,8 @@ export function getBrowserAndOS() {
 }
 
 export function useDeviceStatus() {
-  const { user } = useAuth();
-  const [deviceStatus, setDeviceStatus] = useState<DeviceStatus>("loading");
+  const { user, isAdmin } = useAuth();
+  const [deviceStatus, setDeviceStatus] = useState<DeviceStatus>(isAdmin ? "approved" : "loading");
   const [pendingReq, setPendingReq] = useState<any | null>(null);
   const [localFingerprint, setLocalFingerprint] = useState("");
   const [deviceName, setDeviceName] = useState("");
@@ -47,6 +47,10 @@ export function useDeviceStatus() {
 
   const checkDevice = async () => {
     if (!user) return;
+    if (isAdmin) {
+      setDeviceStatus("approved");
+      return;
+    }
     
     let fingerprint = localStorage.getItem("aslenix_device_fingerprint");
     if (!fingerprint) {
@@ -142,6 +146,7 @@ export function useDeviceStatus() {
 
   const verifyBiometrics = async (): Promise<boolean> => {
     if (!user) return false;
+    if (isAdmin) return true;
     try {
       const rpID = window.location.hostname;
       
