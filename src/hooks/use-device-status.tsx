@@ -55,6 +55,13 @@ export function useDeviceStatus() {
     if (user) {
       checkDevice();
     }
+
+    const handleForceCheck = () => {
+      if (user) checkDevice();
+    };
+    
+    window.addEventListener("force-device-check", handleForceCheck);
+    return () => window.removeEventListener("force-device-check", handleForceCheck);
   }, [user]);
 
   const checkDevice = async () => {

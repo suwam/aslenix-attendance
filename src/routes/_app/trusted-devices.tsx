@@ -138,6 +138,7 @@ function TrustedDevicesPage() {
       toast.success("Device removed");
       if (device.device_fingerprint === localFingerprint) {
         sessionStorage.removeItem("device_prompted");
+        window.dispatchEvent(new Event("force-device-check"));
       }
       await load();
       await checkDevice();
