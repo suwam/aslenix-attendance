@@ -228,7 +228,7 @@ function SettingsPage() {
 
           <GlassCard className="overflow-hidden border-border bg-card">
             <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-blue-400/20 bg-blue-500/10 text-blue-300">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-blue-400/20 bg-blue-500/10 text-blue-600 dark:text-blue-300">
                 <Navigation size={18} />
               </div>
               <div>
@@ -312,8 +312,8 @@ function SettingMetric({
 }) {
   const colors = {
     red: "border-primary/20 bg-primary/10 text-primary",
-    blue: "border-blue-400/20 bg-blue-500/10 text-blue-300",
-    amber: "border-amber-300/20 bg-amber-300/10 text-amber-200",
+    blue: "border-blue-400/20 bg-blue-500/10 text-blue-600 dark:text-blue-300",
+    amber: "border-amber-300/20 bg-amber-300/10 text-amber-600 dark:text-amber-200",
     green: "border-success/20 bg-success/10 text-success",
   };
 

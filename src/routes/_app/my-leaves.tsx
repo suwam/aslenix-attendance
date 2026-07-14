@@ -374,7 +374,7 @@ function LeaveMetric({
   const colors = {
     amber: "border-warning/20 bg-warning/10 text-warning",
     green: "border-success/20 bg-success/10 text-success",
-    blue: "border-blue-400/20 bg-blue-500/10 text-blue-300",
+    blue: "border-blue-400/20 bg-blue-500/10 text-blue-600 dark:text-blue-300",
   };
 
   return (

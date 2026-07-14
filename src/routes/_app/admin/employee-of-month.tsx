@@ -793,7 +793,7 @@ function TopContenders({ rows }: { rows: EmployeeRank[] }) {
       <div className="eom-confetti" />
       <div className="relative z-10 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-amber-200/20 bg-amber-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-amber-200">
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-amber-200/20 bg-amber-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-amber-600 dark:text-amber-200">
             <Trophy size={14} />
             Top 5 Contenders
           </div>
@@ -936,7 +936,7 @@ function ContenderMetric({
 }) {
   return (
     <div className="eom-contender-metric">
-      <Icon size={15} className="text-amber-200" />
+      <Icon size={15} className="text-amber-600 dark:text-amber-200" />
       <div className="mt-2 text-lg font-bold tabular-nums text-foreground">{value}</div>
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
     </div>

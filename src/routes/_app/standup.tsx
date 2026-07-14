@@ -189,10 +189,10 @@ function StandupPage() {
             <div className="rounded-3xl border border-border bg-card p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-200/80">AI Quality Check</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-600 dark:text-fuchsia-200/80">AI Quality Check</p>
                   <h3 className="mt-1 text-lg font-bold text-foreground">{quality.label}</h3>
                 </div>
-                <BrainCircuit className="text-fuchsia-200" />
+                <BrainCircuit className="text-fuchsia-600 dark:text-fuchsia-200" />
               </div>
               <div className="mt-4 h-2.5 rounded-full bg-card">
                 <div
@@ -202,9 +202,9 @@ function StandupPage() {
               </div>
               <ul className="mt-4 space-y-2">
                 {quality.notes.map((note) => (
-                  <li key={note} className="flex items-start gap-2 text-sm text-slate-300">
-                    <ShieldCheck size={15} className="mt-0.5 shrink-0 text-cyan-200" />
-                    <span>{note}</span>
+                  <li key={note} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <ShieldCheck size={15} className="mt-0.5 shrink-0 text-cyan-600 dark:text-cyan-200" />
+                    <span className="text-foreground">{note}</span>
                   </li>
                 ))}
               </ul>
@@ -348,7 +348,7 @@ function StandupPage() {
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               {suggestions.map((suggestion) => (
-                <div key={suggestion.title} className={`flex items-start gap-3 rounded-2xl border p-3 text-sm ${suggestion.tone === "good" ? "border-success/20 bg-success/10 text-success" : suggestion.tone === "warn" ? "border-warning/20 bg-warning/10 text-warning" : "border-border bg-card text-slate-300"}`}>
+                <div key={suggestion.title} className={`flex items-start gap-3 rounded-2xl border p-3 text-sm ${suggestion.tone === "good" ? "border-success/20 bg-success/10 text-success" : suggestion.tone === "warn" ? "border-warning/20 bg-warning/10 text-warning" : "border-border bg-card text-foreground"}`}>
                   {suggestion.tone === "good" ? (
                     <CheckCircle2 size={15} className="mt-0.5 shrink-0" />
                   ) : (
@@ -424,7 +424,7 @@ function StandupMetric({
   tone: "blue" | "green" | "amber" | "red";
 }) {
   const colors = {
-    blue: "border-blue-400/20 bg-blue-500/10 text-blue-300",
+    blue: "border-blue-400/20 bg-blue-500/10 text-blue-600 dark:text-blue-300",
     green: "border-success/20 bg-success/10 text-success",
     amber: "border-warning/20 bg-warning/10 text-warning",
     red: "border-primary/20 bg-primary/10 text-primary",
