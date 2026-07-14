@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import NepaliDate from "nepali-date-converter";
 import { CalendarDays, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { addDays } from "date-fns";
@@ -344,24 +344,32 @@ export function GlassTimeInput({
           <Clock size={16} className="text-slate-400" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[286px] overflow-hidden rounded-2xl border border-border bg-background p-0 text-foreground shadow-xl">
-        <div className="relative p-4">
-          <div className="mb-4 flex items-center justify-between">
+      <PopoverContent 
+        align="end" 
+        className="w-[340px] overflow-hidden rounded-[28px] border border-[#E8ECF3] bg-[#FFFFFF] p-6 shadow-[0_24px_50px_rgba(0,0,0,0.08),0_4px_16px_rgba(0,0,0,0.04)]"
+      >
+        <div className="relative">
+          <div className="mb-6 flex items-center justify-between">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">Time</div>
-              <div className="mt-1 text-lg font-extrabold tabular-nums text-foreground">{hourValue}:{minuteValue}</div>
+              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#7A8599]">Time</div>
+              <div className="mt-1 text-[38px] font-extrabold tabular-nums tracking-tight text-[#1A1A1A] leading-none">
+                {hourValue}:{minuteValue}
+              </div>
             </div>
-            <div className="grid h-11 w-11 place-items-center rounded-2xl border border-border bg-card text-foreground">
-              <Clock size={18} />
+            <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-[#F7F8FC] text-[#00D2FF]">
+              <Clock size={26} strokeWidth={2.5} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="flex gap-4">
             <TimeColumn label="Hour" values={hours} selected={hourValue} onSelect={(hour) => select(hour, minuteValue)} />
             <TimeColumn label="Minute" values={minutes} selected={minuteValue} onSelect={(minute) => select(hourValue, minute)} />
           </div>
-          <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-            <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Aslenix time</span>
-            <Button type="button" variant="outline" className="h-9 rounded-xl border-border bg-card px-4 text-xs font-bold hover:bg-slate-100 hover:text-slate-900" onClick={() => setOpen(false)}>
+          <div className="mt-6 pt-2">
+            <Button 
+              type="button" 
+              className="h-[52px] w-full rounded-2xl bg-gradient-to-r from-[#00D2FF] to-[#FF4DA6] text-base font-bold text-white shadow-[0_8px_20px_rgba(255,77,166,0.25)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(255,77,166,0.35)] active:scale-[0.98]" 
+              onClick={() => setOpen(false)}
+            >
               Done
             </Button>
           </div>
@@ -382,25 +390,86 @@ function TimeColumn({
   selected: string;
   onSelect: (value: string) => void;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const ITEM_HEIGHT = 44;
+  const isScrolling = useRef(false);
+  const scrollTimeout = useRef<any>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      const idx = values.indexOf(selected);
+      if (idx !== -1) {
+        scrollRef.current.scrollTop = idx * ITEM_HEIGHT;
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    isScrolling.current = true;
+    clearTimeout(scrollTimeout.current);
+    
+    const idx = Math.round(scrollRef.current.scrollTop / ITEM_HEIGHT);
+    const validIdx = Math.max(0, Math.min(values.length - 1, idx));
+    if (values[validIdx] !== selected) {
+      onSelect(values[validIdx]);
+    }
+
+    scrollTimeout.current = setTimeout(() => {
+      isScrolling.current = false;
+      if (scrollRef.current) {
+        const finalIdx = Math.round(scrollRef.current.scrollTop / ITEM_HEIGHT);
+        scrollRef.current.scrollTo({ top: finalIdx * ITEM_HEIGHT, behavior: 'smooth' });
+      }
+    }, 150);
+  };
+
   return (
-    <div className="rounded-2xl border border-border bg-card p-2">
-      <div className="px-2 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">{label}</div>
-      <div className="max-h-48 space-y-1 overflow-y-auto pr-1">
-        {values.map((value) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => onSelect(value)}
-            className={cn(
-              "grid h-9 w-full place-items-center rounded-xl text-sm font-extrabold tabular-nums transition",
-              selected === value
-                ? "bg-gradient-to-r from-cyan-400 to-pink-500 text-white shadow-md"
-                : "text-slate-600 hover:bg-slate-100 hover:text-foreground",
-            )}
-          >
-            {value}
-          </button>
-        ))}
+    <div className="flex flex-col items-center flex-1">
+      <div className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#7A8599] mb-3">{label}</div>
+      <div 
+        className="relative w-full h-[220px] rounded-[24px] bg-[#F7F8FC] overflow-hidden" 
+        style={{ 
+          maskImage: 'linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)', 
+          WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)' 
+        }}
+      >
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[44px] bg-[#FFFFFF] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-xl pointer-events-none" />
+        
+        <div 
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="h-full w-full overflow-y-auto relative z-10 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          style={{ paddingBottom: '88px', paddingTop: '88px', scrollSnapType: 'y mandatory' }}
+        >
+          {values.map((value) => {
+            const isSelected = selected === value;
+            return (
+              <div
+                key={value}
+                onClick={() => {
+                  onSelect(value);
+                  if (scrollRef.current) {
+                    const idx = values.indexOf(value);
+                    scrollRef.current.scrollTo({ top: idx * ITEM_HEIGHT, behavior: 'smooth' });
+                  }
+                }}
+                className="h-[44px] w-full flex items-center justify-center cursor-pointer"
+                style={{ scrollSnapAlign: 'center' }}
+              >
+                <div className={cn(
+                  "flex items-center justify-center transition-all duration-300",
+                  isSelected 
+                    ? "w-[64px] h-[36px] bg-gradient-to-r from-[#00D2FF] to-[#FF4DA6] rounded-full shadow-[0_4px_14px_rgba(255,77,166,0.25)] text-[#FFFFFF] font-bold text-[19px] scale-110" 
+                    : "text-[#7A8599] font-medium text-[17px] opacity-60 scale-95 hover:opacity-100 hover:scale-100"
+                )}>
+                  {value}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
