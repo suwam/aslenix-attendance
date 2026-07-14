@@ -54,6 +54,7 @@ export type Database = {
           user_id: string;
           work_hours: number | null;
           work_location: string;
+          deleted_at: string | null;
         };
         Insert: {
           check_in_accuracy_meters?: number | null;
@@ -76,6 +77,7 @@ export type Database = {
           user_id: string;
           work_hours?: number | null;
           work_location?: string;
+          deleted_at?: string | null;
         };
         Update: {
           check_in_accuracy_meters?: number | null;
@@ -98,6 +100,7 @@ export type Database = {
           user_id?: string;
           work_hours?: number | null;
           work_location?: string;
+          deleted_at?: string | null;
         };
         Relationships: [];
       };
@@ -325,6 +328,60 @@ export type Database = {
           user_id?: string;
         };
         Relationships: [];
+      };
+      leave_conflict_audit_logs: {
+        Row: {
+          action_performed: string;
+          attendance_details: Json | null;
+          created_at: string;
+          id: string;
+          leave_id: string;
+          new_status: string;
+          performed_by: string | null;
+          performed_by_name: string;
+          previous_status: string;
+          reason: string | null;
+        };
+        Insert: {
+          action_performed: string;
+          attendance_details?: Json | null;
+          created_at?: string;
+          id?: string;
+          leave_id: string;
+          new_status: string;
+          performed_by?: string | null;
+          performed_by_name: string;
+          previous_status: string;
+          reason?: string | null;
+        };
+        Update: {
+          action_performed?: string;
+          attendance_details?: Json | null;
+          created_at?: string;
+          id?: string;
+          leave_id?: string;
+          new_status?: string;
+          performed_by?: string | null;
+          performed_by_name?: string;
+          previous_status?: string;
+          reason?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "leave_conflict_audit_logs_leave_id_fkey";
+            columns: ["leave_id"];
+            isOneToOne: false;
+            referencedRelation: "leave_requests";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "leave_conflict_audit_logs_performed_by_fkey";
+            columns: ["performed_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["user_id"];
+          }
+        ];
       };
       meetings: {
         Row: {
@@ -938,8 +995,22 @@ export type Database = {
     Enums: {
       app_role: "super_admin" | "admin" | "hr_manager" | "employee" | "viewer";
       approval_status: "pending" | "approved" | "rejected" | "suspended";
-      attendance_status: "present" | "late" | "absent" | "leave" | "half_day" | "wfh" | "holiday" | "weekend";
-      leave_status: "pending" | "approved" | "rejected" | "cancelled";
+      attendance_status:
+        | "present"
+        | "late"
+        | "absent"
+        | "leave"
+        | "half_day"
+        | "wfh"
+        | "holiday"
+        | "weekend"
+        | "half_day_present";
+      leave_status:
+        | "pending"
+        | "approved"
+        | "rejected"
+        | "cancelled"
+        | "half_day_approved";
       leave_type: "sick" | "casual" | "vacation" | "emergency" | "wfh" | "holiday" | "weekend";
       qr_status: "active" | "inactive" | "revoked";
       task_complexity: "small" | "medium" | "large" | "epic";
