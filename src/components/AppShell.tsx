@@ -22,6 +22,7 @@ import {
   MessageSquare,
   Trophy,
   BrainCircuit,
+  Laptop,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { AslenixLogo } from "@/components/AslenixLogo";
@@ -50,6 +51,7 @@ const adminNav: NavItem[] = [
   { to: "/admin/achievements", label: "Achievements", icon: Trophy },
   { to: "/admin/approvals", label: "User Approvals", icon: UserCheck },
   { to: "/admin/attendance-corrections", label: "Attendance Corrections", icon: CalendarClock },
+  { to: "/admin/devices", label: "Device Management", icon: Laptop },
   { to: "/admin/employees", label: "Employees", icon: Users },
   { to: "/admin/qr-ids", label: "Digital QR IDs", icon: QrCode },
   { to: "/admin/tasks", label: "Tasks", icon: ClipboardList },
