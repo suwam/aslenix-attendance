@@ -336,22 +336,22 @@ export function GlassTimeInput({
           type="button"
           className={cn(
             "flex h-10 w-full items-center justify-between gap-2 rounded-xl border border-border bg-card px-3 text-left font-semibold tabular-nums text-foreground transition",
-            "hover:border-cyan-300/30 hover:bg-cyan-400/10 focus:outline-none focus:ring-2 focus:ring-cyan-300/30",
+            "hover:border-border hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300/30",
             className,
           )}
         >
           <span>{value || "--:--"}</span>
-          <Clock size={16} className="text-cyan-200/80" />
+          <Clock size={16} className="text-slate-400" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[286px] overflow-hidden rounded-2xl border border-cyan-300/20 bg-[#06101f]/95 p-0 text-foreground shadow-[0_22px_70px_rgba(0,0,0,.55),0_0_44px_rgba(255,45,111,.12)] backdrop-blur-2xl">
+      <PopoverContent align="end" className="w-[286px] overflow-hidden rounded-2xl border border-border bg-background p-0 text-foreground shadow-xl">
         <div className="relative p-4">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-cyan-200/75">Time</div>
-              <div className="mt-1 text-lg font-extrabold tabular-nums">{hourValue}:{minuteValue}</div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">Time</div>
+              <div className="mt-1 text-lg font-extrabold tabular-nums text-foreground">{hourValue}:{minuteValue}</div>
             </div>
-            <div className="grid h-11 w-11 place-items-center rounded-2xl border border-cyan-300/20 bg-cyan-400/10 text-cyan-100">
+            <div className="grid h-11 w-11 place-items-center rounded-2xl border border-border bg-card text-foreground">
               <Clock size={18} />
             </div>
           </div>
@@ -360,8 +360,8 @@ export function GlassTimeInput({
             <TimeColumn label="Minute" values={minutes} selected={minuteValue} onSelect={(minute) => select(hourValue, minute)} />
           </div>
           <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-            <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Aslenix time</span>
-            <Button type="button" variant="outline" className="h-9 rounded-xl border-border bg-card px-4 text-xs font-bold hover:bg-pink-400/10 hover:text-pink-100" onClick={() => setOpen(false)}>
+            <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Aslenix time</span>
+            <Button type="button" variant="outline" className="h-9 rounded-xl border-border bg-card px-4 text-xs font-bold hover:bg-slate-100 hover:text-slate-900" onClick={() => setOpen(false)}>
               Done
             </Button>
           </div>
@@ -384,7 +384,7 @@ function TimeColumn({
 }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-2">
-      <div className="px-2 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">{label}</div>
+      <div className="px-2 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">{label}</div>
       <div className="max-h-48 space-y-1 overflow-y-auto pr-1">
         {values.map((value) => (
           <button
@@ -394,8 +394,8 @@ function TimeColumn({
             className={cn(
               "grid h-9 w-full place-items-center rounded-xl text-sm font-extrabold tabular-nums transition",
               selected === value
-                ? "bg-gradient-to-r from-cyan-400 to-pink-500 text-foreground shadow-[0_0_18px_rgba(34,211,238,.22)]"
-                : "text-slate-300 hover:bg-card hover:text-foreground",
+                ? "bg-gradient-to-r from-cyan-400 to-pink-500 text-white shadow-md"
+                : "text-slate-600 hover:bg-slate-100 hover:text-foreground",
             )}
           >
             {value}
