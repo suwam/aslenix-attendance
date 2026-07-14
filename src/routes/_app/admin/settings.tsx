@@ -160,7 +160,7 @@ function SettingsPage() {
                 ? "Employees who forget to check out can be automatically checked out at the configured time."
                 : "Auto checkout needs the pending database migration before it can be saved."}
             </div>
-            <div className="mt-4 rounded-xl border border-amber-300/15 bg-amber-300/10 p-3 text-xs leading-5 text-amber-100/80">
+            <div className="mt-4 rounded-xl border border-amber-300/15 bg-amber-300/10 p-3 text-xs leading-5 text-foreground">
               Keep the radius tight, usually 20-50 meters. Employees outside this fence, or with weak GPS accuracy,
               will be blocked from checking in or checking out.
             </div>
@@ -210,7 +210,7 @@ function SettingsPage() {
         <div className="grid content-start gap-5">
           <GlassCard className="overflow-hidden border-border bg-card">
             <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10 text-cyan-100">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10 text-foreground">
                 <ShieldCheck size={18} />
               </div>
               <div>
@@ -228,7 +228,7 @@ function SettingsPage() {
 
           <GlassCard className="overflow-hidden border-border bg-card">
             <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-blue-400/20 bg-blue-500/10 text-blue-600 dark:text-blue-300">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-blue-400/20 bg-blue-500/10 text-blue-600 ">
                 <Navigation size={18} />
               </div>
               <div>
@@ -312,8 +312,8 @@ function SettingMetric({
 }) {
   const colors = {
     red: "border-primary/20 bg-primary/10 text-primary",
-    blue: "border-blue-400/20 bg-blue-500/10 text-blue-600 dark:text-blue-300",
-    amber: "border-amber-300/20 bg-amber-300/10 text-amber-600 dark:text-amber-200",
+    blue: "border-blue-400/20 bg-blue-500/10 text-blue-600 ",
+    amber: "border-amber-300/20 bg-amber-300/10 text-amber-600 ",
     green: "border-success/20 bg-success/10 text-success",
   };
 

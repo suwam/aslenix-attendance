@@ -318,7 +318,7 @@ function ProductivityCommandCenter() {
           <GlassCard className="productivity-hero" glow="blue">
             <div className="relative z-10 grid gap-6 lg:grid-cols-[1fr_auto]">
               <div>
-                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
+                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-foreground">
                   <Sparkles size={13} />
                   Neural productivity engine online
                 </div>
@@ -394,7 +394,7 @@ function ProductivityCommandCenter() {
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.05fr_.95fr]">
           <GlassCard className="productivity-panel">
             <h3 className="mb-4 flex items-center gap-2 font-semibold">
-              <MessageSquare size={17} className="text-cyan-200" />
+              <MessageSquare size={17} className="text-foreground" />
               AI Copilot Assistant
             </h3>
             <div className="grid gap-3">
@@ -439,7 +439,7 @@ function ProductivityCommandCenter() {
 
           <GlassCard className="productivity-panel">
             <h3 className="mb-4 flex items-center gap-2 font-semibold">
-              <Sparkles size={17} className="text-cyan-200" />
+              <Sparkles size={17} className="text-foreground" />
               AI Forecast Engine
             </h3>
             <div className="grid gap-3 md:grid-cols-4">
@@ -454,7 +454,7 @@ function ProductivityCommandCenter() {
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1fr]">
           <GlassCard className="productivity-panel">
             <h3 className="mb-4 flex items-center gap-2 font-semibold">
-              <Activity size={17} className="text-cyan-200" />
+              <Activity size={17} className="text-foreground" />
               Team Intelligence Analytics
             </h3>
             <div className="grid gap-4 md:grid-cols-[1fr_.9fr]">
@@ -706,7 +706,7 @@ function SignalCard({
           {value}
           <span className="text-base text-muted-foreground">{suffix}</span>
         </div>
-        {trend && <div className="mt-1 text-xs font-semibold text-cyan-100/75">{trend}</div>}
+        {trend && <div className="mt-1 text-xs font-semibold text-foreground">{trend}</div>}
         <MiniSparkline values={sparkline} tone={tone} />
       </div>
     </GlassCard>
@@ -731,9 +731,9 @@ function ScoreGauge({ value }: { value: number }) {
   return (
     <div className="productivity-gauge" style={{ "--score": `${value}%` } as CSSProperties & Record<string, string>}>
       <div className="productivity-gauge-inner">
-        <BrainCircuit size={28} className="text-cyan-200" />
+        <BrainCircuit size={28} className="text-foreground" />
         <div className="text-5xl font-bold tabular-nums">{value}</div>
-        <div className="text-xs uppercase tracking-wider text-cyan-100/70">Team AI score</div>
+        <div className="text-xs uppercase tracking-wider text-foreground">Team AI score</div>
       </div>
     </div>
   );
@@ -742,7 +742,7 @@ function ScoreGauge({ value }: { value: number }) {
 function AiBullet({ text }: { text: string }) {
   return (
     <div className="flex items-start gap-2 rounded-2xl border border-border bg-card px-3 py-2">
-      <Sparkles size={14} className="mt-0.5 shrink-0 text-cyan-200" />
+      <Sparkles size={14} className="mt-0.5 shrink-0 text-foreground" />
       <span>{text}</span>
     </div>
   );
@@ -873,7 +873,7 @@ function TaskIntelligenceMatrix({
 function StatusBadge({ employee }: { employee: EmployeePulse }) {
   if (employee.dailyScore >= 88) return <span className="rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-bold uppercase text-success">Elite</span>;
   if (employee.overdueTasks > 0 || employee.attendanceScore < 80) return <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-bold uppercase text-destructive">Risk</span>;
-  if (employee.trend > 8) return <span className="rounded-full bg-cyan-300/15 px-2 py-0.5 text-[10px] font-bold uppercase text-cyan-100">Rising</span>;
+  if (employee.trend > 8) return <span className="rounded-full bg-cyan-300/15 px-2 py-0.5 text-[10px] font-bold uppercase text-foreground">Rising</span>;
   return <span className="rounded-full bg-card px-2 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">Stable</span>;
 }
 
@@ -911,7 +911,7 @@ function AttentionRow({ employee }: { employee: EmployeePulse }) {
 function NeuralMetric({ label, value, icon: Icon }: { label: string; value: number; icon: typeof Target }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-3">
-      <Icon size={15} className="mb-2 text-cyan-200" />
+      <Icon size={15} className="mb-2 text-foreground" />
       <div className="text-xl font-bold tabular-nums">{value}%</div>
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
     </div>
@@ -930,7 +930,7 @@ function CompactMetric({ label, value }: { label: string; value: string | number
 function InsightCard({ title, text }: { title: string; text: string }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
-      <div className="mb-2 text-xs font-bold uppercase tracking-wider text-cyan-100">{title}</div>
+      <div className="mb-2 text-xs font-bold uppercase tracking-wider text-foreground">{title}</div>
       <p className="text-sm text-muted-foreground">{text}</p>
     </div>
   );

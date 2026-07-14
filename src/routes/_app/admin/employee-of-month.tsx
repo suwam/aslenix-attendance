@@ -793,7 +793,7 @@ function TopContenders({ rows }: { rows: EmployeeRank[] }) {
       <div className="eom-confetti" />
       <div className="relative z-10 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-amber-200/20 bg-amber-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-amber-600 dark:text-amber-200">
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-amber-200/20 bg-amber-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-amber-600 ">
             <Trophy size={14} />
             Top 5 Contenders
           </div>
@@ -936,7 +936,7 @@ function ContenderMetric({
 }) {
   return (
     <div className="eom-contender-metric">
-      <Icon size={15} className="text-amber-600 dark:text-amber-200" />
+      <Icon size={15} className="text-amber-600 " />
       <div className="mt-2 text-lg font-bold tabular-nums text-foreground">{value}</div>
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
     </div>
@@ -1039,7 +1039,7 @@ function Leaderboard({ rows, departmentFilter }: { rows: EmployeeRank[]; departm
                 <span className="rounded-full bg-card px-2 py-0.5 text-[10px] text-muted-foreground">
                   {row.level}
                 </span>
-                <span className="rounded-full bg-cyan-400/10 px-2 py-0.5 text-[10px] text-cyan-100">
+                <span className="rounded-full bg-cyan-400/10 px-2 py-0.5 text-[10px] text-foreground">
                   Dept #{row.departmentRank}
                 </span>
                 <EligibilityBadge eligible={row.isEomEligible} />
@@ -1599,7 +1599,7 @@ function FeedbackPanel({
       <GlassCard className="eom-feedback eom-recognition-launcher">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-cyan-100">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-foreground">
               <Medal size={13} />
               Recognition console
             </div>

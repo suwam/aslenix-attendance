@@ -94,8 +94,8 @@ function VerifyEmployeePage() {
           <ValidCard data={data} />
         )}
 
-        <div className="mt-6 flex items-center justify-center gap-2 text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-100/55">
-          <LockKeyhole size={13} className="text-cyan-300/70" />
+        <div className="mt-6 flex items-center justify-center gap-2 text-center text-[11px] font-semibold uppercase tracking-[0.22em] text-foreground">
+          <LockKeyhole size={13} className="text-foreground" />
           ASLENIX Secure Employee Verification
         </div>
       </div>
@@ -127,8 +127,8 @@ function ValidCard({ data }: { data: VerifyData }) {
             <ShieldCheck size={20} />
             <span>QR VERIFIED</span>
           </div>
-          <div className="mt-3 flex items-center gap-2 rounded-full border border-cyan-300/15 bg-cyan-300/5 px-3 py-1.5 text-[11px] font-medium text-cyan-100/75">
-            <Clock3 size={13} className="text-cyan-300" />
+          <div className="mt-3 flex items-center gap-2 rounded-full border border-cyan-300/15 bg-cyan-300/5 px-3 py-1.5 text-[11px] font-medium text-foreground">
+            <Clock3 size={13} className="text-foreground" />
             Verified {verifiedTimestamp}
           </div>
         </div>
@@ -155,9 +155,9 @@ function ValidCard({ data }: { data: VerifyData }) {
 
           <h1 className="mt-5 flex max-w-full items-center justify-center gap-2 text-balance text-3xl font-black leading-tight text-foreground drop-shadow-[0_0_26px_rgba(34,211,238,.2)] sm:text-4xl">
             {data.full_name}
-            <BadgeCheck className="shrink-0 text-cyan-300 drop-shadow-[0_0_16px_rgba(34,211,238,.65)]" size={25} />
+            <BadgeCheck className="shrink-0 text-foreground drop-shadow-[0_0_16px_rgba(34,211,238,.65)]" size={25} />
           </h1>
-          <div className="mt-2 text-sm font-medium text-cyan-100/70">{data.job_position || "Employee"}</div>
+          <div className="mt-2 text-sm font-medium text-foreground">{data.job_position || "Employee"}</div>
           <div className="department-pill mt-4">
             <Building2 size={14} />
             {data.department || "Unassigned"}
@@ -178,16 +178,16 @@ function ValidCard({ data }: { data: VerifyData }) {
 
         <div className="verification-status-card mt-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-400/15 text-emerald-300 shadow-[inset_0_0_18px_rgba(52,211,153,.16)]">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-400/15 text-foreground shadow-[inset_0_0_18px_rgba(52,211,153,.16)]">
               <UserCheck size={21} />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-cyan-100/45">
+              <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground">
                 Verification Status
               </div>
               <div className="mt-1 text-lg font-extrabold text-foreground">Verified</div>
             </div>
-            <Radio className="text-emerald-300" size={19} />
+            <Radio className="text-foreground" size={19} />
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3">
             <StatusMetric label="Employee" value="Active" />
@@ -197,14 +197,14 @@ function ValidCard({ data }: { data: VerifyData }) {
 
         <div className="trust-banner mt-5">
           <div className="relative z-10 flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-card text-emerald-300 shadow-[inset_0_0_20px_rgba(255,255,255,.08)]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-card text-foreground shadow-[inset_0_0_20px_rgba(255,255,255,.08)]">
               <ShieldCheck size={21} />
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-sm font-bold text-foreground">
                 This employee is officially verified by ASLENIX
               </div>
-              <div className="mt-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-100/55">
+              <div className="mt-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-foreground">
                 <Fingerprint size={12} />
                 Secure identity signal
               </div>
@@ -217,8 +217,8 @@ function ValidCard({ data }: { data: VerifyData }) {
           </div>
         </div>
 
-        <div className="mt-5 flex items-center justify-center gap-2 text-center text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-100/50">
-          <LockKeyhole size={13} className="text-emerald-300/80" />
+        <div className="mt-5 flex items-center justify-center gap-2 text-center text-[11px] font-semibold uppercase tracking-[0.16em] text-foreground">
+          <LockKeyhole size={13} className="text-foreground" />
           ASLENIX Secure Employee Verification
         </div>
       </div>
@@ -238,7 +238,7 @@ function InvalidCard({ reason, name }: { reason: string; name?: string }) {
       >
         <ShieldX className="text-red-400" size={28} />
       </div>
-      <h1 className="mt-4 text-xl font-bold text-red-300">Invalid QR Code</h1>
+      <h1 className="mt-4 text-xl font-bold text-foreground">Invalid QR Code</h1>
       <p className="mt-2 text-sm text-muted-foreground">{reason}</p>
       {name && <p className="mt-3 text-xs text-muted-foreground">Employee: {name}</p>}
       <div className="mt-5 text-[11px] text-muted-foreground">
@@ -263,16 +263,16 @@ function Detail({
 }) {
   return (
     <div className="verification-info-card group">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-cyan-300/10 text-cyan-200 shadow-[inset_0_0_18px_rgba(34,211,238,.1)] transition-colors group-hover:bg-fuchsia-300/10 group-hover:text-fuchsia-100">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-cyan-300/10 text-foreground shadow-[inset_0_0_18px_rgba(34,211,238,.1)] transition-colors group-hover:bg-fuchsia-300/10 group-hover:text-foreground">
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-100/45">{label}</div>
+        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground">{label}</div>
         <div className={`mt-1 truncate text-sm font-bold text-foreground ${mono ? "font-mono" : ""} ${className || ""}`}>
           {value}
         </div>
       </div>
-      <ChevronRight size={18} className="shrink-0 text-cyan-100/30 transition-all group-hover:translate-x-0.5 group-hover:text-cyan-200" />
+      <ChevronRight size={18} className="shrink-0 text-foreground transition-all group-hover:translate-x-0.5 group-hover:text-foreground" />
     </div>
   );
 }
@@ -280,8 +280,8 @@ function Detail({
 function StatusMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-3 shadow-[inset_0_1px_0_rgba(255,255,255,.06)]">
-      <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-cyan-100/45">{label}</div>
-      <div className="mt-1 truncate text-sm font-extrabold text-emerald-200">{value}</div>
+      <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-foreground">{label}</div>
+      <div className="mt-1 truncate text-sm font-extrabold text-foreground">{value}</div>
     </div>
   );
 }

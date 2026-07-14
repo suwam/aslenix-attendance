@@ -162,21 +162,21 @@ function StandupPage() {
         }
       />
 
-      <GlassCard className="mb-6 overflow-hidden border-cyan-300/15 bg-[#07111f]/70 p-0 shadow-[0_0_42px_rgba(34,211,238,0.1)]">
+      <GlassCard className="mb-6 overflow-hidden border-cyan-300/15 bg-card p-0 shadow-[0_0_42px_rgba(34,211,238,0.1)]">
         <div className="relative p-6">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(34,211,238,0.16),transparent_34%),radial-gradient(circle_at_85%_18%,rgba(168,85,247,0.14),transparent_30%)]" />
           <div className="relative grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
             <div>
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10 text-cyan-200">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10 text-foreground">
                   <Bot size={23} />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200/80">AI Standup Assistant</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-foreground">AI Standup Assistant</p>
                   <h2 className="text-2xl font-bold text-foreground">Make today's update crisp and useful</h2>
                 </div>
               </div>
-              <p className="max-w-3xl text-sm leading-6 text-slate-300">
+              <p className="max-w-3xl text-sm leading-6 text-foreground">
                 Your standup should tell the team what changed, what happens next, and whether anything needs manager help.
               </p>
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
@@ -189,10 +189,10 @@ function StandupPage() {
             <div className="rounded-3xl border border-border bg-card p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-600 dark:text-fuchsia-200/80">AI Quality Check</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-600 ">AI Quality Check</p>
                   <h3 className="mt-1 text-lg font-bold text-foreground">{quality.label}</h3>
                 </div>
-                <BrainCircuit className="text-fuchsia-600 dark:text-fuchsia-200" />
+                <BrainCircuit className="text-fuchsia-600 " />
               </div>
               <div className="mt-4 h-2.5 rounded-full bg-card">
                 <div
@@ -203,7 +203,7 @@ function StandupPage() {
               <ul className="mt-4 space-y-2">
                 {quality.notes.map((note) => (
                   <li key={note} className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <ShieldCheck size={15} className="mt-0.5 shrink-0 text-cyan-600 dark:text-cyan-200" />
+                    <ShieldCheck size={15} className="mt-0.5 shrink-0 text-cyan-600 " />
                     <span className="text-foreground">{note}</span>
                   </li>
                 ))}
@@ -320,14 +320,14 @@ function StandupPage() {
                 <h3 className="text-lg font-semibold text-foreground">AI writing helper</h3>
                 <p className="text-xs text-muted-foreground">Limited guidance before you save</p>
               </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-300/10 text-cyan-200">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-300/10 text-foreground">
                 <WandSparkles size={18} />
               </div>
             </div>
             <div className="mb-4 rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.055] p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-100/75">Readiness</div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-foreground">Readiness</div>
                   <div className="mt-1 text-2xl font-black text-foreground">{quality.score}%</div>
                 </div>
                 <div className="text-right text-xs text-muted-foreground">
@@ -378,7 +378,7 @@ function StandupPage() {
             {recentStandups.map((h, index) => (
               <li
                 key={h.id}
-                className="group relative -mt-2 first:mt-0 rounded-[1.35rem] border border-border bg-[#07111f]/90 p-4 text-sm shadow-[0_14px_34px_rgba(0,0,0,0.22)] transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/25 hover:bg-cyan-300/[0.055]"
+                className="group relative -mt-2 first:mt-0 rounded-[1.35rem] border border-border bg-card p-4 text-sm shadow-[0_14px_34px_rgba(0,0,0,0.22)] transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/25 hover:bg-cyan-300/[0.055]"
                 style={{ zIndex: recentStandups.length - index }}
               >
                 <div className="mb-2 flex items-center justify-between gap-3">
@@ -424,7 +424,7 @@ function StandupMetric({
   tone: "blue" | "green" | "amber" | "red";
 }) {
   const colors = {
-    blue: "border-blue-400/20 bg-blue-500/10 text-blue-600 dark:text-blue-300",
+    blue: "border-blue-400/20 bg-blue-500/10 text-blue-600 ",
     green: "border-success/20 bg-success/10 text-success",
     amber: "border-warning/20 bg-warning/10 text-warning",
     red: "border-primary/20 bg-primary/10 text-primary",
@@ -455,7 +455,7 @@ function SummaryBadge({
   tone: "blue" | "green" | "amber";
 }) {
   const colors = {
-    blue: "border-cyan-300/20 bg-cyan-300/10 text-cyan-100",
+    blue: "border-cyan-300/20 bg-cyan-300/10 text-foreground",
     green: "border-success/20 bg-success/10 text-success",
     amber: "border-warning/20 bg-warning/10 text-warning",
   };
@@ -475,7 +475,7 @@ function HistorySignal({ label, active, warning = false }: { label: string; acti
         active
           ? warning
             ? "border-warning/25 bg-warning/10 text-warning"
-            : "border-cyan-300/20 bg-cyan-300/10 text-cyan-100"
+            : "border-cyan-300/20 bg-cyan-300/10 text-foreground"
           : "border-border bg-card text-muted-foreground"
       }`}
     >
@@ -541,7 +541,7 @@ function StandupField({
         className="rounded-2xl border-border bg-card text-base leading-6"
       />
       <div className="mt-2 flex items-start gap-2 text-xs text-muted-foreground">
-        <Sparkles size={13} className="mt-0.5 shrink-0 text-cyan-200" />
+        <Sparkles size={13} className="mt-0.5 shrink-0 text-foreground" />
         <span>{hint}</span>
       </div>
     </div>

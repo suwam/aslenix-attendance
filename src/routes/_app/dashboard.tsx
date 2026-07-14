@@ -1714,7 +1714,7 @@ function NotificationPopup({
         {notification && (
           <div className="relative rounded-[28px] bg-gradient-to-br from-[#ff3b7f] via-[#7b61ff] to-[#4f9cff] p-[1px] shadow-[0_0_42px_rgba(123,97,255,.34)]">
             <div className="absolute inset-0 rounded-[28px] bg-gradient-to-br from-[#ff3b7f]/30 via-[#7b61ff]/25 to-[#4f9cff]/30 blur-2xl" />
-            <div className="relative overflow-hidden rounded-[27px] border border-border bg-[#080a14]/90 p-5 text-foreground backdrop-blur-2xl sm:p-7">
+            <div className="relative overflow-hidden rounded-[27px] border border-border bg-card p-5 text-foreground backdrop-blur-2xl sm:p-7">
               <div className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-[#4f9cff]/20 blur-3xl" />
               <div className="pointer-events-none absolute -bottom-28 -left-20 h-56 w-56 rounded-full bg-[#ff3b7f]/15 blur-3xl" />
 
@@ -2179,29 +2179,29 @@ function getActivityMeta(item: ActivityItem) {
   if (item.kind === "Attendance" && /checked out/i.test(item.text)) {
     return {
       icon: LogOut,
-      badgeClass: "border-pink-300/20 bg-pink-300/10 text-pink-100",
-      pillClass: "border-pink-300/20 bg-pink-300/10 text-pink-100",
+      badgeClass: "border-pink-300/20 bg-pink-300/10 text-foreground",
+      pillClass: "border-pink-300/20 bg-pink-300/10 text-foreground",
     };
   }
   if (item.kind === "Attendance") {
     return {
       icon: LogIn,
-      badgeClass: "border-emerald-300/20 bg-emerald-300/10 text-emerald-100",
-      pillClass: "border-emerald-300/20 bg-emerald-300/10 text-emerald-100",
+      badgeClass: "border-emerald-300/20 bg-emerald-300/10 text-foreground",
+      pillClass: "border-emerald-300/20 bg-emerald-300/10 text-foreground",
     };
   }
   if (item.kind === "Task") {
     return {
       icon: CheckCircle2,
-      badgeClass: "border-cyan-300/20 bg-cyan-300/10 text-cyan-100",
-      pillClass: "border-cyan-300/20 bg-cyan-300/10 text-cyan-100",
+      badgeClass: "border-cyan-300/20 bg-cyan-300/10 text-foreground",
+      pillClass: "border-cyan-300/20 bg-cyan-300/10 text-foreground",
     };
   }
   if (item.kind === "Standup") {
     return {
       icon: MessageSquare,
-      badgeClass: "border-violet-300/20 bg-violet-300/10 text-violet-100",
-      pillClass: "border-violet-300/20 bg-violet-300/10 text-violet-100",
+      badgeClass: "border-violet-300/20 bg-violet-300/10 text-foreground",
+      pillClass: "border-violet-300/20 bg-violet-300/10 text-foreground",
     };
   }
   return {

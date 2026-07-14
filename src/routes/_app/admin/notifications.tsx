@@ -178,7 +178,7 @@ function NotificationMetric({
   const colors = {
     red: "border-primary/20 bg-primary/10 text-primary",
     green: "border-success/20 bg-success/10 text-success",
-    blue: "border-blue-400/20 bg-blue-500/10 text-blue-600 dark:text-blue-300",
+    blue: "border-blue-400/20 bg-blue-500/10 text-blue-600 ",
   };
 
   return (
@@ -298,7 +298,7 @@ function NotificationTimelineItem({
                 {meta.label}
               </span>
               {!notification.is_read && (
-                <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-cyan-100">
+                <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-foreground">
                   New
                 </span>
               )}
@@ -381,7 +381,7 @@ function NotificationDetailDialog({
                         className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] ${
                           notification.is_read
                             ? "border-border bg-card text-muted-foreground"
-                            : "border-cyan-300/20 bg-cyan-300/10 text-cyan-100"
+                            : "border-cyan-300/20 bg-cyan-300/10 text-foreground"
                         }`}
                       >
                         {notification.is_read ? "Read" : "New"}

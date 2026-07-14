@@ -166,17 +166,17 @@ function AdminStandupsPage() {
       />
 
       <section className="grid gap-5 xl:grid-cols-[1.4fr_0.9fr]">
-        <GlassCard className="overflow-hidden border border-cyan-300/15 bg-[#07111f]/70 p-0 shadow-[0_0_44px_rgba(59,130,246,0.12)]">
+        <GlassCard className="overflow-hidden border border-cyan-300/15 bg-card p-0 shadow-[0_0_44px_rgba(59,130,246,0.12)]">
           <div className="relative p-6 sm:p-7">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_15%,rgba(56,189,248,0.18),transparent_32%),radial-gradient(circle_at_82%_20%,rgba(168,85,247,0.16),transparent_28%)]" />
             <div className="relative grid gap-6 lg:grid-cols-[1fr_0.82fr]">
               <div>
                 <div className="mb-4 flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10 text-cyan-200 shadow-[0_0_28px_rgba(34,211,238,0.2)]">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10 text-foreground shadow-[0_0_28px_rgba(34,211,238,0.2)]">
                     <Bot size={24} />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200/80">AI Daily Briefing</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-foreground">AI Daily Briefing</p>
                     <h2 className="text-2xl font-bold text-foreground">Executive standup pulse</h2>
                   </div>
                 </div>
@@ -188,7 +188,7 @@ function AdminStandupsPage() {
                   <BriefingPoint label={blockerCount > 2 ? "Manager attention recommended" : "No critical risks identified"} tone={blockerCount > 2 ? "amber" : "green"} />
                 </div>
                 <div className="mt-5 rounded-2xl border border-border bg-card p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-fuchsia-600 dark:text-fuchsia-200/80">AI Insights</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-fuchsia-600 ">AI Insights</p>
                   <p className="mt-2 text-lg font-semibold leading-relaxed text-foreground">
                     {makeAiInsight(signals.length, blockerCount, executionConfidence)}
                   </p>
@@ -201,7 +201,7 @@ function AdminStandupsPage() {
                     <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Execution Confidence</p>
                     <div className="mt-2 text-5xl font-black text-foreground tabular-nums">{executionConfidence}%</div>
                   </div>
-                  <Gauge className="text-cyan-200" size={34} />
+                  <Gauge className="text-foreground" size={34} />
                 </div>
                 <div className="mt-5 h-3 rounded-full bg-card">
                   <div
@@ -219,13 +219,13 @@ function AdminStandupsPage() {
           </div>
         </GlassCard>
 
-        <GlassCard className="border border-fuchsia-300/15 bg-[#09101f]/70 shadow-[0_0_38px_rgba(168,85,247,0.12)]">
+        <GlassCard className="border border-fuchsia-300/15 bg-card shadow-[0_0_38px_rgba(168,85,247,0.12)]">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-fuchsia-200/80">AI Recommendation Center</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-foreground">AI Recommendation Center</p>
               <h2 className="mt-1 text-2xl font-bold text-foreground">Suggested actions</h2>
             </div>
-            <Lightbulb className="text-amber-200" />
+            <Lightbulb className="text-foreground" />
           </div>
           <div className="mt-5 space-y-3">
             {buildRecommendations(signals, blockerCount).map((item) => (
@@ -235,7 +235,7 @@ function AdminStandupsPage() {
               >
                 <div className="mt-0.5 h-2.5 w-2.5 rounded-full bg-gradient-to-r from-cyan-300 to-fuchsia-300 shadow-[0_0_14px_rgba(34,211,238,0.65)]" />
                 <p className="text-sm leading-relaxed text-foreground">{item}</p>
-                <ChevronRight className="ml-auto shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-cyan-200" size={16} />
+                <ChevronRight className="ml-auto shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-foreground" size={16} />
               </div>
             ))}
           </div>
@@ -252,7 +252,7 @@ function AdminStandupsPage() {
       </section>
 
       <div className="relative mt-5 max-w-md">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-100/60" />
+        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground" />
         <Input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
@@ -263,20 +263,20 @@ function AdminStandupsPage() {
 
       {loading ? (
         <GlassCard className="mt-5 flex justify-center py-20">
-          <Loader2 className="animate-spin text-cyan-300" />
+          <Loader2 className="animate-spin text-foreground" />
         </GlassCard>
       ) : (
         <>
           <section className="mt-5 grid items-stretch gap-5 xl:h-[40rem] xl:grid-cols-[1.45fr_0.85fr]">
-            <GlassCard className="flex h-full min-h-0 flex-col overflow-hidden border border-[rgba(0,180,255,0.15)] bg-[#071827]/80 shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
+            <GlassCard className="flex h-full min-h-0 flex-col overflow-hidden border border-[rgba(0,180,255,0.15)] bg-card shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
               <div className="mb-5 flex shrink-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200/85">Team Standup Feed</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-foreground">Team Standup Feed</p>
                   <div className="mt-1 flex items-center gap-2">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10 text-cyan-200 shadow-[0_0_18px_rgba(34,211,238,0.18)]">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10 text-foreground shadow-[0_0_18px_rgba(34,211,238,0.18)]">
                       <BrainCircuit size={15} />
                     </span>
-                    <h2 className="text-xl font-semibold text-slate-100">Progress Intelligence</h2>
+                    <h2 className="text-xl font-semibold text-foreground">Progress Intelligence</h2>
                   </div>
                 </div>
                 <span className="w-fit rounded-full border border-cyan-300/25 bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-50 shadow-[0_0_18px_rgba(34,211,238,0.12)]">
@@ -295,7 +295,7 @@ function AdminStandupsPage() {
                 ))}
                 {signals.length === 0 && (
                   <div className="rounded-3xl border border-dashed border-cyan-300/20 bg-cyan-300/5 p-10 text-center">
-                    <MessageSquareText className="mx-auto text-cyan-200" size={30} />
+                    <MessageSquareText className="mx-auto text-foreground" size={30} />
                     <h3 className="mt-3 text-lg font-bold text-foreground">No standups found for this date</h3>
                     <p className="mt-1 text-sm text-muted-foreground">Submitted standups will appear as AI intelligence cards here.</p>
                   </div>
@@ -304,13 +304,13 @@ function AdminStandupsPage() {
             </GlassCard>
 
             <div className="min-h-0 space-y-5 overflow-y-auto pr-1 [scrollbar-color:rgba(103,232,249,0.28)_rgba(255,255,255,0.05)] [scrollbar-width:thin]">
-              <GlassCard className="border border-amber-300/15 bg-[#0b1020]/75 shadow-[0_0_32px_rgba(251,191,36,0.08)]">
+              <GlassCard className="border border-amber-300/15 bg-card shadow-[0_0_32px_rgba(251,191,36,0.08)]">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-100/80">AI Risk & Blocker Analysis</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-foreground">AI Risk & Blocker Analysis</p>
                     <h2 className="mt-1 text-xl font-bold text-foreground">Operational signals</h2>
                   </div>
-                  <AlertTriangle className="text-amber-200" />
+                  <AlertTriangle className="text-foreground" />
                 </div>
                 <div className="mt-5 space-y-3">
                   {risks.map((risk) => (
@@ -365,10 +365,10 @@ function AdminStandupsPage() {
                       background: `conic-gradient(from 220deg, #22d3ee 0deg, #8b5cf6 ${submissionRate * 3.6}deg, rgba(255,255,255,0.08) ${submissionRate * 3.6}deg)`,
                     }}
                   />
-                  <div className="relative grid h-36 w-36 place-items-center rounded-full bg-[#070d1a] text-center">
+                  <div className="relative grid h-36 w-36 place-items-center rounded-full bg-card text-center">
                     <div>
                       <div className="text-5xl font-black text-foreground">{submissionRate}%</div>
-                      <div className="mt-1 text-xs uppercase tracking-[0.2em] text-cyan-100/70">Submitted</div>
+                      <div className="mt-1 text-xs uppercase tracking-[0.2em] text-foreground">Submitted</div>
                     </div>
                   </div>
                 </div>
@@ -388,10 +388,10 @@ function AdminStandupsPage() {
             </AnalyticsCard>
           </section>
 
-          <GlassCard className="mt-5 border border-fuchsia-300/10 bg-[#070d1a]/70">
+          <GlassCard className="mt-5 border border-fuchsia-300/10 bg-card/70">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-fuchsia-200/80">Team Workload Heatmap</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-foreground">Team Workload Heatmap</p>
                 <h2 className="text-2xl font-bold text-foreground">Weekly intensity map</h2>
               </div>
               <span className="text-sm text-muted-foreground">AI compares submitted standups, blockers, and work hours.</span>
@@ -399,7 +399,7 @@ function AdminStandupsPage() {
             <div className="mt-6 grid gap-3">
               {heatmap.map((item) => (
                 <div key={item.day} className="grid grid-cols-[3rem_1fr_4rem] items-center gap-4">
-                  <span className="text-sm font-semibold text-slate-300">{item.day}</span>
+                  <span className="text-sm font-semibold text-foreground">{item.day}</span>
                   <div className="flex h-8 items-center gap-1 rounded-full border border-border bg-card px-2">
                     {Array.from({ length: 10 }).map((_, index) => (
                       <div
@@ -442,15 +442,15 @@ function AiKpiCard({
   sparkline: number[];
 }) {
   const toneClass = {
-    cyan: "from-cyan-300 to-blue-500 text-cyan-100 shadow-cyan-500/20",
-    blue: "from-blue-300 to-cyan-500 text-blue-100 shadow-blue-500/20",
-    purple: "from-fuchsia-300 to-violet-500 text-fuchsia-100 shadow-fuchsia-500/20",
-    amber: "from-amber-200 to-orange-500 text-amber-100 shadow-amber-500/20",
-    green: "from-emerald-300 to-cyan-500 text-emerald-100 shadow-emerald-500/20",
+    cyan: "from-cyan-300 to-blue-500 text-foreground shadow-cyan-500/20",
+    blue: "from-blue-300 to-cyan-500 text-foreground shadow-blue-500/20",
+    purple: "from-fuchsia-300 to-violet-500 text-foreground shadow-fuchsia-500/20",
+    amber: "from-amber-200 to-orange-500 text-foreground shadow-amber-500/20",
+    green: "from-emerald-300 to-cyan-500 text-foreground shadow-emerald-500/20",
   }[tone];
 
   return (
-    <GlassCard className="group overflow-hidden border border-border bg-[#07111f]/70 p-4 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/30 hover:shadow-[0_0_34px_rgba(34,211,238,0.14)]">
+    <GlassCard className="group overflow-hidden border border-border bg-card p-4 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/30 hover:shadow-[0_0_34px_rgba(34,211,238,0.14)]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
@@ -462,7 +462,7 @@ function AiKpiCard({
       </div>
       <MiniSparkline values={sparkline} />
       <div className="mt-3 flex items-center justify-between text-xs">
-        <span className="font-bold text-emerald-200">{trend}</span>
+        <span className="font-bold text-foreground">{trend}</span>
         <span className="text-muted-foreground">{compare}</span>
       </div>
     </GlassCard>
@@ -475,7 +475,7 @@ function StandupEmployeeCard({ row, selected, onSelect }: { row: EmployeeSignal;
       type="button"
       onClick={onSelect}
       className={cn(
-        "group w-full rounded-3xl border bg-[#0B2238]/72 p-5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/35 hover:bg-[#0D2942]/84 hover:shadow-[0_18px_42px_rgba(0,0,0,0.28),0_0_30px_rgba(34,211,238,0.12)]",
+        "group w-full rounded-3xl border bg-card p-5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/35 hover:bg-card hover:shadow-[0_18px_42px_rgba(0,0,0,0.28),0_0_30px_rgba(34,211,238,0.12)]",
         selected ? "border-cyan-300/50 shadow-[0_0_42px_rgba(34,211,238,0.14)]" : "border-[rgba(0,180,255,0.15)]",
       )}
     >
@@ -484,10 +484,10 @@ function StandupEmployeeCard({ row, selected, onSelect }: { row: EmployeeSignal;
           <EmployeeAvatar profile={row.profile} size="lg" />
           <div className="min-w-0">
             <h3 className="truncate text-xl font-semibold leading-tight text-foreground">{getEmployeeName(row)}</h3>
-            <p className="mt-1 truncate text-base text-slate-400">{row.profile?.department || row.profile?.email || "Team member"}</p>
+            <p className="mt-1 truncate text-base text-foreground">{row.profile?.department || row.profile?.email || "Team member"}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <StatusPill status={row.status} />
-              <span className="rounded-full border border-violet-300/30 bg-violet-500/15 px-3 py-1 text-xs font-semibold text-violet-100 shadow-[0_0_16px_rgba(139,92,246,0.2)]">{row.badge}</span>
+              <span className="rounded-full border border-violet-300/30 bg-violet-500/15 px-3 py-1 text-xs font-semibold text-foreground shadow-[0_0_16px_rgba(139,92,246,0.2)]">{row.badge}</span>
             </div>
           </div>
         </div>
@@ -495,20 +495,20 @@ function StandupEmployeeCard({ row, selected, onSelect }: { row: EmployeeSignal;
         <div className="grid min-w-0 gap-3 sm:grid-cols-2">
           <StandupSnippet label="Today" text={row.yesterday || "No completed work update shared."} />
           <StandupSnippet label="Tomorrow" text={row.today || "No execution plan shared."} />
-          <div className="rounded-2xl border border-[rgba(0,180,255,0.15)] bg-[#081B2D]/85 p-4">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-slate-400">Hours</p>
+          <div className="rounded-2xl border border-[rgba(0,180,255,0.15)] bg-card p-4">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-foreground">Hours</p>
             <p className="mt-2 text-4xl font-black leading-none text-foreground tabular-nums">{formatWorkHours(row.hours)}</p>
           </div>
-          <div className="rounded-2xl border border-[rgba(0,180,255,0.15)] bg-[#081B2D]/85 p-4 sm:col-span-2 xl:col-span-1">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-cyan-100/70">AI Insight</p>
-            <p className="mt-2 line-clamp-4 text-[15px] leading-6 text-slate-100">{makeEmployeeInsight(row)}</p>
+          <div className="rounded-2xl border border-[rgba(0,180,255,0.15)] bg-card p-4 sm:col-span-2 xl:col-span-1">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-foreground">AI Insight</p>
+            <p className="mt-2 line-clamp-4 text-[15px] leading-6 text-foreground">{makeEmployeeInsight(row)}</p>
           </div>
         </div>
 
         <div className="rounded-3xl border border-cyan-300/20 bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.18),transparent_42%),linear-gradient(180deg,rgba(139,92,246,0.14),rgba(11,34,56,0.86))] p-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_0_24px_rgba(34,211,238,0.1)]">
-          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-slate-400">Score</p>
+          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-foreground">Score</p>
           <p className="mt-1 text-5xl font-black leading-none text-foreground">{row.score}</p>
-          <p className="mt-2 text-xs font-semibold text-cyan-100/80">AI productivity</p>
+          <p className="mt-2 text-xs font-semibold text-foreground">AI productivity</p>
         </div>
       </div>
     </button>
@@ -518,18 +518,18 @@ function StandupEmployeeCard({ row, selected, onSelect }: { row: EmployeeSignal;
 function EmployeeIntelligencePanel({ row }: { row?: EmployeeSignal }) {
   if (!row) {
     return (
-      <GlassCard className="border border-cyan-300/10 bg-[#0b1020]/75">
+      <GlassCard className="border border-cyan-300/10 bg-card">
         <p className="text-sm text-muted-foreground">Select an employee to open intelligence details.</p>
       </GlassCard>
     );
   }
 
   return (
-    <GlassCard className="border border-cyan-300/15 bg-[#0b1020]/75 shadow-[0_0_34px_rgba(34,211,238,0.1)]">
+    <GlassCard className="border border-cyan-300/15 bg-card shadow-[0_0_34px_rgba(34,211,238,0.1)]">
       <div className="flex items-start gap-3">
         <EmployeeAvatar profile={row.profile} size="lg" />
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200/80">Employee Intelligence Drawer</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-foreground">Employee Intelligence Drawer</p>
           <h2 className="mt-1 truncate text-xl font-bold text-foreground">{getEmployeeName(row)}</h2>
           <p className="text-sm text-muted-foreground">{row.profile?.department || "Team member"}</p>
         </div>
@@ -542,7 +542,7 @@ function EmployeeIntelligencePanel({ row }: { row?: EmployeeSignal }) {
       </div>
 
       <div className="mt-5 rounded-2xl border border-border bg-card p-4">
-        <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-600 dark:text-fuchsia-100/70">Recent standup</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-600 ">Recent standup</p>
         <p className="mt-2 text-sm leading-relaxed text-foreground">{row.yesterday || "No completed work update shared."}</p>
         <p className="mt-3 text-xs text-muted-foreground">
           Updated {formatNepaliDate(row.updated_at, "DD MMM YYYY")} BS · {format(new Date(row.updated_at), "HH:mm")}
@@ -560,10 +560,10 @@ function EmployeeIntelligencePanel({ row }: { row?: EmployeeSignal }) {
 
 function AnalyticsCard({ title, icon: Icon, children }: { title: string; icon: typeof Activity; children: React.ReactNode }) {
   return (
-    <GlassCard className="border border-cyan-300/10 bg-[#070d1a]/70">
+    <GlassCard className="border border-cyan-300/10 bg-card/70">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-xl font-bold text-foreground">{title}</h2>
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10 text-cyan-200">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-300/10 text-foreground">
           <Icon size={19} />
         </div>
       </div>
@@ -617,19 +617,19 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
 
 function StandupSnippet({ label, text }: { label: string; text: string }) {
   return (
-    <div className="min-h-[6rem] rounded-2xl border border-[rgba(0,180,255,0.15)] bg-[#081B2D]/85 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
-      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-slate-400">{label}</p>
-      <p className="mt-2 line-clamp-3 text-[15px] leading-6 text-slate-100">{text}</p>
+    <div className="min-h-[6rem] rounded-2xl border border-[rgba(0,180,255,0.15)] bg-card p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
+      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-foreground">{label}</p>
+      <p className="mt-2 line-clamp-3 text-[15px] leading-6 text-foreground">{text}</p>
     </div>
   );
 }
 
 function RiskCard({ title, text, recommendation, tone }: { title: string; text: string; recommendation: string; tone: "red" | "amber" | "blue" | "green" }) {
   const color = {
-    red: "border-red-300/25 bg-red-500/10 text-red-100",
-    amber: "border-amber-300/25 bg-amber-400/10 text-amber-100",
-    blue: "border-cyan-300/25 bg-cyan-400/10 text-cyan-100",
-    green: "border-emerald-300/25 bg-emerald-400/10 text-emerald-100",
+    red: "border-red-300/25 bg-red-500/10 text-foreground",
+    amber: "border-amber-300/25 bg-amber-400/10 text-foreground",
+    blue: "border-cyan-300/25 bg-cyan-400/10 text-foreground",
+    green: "border-emerald-300/25 bg-emerald-400/10 text-foreground",
   }[tone];
 
   return (
@@ -638,7 +638,7 @@ function RiskCard({ title, text, recommendation, tone }: { title: string; text: 
         <AlertTriangle size={16} />
         {title}
       </div>
-      <p className="mt-2 text-sm leading-relaxed text-slate-200">{text}</p>
+      <p className="mt-2 text-sm leading-relaxed text-foreground">{text}</p>
       <p className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] opacity-80">AI Recommendation</p>
       <p className="mt-1 text-sm text-foreground">{recommendation}</p>
     </div>
@@ -666,7 +666,7 @@ function IntelScore({ label, value }: { label: string; value: number }) {
 function CoachingLine({ icon: Icon, label, text }: { icon: typeof Target; label: string; text: string }) {
   return (
     <div className="flex gap-3 rounded-2xl border border-border bg-card p-3">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-300/10 text-cyan-200">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-300/10 text-foreground">
         <Icon size={17} />
       </div>
       <div>
@@ -701,8 +701,8 @@ function EmployeeAvatar({ profile, size = "md" }: { profile?: StandupRow["profil
 function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-2xl border border-cyan-300/20 bg-[#050816]/95 p-3 shadow-2xl backdrop-blur-xl">
-      <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-cyan-100">{label}</p>
+    <div className="rounded-2xl border border-cyan-300/20 bg-card p-3 shadow-2xl backdrop-blur-xl">
+      <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-foreground">{label}</p>
       {payload.map((item: any) => (
         <div key={item.dataKey} className="flex items-center justify-between gap-6 text-sm">
           <span className="capitalize text-muted-foreground">{item.dataKey}</span>

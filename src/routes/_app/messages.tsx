@@ -606,33 +606,33 @@ function MessagesPage() {
   ).length;
 
   return (
-    <div className="-mx-4 -mb-4 mt-0 sm:mx-0 sm:my-0 h-full flex flex-col flex-1 min-h-0 overflow-hidden bg-[#0B1020] text-foreground shadow-2xl sm:rounded-[30px] sm:border sm:border-border sm:p-4 lg:p-5">
+    <div className="-mx-4 -mb-4 mt-0 sm:mx-0 sm:my-0 h-full flex flex-col flex-1 min-h-0 overflow-hidden bg-card text-foreground shadow-2xl sm:rounded-[30px] sm:border sm:border-border sm:p-4 lg:p-5">
       <div className="hidden gap-3 pb-4 lg:grid lg:grid-cols-3">
         <ChatMetric icon={MessageCircle} label={isChatAdmin ? "Total conversations" : "Inbox"} value={isChatAdmin ? conversations.length : "Official Channel"} subtitle={isChatAdmin ? "+18 today" : "Secure messaging"} tone="cyan" />
         <ChatMetric icon={Users} label={isChatAdmin ? "Waiting for reply" : "Channel status"} value={isChatAdmin ? waitingForReply : "Active"} subtitle={isChatAdmin ? "3 urgent" : "Auditable history"} tone="violet" />
         <ChatMetric icon={ShieldCheck} label="Unread messages" value={totalUnread} subtitle={totalUnread ? "High priority" : "All caught up"} tone="pink" />
       </div>
 
-      <div className="flex flex-1 min-h-0 overflow-hidden bg-[#0B1020] sm:rounded-[26px] sm:border sm:border-border">
-        <aside className={`${mobileChatOpen ? "hidden" : "flex"} w-full shrink-0 flex-col bg-[#121827] md:flex md:w-[340px] md:border-r md:border-border xl:w-[380px]`}>
+      <div className="flex flex-1 min-h-0 overflow-hidden bg-card sm:rounded-[26px] sm:border sm:border-border">
+        <aside className={`${mobileChatOpen ? "hidden" : "flex"} w-full shrink-0 flex-col bg-card md:flex md:w-[340px] md:border-r md:border-border xl:w-[380px]`}>
           <div className="border-b border-border p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="flex items-center gap-2 text-lg font-black"><MessageCircle className="text-cyan-300" size={21} /> Messages</div>
+                <div className="flex items-center gap-2 text-lg font-black"><MessageCircle className="text-foreground" size={21} /> Messages</div>
                 <p className="mt-1 text-xs text-muted-foreground">{isChatAdmin ? "Admin–employee workspace" : "Your secure Admin / HR channel"}</p>
               </div>
               {totalUnread > 0 && <span className="rounded-full bg-gradient-to-r from-pink-500 to-violet-500 px-2.5 py-1 text-xs font-black">{totalUnread}</span>}
             </div>
             {isChatAdmin && (
               <>
-                <label className="mt-4 flex items-center gap-2 rounded-2xl border border-border bg-[#182233] px-3 shadow-[inset_0_1px_0_rgba(255,255,255,.04)] transition focus-within:border-cyan-300/45 focus-within:shadow-[0_0_28px_rgba(0,194,255,.12)]">
+                <label className="mt-4 flex items-center gap-2 rounded-2xl border border-border bg-card px-3 shadow-[inset_0_1px_0_rgba(255,255,255,.04)] transition focus-within:border-cyan-300/45 focus-within:shadow-[0_0_28px_rgba(0,194,255,.12)]">
                   <Search size={16} className="text-muted-foreground" />
                   <input value={employeeSearch} onChange={(event) => setEmployeeSearch(event.target.value)} placeholder="Search employees, departments or messages..." className="h-11 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground" />
                   {employeeSearch && <button onClick={() => setEmployeeSearch("")} aria-label="Clear search"><X size={15} /></button>}
                 </label>
                 <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
                   {(["recent", "unread", "archived", "pinned", "all"] as const).map((filter) => (
-                    <button key={filter} onClick={() => setConversationFilter(filter)} className={`rounded-full border px-3 py-1.5 text-xs font-bold capitalize transition active:scale-95 ${conversationFilter === filter ? "border-cyan-300/35 bg-cyan-300/15 text-cyan-100 shadow-[0_0_18px_rgba(0,194,255,.12)]" : "border-border bg-card text-muted-foreground hover:bg-[#22304A] hover:text-muted-foreground"}`}>
+                    <button key={filter} onClick={() => setConversationFilter(filter)} className={`rounded-full border px-3 py-1.5 text-xs font-bold capitalize transition active:scale-95 ${conversationFilter === filter ? "border-cyan-300/35 bg-cyan-300/15 text-foreground shadow-[0_0_18px_rgba(0,194,255,.12)]" : "border-border bg-card text-muted-foreground hover:bg-card hover:text-muted-foreground"}`}>
                       {filter}
                     </button>
                   ))}
@@ -647,18 +647,18 @@ function MessagesPage() {
                 const unread = conversation ? unreadByConversation.get(conversation.id) ?? 0 : 0;
                 const online = presences.some((item) => item.user_id === employee.user_id && item.is_online);
                 return (
-                  <button key={employee.user_id} onClick={() => { setSelectedEmployeeId(employee.user_id); setMobileChatOpen(true); }} className={`group flex w-full gap-3 border-b border-border p-4 text-left transition duration-200 hover:bg-[#22304A]/70 ${selectedEmployeeId === employee.user_id ? "bg-gradient-to-r from-cyan-400/15 via-[#182233] to-transparent shadow-[inset_3px_0_0_rgba(0,194,255,.9)]" : unread > 0 ? "bg-cyan-300/[0.045]" : ""}`}>
+                  <button key={employee.user_id} onClick={() => { setSelectedEmployeeId(employee.user_id); setMobileChatOpen(true); }} className={`group flex w-full gap-3 border-b border-border p-4 text-left transition duration-200 hover:bg-card/70 ${selectedEmployeeId === employee.user_id ? "bg-gradient-to-r from-cyan-400/15 via-[#182233] to-transparent shadow-[inset_3px_0_0_rgba(0,194,255,.9)]" : unread > 0 ? "bg-cyan-300/[0.045]" : ""}`}>
                     <Avatar profile={employee} online={online} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <strong className={`truncate text-sm ${unread > 0 ? "text-foreground" : "text-muted-foreground"}`}>{employee.full_name || "Employee"}</strong>
-                        {conversation?.pinned_by_admin && <Pin size={12} className="shrink-0 text-cyan-300" />}
+                        {conversation?.pinned_by_admin && <Pin size={12} className="shrink-0 text-foreground" />}
                         <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">{lastMessage ? formatMessageListTime(lastMessage.created_at) : "New"}</span>
                       </div>
-                      <div className="mt-0.5 truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-100/35">{employee.department || employee.position || "Team member"}</div>
+                      <div className="mt-0.5 truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground">{employee.department || employee.position || "Team member"}</div>
                       <div className="mt-1 flex items-center gap-2">
                         <p className={`truncate text-xs ${unread > 0 ? "font-semibold text-muted-foreground" : "text-muted-foreground"}`}>{lastMessage?.body || lastMessage?.attachment_name || employee.position || "Start a conversation"}</p>
-                        {peerIsTyping && selectedEmployeeId === employee.user_id && <span className="shrink-0 text-[10px] font-bold text-cyan-300">typing…</span>}
+                        {peerIsTyping && selectedEmployeeId === employee.user_id && <span className="shrink-0 text-[10px] font-bold text-foreground">typing…</span>}
                         {unread > 0 && <span className="ml-auto flex h-5 min-w-5 shrink-0 animate-pulse items-center justify-center rounded-full bg-pink-500 px-1 text-[10px] font-black shadow-[0_0_18px_rgba(236,72,153,.35)]">{unread > 99 ? "99+" : unread}</span>}
                       </div>
                     </div>
@@ -677,7 +677,7 @@ function MessagesPage() {
                       setSelectedOfficialId(official.user_id);
                       setMobileChatOpen(true);
                     }}
-                    className={`group flex w-full gap-3 border-b border-border p-4 text-left transition duration-200 hover:bg-[#22304A]/60 ${
+                    className={`group flex w-full gap-3 border-b border-border p-4 text-left transition duration-200 hover:bg-card/60 ${
                       isSelected
                         ? "bg-gradient-to-r from-cyan-400/15 via-[#182233] to-transparent shadow-[inset_3px_0_0_rgba(0,194,255,.9)]"
                         : unread > 0
@@ -693,10 +693,10 @@ function MessagesPage() {
                         </strong>
                         <span className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.08em] ${
                           official.role === "super_admin"
-                            ? "border border-pink-500/20 bg-pink-500/10 text-pink-300"
+                            ? "border border-pink-500/20 bg-pink-500/10 text-foreground"
                             : official.role === "hr_manager"
                             ? "border border-purple-500/20 bg-purple-500/10 text-purple-300"
-                            : "border border-cyan-300/15 bg-cyan-300/10 text-cyan-100/75"
+                            : "border border-cyan-300/15 bg-cyan-300/10 text-foreground"
                         }`}>
                           {official.role === "super_admin" ? "S-Admin" : official.role === "hr_manager" ? "HR" : "Admin"}
                         </span>
@@ -706,14 +706,14 @@ function MessagesPage() {
                           </span>
                         )}
                       </div>
-                      <div className="mt-0.5 truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-100/35">
+                      <div className="mt-0.5 truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground">
                         {official.position || "Administrator"}
                       </div>
                       <div className="mt-1 flex items-center gap-2">
                         <p className={`truncate text-xs ${unread > 0 ? "font-semibold text-muted-foreground" : "text-muted-foreground"}`}>
                           {lastMessage?.body || lastMessage?.attachment_name || "Start the conversation"}
                         </p>
-                        {isTyping && <span className="shrink-0 text-[10px] font-bold text-cyan-300 animate-pulse">typing…</span>}
+                        {isTyping && <span className="shrink-0 text-[10px] font-bold text-foreground animate-pulse">typing…</span>}
                         {unread > 0 && (
                           <span className="ml-auto flex h-5 min-w-5 shrink-0 animate-pulse items-center justify-center rounded-full bg-pink-500 px-1 text-[10px] font-black shadow-[0_0_18px_rgba(236,72,153,.35)]">
                             {unread}
@@ -732,13 +732,13 @@ function MessagesPage() {
         <section className={`${mobileChatOpen ? "flex" : "hidden"} w-full min-w-0 flex-1 flex-col overflow-x-hidden bg-[radial-gradient(circle_at_70%_0%,rgba(0,194,255,.08),transparent_30%),#0B1020] md:flex`}>
           {(isChatAdmin ? selectedEmployee : selectedOfficial) ? (
             <>
-              <header className="flex h-16 shrink-0 items-center gap-2 border-b border-border bg-[#121827]/95 px-2 backdrop-blur-xl sm:h-[76px] sm:gap-3 sm:px-4">
+              <header className="flex h-16 shrink-0 items-center gap-2 border-b border-border bg-card/95 px-2 backdrop-blur-xl sm:h-[76px] sm:gap-3 sm:px-4">
                 <button onClick={() => setMobileChatOpen(false)} className="rounded-lg p-2 hover:bg-card md:hidden" aria-label="Back to conversations"><ArrowLeft size={19} /></button>
                 <Avatar profile={isChatAdmin ? selectedEmployee : selectedOfficial} online={Boolean(peerPresence?.is_online)} admin={!isChatAdmin} compact />
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2"><h2 className="truncate text-sm font-black sm:text-base">{isChatAdmin ? selectedEmployee?.full_name : selectedOfficial?.full_name || "Aslenix Admin"}</h2>{!isChatAdmin && <ShieldCheck size={14} className="text-cyan-300" />}</div>
+                  <div className="flex items-center gap-2"><h2 className="truncate text-sm font-black sm:text-base">{isChatAdmin ? selectedEmployee?.full_name : selectedOfficial?.full_name || "Aslenix Admin"}</h2>{!isChatAdmin && <ShieldCheck size={14} className="text-foreground" />}</div>
                   <div className="mt-0.5 truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{isChatAdmin ? selectedEmployee?.department || selectedEmployee?.position || "Employee" : selectedOfficial?.position || "Official support channel"}</div>
-                  <p className={`truncate text-[11px] ${peerIsTyping ? "text-cyan-300" : "text-muted-foreground"}`}>
+                  <p className={`truncate text-[11px] ${peerIsTyping ? "text-foreground" : "text-muted-foreground"}`}>
                     {peerIsTyping ? "typing…" : peerPresence?.is_online ? "Online" : peerPresence?.last_seen_at ? `Last seen ${formatDistanceToNow(new Date(peerPresence.last_seen_at), { addSuffix: true })}` : (isChatAdmin ? selectedEmployee?.position : selectedOfficial?.position || "Support channel")}
                   </p>
                 </div>
@@ -747,18 +747,18 @@ function MessagesPage() {
                   <input value={messageSearch} onChange={(event) => setMessageSearch(event.target.value)} placeholder="Search messages" className="h-9 w-32 bg-transparent text-xs outline-none 2xl:w-44" />
                 </label>
                 <input type="date" value={dateSearch} onChange={(event) => setDateSearch(event.target.value)} className="hidden h-9 rounded-xl border border-border bg-card px-2 text-xs text-muted-foreground outline-none 2xl:block [color-scheme:dark]" aria-label="Search messages by date" />
-                <button className="hidden rounded-xl border border-border bg-card p-2 text-muted-foreground transition hover:bg-[#22304A] hover:text-cyan-100 lg:inline-flex" aria-label="Voice call"><Phone size={18} /></button>
-                <button className="hidden rounded-xl border border-border bg-card p-2 text-muted-foreground transition hover:bg-[#22304A] hover:text-cyan-100 lg:inline-flex" aria-label="Video call"><Video size={18} /></button>
+                <button className="hidden rounded-xl border border-border bg-card p-2 text-muted-foreground transition hover:bg-card hover:text-foreground lg:inline-flex" aria-label="Voice call"><Phone size={18} /></button>
+                <button className="hidden rounded-xl border border-border bg-card p-2 text-muted-foreground transition hover:bg-card hover:text-foreground lg:inline-flex" aria-label="Video call"><Video size={18} /></button>
                 {isChatAdmin && currentConversation && (
                   <div className="flex items-center gap-1">
-                    <button onClick={() => setConversationFlag("pin")} title={currentConversation.pinned_by_admin ? "Unpin" : "Pin conversation"} className="rounded-lg p-2 text-muted-foreground hover:bg-card hover:text-cyan-200">{currentConversation.pinned_by_admin ? <PinOff size={18} /> : <Pin size={18} />}</button>
-                    <button onClick={() => setConversationFlag("archive")} title={currentConversation.archived_by_admin ? "Restore" : "Archive conversation"} className="rounded-lg p-2 text-muted-foreground hover:bg-card hover:text-violet-200">{currentConversation.archived_by_admin ? <ArchiveRestore size={18} /> : <Archive size={18} />}</button>
+                    <button onClick={() => setConversationFlag("pin")} title={currentConversation.pinned_by_admin ? "Unpin" : "Pin conversation"} className="rounded-lg p-2 text-muted-foreground hover:bg-card hover:text-foreground">{currentConversation.pinned_by_admin ? <PinOff size={18} /> : <Pin size={18} />}</button>
+                    <button onClick={() => setConversationFlag("archive")} title={currentConversation.archived_by_admin ? "Restore" : "Archive conversation"} className="rounded-lg p-2 text-muted-foreground hover:bg-card hover:text-foreground">{currentConversation.archived_by_admin ? <ArchiveRestore size={18} /> : <Archive size={18} />}</button>
                   </div>
                 )}
                 <button
                   type="button"
                   onClick={() => setShowInfoPanel((value) => !value)}
-                  className={`rounded-lg p-2 transition ${showInfoPanel ? "bg-cyan-300/10 text-cyan-100" : "text-muted-foreground hover:bg-card"}`}
+                  className={`rounded-lg p-2 transition ${showInfoPanel ? "bg-cyan-300/10 text-foreground" : "text-muted-foreground hover:bg-card"}`}
                   aria-label="Conversation information"
                   aria-expanded={showInfoPanel}
                 >
@@ -778,17 +778,17 @@ function MessagesPage() {
                       <button
                         type="button"
                         onClick={() => setMessageLimit((prev) => prev + 50)}
-                        className="rounded-full border border-border bg-card px-4 py-1.5 text-xs font-bold text-muted-foreground transition hover:bg-[#22304A] hover:text-foreground cursor-pointer"
+                        className="rounded-full border border-border bg-card px-4 py-1.5 text-xs font-bold text-muted-foreground transition hover:bg-card hover:text-foreground cursor-pointer"
                       >
                         Load Older Messages
                       </button>
                     </div>
                   )}
                   <div className="mx-auto mb-5 flex max-w-xl items-start gap-3 rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.07] px-4 py-3 text-left shadow-[0_18px_45px_rgba(0,194,255,.06)]">
-                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-cyan-300/10 text-cyan-200"><ShieldCheck size={17} /></span>
+                    <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-cyan-300/10 text-foreground"><ShieldCheck size={17} /></span>
                     <div>
                       <div className="text-xs font-black text-cyan-50">Secure Internal Conversation</div>
-                      <p className="mt-1 text-[11px] leading-5 text-cyan-100/55">Messages are encrypted. Conversation history cannot be edited or deleted.</p>
+                      <p className="mt-1 text-[11px] leading-5 text-foreground">Messages are encrypted. Conversation history cannot be edited or deleted.</p>
                     </div>
                   </div>
                   {loading ? <MessageSkeleton /> : visibleMessages.length ? visibleMessages.map((message, index) => {
@@ -814,28 +814,28 @@ function MessagesPage() {
                 </div>
               </div>
 
-              <form onSubmit={sendMessage} className="relative w-full max-w-full shrink-0 overflow-hidden border-t border-border bg-[#121827]/95 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-18px_50px_rgba(0,0,0,.22)] backdrop-blur-xl sm:p-4">
+              <form onSubmit={sendMessage} className="relative w-full max-w-full shrink-0 overflow-hidden border-t border-border bg-card/95 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-18px_50px_rgba(0,0,0,.22)] backdrop-blur-xl sm:p-4">
                 {replyingTo && (
                   <div className="mx-auto mb-2 flex max-w-4xl items-center justify-between gap-3 border-l-2 border-cyan-400 bg-cyan-300/[0.04] px-4 py-2 text-xs rounded-r-xl animate-[fade-in_.15s_ease-out]">
                     <div className="min-w-0 flex-1">
-                      <span className="font-bold text-cyan-300">Replying to {replyingTo.sender_is_admin ? "Admin" : "Teammate"}:</span>
+                      <span className="font-bold text-foreground">Replying to {replyingTo.sender_is_admin ? "Admin" : "Teammate"}:</span>
                       <p className="truncate text-muted-foreground mt-0.5">{replyingTo.body || "Attachment"}</p>
                     </div>
                     <button type="button" onClick={() => setReplyingTo(null)} className="text-muted-foreground hover:text-foreground cursor-pointer" aria-label="Cancel reply"><X size={14} /></button>
                   </div>
                 )}
-                <div className="mx-auto w-full min-w-0 max-w-4xl rounded-3xl border border-border bg-[#182233] p-2 shadow-[inset_0_1px_0_rgba(255,255,255,.05),0_18px_55px_rgba(0,0,0,.18)]">
+                <div className="mx-auto w-full min-w-0 max-w-4xl rounded-3xl border border-border bg-card p-2 shadow-[inset_0_1px_0_rgba(255,255,255,.05),0_18px_55px_rgba(0,0,0,.18)]">
                   <div className="flex w-full min-w-0 items-end gap-1.5 sm:gap-2">
                   <input ref={fileInputRef} type="file" accept={ACCEPTED_ATTACHMENT_TYPES} className="hidden" onChange={(event) => event.target.files?.[0] && sendMessage(undefined, event.target.files[0])} />
-                  <button type="button" onClick={() => fileInputRef.current?.click()} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-muted-foreground transition hover:border-cyan-300/25 hover:bg-cyan-300/10 hover:text-cyan-100 active:scale-95 cursor-pointer" aria-label="Attach file"><Paperclip size={21} /></button>
-                  <div className="relative flex min-h-11 min-w-0 flex-1 items-end rounded-2xl border border-cyan-300/15 bg-[#0B1020]/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition focus-within:border-cyan-300/45 focus-within:shadow-[0_0_24px_rgba(0,194,255,0.12)]">
+                  <button type="button" onClick={() => fileInputRef.current?.click()} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-muted-foreground transition hover:border-cyan-300/25 hover:bg-cyan-300/10 hover:text-foreground active:scale-95 cursor-pointer" aria-label="Attach file"><Paperclip size={21} /></button>
+                  <div className="relative flex min-h-11 min-w-0 flex-1 items-end rounded-2xl border border-cyan-300/15 bg-card/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition focus-within:border-cyan-300/45 focus-within:shadow-[0_0_24px_rgba(0,194,255,0.12)]">
                     <textarea ref={textareaRef} value={draft} onFocus={() => setComposerFocused(true)} onBlur={() => { setComposerFocused(false); if (user) db.from("chat_presence").upsert({ user_id: user.id, is_online: true, last_seen_at: new Date().toISOString(), typing_conversation_id: null }); }} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendMessage(); } }} rows={1} placeholder="Type a secure workplace message..." className="max-h-28 min-h-11 flex-1 resize-none bg-transparent px-3 py-3 text-sm leading-5 outline-none placeholder:text-muted-foreground sm:px-4" />
-                    <button type="button" className="m-1 flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-card hover:text-cyan-200" aria-label="Mention teammate"><AtSign size={17} /></button>
-                    <button type="button" className="m-1 flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-card hover:text-violet-200" aria-label="AI assistant"><Bot size={17} /></button>
+                    <button type="button" className="m-1 flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-card hover:text-foreground" aria-label="Mention teammate"><AtSign size={17} /></button>
+                    <button type="button" className="m-1 flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-card hover:text-foreground" aria-label="AI assistant"><Bot size={17} /></button>
                     <button type="button" onClick={() => setShowEmoji((value) => !value)} className="m-1 flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-card hover:text-yellow-200 cursor-pointer" aria-label="Choose emoji"><Smile size={19} /></button>
-                    {showEmoji && <div className="absolute bottom-12 right-0 grid grid-cols-4 gap-1 rounded-2xl border border-border bg-[#111525] p-2 shadow-2xl">{QUICK_EMOJIS.map((emoji) => <button type="button" key={emoji} onClick={() => { setDraft((value) => value + emoji); setShowEmoji(false); }} className="rounded-lg p-2 text-lg hover:bg-card">{emoji}</button>)}</div>}
+                    {showEmoji && <div className="absolute bottom-12 right-0 grid grid-cols-4 gap-1 rounded-2xl border border-border bg-card p-2 shadow-2xl">{QUICK_EMOJIS.map((emoji) => <button type="button" key={emoji} onClick={() => { setDraft((value) => value + emoji); setShowEmoji(false); }} className="rounded-lg p-2 text-lg hover:bg-card">{emoji}</button>)}</div>}
                   </div>
-                  <button type="button" className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-muted-foreground transition hover:bg-[#22304A] hover:text-cyan-100 active:scale-95 sm:flex" aria-label="Voice message"><Mic size={19} /></button>
+                  <button type="button" className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-border bg-card text-muted-foreground transition hover:bg-card hover:text-foreground active:scale-95 sm:flex" aria-label="Voice message"><Mic size={19} /></button>
                   <button type="submit" disabled={sending || !draft.trim()} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-violet-500 to-cyan-400 text-foreground shadow-[0_0_24px_rgba(124,58,237,.3)] transition hover:scale-105 hover:shadow-[0_0_32px_rgba(0,194,255,.22)] active:scale-95 disabled:cursor-not-allowed disabled:grayscale disabled:opacity-45 cursor-pointer" aria-label="Send message"><Send size={19} /></button>
                   </div>
                   <div className="mt-2 flex items-center justify-end sm:justify-between gap-3 px-1 text-[10px] text-muted-foreground">
@@ -846,14 +846,14 @@ function MessagesPage() {
               </form>
             </>
           ) : !isChatAdmin && adminProfiles.length > 0 ? (
-            <div className="flex flex-1 flex-col overflow-y-auto p-6 sm:p-8 lg:p-10 bg-[#0B1020]">
+            <div className="flex flex-1 flex-col overflow-y-auto p-6 sm:p-8 lg:p-10 bg-card">
               <div className="max-w-4xl mx-auto w-full animate-[fade-in_.2s_ease-out]">
                 <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between border-b border-border pb-6">
                   <div>
                     <h2 className="text-2xl font-black text-foreground tracking-tight">Contact HR & Administration</h2>
                     <p className="text-sm text-muted-foreground mt-1.5">Directly message any of the available workspace administrators or HR managers below.</p>
                   </div>
-                  <div className="mt-4 md:mt-0 flex items-center gap-2 rounded-2xl border border-border bg-[#182233] px-3 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,.04)]">
+                  <div className="mt-4 md:mt-0 flex items-center gap-2 rounded-2xl border border-border bg-card px-3 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,.04)]">
                     <Search size={14} className="text-muted-foreground" />
                     <input value={employeeSearch} onChange={(event) => setEmployeeSearch(event.target.value)} placeholder="Search administrators..." className="h-9 w-44 bg-transparent text-xs outline-none placeholder:text-muted-foreground" />
                     {employeeSearch && <button onClick={() => setEmployeeSearch("")} aria-label="Clear search"><X size={13} /></button>}
@@ -866,7 +866,7 @@ function MessagesPage() {
                       const online = presences.some((item) => item.user_id === official.user_id && item.is_online);
                       const initialsStr = initials(official.full_name);
                       return (
-                        <div key={official.user_id} className="relative group rounded-3xl border border-border bg-[#121827]/70 p-6 flex flex-col justify-between transition duration-300 hover:border-cyan-300/25 hover:bg-[#182233]/70 hover:shadow-[0_20px_50px_rgba(0,194,255,0.06)]">
+                        <div key={official.user_id} className="relative group rounded-3xl border border-border bg-card/70 p-6 flex flex-col justify-between transition duration-300 hover:border-cyan-300/25 hover:bg-card/70 hover:shadow-[0_20px_50px_rgba(0,194,255,0.06)]">
                           <div>
                             <div className="flex items-start gap-4">
                               <div className="relative shrink-0 h-14 w-14">
@@ -882,7 +882,7 @@ function MessagesPage() {
                               <div className="min-w-0">
                                 <h3 className="font-black text-foreground text-base truncate flex items-center gap-1.5">
                                   {official.full_name || "Official"}
-                                  <ShieldCheck size={16} className="text-cyan-300 shrink-0" />
+                                  <ShieldCheck size={16} className="text-foreground shrink-0" />
                                 </h3>
                                 <div className="mt-0.5 text-xs font-semibold uppercase tracking-[0.08em] text-purple-300/80">
                                   {official.role === "super_admin" ? "Super Admin" : official.role === "hr_manager" ? "HR Manager" : "Administrator"}
@@ -902,7 +902,7 @@ function MessagesPage() {
                               setSelectedOfficialId(official.user_id);
                               setMobileChatOpen(true);
                             }}
-                            className="mt-6 w-full rounded-2xl bg-[#182233] border border-border hover:border-cyan-300/25 hover:bg-cyan-300/10 hover:text-cyan-100 text-foreground font-bold py-2.5 px-4 text-xs tracking-wider uppercase transition active:scale-95 cursor-pointer"
+                            className="mt-6 w-full rounded-2xl bg-card border border-border hover:border-cyan-300/25 hover:bg-cyan-300/10 hover:text-foreground text-foreground font-bold py-2.5 px-4 text-xs tracking-wider uppercase transition active:scale-95 cursor-pointer"
                           >
                             Message
                           </button>
@@ -915,7 +915,7 @@ function MessagesPage() {
           ) : (
             <div className="flex flex-1 items-center justify-center text-center">
               <div>
-                <MessageCircle className="mx-auto text-cyan-300/30" size={46} />
+                <MessageCircle className="mx-auto text-foreground" size={46} />
                 <h2 className="mt-4 font-black">Select a conversation</h2>
                 <p className="mt-1 text-sm text-muted-foreground">Choose an official to start messaging.</p>
               </div>
@@ -923,17 +923,17 @@ function MessagesPage() {
           )}
         </section>
 
-        {showInfoPanel && <aside className="hidden w-[300px] shrink-0 animate-[fade-in_.18s_ease-out] border-l border-border bg-[#121827] p-4 xl:block">
+        {showInfoPanel && <aside className="hidden w-[300px] shrink-0 animate-[fade-in_.18s_ease-out] border-l border-border bg-card p-4 xl:block">
           <div className="mb-3 flex items-center justify-between">
             <div>
               <div className="text-sm font-black">Details</div>
               <div className="text-[11px] text-muted-foreground">Conversation information</div>
             </div>
-            <button type="button" onClick={() => setShowInfoPanel(false)} className="rounded-xl border border-border bg-card p-2 text-muted-foreground transition hover:bg-[#22304A] hover:text-foreground" aria-label="Close details panel">
+            <button type="button" onClick={() => setShowInfoPanel(false)} className="rounded-xl border border-border bg-card p-2 text-muted-foreground transition hover:bg-card hover:text-foreground" aria-label="Close details panel">
               <X size={16} />
             </button>
           </div>
-          <div className="rounded-3xl border border-border bg-[#182233]/80 p-4">
+          <div className="rounded-3xl border border-border bg-card/80 p-4">
             <div className="flex items-center gap-3">
               <Avatar profile={isChatAdmin ? selectedEmployee : selectedOfficial} online={Boolean(peerPresence?.is_online)} admin={!isChatAdmin} />
               <div className="min-w-0">
@@ -957,7 +957,7 @@ function Avatar({ profile, online, admin, compact }: { profile?: ChatProfile | n
   return (
     <div className={`relative shrink-0 ${size}`}>
       <div className={`flex h-full w-full items-center justify-center overflow-hidden rounded-2xl border ${admin ? "border-cyan-300/30 bg-gradient-to-br from-cyan-400/25 to-violet-500/25" : "border-border bg-card"} text-sm font-black`}>
-        {profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" /> : admin ? <ShieldCheck size={20} className="text-cyan-200" /> : initials(profile?.full_name)}
+        {profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" /> : admin ? <ShieldCheck size={20} className="text-foreground" /> : initials(profile?.full_name)}
       </div>
       <span className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-[3px] border-[#0b0e1a] ${online ? "bg-emerald-400" : "bg-slate-600"}`} />
     </div>
@@ -1004,7 +1004,7 @@ function MessageBubble({
   return (
     <div className={`group mb-3 flex min-w-0 items-end gap-2 ${mine ? "justify-end" : "justify-start"}`}>
       <div className={`order-2 flex translate-y-1 gap-1 opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100 ${mine ? "" : "order-1"}`}>
-        <div className="flex gap-0.5 rounded-lg bg-[#182233] p-0.5 border border-border shadow-md">
+        <div className="flex gap-0.5 rounded-lg bg-card p-0.5 border border-border shadow-md">
           {["👍", "❤️", "😂", "🎉", "🙏"].map((emoji) => (
             <button
               key={emoji}
@@ -1016,10 +1016,10 @@ function MessageBubble({
             </button>
           ))}
         </div>
-        <button onClick={() => onReply(message)} className="rounded-lg bg-[#182233] p-1.5 text-muted-foreground hover:text-cyan-200 hover:bg-card cursor-pointer" aria-label="Reply"><CornerUpLeft size={13} /></button>
-        <button onClick={() => { navigator.clipboard.writeText(cleanBody); toast.success("Copied to clipboard"); }} className="rounded-lg bg-[#182233] p-1.5 text-muted-foreground hover:text-cyan-200 hover:bg-card cursor-pointer" aria-label="Copy"><Copy size={13} /></button>
+        <button onClick={() => onReply(message)} className="rounded-lg bg-card p-1.5 text-muted-foreground hover:text-foreground hover:bg-card cursor-pointer" aria-label="Reply"><CornerUpLeft size={13} /></button>
+        <button onClick={() => { navigator.clipboard.writeText(cleanBody); toast.success("Copied to clipboard"); }} className="rounded-lg bg-card p-1.5 text-muted-foreground hover:text-foreground hover:bg-card cursor-pointer" aria-label="Copy"><Copy size={13} /></button>
       </div>
-      <div className={`min-w-0 max-w-[82vw] animate-[fade-in_.18s_ease-out] overflow-hidden rounded-2xl border px-2.5 py-2 text-sm shadow-lg sm:max-w-[72%] sm:px-3.5 sm:py-2.5 ${mine ? "order-1 rounded-br-md border-violet-300/15 bg-gradient-to-br from-violet-600/90 via-fuchsia-600/82 to-pink-600/82 shadow-[0_18px_42px_rgba(168,85,247,0.20)]" : "order-2 rounded-bl-md border-border bg-[#182233] shadow-[0_18px_42px_rgba(0,0,0,0.18)]"}`}>
+      <div className={`min-w-0 max-w-[82vw] animate-[fade-in_.18s_ease-out] overflow-hidden rounded-2xl border px-2.5 py-2 text-sm shadow-lg sm:max-w-[72%] sm:px-3.5 sm:py-2.5 ${mine ? "order-1 rounded-br-md border-violet-300/15 bg-gradient-to-br from-violet-600/90 via-fuchsia-600/82 to-pink-600/82 shadow-[0_18px_42px_rgba(168,85,247,0.20)]" : "order-2 rounded-bl-md border-border bg-card shadow-[0_18px_42px_rgba(0,0,0,0.18)]"}`}>
         {quoteUser && (
           <div className="mb-2 border-l-2 border-border bg-card px-2.5 py-1.5 text-[11px] rounded-r-lg text-muted-foreground">
             <span className="font-bold block text-[10px] text-muted-foreground">{quoteUser}</span>
@@ -1050,7 +1050,7 @@ function MessageBubble({
         {cleanBody && <p className="whitespace-pre-wrap break-words leading-5 text-muted-foreground">{cleanBody}</p>}
         <div className={`mt-1 flex items-center justify-end gap-1 text-[9px] ${mine ? "text-muted-foreground" : "text-muted-foreground"}`}>
           {format(new Date(message.created_at), "h:mm a")}
-          {mine && (message.read_at ? <CheckCheck size={13} className="text-cyan-200" /> : message.delivered_at ? <CheckCheck size={13} /> : <Check size={13} />)}
+          {mine && (message.read_at ? <CheckCheck size={13} className="text-foreground" /> : message.delivered_at ? <CheckCheck size={13} /> : <Check size={13} />)}
         </div>
         {message.reactions && Object.keys(message.reactions).length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1.5">
@@ -1064,8 +1064,8 @@ function MessageBubble({
                   onClick={() => onToggleReaction(message, emoji)}
                   className={`flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs transition active:scale-95 cursor-pointer ${
                     reacted
-                      ? "border-cyan-300/30 bg-cyan-300/10 text-cyan-200"
-                      : "border-border bg-card text-muted-foreground hover:bg-[#22304A] hover:text-foreground"
+                      ? "border-cyan-300/30 bg-cyan-300/10 text-foreground"
+                      : "border-border bg-card text-muted-foreground hover:bg-card hover:text-foreground"
                   }`}
                 >
                   <span>{emoji}</span>
@@ -1086,25 +1086,25 @@ function DateSeparator({ date }: { date: string }) {
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
   const label = isSameDay(value, today) ? "Today" : isSameDay(value, yesterday) ? "Yesterday" : format(value, "EEEE, MMMM d");
-  return <div className="my-6 flex items-center gap-3"><span className="h-px flex-1 bg-card" /><span className="rounded-full border border-border bg-[#182233] px-3 py-1 text-[10px] font-bold text-muted-foreground shadow-sm">{label}</span><span className="h-px flex-1 bg-card" /></div>;
+  return <div className="my-6 flex items-center gap-3"><span className="h-px flex-1 bg-card" /><span className="rounded-full border border-border bg-card px-3 py-1 text-[10px] font-bold text-muted-foreground shadow-sm">{label}</span><span className="h-px flex-1 bg-card" /></div>;
 }
 
 function ChatMetric({ icon: Icon, label, value, subtitle, tone }: { icon: typeof MessageCircle; label: string; value: string | number; subtitle: string; tone: "cyan" | "violet" | "pink" }) {
   const colors = {
-    cyan: "from-cyan-400/25 text-cyan-100 border-cyan-300/20",
-    violet: "from-violet-400/20 text-violet-100 border-violet-300/20",
-    pink: "from-pink-400/20 text-pink-100 border-pink-300/20",
+    cyan: "from-cyan-400/25 text-foreground border-cyan-300/20",
+    violet: "from-violet-400/20 text-foreground border-violet-300/20",
+    pink: "from-pink-400/20 text-foreground border-pink-300/20",
   };
   return (
     <div className={`group rounded-[20px] border bg-gradient-to-br ${colors[tone]} to-[#182233] p-[1px] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_45px_rgba(0,0,0,.22)]`}>
-      <div className="flex h-full items-center gap-4 rounded-[19px] bg-[#182233]/90 p-4">
+      <div className="flex h-full items-center gap-4 rounded-[19px] bg-card/90 p-4">
         <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-card shadow-[inset_0_1px_0_rgba(255,255,255,.08)] transition group-hover:scale-105">
           <Icon size={21} />
         </span>
         <div className="min-w-0">
           <div className="truncate text-[10px] font-black uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
           <div className="mt-1 text-2xl font-black tracking-tight text-foreground">{value}</div>
-          <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-emerald-200/80"><Sparkles size={12} />{subtitle}</div>
+          <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-foreground"><Sparkles size={12} />{subtitle}</div>
         </div>
       </div>
     </div>
@@ -1120,7 +1120,7 @@ function EmptyMessages({ isAdmin, onUpload }: { isAdmin: boolean; onUpload: () =
     <div className="mx-auto flex max-w-lg flex-col items-center py-16 text-center">
       <div className="relative">
         <div className="absolute inset-0 rounded-[32px] bg-cyan-300/20 blur-2xl" />
-        <div className="relative flex h-20 w-20 items-center justify-center rounded-[28px] border border-cyan-300/20 bg-[#182233] text-cyan-200 shadow-[0_20px_70px_rgba(0,194,255,.12)]">
+        <div className="relative flex h-20 w-20 items-center justify-center rounded-[28px] border border-cyan-300/20 bg-card text-foreground shadow-[0_20px_70px_rgba(0,194,255,.12)]">
           <MessageCircle size={36} />
         </div>
       </div>
@@ -1129,9 +1129,9 @@ function EmptyMessages({ isAdmin, onUpload }: { isAdmin: boolean; onUpload: () =
         {isAdmin ? "Send a secure message, document, or update to this employee." : "Send a secure workplace message to the official admin channel."}
       </p>
       <div className="mt-6 grid w-full max-w-md grid-cols-1 gap-2 sm:grid-cols-3">
-        <button onClick={onUpload} className="rounded-2xl border border-border bg-card px-3 py-3 text-xs font-bold text-muted-foreground transition hover:bg-[#22304A] hover:text-foreground active:scale-95">Upload File</button>
-        <button className="rounded-2xl border border-border bg-card px-3 py-3 text-xs font-bold text-muted-foreground transition hover:bg-[#22304A] hover:text-foreground active:scale-95">Send Announcement</button>
-        <button className="rounded-2xl border border-border bg-card px-3 py-3 text-xs font-bold text-muted-foreground transition hover:bg-[#22304A] hover:text-foreground active:scale-95">Choose Template</button>
+        <button onClick={onUpload} className="rounded-2xl border border-border bg-card px-3 py-3 text-xs font-bold text-muted-foreground transition hover:bg-card hover:text-foreground active:scale-95">Upload File</button>
+        <button className="rounded-2xl border border-border bg-card px-3 py-3 text-xs font-bold text-muted-foreground transition hover:bg-card hover:text-foreground active:scale-95">Send Announcement</button>
+        <button className="rounded-2xl border border-border bg-card px-3 py-3 text-xs font-bold text-muted-foreground transition hover:bg-card hover:text-foreground active:scale-95">Choose Template</button>
       </div>
     </div>
   );
@@ -1139,7 +1139,7 @@ function EmptyMessages({ isAdmin, onUpload }: { isAdmin: boolean; onUpload: () =
 
 function InfoSection({ title, items }: { title: string; items: string[] }) {
   return (
-    <section className="mt-4 rounded-3xl border border-border bg-[#182233]/60 p-4">
+    <section className="mt-4 rounded-3xl border border-border bg-card/60 p-4">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-xs font-black uppercase tracking-[0.14em] text-muted-foreground">{title}</h3>
         <span className="h-2 w-2 rounded-full bg-cyan-300/70" />
