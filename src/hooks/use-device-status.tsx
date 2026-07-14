@@ -94,22 +94,11 @@ export function useDeviceStatus() {
 
     if (currentDevice) {
       if (currentDevice.status === "Active" && !currentDevice.force_logout_at) {
-        const { data: passkey } = await (supabase as any)
-          .from("device_passkeys")
-          .select("id")
-          .eq("employee_id", user.id)
-          .eq("device_fingerprint", fingerprint)
-          .maybeSingle();
-
-        if (passkey) {
-          await (supabase as any)
-            .from("employee_devices")
-            .update({ last_login: new Date().toISOString() })
-            .eq("id", currentDevice.id);
-          setDeviceStatus("approved");
-        } else {
-          setDeviceStatus("setup_biometrics");
-        }
+        await (supabase as any)
+          .from("employee_devices")
+          .update({ last_login: new Date().toISOString() })
+          .eq("id", currentDevice.id);
+        setDeviceStatus("approved");
       } else {
         setDeviceStatus("inactive");
       }
@@ -149,7 +138,7 @@ export function useDeviceStatus() {
 
       setTrustedDevices([inserted as TrustedDevice]);
       setDeviceName(name);
-      setDeviceStatus("setup_biometrics");
+      setDeviceStatus("approved");
       return;
     }
 
@@ -252,27 +241,66 @@ export function useDeviceStatus() {
     if (!user) return;
     if (!deviceName.trim()) return toast.error("Please enter a device name");
     setBusy(true);
-    const { browser, os } = getBrowserAndOS();
-    const { error } = await supabase.from("pending_device_requests").insert({
-      employee_id: user.id,
-      device_fingerprint: localFingerprint,
-      browser,
-      operating_system: os,
-      device_name: deviceName.trim(),
-      status: "Pending",
-      verification_method: replaceDeviceId ? "Replacement" : "HR Approval",
-      replace_device_id: replaceDeviceId ?? null,
-    });
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    await logTrustedDeviceEvent({
-      employeeId: user.id,
-      deviceFingerprint: localFingerprint,
-      action: "registration_requested",
-      metadata: { browser, os, deviceName: deviceName.trim(), replaceDeviceId: replaceDeviceId ?? null },
-    });
-    toast.success("Device registration request submitted successfully!");
-    checkDevice();
+    try {
+      const { browser, os } = getBrowserAndOS();
+      const now = new Date().toISOString();
+
+      if (replaceDeviceId) {
+        const replacedDevice = trustedDevices.find((device) => device.id === replaceDeviceId);
+        const { error: replaceError } = await (supabase as any)
+          .from("employee_devices")
+          .update({
+            status: "Inactive",
+            removed_at: now,
+            removed_by: user.id,
+            removal_reason: "Replaced by employee registered device",
+          })
+          .eq("id", replaceDeviceId)
+          .eq("employee_id", user.id);
+        if (replaceError) throw replaceError;
+
+        if (replacedDevice) {
+          await (supabase as any)
+            .from("device_passkeys")
+            .delete()
+            .eq("employee_id", user.id)
+            .eq("device_fingerprint", replacedDevice.device_fingerprint);
+        }
+      }
+
+      const { data: device, error } = await (supabase as any)
+        .from("employee_devices")
+        .upsert(
+          {
+            employee_id: user.id,
+            device_fingerprint: localFingerprint,
+            browser,
+            operating_system: os,
+            device_name: deviceName.trim(),
+            status: "Active",
+            last_login: now,
+          },
+          { onConflict: "employee_id,device_fingerprint" },
+        )
+        .select("id,device_name,device_fingerprint,browser,operating_system,status,registered_at,last_login,force_logout_at")
+        .single();
+      if (error) throw error;
+
+      await logTrustedDeviceEvent({
+        employeeId: user.id,
+        deviceId: device.id,
+        deviceFingerprint: localFingerprint,
+        action: replaceDeviceId ? "replaced" : "auto_registered",
+        metadata: { browser, os, deviceName: deviceName.trim(), replaceDeviceId: replaceDeviceId ?? null },
+      });
+      toast.success(replaceDeviceId ? "Trusted device replaced" : "Device registered as trusted");
+      setDeviceStatus("approved");
+      await checkDevice();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to register device");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return {

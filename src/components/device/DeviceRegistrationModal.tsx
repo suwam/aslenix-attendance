@@ -85,7 +85,7 @@ export function DeviceRegistrationModal() {
               </div>
               <h2 className="text-2xl font-bold text-foreground font-display">Register This Device</h2>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                To ensure secure access, you must register this device with the HRMS before continuing.
+                Register this device once to trust it for attendance and secure access.
               </p>
             </div>
 
@@ -123,7 +123,7 @@ export function DeviceRegistrationModal() {
               className="w-full neon-button h-12 rounded-xl text-base font-semibold"
             >
               {busy ? <Loader2 size={18} className="mr-2 animate-spin" /> : <ShieldCheck size={18} className="mr-2" />}
-              Submit Registration Request
+              Register Trusted Device
             </Button>
           </div>
         )}
@@ -136,7 +136,7 @@ export function DeviceRegistrationModal() {
               </div>
               <h2 className="text-2xl font-bold text-foreground font-display">Device Limit Reached</h2>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Your account allows {maxTrustedDevices} trusted devices. Choose one existing device to replace, then HR can approve this new device.
+                Your account allows {maxTrustedDevices} trusted devices. Choose one existing device to replace with this registered device.
               </p>
             </div>
 
@@ -175,7 +175,7 @@ export function DeviceRegistrationModal() {
               className="w-full neon-button h-12 rounded-xl text-base font-semibold"
             >
               {busy ? <Loader2 size={18} className="mr-2 animate-spin" /> : <ShieldCheck size={18} className="mr-2" />}
-              Request Replacement
+              Replace Trusted Device
             </Button>
           </div>
         )}
