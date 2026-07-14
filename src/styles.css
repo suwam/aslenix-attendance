@@ -630,7 +630,7 @@
     border-radius: 14px;
     border: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(255, 255, 255, 0.07);
-    color: #f8fbff;
+    color: #0F172A;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
   }
 
@@ -714,7 +714,7 @@
   .employee-task-card:hover,
   .employee-meeting-card:hover {
     transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, 0.18);
+    border-color: #0F172A;
   }
 
   .employee-kpi-card.green { --kpi-accent: #34d399; }
@@ -1062,7 +1062,7 @@
     flex-direction: column;
     border: 1px solid rgba(255, 255, 255, 0.09);
     background: rgba(255, 255, 255, 0.05);
-    color: #f8fbff;
+    color: #0F172A;
     text-align: center;
   }
 
@@ -1248,7 +1248,7 @@
 
   .employee-timeline-item strong {
     display: block;
-    color: #f8fbff;
+    color: #0F172A;
     font-size: 0.95rem;
   }
 
@@ -1415,7 +1415,7 @@
   }
 
   .employee-mini-metric strong {
-    color: #f8fbff;
+    color: #0F172A;
     text-shadow: 0 0 28px rgba(33, 212, 253, 0.12);
   }
 
@@ -1556,7 +1556,7 @@
     min-width: 12px;
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(8, 13, 24, 0.78);
+    background: #f1f0ee;
     transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, filter 0.18s ease;
   }
 
@@ -1593,7 +1593,7 @@
   .heatmap-cell:hover {
     z-index: 6;
     transform: scale(1.08);
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: #0F172A;
     filter: brightness(1.08);
     box-shadow: 0 0 22px rgba(142, 203, 255, 0.22), 0 0 24px rgba(236, 72, 153, 0.16);
   }
@@ -1978,28 +1978,28 @@
       oklch(0.14 0.027 265 / 0.88);
   }
   .eom-contender-card.gold {
-    border-color: oklch(0.86 0.17 85 / 0.34);
+    border-color: #0F172A;
     box-shadow: 0 22px 70px -42px oklch(0.86 0.17 85 / 0.95), inset 0 1px 0 oklch(1 0 0 / 0.12);
   }
   .eom-contender-card.gold::before {
     background: radial-gradient(circle at 10% 8%, oklch(0.86 0.17 85 / 0.22), transparent 32%);
   }
   .eom-contender-card.silver {
-    border-color: oklch(0.86 0.04 250 / 0.24);
+    border-color: #0F172A;
     box-shadow: 0 20px 62px -44px oklch(0.86 0.04 250 / 0.85), inset 0 1px 0 oklch(1 0 0 / 0.1);
   }
   .eom-contender-card.silver::before {
     background: radial-gradient(circle at 8% 10%, oklch(0.86 0.04 250 / 0.18), transparent 34%);
   }
   .eom-contender-card.bronze {
-    border-color: oklch(0.72 0.14 55 / 0.26);
+    border-color: #0F172A;
     box-shadow: 0 20px 62px -44px oklch(0.72 0.14 55 / 0.88), inset 0 1px 0 oklch(1 0 0 / 0.1);
   }
   .eom-contender-card.bronze::before {
     background: radial-gradient(circle at 8% 10%, oklch(0.72 0.14 55 / 0.18), transparent 34%);
   }
   .eom-contender-card.neutral {
-    border-color: oklch(0.74 0.08 205 / 0.22);
+    border-color: #0F172A;
     box-shadow: 0 18px 54px -44px oklch(0.74 0.08 205 / 0.72), inset 0 1px 0 oklch(1 0 0 / 0.1);
   }
   .eom-contender-card.neutral::before {
@@ -2076,7 +2076,7 @@
     border: 1px solid oklch(0.65 0.27 22 / 0.24);
     background: linear-gradient(135deg, oklch(0.65 0.27 22 / 0.18), oklch(0.86 0.17 85 / 0.12));
     padding: 7px 10px;
-    color: oklch(0.92 0.1 45);
+    color: #0F172A;
     font-size: 12px;
     font-weight: 800;
     box-shadow: 0 0 28px -18px oklch(0.65 0.27 22 / 0.95);
@@ -2308,7 +2308,7 @@
     border-radius: 999px;
     background: linear-gradient(135deg, rgb(255 45 111 / 0.18), rgb(139 92 246 / 0.16));
     padding: 0.25rem 0.48rem;
-    color: rgb(226 232 240);
+    color: #475569;
     font-size: 0.68rem;
     font-weight: 850;
   }
@@ -2565,7 +2565,7 @@
     min-height: 44px;
     border-radius: 15px;
     border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(7, 12, 26, 0.52);
+    background: #f1f0ee;
     padding: 9px 11px;
   }
 
@@ -2695,7 +2695,7 @@
   .recognition-badge-card:hover,
   .recognition-badge-card.selected {
     transform: translateY(-3px) scale(1.015);
-    border-color: rgba(255, 255, 255, 0.28);
+    border-color: #0F172A;
   }
 
   .recognition-badge-card.selected.month { box-shadow: 0 20px 60px rgba(246, 196, 83, 0.24), inset 0 0 0 1px rgba(246, 196, 83, 0.32); }
@@ -2756,7 +2756,7 @@
 
   .recognition-card-copy {
     margin-top: 8px;
-    color: rgba(255, 255, 255, 0.66);
+    color: #0F172A;
     font-size: 0.9rem;
     line-height: 1.45;
   }
@@ -2776,7 +2776,7 @@
     justify-content: space-between;
     gap: 12px;
     margin-bottom: 10px;
-    color: rgba(255, 255, 255, 0.72);
+    color: #0F172A;
     font-size: 0.74rem;
     font-weight: 800;
     text-transform: uppercase;
@@ -2784,7 +2784,7 @@
   }
 
   .recognition-field-heading span {
-    color: rgba(255, 255, 255, 0.42);
+    color: #0F172A;
     font-size: 0.72rem;
     letter-spacing: 0;
     text-transform: none;
@@ -2798,7 +2798,7 @@
     gap: 12px;
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(6, 12, 26, 0.6);
+    background: #f1f0ee;
     padding: 10px;
   }
 
@@ -2816,14 +2816,14 @@
   .recognition-search svg {
     position: absolute;
     left: 12px;
-    color: rgba(255, 255, 255, 0.45);
+    color: #0F172A;
   }
 
   .recognition-search input {
     padding-left: 38px;
     border-radius: 16px;
-    border-color: rgba(255, 255, 255, 0.09);
-    background: rgba(0, 0, 0, 0.22);
+    border-color: #0F172A;
+    background: #f1f0ee;
   }
 
   .recognition-employee-list {
@@ -2869,7 +2869,7 @@
     display: grid;
     min-width: 58px;
     justify-items: center;
-    color: rgba(255, 255, 255, 0.55);
+    color: #0F172A;
     font-size: 0.64rem;
     text-transform: uppercase;
   }
@@ -2883,7 +2883,7 @@
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.09);
     padding: 6px 9px;
-    color: rgba(255, 255, 255, 0.72);
+    color: #0F172A;
     font-weight: 800;
   }
 
@@ -2891,8 +2891,8 @@
     min-height: 120px;
     resize: vertical;
     border-radius: 18px;
-    border-color: rgba(255, 255, 255, 0.09);
-    background: rgba(0, 0, 0, 0.22);
+    border-color: #0F172A;
+    background: #f1f0ee;
   }
 
   .recognition-tag {
@@ -2900,7 +2900,7 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.055);
     padding: 7px 10px;
-    color: rgba(255, 255, 255, 0.68);
+    color: #0F172A;
     font-size: 0.78rem;
     transition: transform 160ms ease, border-color 160ms ease;
   }
@@ -2959,7 +2959,7 @@
     position: relative;
     z-index: 1;
     margin-top: 8px;
-    color: rgba(255, 255, 255, 0.72);
+    color: #0F172A;
     font-weight: 700;
   }
 
@@ -2971,7 +2971,7 @@
     border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.12);
     padding: 7px 12px;
-    color: rgba(255, 255, 255, 0.58);
+    color: #0F172A;
     font-size: 0.8rem;
     font-weight: 700;
   }
@@ -2989,7 +2989,7 @@
     display: flex;
     align-items: center;
     gap: 9px;
-    color: rgba(255, 255, 255, 0.42);
+    color: #0F172A;
     font-size: 0.86rem;
     font-weight: 700;
   }
@@ -3112,7 +3112,7 @@
   }
   .eom-stat-tile:hover {
     transform: translateY(-3px);
-    border-color: oklch(0.7 0.24 300 / 0.28);
+    border-color: #0F172A;
     box-shadow: 0 18px 52px -34px oklch(0.7 0.24 300 / 0.8);
   }
   .eom-feedback {
@@ -3184,7 +3184,7 @@
   .eom-review-card:hover,
   .eom-review-timeline-item:hover {
     transform: translateY(-2px);
-    border-color: oklch(0.7 0.24 300 / 0.24);
+    border-color: #0F172A;
     box-shadow: var(--shadow-glass), 0 18px 52px -34px oklch(0.7 0.24 300 / 0.8);
   }
   .eom-review-timeline-item {
@@ -3274,7 +3274,7 @@
   .eom-review-name-row:hover,
   .eom-review-name-row.active {
     transform: translateY(-1px);
-    border-color: oklch(0.74 0.23 205 / 0.34);
+    border-color: #0F172A;
     background:
       linear-gradient(135deg, oklch(0.74 0.23 205 / 0.13), oklch(0.72 0.26 340 / 0.1)),
       oklch(0.14 0.027 265 / 0.78);
@@ -3312,7 +3312,7 @@
   }
   .eom-review-employee-pill:hover,
   .eom-review-employee-pill.active {
-    border-color: oklch(0.74 0.23 205 / 0.36);
+    border-color: #0F172A;
     background: linear-gradient(135deg, oklch(0.74 0.23 205 / 0.18), oklch(0.72 0.26 340 / 0.14));
     color: #0F172A;
     transform: translateY(-1px);
@@ -3324,7 +3324,7 @@
     transition: color .18s ease;
   }
   .eom-review-name-button:hover {
-    color: oklch(0.78 0.22 205);
+    color: #0F172A;
   }
   .eom-review-rating {
     border-radius: 999px;
@@ -3335,7 +3335,7 @@
     font-weight: 700;
   }
   .eom-eligibility-panel {
-    border-color: oklch(0.72 0.18 155 / 0.14);
+    border-color: #0F172A;
     box-shadow: var(--shadow-glass), 0 0 38px -28px oklch(0.72 0.18 155 / 0.78);
   }
   .eom-eligibility-badge {
@@ -3359,7 +3359,7 @@
   .eom-excluded-pill {
     border: 1px solid oklch(0.65 0.27 22 / 0.22);
     background: oklch(0.65 0.27 22 / 0.12);
-    color: oklch(0.82 0.13 32);
+    color: #0F172A;
     white-space: normal;
     max-width: 100%;
     word-break: break-word;
@@ -3401,7 +3401,7 @@
   .admin-achievement-stat:hover,
   .admin-achievement-panel:hover {
     transform: translateY(-2px);
-    border-color: oklch(0.7 0.24 300 / 0.24);
+    border-color: #0F172A;
     box-shadow: var(--shadow-glass), 0 18px 52px -34px oklch(0.7 0.24 300 / 0.8);
   }
   .admin-achievement-panel {
@@ -3462,7 +3462,7 @@
   }
   .admin-achievement-table thead {
     background: oklch(1 0 0 / 0.045);
-    color: oklch(0.73 0.03 250);
+    color: #0F172A;
     font-size: 11px;
     font-weight: 800;
     letter-spacing: .08em;
@@ -3517,7 +3517,7 @@
   }
   .admin-achievement-action.primary:hover {
     background: oklch(0.74 0.23 205 / 0.14);
-    color: oklch(0.82 0.18 205);
+    color: #0F172A;
   }
   .admin-achievement-action.success:hover {
     background: oklch(0.72 0.18 155 / 0.14);
@@ -3655,7 +3655,7 @@
   .weekly-eom-card:hover,
   .weekly-leader-row:hover {
     transform: translateY(-2px);
-    border-color: oklch(0.7 0.24 300 / 0.24);
+    border-color: #0F172A;
     box-shadow: var(--shadow-glass), 0 18px 52px -34px oklch(0.7 0.24 300 / 0.8);
   }
   .weekly-feedback-panel {
@@ -3791,7 +3791,7 @@
     border-radius: 999px;
     background: linear-gradient(135deg, rgb(33 212 253 / 0.16), rgb(255 45 111 / 0.14));
     padding: 0.26rem 0.5rem;
-    color: rgb(226 232 240);
+    color: #475569;
     font-size: 0.68rem;
     font-weight: 850;
   }
@@ -3867,7 +3867,7 @@
   }
   .weekly-employee-name {
     overflow: hidden;
-    color: oklch(0.96 0.01 260);
+    color: #0F172A;
     font-size: 15px;
     font-weight: 850;
     line-height: 1.2;
@@ -3877,7 +3877,7 @@
   .weekly-employee-department {
     margin-top: 3px;
     overflow: hidden;
-    color: oklch(0.72 0.04 250);
+    color: #0F172A;
     font-size: 12px;
     font-weight: 600;
     text-overflow: ellipsis;
@@ -3892,15 +3892,15 @@
     border-radius: 999px;
     border: 1px solid oklch(1 0 0 / 0.06);
     background: oklch(1 0 0 / 0.065);
-    color: oklch(0.92 0.01 260);
+    color: #0F172A;
     font-size: 13px;
     font-weight: 900;
     font-variant-numeric: tabular-nums;
   }
   .weekly-employee-rank.top {
-    border-color: oklch(0.82 0.17 75 / 0.26);
+    border-color: #0F172A;
     background: linear-gradient(135deg, oklch(0.82 0.17 75 / 0.18), oklch(0.65 0.27 22 / 0.12));
-    color: oklch(0.94 0.13 80);
+    color: #0F172A;
   }
   .weekly-employee-metrics {
     position: relative;
@@ -3942,7 +3942,7 @@
     justify-content: space-between;
     gap: 16px;
     border-bottom: 1px solid oklch(1 0 0 / 0.07);
-    background: oklch(0.08 0.015 260 / 0.44);
+    background: #f1f0ee;
     padding: 22px 24px;
   }
   .weekly-feedback-profile {
@@ -3975,7 +3975,7 @@
   .weekly-feedback-dialog-side {
     border-radius: 18px;
     border: 1px solid oklch(1 0 0 / 0.075);
-    background: oklch(0.15 0.018 260 / 0.66);
+    background: #f1f0ee;
     box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.035);
     padding: 18px;
   }
@@ -4030,7 +4030,7 @@
     color: var(--primary);
   }
   .weekly-review-panel-header h3 {
-    color: oklch(0.96 0.01 260);
+    color: #0F172A;
     font-size: 16px;
     font-weight: 850;
     line-height: 1.1;
@@ -4061,7 +4061,7 @@
     display: flex;
     justify-content: space-between;
     gap: 5px;
-    color: oklch(0.72 0.04 250);
+    color: #0F172A;
     font-size: 10px;
     font-weight: 850;
     letter-spacing: .055em;
@@ -4147,11 +4147,11 @@
   .weekly-week-tab:hover,
   .weekly-week-tab.selected {
     transform: translateY(-1px);
-    border-color: oklch(0.7 0.16 165 / 0.34);
+    border-color: #0F172A;
     background: linear-gradient(135deg, oklch(0.7 0.16 165 / 0.1), oklch(0.55 0.16 245 / 0.08));
   }
   .weekly-week-tab.current {
-    border-color: oklch(0.7 0.16 165 / 0.36);
+    border-color: #0F172A;
     box-shadow: 0 14px 34px -30px oklch(0.7 0.16 165 / 0.85), inset 0 1px 0 oklch(1 0 0 / 0.08);
     animation: weekly-active-glow 2.6s ease-in-out infinite;
   }
@@ -4212,7 +4212,7 @@
     padding: 15px;
   }
   .weekly-review-card.completed {
-    border-color: oklch(0.72 0.18 155 / 0.24);
+    border-color: #0F172A;
     background:
       linear-gradient(135deg, oklch(0.72 0.18 155 / 0.08), oklch(1 0 0 / 0.025)),
       oklch(1 0 0 / 0.032);
@@ -4239,7 +4239,7 @@
     gap: 12px;
   }
   .weekly-review-card-kicker {
-    color: oklch(0.7 0.04 250);
+    color: #0F172A;
     font-size: 11px;
     font-weight: 850;
     letter-spacing: .08em;
@@ -4247,14 +4247,14 @@
   }
   .weekly-review-card-title {
     margin-top: 6px;
-    color: oklch(0.96 0.01 260);
+    color: #0F172A;
     font-size: 16px;
     font-weight: 850;
     line-height: 1.15;
   }
   .weekly-review-card-date {
     margin-top: 10px;
-    color: oklch(0.7 0.04 250);
+    color: #0F172A;
     font-size: 12px;
     font-weight: 600;
   }
@@ -4266,7 +4266,7 @@
     justify-content: center;
     border-radius: 999px;
     background: oklch(1 0 0 / 0.07);
-    color: oklch(0.92 0.01 260);
+    color: #0F172A;
     font-size: 15px;
     font-weight: 900;
     font-variant-numeric: tabular-nums;
@@ -4274,10 +4274,10 @@
   .weekly-review-score.completed {
     border: 1px solid oklch(0.72 0.18 155 / 0.18);
     background: oklch(0.72 0.18 155 / 0.12);
-    color: oklch(0.88 0.12 155);
+    color: #0F172A;
   }
   .weekly-review-score.pending {
-    color: oklch(0.74 0.03 250);
+    color: #0F172A;
   }
   .weekly-history-item.completed .weekly-history-dot {
     background: var(--success);
@@ -4454,7 +4454,7 @@
   .productivity-task-row:hover,
   .productivity-month-row:hover {
     transform: translateY(-2px);
-    border-color: oklch(0.7 0.24 300 / 0.24);
+    border-color: #0F172A;
     box-shadow: var(--shadow-glass), 0 18px 52px -34px oklch(0.7 0.24 300 / 0.8);
   }
   .productivity-hero,
@@ -4508,7 +4508,7 @@
     background: linear-gradient(135deg, oklch(0.6 0.25 260 / 0.13), oklch(0.7 0.24 340 / 0.1));
   }
   .productivity-rank-row.active {
-    border-color: oklch(0.75 0.24 240 / 0.35);
+    border-color: #0F172A;
   }
   .productivity-rank-number {
     display: flex;
