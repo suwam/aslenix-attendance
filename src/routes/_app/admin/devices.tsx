@@ -5,36 +5,39 @@ import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_app/admin/devices")({ component: DeviceManagementPage });
 
 type EmployeeSummary = {
-  _id: string;
+  id: string;
   name: string;
   email: string;
-  role: string;
+  department?: string | null;
 };
 
 type EmployeeDevice = {
-  _id: string;
-  employeeId: EmployeeSummary | string;
-  deviceFingerprint: string;
+  id: string;
+  employee_id: string;
+  employee?: EmployeeSummary;
+  device_fingerprint: string;
   browser: string;
-  operatingSystem: string;
-  deviceName: string;
+  operating_system: string;
+  device_name: string;
   status: "Active" | "Inactive";
-  registeredAt: string;
-  lastLogin: string;
+  registered_at: string;
+  last_login: string;
 };
 
 type PendingDeviceRequest = {
-  _id: string;
-  employeeId: EmployeeSummary | string;
-  deviceFingerprint: string;
+  id: string;
+  employee_id: string;
+  employee?: EmployeeSummary;
+  device_fingerprint: string;
   browser: string;
-  operatingSystem: string;
-  deviceName: string;
-  requestedAt: string;
+  operating_system: string;
+  device_name: string;
+  requested_at: string;
   status: "Pending" | "Approved" | "Rejected";
 };
 
@@ -42,27 +45,6 @@ type DevicePayload = {
   devices: EmployeeDevice[];
   pendingRequests: PendingDeviceRequest[];
 };
-
-const API_BASE = import.meta.env.VITE_TASK_API_BASE || "http://localhost:4000/api";
-
-async function deviceRequest<T>(path: string, options: RequestInit = {}) {
-  const token = localStorage.getItem("accessToken");
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Request failed" }));
-    throw new Error(error.message || "Request failed");
-  }
-
-  return response.json() as Promise<T>;
-}
 
 function DeviceManagementPage() {
   const [payload, setPayload] = useState<DevicePayload>({ devices: [], pendingRequests: [] });
@@ -72,8 +54,52 @@ function DeviceManagementPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const data = await deviceRequest<DevicePayload>("/devices");
-      setPayload(data);
+      const [{ data: deviceRows, error: devicesError }, { data: requestRows, error: requestsError }] = await Promise.all([
+        (supabase as any)
+          .from("employee_devices")
+          .select("id,employee_id,device_fingerprint,browser,operating_system,device_name,status,registered_at,last_login")
+          .order("last_login", { ascending: false }),
+        (supabase as any)
+          .from("pending_device_requests")
+          .select("id,employee_id,device_fingerprint,browser,operating_system,device_name,requested_at,status")
+          .eq("status", "Pending")
+          .order("requested_at", { ascending: false }),
+      ]);
+
+      if (devicesError) throw devicesError;
+      if (requestsError) throw requestsError;
+
+      const devices = (deviceRows ?? []) as EmployeeDevice[];
+      const pendingRequests = (requestRows ?? []) as PendingDeviceRequest[];
+      const employeeIds = [
+        ...new Set([...devices.map((device) => device.employee_id), ...pendingRequests.map((request) => request.employee_id)]),
+      ];
+
+      const { data: profiles, error: profilesError } = employeeIds.length
+        ? await supabase
+            .from("profiles")
+            .select("user_id,full_name,email,department")
+            .in("user_id", employeeIds)
+        : { data: [], error: null };
+
+      if (profilesError) throw profilesError;
+
+      const profileMap = new Map(
+        (profiles ?? []).map((profile) => [
+          profile.user_id,
+          {
+            id: profile.user_id,
+            name: profile.full_name,
+            email: profile.email,
+            department: profile.department,
+          },
+        ]),
+      );
+
+      setPayload({
+        devices: devices.map((device) => ({ ...device, employee: profileMap.get(device.employee_id) })),
+        pendingRequests: pendingRequests.map((request) => ({ ...request, employee: profileMap.get(request.employee_id) })),
+      });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to load devices");
     } finally {
@@ -88,11 +114,28 @@ function DeviceManagementPage() {
   const requestsByEmployee = useMemo(() => {
     const map = new Map<string, PendingDeviceRequest[]>();
     payload.pendingRequests.forEach((request) => {
-      const key = typeof request.employeeId === "string" ? request.employeeId : request.employeeId._id;
-      map.set(key, [...(map.get(key) || []), request]);
+      map.set(request.employee_id, [...(map.get(request.employee_id) || []), request]);
     });
     return map;
   }, [payload.pendingRequests]);
+
+  const visibleRows = useMemo(() => {
+    const rows: Array<{ device?: EmployeeDevice; requests: PendingDeviceRequest[]; employeeId: string }> = payload.devices.map(
+      (device) => ({
+        device,
+        requests: requestsByEmployee.get(device.employee_id) || [],
+        employeeId: device.employee_id,
+      }),
+    );
+
+    payload.pendingRequests.forEach((request) => {
+      if (!rows.some((row) => row.employeeId === request.employee_id)) {
+        rows.push({ requests: [request], employeeId: request.employee_id });
+      }
+    });
+
+    return rows;
+  }, [payload.devices, payload.pendingRequests, requestsByEmployee]);
 
   const runAction = async (key: string, action: () => Promise<unknown>, success: string) => {
     setBusy(key);
@@ -145,44 +188,51 @@ function DeviceManagementPage() {
               </tr>
             </thead>
             <tbody>
-              {payload.devices.map((device) => {
-                const employeeId = typeof device.employeeId === "string" ? device.employeeId : device.employeeId._id;
-                const requests = requestsByEmployee.get(employeeId) || [];
+              {visibleRows.map(({ device, requests, employeeId }) => {
+                const firstRequest = requests[0];
+                const employee = device?.employee || firstRequest?.employee;
                 return (
-                  <tr key={device._id} className="border-b border-border/40 align-top last:border-b-0">
-                    <td className="px-5 py-4 font-semibold text-foreground">{employeeName(device.employeeId)}</td>
-                    <td className="px-5 py-4 text-muted-foreground">
-                      <div className="font-medium text-foreground">{device.deviceName}</div>
-                      <div className="mt-1 max-w-[220px] truncate text-xs">{device.deviceFingerprint}</div>
-                    </td>
-                    <td className="px-5 py-4 text-muted-foreground">{device.browser}</td>
-                    <td className="px-5 py-4 text-muted-foreground">{device.operatingSystem}</td>
-                    <td className="px-5 py-4 text-muted-foreground">{formatDate(device.lastLogin)}</td>
+                  <tr key={device?.id || employeeId} className="border-b border-border/40 align-top last:border-b-0">
                     <td className="px-5 py-4">
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                          device.status === "Active" ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {device.status}
-                      </span>
+                      <div className="font-semibold text-foreground">{employeeName(employee, employeeId)}</div>
+                      {employee?.email && <div className="mt-1 text-xs text-muted-foreground">{employee.email}</div>}
+                    </td>
+                    <td className="px-5 py-4 text-muted-foreground">
+                      <div className="font-medium text-foreground">{device?.device_name || "No active registered device"}</div>
+                      {device?.device_fingerprint && <div className="mt-1 max-w-[220px] truncate text-xs">{device.device_fingerprint}</div>}
+                    </td>
+                    <td className="px-5 py-4 text-muted-foreground">{device?.browser || "-"}</td>
+                    <td className="px-5 py-4 text-muted-foreground">{device?.operating_system || "-"}</td>
+                    <td className="px-5 py-4 text-muted-foreground">{device ? formatDate(device.last_login) : "Never"}</td>
+                    <td className="px-5 py-4">
+                      {device ? (
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                            device.status === "Active" ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"
+                          }`}
+                        >
+                          {device.status}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Unregistered</span>
+                      )}
                     </td>
                     <td className="px-5 py-4">
                       <div className="space-y-3">
                         {requests.length === 0 && <span className="text-sm text-muted-foreground">No pending requests</span>}
                         {requests.map((request) => (
-                          <div key={request._id} className="rounded-xl border border-border/60 bg-background/60 p-3">
-                            <div className="font-semibold text-foreground">{request.deviceName}</div>
+                          <div key={request.id} className="rounded-xl border border-border/60 bg-background/60 p-3">
+                            <div className="font-semibold text-foreground">{request.device_name}</div>
                             <div className="mt-1 text-xs text-muted-foreground">
-                              {request.browser} · {request.operatingSystem} · {formatDate(request.requestedAt)}
+                              {request.browser} · {request.operating_system} · {formatDate(request.requested_at)}
                             </div>
                             <div className="mt-3 flex flex-wrap gap-2">
                               <Button
                                 size="sm"
                                 onClick={() =>
                                   runAction(
-                                    `approve-${request._id}`,
-                                    () => deviceRequest(`/devices/requests/${request._id}/approve`, { method: "POST" }),
+                                    `approve-${request.id}`,
+                                    () => approveRequest(request),
                                     "New device approved",
                                   )
                                 }
@@ -196,8 +246,8 @@ function DeviceManagementPage() {
                                 variant="outline"
                                 onClick={() =>
                                   runAction(
-                                    `reject-${request._id}`,
-                                    () => deviceRequest(`/devices/requests/${request._id}/reject`, { method: "POST" }),
+                                    `reject-${request.id}`,
+                                    () => rejectRequest(request.id),
                                     "Device request rejected",
                                   )
                                 }
@@ -206,43 +256,43 @@ function DeviceManagementPage() {
                                 <X size={14} className="mr-1" />
                                 Reject
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  runAction(
-                                    `replace-${device._id}-${request._id}`,
-                                    () =>
-                                      deviceRequest(`/devices/${device._id}/replace`, {
-                                        method: "POST",
-                                        body: JSON.stringify({ requestId: request._id }),
-                                      }),
-                                    "Existing device replaced",
-                                  )
-                                }
-                                disabled={Boolean(busy)}
-                              >
-                                <RefreshCw size={14} className="mr-1" />
-                                Replace
-                              </Button>
+                              {device && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    runAction(
+                                      `replace-${device.id}-${request.id}`,
+                                      () => approveRequest(request),
+                                      "Existing device replaced",
+                                    )
+                                  }
+                                  disabled={Boolean(busy)}
+                                >
+                                  <RefreshCw size={14} className="mr-1" />
+                                  Replace
+                                </Button>
+                              )}
                             </div>
                           </div>
                         ))}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            runAction(
-                              `remove-${device._id}`,
-                              () => deviceRequest(`/devices/${device._id}`, { method: "DELETE" }),
-                              "Device removed",
-                            )
-                          }
-                          disabled={Boolean(busy)}
-                        >
-                          <Trash2 size={14} className="mr-1" />
-                          Remove Device
-                        </Button>
+                        {device && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              runAction(
+                                `remove-${device.id}`,
+                                () => removeDevice(device.id),
+                                "Device removed",
+                              )
+                            }
+                            disabled={Boolean(busy)}
+                          >
+                            <Trash2 size={14} className="mr-1" />
+                            Remove Device
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -252,13 +302,72 @@ function DeviceManagementPage() {
           </table>
         </div>
 
-        {!loading && payload.devices.length === 0 && (
+        {!loading && visibleRows.length === 0 && (
           <div className="px-5 py-12 text-center text-sm text-muted-foreground">No registered devices found.</div>
         )}
         {loading && <div className="px-5 py-12 text-center text-sm text-muted-foreground">Loading devices...</div>}
       </GlassCard>
     </div>
   );
+}
+
+async function approveRequest(request: PendingDeviceRequest) {
+  const now = new Date().toISOString();
+  const { error: inactiveError } = await (supabase as any)
+    .from("employee_devices")
+    .update({ status: "Inactive" })
+    .eq("employee_id", request.employee_id)
+    .eq("status", "Active");
+
+  if (inactiveError) throw inactiveError;
+
+  const { error: upsertError } = await (supabase as any).from("employee_devices").upsert(
+    {
+      employee_id: request.employee_id,
+      device_fingerprint: request.device_fingerprint,
+      browser: request.browser,
+      operating_system: request.operating_system,
+      device_name: request.device_name,
+      status: "Active",
+      registered_at: now,
+      last_login: now,
+    },
+    { onConflict: "employee_id,device_fingerprint" },
+  );
+
+  if (upsertError) throw upsertError;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { error: requestError } = await (supabase as any)
+    .from("pending_device_requests")
+    .update({ status: "Approved", reviewed_at: now, reviewed_by: user?.id ?? null })
+    .eq("id", request.id);
+
+  if (requestError) throw requestError;
+}
+
+async function rejectRequest(requestId: string) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { error } = await (supabase as any)
+    .from("pending_device_requests")
+    .update({ status: "Rejected", reviewed_at: new Date().toISOString(), reviewed_by: user?.id ?? null })
+    .eq("id", requestId);
+
+  if (error) throw error;
+}
+
+async function removeDevice(deviceId: string) {
+  const { error } = await (supabase as any)
+    .from("employee_devices")
+    .update({ status: "Inactive" })
+    .eq("id", deviceId);
+
+  if (error) throw error;
 }
 
 function Metric({ icon: Icon, label, value }: { icon: typeof Laptop; label: string; value: number }) {
@@ -273,8 +382,8 @@ function Metric({ icon: Icon, label, value }: { icon: typeof Laptop; label: stri
   );
 }
 
-function employeeName(value: EmployeeSummary | string) {
-  return typeof value === "string" ? value : value.name;
+function employeeName(value: EmployeeSummary | undefined, fallback: string) {
+  return value?.name || fallback;
 }
 
 function formatDate(value: string) {
