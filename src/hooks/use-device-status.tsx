@@ -204,6 +204,14 @@ export function useDeviceStatus() {
   const verifyBiometrics = async (): Promise<boolean> => {
     if (!user) return false;
     if (isAdmin) return true;
+    if (deviceStatus !== "approved") {
+      toast.error(
+        deviceStatus === "setup_biometrics" 
+          ? "Please setup your Passkey first from the Trusted Devices page."
+          : "You must use an approved Trusted Device to check in."
+      );
+      return false;
+    }
     try {
       const rpID = window.location.hostname;
       
@@ -294,7 +302,6 @@ export function useDeviceStatus() {
         metadata: { browser, os, deviceName: deviceName.trim(), replaceDeviceId: replaceDeviceId ?? null },
       });
       toast.success(replaceDeviceId ? "Trusted device replaced" : "Device registered as trusted");
-      setDeviceStatus("approved");
       await checkDevice();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to register device");

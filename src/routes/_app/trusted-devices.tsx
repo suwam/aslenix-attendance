@@ -6,6 +6,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useDeviceStatus } from "@/hooks/use-device-status";
 import { logTrustedDeviceEvent } from "@/lib/trusted-devices";
 import { toast } from "sonner";
 
@@ -32,6 +33,7 @@ type AuditLog = {
 
 function TrustedDevicesPage() {
   const { user } = useAuth();
+  const { localFingerprint, setupBiometrics } = useDeviceStatus();
   const [devices, setDevices] = useState<Device[]>([]);
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [maxDevices, setMaxDevices] = useState(2);
@@ -180,6 +182,12 @@ function TrustedDevicesPage() {
 
               <div className="flex flex-wrap gap-2">
                 <Badge ok={Boolean(device.passkey)} text={device.passkey ? "Passkey registered" : "Passkey missing"} />
+                {device.device_fingerprint === localFingerprint && !device.passkey && (
+                  <Button size="sm" onClick={() => setupBiometrics().then(load)} disabled={busy === device.id}>
+                    <ShieldCheck size={14} className="mr-1" />
+                    Setup Passkey
+                  </Button>
+                )}
                 <Button size="sm" variant="outline" onClick={() => { setEditing(device.id); setNameDraft(device.device_name); }}>
                   <Pencil size={14} className="mr-1" />
                   Rename
