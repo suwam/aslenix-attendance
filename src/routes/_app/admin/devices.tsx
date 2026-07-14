@@ -71,7 +71,6 @@ function DeviceManagementPage() {
       const [
         { data: deviceRows, error: devicesError },
         { data: requestRows, error: requestsError },
-        { data: passkeyRows, error: passkeysError },
         { data: auditRows, error: auditError },
         { data: settingsRow, error: settingsError },
       ] = await Promise.all([
@@ -99,7 +98,6 @@ function DeviceManagementPage() {
 
       if (devicesError) throw devicesError;
       if (requestsError) throw requestsError;
-      if (passkeysError) throw passkeysError;
       if (auditError) throw auditError;
       if (settingsError) throw settingsError;
 
