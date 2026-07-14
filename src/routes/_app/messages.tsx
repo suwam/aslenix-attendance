@@ -104,6 +104,12 @@ const ALLOWED_EXTENSIONS = [
 ];
 const ACCEPTED_ATTACHMENT_TYPES = ".pdf,.docx,.xlsx,.jpg,.jpeg,.png,.gif,.webp,.heic,.heif,.mp4,.mov,.webm,.m4v,.zip";
 const QUICK_EMOJIS = ["👍", "✅", "🙏", "🙂", "📌", "📄", "👏", "💡"];
+const QUICK_TEMPLATES = [
+  { label: "Thanks", text: "Thanks for the update. I will review this and get back to you shortly." },
+  { label: "Need Details", text: "Could you share a few more details so I can help you properly?" },
+  { label: "Resolved", text: "This has been resolved. Please let me know if anything else comes up." },
+  { label: "Follow Up", text: "Following up on this conversation. Is there any update from your side?" },
+];
 
 function MessagesPage() {
   const { user, profile, isAdmin } = useAuth();
@@ -129,7 +135,7 @@ function MessagesPage() {
   const [employeeSearch, setEmployeeSearch] = useState("");
   const [messageSearch, setMessageSearch] = useState("");
   const [dateSearch, setDateSearch] = useState("");
-  const [conversationFilter, setConversationFilter] = useState<"recent" | "unread" | "archived" | "pinned" | "all">("recent");
+  const [conversationFilter, setConversationFilter] = useState<"recent" | "unread" | "needs_reply" | "archived" | "pinned" | "all">("recent");
   const [showEmoji, setShowEmoji] = useState(false);
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -434,8 +440,10 @@ function MessagesPage() {
       })
       .filter(({ employee, conversation, lastMessage }) => {
         const unread = conversation ? unreadByConversation.get(conversation.id) ?? 0 : 0;
+        const needsReply = Boolean(conversation && lastMessage && !lastMessage.sender_is_admin);
         if (conversationFilter === "recent" && conversation?.archived_by_admin) return false;
         if (conversationFilter === "unread" && unread === 0) return false;
+        if (conversationFilter === "needs_reply" && !needsReply) return false;
         if (conversationFilter === "archived" && !conversation?.archived_by_admin) return false;
         if (conversationFilter === "pinned" && !conversation?.pinned_by_admin) return false;
         return !needle || `${employee.full_name} ${employee.department} ${employee.position} ${lastMessage?.body ?? ""} ${lastMessage?.attachment_name ?? ""}`.toLowerCase().includes(needle);
@@ -601,15 +609,36 @@ function MessagesPage() {
   }
 
   const totalUnread = [...unreadByConversation.values()].reduce((sum, value) => sum + value, 0);
-  const waitingForReply = overviewMessages.filter((item, index, rows) =>
-    !item.sender_is_admin && rows.findIndex((other) => other.conversation_id === item.conversation_id) === index,
-  ).length;
+  const waitingForReply = conversations.filter((conversation) => {
+    const lastMessage = lastMessageByConversation.get(conversation.id);
+    return !conversation.archived_by_admin && lastMessage && !lastMessage.sender_is_admin;
+  }).length;
+  const todayMessages = overviewMessages.filter((item) => isSameDay(new Date(item.created_at), new Date())).length;
+  const activeSharedFiles = messages.filter((item) => item.attachment_path);
+  const activeLastMessage = messages[messages.length - 1] ?? null;
+  const activeUnread = currentConversation ? unreadByConversation.get(currentConversation.id) ?? 0 : 0;
+  const activeResponseStatus = activeLastMessage
+    ? activeLastMessage.sender_is_admin === isChatAdmin
+      ? "Waiting on recipient"
+      : "Your turn"
+    : "No messages yet";
+  const suggestedActions = [
+    activeUnread ? `Review ${activeUnread} unread message${activeUnread === 1 ? "" : "s"}` : "No unread messages",
+    activeSharedFiles.length ? `${activeSharedFiles.length} shared file${activeSharedFiles.length === 1 ? "" : "s"}` : "No shared files yet",
+    activeLastMessage ? `Last activity ${formatDistanceToNow(new Date(activeLastMessage.created_at), { addSuffix: true })}` : "Start with a quick template",
+  ];
+
+  function applyTemplate(text: string) {
+    setDraft((value) => (value.trim() ? `${value.trim()}\n\n${text}` : text));
+    setShowEmoji(false);
+    window.requestAnimationFrame(() => textareaRef.current?.focus({ preventScroll: true }));
+  }
 
   return (
     <div className="-mx-4 -mb-4 mt-0 sm:mx-0 sm:my-0 h-full flex flex-col flex-1 min-h-0 overflow-hidden bg-card text-foreground shadow-2xl sm:rounded-[30px] sm:border sm:border-border sm:p-4 lg:p-5">
       <div className="hidden gap-3 pb-4 lg:grid lg:grid-cols-3">
-        <ChatMetric icon={MessageCircle} label={isChatAdmin ? "Total conversations" : "Inbox"} value={isChatAdmin ? conversations.length : "Official Channel"} subtitle={isChatAdmin ? "+18 today" : "Secure messaging"} tone="cyan" />
-        <ChatMetric icon={Users} label={isChatAdmin ? "Waiting for reply" : "Channel status"} value={isChatAdmin ? waitingForReply : "Active"} subtitle={isChatAdmin ? "3 urgent" : "Auditable history"} tone="violet" />
+        <ChatMetric icon={MessageCircle} label={isChatAdmin ? "Total conversations" : "Inbox"} value={isChatAdmin ? conversations.length : "Official Channel"} subtitle={isChatAdmin ? `${todayMessages} today` : "Secure messaging"} tone="cyan" />
+        <ChatMetric icon={Users} label={isChatAdmin ? "Waiting for reply" : "Channel status"} value={isChatAdmin ? waitingForReply : "Active"} subtitle={activeResponseStatus} tone="violet" />
         <ChatMetric icon={ShieldCheck} label="Unread messages" value={totalUnread} subtitle={totalUnread ? "High priority" : "All caught up"} tone="pink" />
       </div>
 
@@ -631,9 +660,9 @@ function MessagesPage() {
                   {employeeSearch && <button onClick={() => setEmployeeSearch("")} aria-label="Clear search"><X size={15} /></button>}
                 </label>
                 <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
-                  {(["recent", "unread", "archived", "pinned", "all"] as const).map((filter) => (
+                  {(["recent", "unread", "needs_reply", "archived", "pinned", "all"] as const).map((filter) => (
                     <button key={filter} onClick={() => setConversationFilter(filter)} className={`rounded-full border px-3 py-1.5 text-xs font-bold capitalize transition active:scale-95 ${conversationFilter === filter ? "border-cyan-300/35 bg-cyan-300/15 text-foreground shadow-[0_0_18px_rgba(0,194,255,.12)]" : "border-border bg-card text-muted-foreground hover:bg-card hover:text-muted-foreground"}`}>
-                      {filter}
+                      {filter.replace("_", " ")}
                     </button>
                   ))}
                 </div>
@@ -824,6 +853,18 @@ function MessagesPage() {
                     <button type="button" onClick={() => setReplyingTo(null)} className="text-muted-foreground hover:text-foreground cursor-pointer" aria-label="Cancel reply"><X size={14} /></button>
                   </div>
                 )}
+                <div className="mx-auto mb-2 flex max-w-4xl gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
+                  {QUICK_TEMPLATES.map((template) => (
+                    <button
+                      key={template.label}
+                      type="button"
+                      onClick={() => applyTemplate(template.text)}
+                      className="shrink-0 rounded-full border border-border bg-card px-3 py-1.5 text-[11px] font-bold text-muted-foreground transition hover:border-cyan-300/30 hover:bg-cyan-300/10 hover:text-foreground active:scale-95"
+                    >
+                      {template.label}
+                    </button>
+                  ))}
+                </div>
                 <div className="mx-auto w-full min-w-0 max-w-4xl rounded-3xl border border-border bg-card p-2 shadow-[inset_0_1px_0_rgba(255,255,255,.05),0_18px_55px_rgba(0,0,0,.18)]">
                   <div className="flex w-full min-w-0 items-end gap-1.5 sm:gap-2">
                   <input ref={fileInputRef} type="file" accept={ACCEPTED_ATTACHMENT_TYPES} className="hidden" onChange={(event) => event.target.files?.[0] && sendMessage(undefined, event.target.files[0])} />
@@ -942,10 +983,10 @@ function MessagesPage() {
               </div>
             </div>
           </div>
-          <InfoSection title="Conversation Details" items={["Secure internal channel", "Permanent audit history", currentConversation?.pinned_by_admin ? "Pinned conversation" : "Standard priority"]} />
-          <InfoSection title="Shared Files" items={[`${messages.filter((item) => item.attachment_path).length} attachments`, "PDF, Office, Images, ZIP", "Video previews supported"]} />
-          <InfoSection title="Pinned Messages" items={["No pinned messages yet", "Use hover actions to review", "Important items stay visible"]} />
-          <InfoSection title="Recent Activity" items={[visibleMessages.length ? `${visibleMessages.length} messages loaded` : "No messages yet", totalUnread ? `${totalUnread} unread` : "All caught up", peerPresence?.is_online ? "Member online" : "Member offline"]} />
+          <InfoSection title="Conversation Details" items={["Secure internal channel", currentConversation?.pinned_by_admin ? "Pinned conversation" : "Standard priority", currentConversation?.archived_by_admin ? "Archived" : "Active"]} />
+          <InfoSection title="Shared Files" items={[`${activeSharedFiles.length} attachment${activeSharedFiles.length === 1 ? "" : "s"}`, activeSharedFiles[0]?.attachment_name || "No recent file", "PDF, Office, Images, ZIP, Video"]} />
+          <InfoSection title="Suggested Actions" items={suggestedActions} />
+          <InfoSection title="Recent Activity" items={[visibleMessages.length ? `${visibleMessages.length} messages loaded` : "No messages yet", activeResponseStatus, peerPresence?.is_online ? "Member online" : "Member offline"]} />
         </aside>}
       </div>
     </div>
