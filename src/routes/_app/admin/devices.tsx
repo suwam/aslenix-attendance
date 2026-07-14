@@ -433,39 +433,14 @@ async function approveRequest(request: PendingDeviceRequest, replaceDeviceId?: s
     throw new Error(`Employee already has ${maxTrustedDevices} registered devices. Approve a replacement request instead.`);
   }
 
-  if (replaceDeviceId) {
-    const { error: replaceError } = await (supabase as any)
-      .from("employee_devices")
-      .update({
-        status: "Inactive",
-        removed_at: now,
-        removed_by: user?.id ?? null,
-        removal_reason: "Replaced by HR",
-      })
-      .eq("id", replaceDeviceId)
-      .eq("employee_id", request.employee_id);
-    if (replaceError) throw replaceError;
-  }
-
-  const { error: insertError } = await (supabase as any)
-    .from("employee_devices")
-    .upsert(
-      {
-        employee_id: request.employee_id,
-        device_fingerprint: request.device_fingerprint,
-        browser: request.browser,
-        operating_system: request.operating_system,
-        device_name: request.device_name,
-        status: "Active",
-        last_login: now,
-      },
-      { onConflict: "employee_id,device_fingerprint" },
-    );
-  if (insertError) throw insertError;
-
   const { error: requestError } = await (supabase as any)
     .from("pending_device_requests")
-    .update({ status: "Approved", reviewed_at: now, reviewed_by: user?.id ?? null })
+    .update({ 
+      status: "Approved", 
+      reviewed_at: now, 
+      reviewed_by: user?.id ?? null,
+      replace_device_id: replaceDeviceId || null 
+    })
     .eq("id", request.id);
 
   if (requestError) throw requestError;

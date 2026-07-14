@@ -423,7 +423,10 @@ function EmployeeDashboard() {
 
   const checkIn = async () => {
     if (!user) return;
-    if (!isAdmin && deviceStatus !== "registered") return toast.error("Use an approved registered device to mark attendance.");
+    if (!isAdmin) {
+      if (deviceStatus === "setup_required") return toast.error("Biometric registration required. Please go to the Check-in page to complete setup.");
+      if (deviceStatus !== "registered") return toast.error("Use an approved registered device to mark attendance.");
+    }
     if (isWeeklyOff) return toast.info("Saturday is a weekly off. Attendance is not required.");
     setBusy(true);
     let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
@@ -467,7 +470,10 @@ function EmployeeDashboard() {
 
   const checkOut = async () => {
     if (!user || !today) return;
-    if (!isAdmin && deviceStatus !== "registered") return toast.error("Use an approved registered device to mark attendance.");
+    if (!isAdmin) {
+      if (deviceStatus === "setup_required") return toast.error("Biometric registration required. Please go to the Check-in page to complete setup.");
+      if (deviceStatus !== "registered") return toast.error("Use an approved registered device to mark attendance.");
+    }
     setBusy(true);
     let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
     try {

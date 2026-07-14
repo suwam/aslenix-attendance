@@ -50,7 +50,7 @@ function CheckInPage() {
   const todayDate = format(new Date(), "yyyy-MM-dd");
   const isWeeklyOff = isWeeklyOffDate(todayDate);
 
-  const { deviceStatus } = useDeviceStatus();
+  const { deviceStatus, setupBiometrics, busy: biometricsBusy } = useDeviceStatus();
 
   const load = async () => {
     if (!user) return;
@@ -204,6 +204,26 @@ function CheckInPage() {
         <PageHeader title="Check-in" subtitle="Daily attendance" />
         <div className="flex justify-center py-20">
           <Loader2 className="animate-spin text-primary" />
+        </div>
+      </>
+    );
+  }
+
+  if (deviceStatus === 'setup_required') {
+    return (
+      <>
+        <PageHeader title="Check-in" subtitle="Daily attendance" />
+        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+          <Fingerprint size={48} className="text-primary" />
+          <h2 className="text-xl font-semibold">Biometric Registration Required</h2>
+          <p className="text-sm text-muted-foreground max-w-md">
+            To use this device for attendance, you must register it with a Passkey (e.g. Windows Hello, Face ID, Touch ID).
+            This is a one-time setup process.
+          </p>
+          <Button onClick={setupBiometrics} disabled={biometricsBusy} className="mt-4">
+            {biometricsBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Register Passkey
+          </Button>
         </div>
       </>
     );
