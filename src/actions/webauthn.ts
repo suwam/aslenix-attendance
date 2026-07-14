@@ -11,7 +11,7 @@ import {
 const rpName = "ASLENIX Attendance";
 
 export const generateRegistrationOptions = createServerFn({ method: "POST" })
-  .validator((d: { userId: string; deviceFingerprint: string; rpID: string; username: string }) => d)
+  .inputValidator((d: { userId: string; deviceFingerprint: string; rpID: string; username: string }) => d)
   .handler(async ({ data }) => {
     const { userId, deviceFingerprint, rpID, username } = data;
 
@@ -51,7 +51,7 @@ export const generateRegistrationOptions = createServerFn({ method: "POST" })
   });
 
 export const verifyRegistrationResponse = createServerFn({ method: "POST" })
-  .validator((d: { userId: string; deviceFingerprint: string; rpID: string; response: any }) => d)
+  .inputValidator((d: { userId: string; deviceFingerprint: string; rpID: string; response: any }) => d)
   .handler(async ({ data }) => {
     const { userId, deviceFingerprint, rpID, response } = data;
 
@@ -112,7 +112,7 @@ export const verifyRegistrationResponse = createServerFn({ method: "POST" })
   });
 
 export const generateAuthenticationOptions = createServerFn({ method: "POST" })
-  .validator((d: { userId: string; deviceFingerprint: string; rpID: string }) => d)
+  .inputValidator((d: { userId: string; deviceFingerprint: string; rpID: string }) => d)
   .handler(async ({ data }) => {
     const { userId, deviceFingerprint, rpID } = data;
 
@@ -149,7 +149,7 @@ export const generateAuthenticationOptions = createServerFn({ method: "POST" })
   });
 
 export const verifyAuthenticationResponse = createServerFn({ method: "POST" })
-  .validator((d: { userId: string; deviceFingerprint: string; rpID: string; response: any }) => d)
+  .inputValidator((d: { userId: string; deviceFingerprint: string; rpID: string; response: any }) => d)
   .handler(async ({ data }) => {
     const { userId, deviceFingerprint, rpID, response } = data;
 
