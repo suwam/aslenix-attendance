@@ -486,9 +486,9 @@ function WeeklyFeedbackPage() {
             </h3>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={chartRows}>
-                <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 0.06)" />
-                <XAxis dataKey="name" stroke="oklch(0.7 0.03 250)" fontSize={12} />
-                <YAxis stroke="oklch(0.7 0.03 250)" fontSize={12} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="name" stroke="#64748b" fontSize={12} />
+                <YAxis stroke="#64748b" fontSize={12} />
                 <Tooltip contentStyle={tooltipStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipItemStyle} />
                 <Bar dataKey="score" fill="#ff2d6f" radius={[8, 8, 0, 0]} />
                 <Bar dataKey="attendance" fill="#21d4fd" radius={[8, 8, 0, 0]} />
@@ -522,9 +522,9 @@ function WeeklyFeedbackPage() {
                 <ReferenceArea y1={0} y2={50} fill="#ff2d6f" fillOpacity={0.08} />
                 <ReferenceArea y1={51} y2={75} fill="#f6c453" fillOpacity={0.07} />
                 <ReferenceArea y1={76} y2={100} fill="#22c55e" fillOpacity={0.08} />
-                <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 0.06)" />
-                <XAxis dataKey="week" stroke="oklch(0.7 0.03 250)" fontSize={12} />
-                <YAxis domain={[0, 100]} stroke="oklch(0.7 0.03 250)" fontSize={12} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="week" stroke="#64748b" fontSize={12} />
+                <YAxis domain={[0, 100]} stroke="#64748b" fontSize={12} />
                 <Tooltip content={<WeeklyProgressTooltip />} />
                 <ReferenceLine y={80} stroke="#f6c453" strokeDasharray="6 6" strokeWidth={1.5} />
                 <ReferenceLine y={teamAverageScore} stroke="#8b5cf6" strokeDasharray="4 5" strokeOpacity={0.7} />
