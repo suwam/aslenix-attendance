@@ -9,7 +9,12 @@ import { bsInputToAdDateString, formatBsInput, getNepaliDate } from "@/lib/nepal
 import { cn } from "@/lib/utils";
 
 const pickerPanelClass =
-  "w-[324px] overflow-hidden rounded-2xl border border-cyan-300/20 bg-[#06101f]/90 p-0 text-foreground shadow-[0_22px_70px_rgba(0,0,0,.55),0_0_44px_rgba(34,211,238,.14)] backdrop-blur-2xl before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_16%_0%,rgba(34,211,238,.18),transparent_32%),radial-gradient(circle_at_92%_18%,rgba(255,45,111,.14),transparent_30%)]";
+  "z-[70] w-[min(22rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border bg-popover p-0 text-popover-foreground shadow-[0_18px_54px_rgba(15,23,42,.18)]";
+
+const pickerIconButtonClass =
+  "h-9 w-9 rounded-xl border border-border bg-background text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground";
+
+const pickerSectionClass = "rounded-2xl border border-border bg-background";
 
 type BSDateInputProps = {
   value: string;
@@ -110,26 +115,26 @@ export function BSDateInput({
             <CalendarDays size={16} />
           </button>
         </PopoverTrigger>
-        <PopoverContent align="end" className={pickerPanelClass}>
-          <div className="relative p-4">
+        <PopoverContent align="end" sideOffset={10} collisionPadding={16} className={pickerPanelClass}>
+          <div className="p-4">
             <div className="mb-4 flex items-center justify-between gap-2">
-            <Button type="button" variant="ghost" size="icon" className="h-9 w-9 rounded-xl border border-border bg-card text-slate-200 hover:bg-cyan-400/10 hover:text-cyan-100" onClick={() => moveMonth(-1)}>
+            <Button type="button" variant="ghost" size="icon" className={pickerIconButtonClass} onClick={() => moveMonth(-1)}>
               <ChevronLeft size={16} />
             </Button>
             <div className="text-center">
-              <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-cyan-200/75">BS Calendar</div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-muted-foreground">BS Calendar</div>
               <div className="mt-1 text-base font-extrabold tabular-nums text-foreground">{monthLabel} BS</div>
             </div>
-            <Button type="button" variant="ghost" size="icon" className="h-9 w-9 rounded-xl border border-border bg-card text-slate-200 hover:bg-pink-400/10 hover:text-pink-100" onClick={() => moveMonth(1)}>
+            <Button type="button" variant="ghost" size="icon" className={pickerIconButtonClass} onClick={() => moveMonth(1)}>
               <ChevronRight size={16} />
             </Button>
           </div>
-          <div className="grid grid-cols-7 gap-1 rounded-2xl border border-border bg-card p-2 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+          <div className={cn("grid grid-cols-7 gap-1 p-2 text-center text-[11px] font-bold uppercase tracking-wider text-muted-foreground", pickerSectionClass)}>
             {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
               <div key={day} className="py-1">{day}</div>
             ))}
           </div>
-          <div className="mt-2 grid grid-cols-7 gap-1 rounded-2xl border border-border bg-card p-2">
+          <div className={cn("mt-2 grid grid-cols-7 gap-1 p-2", pickerSectionClass)}>
             {Array.from({ length: days.firstWeekday }).map((_, index) => (
               <div key={`blank-${index}`} className="h-9" />
             ))}
@@ -148,11 +153,11 @@ export function BSDateInput({
                   onClick={() => selectDate(day)}
                   className={cn(
                     "grid h-9 place-items-center rounded-xl text-sm font-extrabold tabular-nums transition",
-                    "hover:bg-cyan-400/15 hover:text-cyan-100 hover:shadow-[0_0_18px_rgba(34,211,238,.18)]",
+                    "hover:bg-accent hover:text-accent-foreground",
                     isSelected
-                      ? "bg-gradient-to-br from-cyan-300 via-violet-500 to-pink-500 text-foreground shadow-[0_0_24px_rgba(34,211,238,.32)]"
-                      : "text-slate-200/95",
-                    !isSelected && isToday && "border border-cyan-300/60 bg-cyan-400/10 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,.16)]",
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-foreground",
+                    !isSelected && isToday && "border border-primary/40 bg-primary/10 text-primary",
                   )}
                 >
                   {day}
@@ -161,8 +166,8 @@ export function BSDateInput({
             })}
           </div>
           <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-            <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Nepali date picker</span>
-            <Button type="button" variant="outline" className="h-9 rounded-xl border-border bg-card px-4 text-xs font-bold hover:bg-cyan-400/10 hover:text-cyan-100" onClick={selectToday}>
+            <span className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">Nepali date picker</span>
+            <Button type="button" variant="outline" className="h-9 rounded-xl px-4 text-xs font-bold" onClick={selectToday}>
               Today
             </Button>
           </div>
@@ -219,17 +224,17 @@ export function BSMonthInput({
             <CalendarDays size={16} />
           </button>
         </PopoverTrigger>
-        <PopoverContent align="end" className={pickerPanelClass}>
+        <PopoverContent align="end" sideOffset={10} collisionPadding={16} className={pickerPanelClass}>
           <div className="relative p-4">
           <div className="mb-4 flex items-center justify-between gap-2">
-            <Button type="button" variant="ghost" size="icon" className="h-9 w-9 rounded-xl border border-border bg-card text-slate-200 hover:bg-cyan-400/10 hover:text-cyan-100" onClick={() => setViewYear((year) => year - 1)}>
+            <Button type="button" variant="ghost" size="icon" className={pickerIconButtonClass} onClick={() => setViewYear((year) => year - 1)}>
               <ChevronLeft size={16} />
             </Button>
             <div className="text-center">
-              <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-cyan-200/75">BS Month</div>
+              <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-muted-foreground">BS Month</div>
               <div className="mt-1 text-base font-extrabold tabular-nums text-foreground">{viewYear} BS</div>
             </div>
-            <Button type="button" variant="ghost" size="icon" className="h-9 w-9 rounded-xl border border-border bg-card text-slate-200 hover:bg-pink-400/10 hover:text-pink-100" onClick={() => setViewYear((year) => year + 1)}>
+            <Button type="button" variant="ghost" size="icon" className={pickerIconButtonClass} onClick={() => setViewYear((year) => year + 1)}>
               <ChevronRight size={16} />
             </Button>
           </div>
@@ -245,11 +250,11 @@ export function BSMonthInput({
                   onClick={() => selectMonth(month)}
                   className={cn(
                     "rounded-xl border px-2 py-3 text-sm font-bold transition",
-                    "hover:border-cyan-300/40 hover:bg-cyan-400/15 hover:text-cyan-100",
+                    "hover:border-primary/40 hover:bg-accent hover:text-accent-foreground",
                     isSelected
-                      ? "border-transparent bg-gradient-to-br from-cyan-400 to-fuchsia-500 text-foreground shadow-lg shadow-cyan-500/20"
-                      : "border-border bg-card text-slate-200",
-                    !isSelected && isCurrent && "border-cyan-300/50 text-cyan-200",
+                      ? "border-transparent bg-primary text-primary-foreground shadow-sm"
+                      : "border-border bg-background text-foreground",
+                    !isSelected && isCurrent && "border-primary/50 text-primary",
                   )}
                 >
                   {monthName}

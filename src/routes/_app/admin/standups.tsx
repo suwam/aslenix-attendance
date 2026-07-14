@@ -188,7 +188,7 @@ function AdminStandupsPage() {
                   <BriefingPoint label={blockerCount > 2 ? "Manager attention recommended" : "No critical risks identified"} tone={blockerCount > 2 ? "amber" : "green"} />
                 </div>
                 <div className="mt-5 rounded-2xl border border-border bg-card p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-fuchsia-200/80">AI Insights</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-fuchsia-600 dark:text-fuchsia-200/80">AI Insights</p>
                   <p className="mt-2 text-lg font-semibold leading-relaxed text-foreground">
                     {makeAiInsight(signals.length, blockerCount, executionConfidence)}
                   </p>
@@ -234,7 +234,7 @@ function AdminStandupsPage() {
                 className="group flex items-start gap-3 rounded-2xl border border-border bg-card p-4 transition-all duration-300 hover:border-cyan-300/35 hover:bg-cyan-300/10"
               >
                 <div className="mt-0.5 h-2.5 w-2.5 rounded-full bg-gradient-to-r from-cyan-300 to-fuchsia-300 shadow-[0_0_14px_rgba(34,211,238,0.65)]" />
-                <p className="text-sm leading-relaxed text-slate-200">{item}</p>
+                <p className="text-sm leading-relaxed text-foreground">{item}</p>
                 <ChevronRight className="ml-auto shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-cyan-200" size={16} />
               </div>
             ))}
@@ -257,7 +257,7 @@ function AdminStandupsPage() {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Search employee, role, department..."
-          className="border-border bg-card pl-9 text-foreground placeholder:text-slate-500 focus-visible:ring-cyan-300/40"
+          className="border-border bg-card pl-9 text-foreground placeholder:text-muted-foreground focus-visible:ring-cyan-300/40"
         />
       </div>
 
@@ -542,8 +542,8 @@ function EmployeeIntelligencePanel({ row }: { row?: EmployeeSignal }) {
       </div>
 
       <div className="mt-5 rounded-2xl border border-border bg-card p-4">
-        <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-100/70">Recent standup</p>
-        <p className="mt-2 text-sm leading-relaxed text-slate-200">{row.yesterday || "No completed work update shared."}</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-600 dark:text-fuchsia-100/70">Recent standup</p>
+        <p className="mt-2 text-sm leading-relaxed text-foreground">{row.yesterday || "No completed work update shared."}</p>
         <p className="mt-3 text-xs text-muted-foreground">
           Updated {formatNepaliDate(row.updated_at, "DD MMM YYYY")} BS · {format(new Date(row.updated_at), "HH:mm")}
         </p>
@@ -601,7 +601,7 @@ function BriefingPoint({ label, tone }: { label: string; tone: "blue" | "green" 
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3">
       <span className={cn("h-2.5 w-2.5 rounded-full shadow-[0_0_14px_currentColor]", color)} />
-      <span className="text-sm font-medium text-slate-100">{label}</span>
+      <span className="text-sm font-medium text-foreground">{label}</span>
     </div>
   );
 }
