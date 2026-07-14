@@ -58,6 +58,7 @@ import {
   ShieldCheck,
   Sparkles,
   Smile,
+  Fingerprint,
   Target,
   Trophy,
   TrendingUp,
@@ -626,6 +627,22 @@ function EmployeeDashboard() {
 
   return (
     <>
+      {!isAdmin && deviceStatus === "setup_required" && (
+        <div className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-4 bg-[#EEF2FF] px-4 py-3 shadow-md border-b border-[#C4DAFF]">
+          <Fingerprint className="text-[#4F46E5] h-5 w-5 animate-pulse" />
+          <p className="text-sm font-medium text-[#4338CA]">
+            Biometric registration required for this device to mark attendance.
+          </p>
+          <Button 
+            size="sm" 
+            className="bg-[#4F46E5] text-white hover:bg-[#4338CA] shadow-sm ml-2 h-8"
+            onClick={() => window.location.href = '/check-in'}
+          >
+            Setup Now
+          </Button>
+        </div>
+      )}
+
       <NotificationPopup
         notification={notificationPopup}
         meetings={meetings}
