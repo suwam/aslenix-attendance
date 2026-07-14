@@ -21,7 +21,6 @@ type EmployeeDevice = {
   id: string;
   employee_id: string;
   employee?: EmployeeSummary;
-  passkey?: { credential_id: string } | null;
   device_fingerprint: string;
   browser: string;
   operating_system: string;
@@ -87,9 +86,6 @@ function DeviceManagementPage() {
           .eq("status", "Pending")
           .order("requested_at", { ascending: false }),
         (supabase as any)
-          .from("device_passkeys")
-          .select("employee_id,device_fingerprint,credential_id"),
-        (supabase as any)
           .from("trusted_device_audit_logs")
           .select("id,employee_id,action,created_at,metadata")
           .order("created_at", { ascending: false })
@@ -109,9 +105,6 @@ function DeviceManagementPage() {
 
       const devices = (deviceRows ?? []) as EmployeeDevice[];
       const pendingRequests = (requestRows ?? []) as PendingDeviceRequest[];
-      const passkeyMap = new Map(
-        (passkeyRows ?? []).map((passkey: any) => [`${passkey.employee_id}:${passkey.device_fingerprint}`, passkey]),
-      );
       setMaxDevices(Number(settingsRow?.max_trusted_devices ?? 2));
       const employeeIds = [
         ...new Set([...devices.map((device) => device.employee_id), ...pendingRequests.map((request) => request.employee_id)]),
@@ -142,7 +135,6 @@ function DeviceManagementPage() {
         devices: devices.map((device) => ({
           ...device,
           employee: profileMap.get(device.employee_id),
-          passkey: passkeyMap.get(`${device.employee_id}:${device.device_fingerprint}`) ?? null,
         })),
         pendingRequests: pendingRequests.map((request) => ({ ...request, employee: profileMap.get(request.employee_id) })),
         auditLogs: (auditRows ?? []) as TrustedDeviceAuditLog[],
@@ -236,8 +228,8 @@ function DeviceManagementPage() {
 
       <GlassCard className="flex flex-wrap items-end justify-between gap-4 p-5">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">Trusted Device Policy</h2>
-          <p className="text-sm text-muted-foreground">Default is 2 trusted devices per employee. HR can adjust the limit for the whole organization.</p>
+          <h2 className="text-lg font-semibold text-foreground">Registered Device Policy</h2>
+          <p className="text-sm text-muted-foreground">Default is 2 registered devices per employee. HR can adjust the limit for the whole organization.</p>
         </div>
         <div className="flex items-end gap-3">
           <label className="block">
@@ -292,7 +284,6 @@ function DeviceManagementPage() {
                     <Detail label="Registered Device" value={device?.device_name || "No active registered device"} subvalue={device?.device_fingerprint} />
                     <Detail label="Browser" value={device?.browser || "-"} />
                     <Detail label="Operating System" value={device?.operating_system || "-"} />
-                    <Detail label="Passkey Credential" value={device?.passkey?.credential_id ? "Registered" : "Missing"} subvalue={device?.passkey?.credential_id} />
                     <Detail label="Last Login" value={device ? formatDate(device.last_login) : "Never"} />
                   </div>
 
@@ -390,7 +381,7 @@ function DeviceManagementPage() {
                                 onClick={() =>
                                   runAction(
                                     `replace-${device.id}-${request.id}`,
-                                    () => approveRequest(request),
+                                    () => approveRequest(request, device.id),
                                     "Existing device replaced",
                                   )
                                 }
@@ -420,7 +411,7 @@ function DeviceManagementPage() {
   );
 }
 
-async function approveRequest(request: PendingDeviceRequest) {
+async function approveRequest(request: PendingDeviceRequest, replaceDeviceId?: string) {
   const now = new Date().toISOString();
   const {
     data: { user },
@@ -440,50 +431,39 @@ async function approveRequest(request: PendingDeviceRequest) {
     .eq("status", "Active");
   if (activeError) throw activeError;
 
-  const replacingDevice = Boolean(request.replace_device_id);
-  if ((activeDevices ?? []).length >= maxTrustedDevices && !replacingDevice) {
-    throw new Error(`Employee already has ${maxTrustedDevices} trusted devices. Approve a replacement request instead.`);
+  if ((activeDevices ?? []).length >= maxTrustedDevices && !replaceDeviceId) {
+    throw new Error(`Employee already has ${maxTrustedDevices} registered devices. Approve a replacement request instead.`);
   }
 
-  if (request.replace_device_id) {
-    const { error: inactiveError } = await (supabase as any)
+  if (replaceDeviceId) {
+    const { error: replaceError } = await (supabase as any)
       .from("employee_devices")
       .update({
         status: "Inactive",
         removed_at: now,
         removed_by: user?.id ?? null,
-        removal_reason: "Replaced by HR-approved trusted device",
+        removal_reason: "Replaced by HR",
       })
-      .eq("id", request.replace_device_id)
+      .eq("id", replaceDeviceId)
       .eq("employee_id", request.employee_id);
-
-    if (inactiveError) throw inactiveError;
-
-    await (supabase as any)
-      .from("device_passkeys")
-      .delete()
-      .eq("employee_id", request.employee_id)
-      .eq(
-        "device_fingerprint",
-        activeDevices?.find((device: any) => device.id === request.replace_device_id)?.device_fingerprint ?? "",
-      );
+    if (replaceError) throw replaceError;
   }
 
-  const { error: upsertError } = await (supabase as any).from("employee_devices").upsert(
-    {
-      employee_id: request.employee_id,
-      device_fingerprint: request.device_fingerprint,
-      browser: request.browser,
-      operating_system: request.operating_system,
-      device_name: request.device_name,
-      status: "Active",
-      registered_at: now,
-      last_login: now,
-    },
-    { onConflict: "employee_id,device_fingerprint" },
-  );
-
-  if (upsertError) throw upsertError;
+  const { error: insertError } = await (supabase as any)
+    .from("employee_devices")
+    .upsert(
+      {
+        employee_id: request.employee_id,
+        device_fingerprint: request.device_fingerprint,
+        browser: request.browser,
+        operating_system: request.operating_system,
+        device_name: request.device_name,
+        status: "Active",
+        last_login: now,
+      },
+      { onConflict: "employee_id,device_fingerprint" },
+    );
+  if (insertError) throw insertError;
 
   const { error: requestError } = await (supabase as any)
     .from("pending_device_requests")
@@ -496,9 +476,9 @@ async function approveRequest(request: PendingDeviceRequest) {
     employeeId: request.employee_id,
     actorId: user?.id ?? null,
     actorRole: "admin",
-    action: request.replace_device_id ? "replaced" : "approved",
+    action: "approved",
     deviceFingerprint: request.device_fingerprint,
-    metadata: { requestId: request.id, replaceDeviceId: request.replace_device_id ?? null },
+    metadata: { requestId: request.id, replaceDeviceId: replaceDeviceId ?? null },
   });
 }
 
@@ -553,11 +533,6 @@ async function removeDevice(deviceId: string) {
   if (error) throw error;
 
   if (device) {
-    await (supabase as any)
-      .from("device_passkeys")
-      .delete()
-      .eq("employee_id", device.employee_id)
-      .eq("device_fingerprint", device.device_fingerprint);
     await logTrustedDeviceEvent({
       employeeId: device.employee_id,
       deviceId,

@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { AppShell } from "@/components/AppShell";
 import { AslenixLogo } from "@/components/AslenixLogo";
-import { DeviceRegistrationModal } from "@/components/device/DeviceRegistrationModal";
+import { Toaster } from "@/components/ui/sonner";
 
 export const Route = createFileRoute("/_app")({
   component: ProtectedLayout,
@@ -77,7 +77,7 @@ function ProtectedLayout() {
   return (
     <AppShell>
       <Outlet />
-      <DeviceRegistrationModal />
+      <Toaster position="top-right" richColors />
     </AppShell>
   );
 }

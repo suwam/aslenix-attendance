@@ -50,7 +50,7 @@ function CheckInPage() {
   const todayDate = format(new Date(), "yyyy-MM-dd");
   const isWeeklyOff = isWeeklyOffDate(todayDate);
 
-  const { deviceStatus, verifyBiometrics } = useDeviceStatus();
+  const { deviceStatus } = useDeviceStatus();
 
   const load = async () => {
     if (!user) return;
@@ -85,12 +85,12 @@ function CheckInPage() {
 
   const requireTrustedDevice = async () => {
     if (isAdmin) return true;
-    if (deviceStatus !== "approved") {
-      toast.error("Use an approved trusted device to mark attendance.");
+    if (deviceStatus !== "registered") {
+      toast.error("Use an approved registered device to mark attendance.");
       return false;
     }
 
-    return verifyBiometrics();
+    return true;
   };
 
   const checkIn = async () => {
@@ -209,15 +209,15 @@ function CheckInPage() {
     );
   }
 
-  if (deviceStatus !== 'approved') {
+  if (deviceStatus !== 'registered') {
     return (
       <>
         <PageHeader title="Check-in" subtitle="Daily attendance" />
         <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
           <ShieldX size={48} className="text-muted-foreground/50" />
-          <h2 className="text-xl font-semibold">Device Registration Required</h2>
+          <h2 className="text-xl font-semibold">Attendance Blocked</h2>
           <p className="text-sm text-muted-foreground">
-            Please register your device using the prompt that appeared after login, or contact your administrator if you are pending approval.
+            This device is pending HR approval or is unregistered. Please contact your administrator to authorize this device.
           </p>
         </div>
       </>

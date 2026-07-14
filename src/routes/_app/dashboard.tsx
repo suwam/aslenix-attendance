@@ -142,7 +142,7 @@ const MOODS = [
 
 function EmployeeDashboard() {
   const { user, profile, isAdmin } = useAuth();
-  const { deviceStatus, verifyBiometrics } = useDeviceStatus();
+  const { deviceStatus } = useDeviceStatus();
   const [today, setToday] = useState<any>(null);
   const [monthStats, setMonthStats] = useState({ present: 0, late: 0, leave: 0, hours: 0 });
   const [taskStats, setTaskStats] = useState({
@@ -423,16 +423,9 @@ function EmployeeDashboard() {
 
   const checkIn = async () => {
     if (!user) return;
-    if (!isAdmin && deviceStatus !== "approved") return toast.error("Use an approved trusted device to mark attendance.");
+    if (!isAdmin && deviceStatus !== "registered") return toast.error("Use an approved registered device to mark attendance.");
     if (isWeeklyOff) return toast.info("Saturday is a weekly off. Attendance is not required.");
     setBusy(true);
-    if (!isAdmin) {
-      const verified = await verifyBiometrics();
-      if (!verified) {
-        setBusy(false);
-        return;
-      }
-    }
     let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
     try {
       location = await getVerifiedAttendanceLocation();
@@ -474,15 +467,8 @@ function EmployeeDashboard() {
 
   const checkOut = async () => {
     if (!user || !today) return;
-    if (!isAdmin && deviceStatus !== "approved") return toast.error("Use an approved trusted device to mark attendance.");
+    if (!isAdmin && deviceStatus !== "registered") return toast.error("Use an approved registered device to mark attendance.");
     setBusy(true);
-    if (!isAdmin) {
-      const verified = await verifyBiometrics();
-      if (!verified) {
-        setBusy(false);
-        return;
-      }
-    }
     let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
     try {
       location = await getVerifiedAttendanceLocation();
