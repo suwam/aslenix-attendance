@@ -392,37 +392,52 @@ function TimeColumn({
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const ITEM_HEIGHT = 44;
-  const isScrolling = useRef(false);
+  const [internalValue, setInternalValue] = useState(selected);
   const scrollTimeout = useRef<any>(null);
+  const isProgrammaticScroll = useRef(false);
 
   useEffect(() => {
+    setInternalValue(selected);
     if (scrollRef.current) {
       const idx = values.indexOf(selected);
       if (idx !== -1) {
+        isProgrammaticScroll.current = true;
         scrollRef.current.scrollTop = idx * ITEM_HEIGHT;
+        setTimeout(() => { isProgrammaticScroll.current = false; }, 100);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [selected, values]);
 
   const handleScroll = () => {
     if (!scrollRef.current) return;
-    isScrolling.current = true;
-    clearTimeout(scrollTimeout.current);
     
     const idx = Math.round(scrollRef.current.scrollTop / ITEM_HEIGHT);
     const validIdx = Math.max(0, Math.min(values.length - 1, idx));
-    if (values[validIdx] !== selected) {
-      onSelect(values[validIdx]);
+    const newValue = values[validIdx];
+
+    if (internalValue !== newValue) {
+      setInternalValue(newValue);
     }
 
+    if (isProgrammaticScroll.current) return;
+
+    clearTimeout(scrollTimeout.current);
     scrollTimeout.current = setTimeout(() => {
-      isScrolling.current = false;
-      if (scrollRef.current) {
-        const finalIdx = Math.round(scrollRef.current.scrollTop / ITEM_HEIGHT);
-        scrollRef.current.scrollTo({ top: finalIdx * ITEM_HEIGHT, behavior: 'smooth' });
-      }
+      onSelect(newValue);
     }, 150);
+  };
+
+  const handleItemClick = (value: string) => {
+    if (!scrollRef.current) return;
+    const idx = values.indexOf(value);
+    if (idx !== -1) {
+      isProgrammaticScroll.current = true;
+      scrollRef.current.scrollTo({ top: idx * ITEM_HEIGHT, behavior: "smooth" });
+      setInternalValue(value);
+      onSelect(value);
+      setTimeout(() => { isProgrammaticScroll.current = false; }, 400);
+    }
   };
 
   return (
@@ -444,17 +459,11 @@ function TimeColumn({
           style={{ paddingBottom: '88px', paddingTop: '88px', scrollSnapType: 'y mandatory' }}
         >
           {values.map((value) => {
-            const isSelected = selected === value;
+            const isSelected = internalValue === value;
             return (
               <div
                 key={value}
-                onClick={() => {
-                  onSelect(value);
-                  if (scrollRef.current) {
-                    const idx = values.indexOf(value);
-                    scrollRef.current.scrollTo({ top: idx * ITEM_HEIGHT, behavior: 'smooth' });
-                  }
-                }}
+                onClick={() => handleItemClick(value)}
                 className="h-[44px] w-full flex items-center justify-center cursor-pointer"
                 style={{ scrollSnapAlign: 'center' }}
               >
