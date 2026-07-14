@@ -23,6 +23,7 @@ import {
   Trophy,
   BrainCircuit,
   Laptop,
+  ShieldCheck,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { AslenixLogo } from "@/components/AslenixLogo";
