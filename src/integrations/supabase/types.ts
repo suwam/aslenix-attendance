@@ -898,6 +898,50 @@ export type Database = {
         };
         Relationships: [];
       };
+      weekly_standup_reports: {
+        Row: {
+          ai_summary: Json;
+          analytics_data: Json;
+          created_at: string;
+          id: string;
+          status: string;
+          updated_at: string;
+          user_id: string;
+          week_end: string;
+          week_start: string;
+        };
+        Insert: {
+          ai_summary?: Json;
+          analytics_data?: Json;
+          created_at?: string;
+          id?: string;
+          status?: string;
+          updated_at?: string;
+          user_id: string;
+          week_end: string;
+          week_start: string;
+        };
+        Update: {
+          ai_summary?: Json;
+          analytics_data?: Json;
+          created_at?: string;
+          id?: string;
+          status?: string;
+          updated_at?: string;
+          user_id?: string;
+          week_end?: string;
+          week_start?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "weekly_standup_reports_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["user_id"];
+          }
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
