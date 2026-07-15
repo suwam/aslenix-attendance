@@ -969,13 +969,13 @@ function WeeklyAttendanceTooltip({ active, payload }: any) {
   if (!row) return null;
 
   return (
-    <div className="min-w-52 rounded-xl border border-border bg-[#101827]/95 p-3 text-xs text-foreground shadow-[0_18px_60px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
-      <div className="mb-2 flex items-center justify-between gap-4 border-b border-border pb-2">
+    <div className="min-w-52 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-900 shadow-xl">
+      <div className="mb-2 flex items-center justify-between gap-4 border-b border-slate-100 pb-2">
         <div>
-          <div className="font-semibold">{row.day}{row.isToday ? " · Today" : ""}</div>
-          <div className="text-[11px] text-muted-foreground">{row.date ? formatNepaliDate(row.date, "DD MMM YYYY") + " BS" : "Weekly snapshot"}</div>
+          <div className="font-semibold text-slate-900">{row.day}{row.isToday ? " · Today" : ""}</div>
+          <div className="text-[11px] text-slate-500">{row.date ? formatNepaliDate(row.date, "DD MMM YYYY") + " BS" : "Weekly snapshot"}</div>
         </div>
-        <div className="rounded-full bg-cyan-300/10 px-2 py-1 font-bold text-cyan-100 tabular-nums">{row.attendancePct ?? 0}%</div>
+        <div className="rounded-full bg-slate-100 px-2 py-1 font-bold text-slate-800 tabular-nums">{row.attendancePct ?? 0}%</div>
       </div>
       <TooltipRow label="Total employees" value={row.totalEmployees ?? 0} />
       <TooltipRow label="Present" value={row.present ?? 0} color={ATTENDANCE_COLORS.present} />
@@ -983,7 +983,7 @@ function WeeklyAttendanceTooltip({ active, payload }: any) {
       <TooltipRow label="WFH" value={row.wfh ?? 0} color={ATTENDANCE_COLORS.wfh} />
       <TooltipRow label="Absent" value={row.absent ?? 0} color={ATTENDANCE_COLORS.absent} />
       <TooltipRow label="Attendance percentage" value={`${row.attendancePct ?? 0}%`} />
-      {row.noData && <div className="mt-2 rounded-lg border border-border bg-card px-2 py-1.5 text-[11px] text-muted-foreground">No attendance records captured for this day.</div>}
+      {row.noData && <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px] text-slate-500">No attendance records captured for this day.</div>}
     </div>
   );
 }
@@ -991,11 +991,11 @@ function WeeklyAttendanceTooltip({ active, payload }: any) {
 function TooltipRow({ label, value, color }: { label: string; value: string | number; color?: string }) {
   return (
     <div className="flex items-center justify-between gap-4 py-1">
-      <span className="flex items-center gap-2 text-muted-foreground">
-        {color && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />}
+      <span className="flex items-center gap-2 text-slate-600">
+        {color && <span className="h-2.5 w-2.5 rounded-full shadow-sm" style={{ backgroundColor: color }} />}
         {label}
       </span>
-      <strong className="tabular-nums text-foreground">{value}</strong>
+      <strong className="tabular-nums text-slate-900 font-semibold">{value}</strong>
     </div>
   );
 }
