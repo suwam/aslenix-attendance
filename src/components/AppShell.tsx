@@ -78,7 +78,6 @@ const empNav: NavItem[] = [
   { to: "/my-leaves", label: "My Leaves", icon: Calendar },
   { to: "/tasks", label: "My Tasks", icon: ClipboardList },
   { to: "/notifications", label: "Notifications", icon: BellDot },
-  { to: "/profile", label: "Profile", icon: UserIcon },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -406,6 +405,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <p className="text-sm font-medium text-foreground truncate">{profile?.full_name}</p>
                   <p className="text-xs text-muted-foreground truncate">{isAdmin ? "Administrator" : profile?.position || "Employee"}</p>
                 </div>
+                <Link
+                  to="/profile"
+                  onClick={() => setProfileDropdownOpen(false)}
+                  className="flex items-center gap-2 px-2 py-2 text-sm text-foreground hover:bg-muted rounded-lg transition-colors"
+                >
+                  <UserIcon size={16} className="text-muted-foreground" />
+                  Profile
+                </Link>
                 <Link
                   to={isAdmin ? "/admin/settings" : "/settings"}
                   onClick={() => setProfileDropdownOpen(false)}
