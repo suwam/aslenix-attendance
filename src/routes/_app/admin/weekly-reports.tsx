@@ -10,6 +10,11 @@ import { toast } from "sonner";
 import { formatNepaliDate } from "@/lib/nepali-calendar";
 import { WeeklyReportPdfTemplate } from "@/components/WeeklyReportPdfTemplate";
 import html2canvas from "html2canvas";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { BSDateInput } from "@/components/BSDateInput";
+import { generateReportsForWeekClient } from "@/lib/generate-reports-client";
+import { Play } from "lucide-react";
+import { bsInputToAdDateString } from "@/lib/nepali-calendar";
 
 export const Route = createFileRoute("/_app/admin/weekly-reports")({ component: AdminWeeklyReportsPage });
 
@@ -19,6 +24,10 @@ function AdminWeeklyReportsPage() {
   const [search, setSearch] = useState("");
   const [exportingId, setExportingId] = useState<string | null>(null);
   const [selectedReport, setSelectedReport] = useState<any | null>(null);
+  const [isGenerateOpen, setIsGenerateOpen] = useState(false);
+  const [generateDate, setGenerateDate] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generateProgress, setGenerateProgress] = useState("");
   
   const pdfContainerRef = useRef<HTMLDivElement>(null);
 
@@ -97,6 +106,37 @@ function AdminWeeklyReportsPage() {
     }
   };
 
+  const handleGenerateReports = async () => {
+    if (!generateDate) {
+      toast.error("Please select a date");
+      return;
+    }
+    
+    try {
+      setIsGenerating(true);
+      setGenerateProgress("Initializing...");
+      
+      const adDateStr = bsInputToAdDateString(generateDate);
+      if (!adDateStr) throw new Error("Invalid date");
+      
+      const result = await generateReportsForWeekClient(adDateStr, (msg) => setGenerateProgress(msg));
+      
+      if (result.success) {
+        toast.success(`Successfully generated ${result.count} reports!`);
+        setIsGenerateOpen(false);
+        fetchReports(); // Refresh the list
+      } else {
+        toast.error(`Generation failed: ${result.error}`);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate reports");
+    } finally {
+      setIsGenerating(false);
+      setGenerateProgress("");
+    }
+  };
+
   return (
     <div className="relative overflow-hidden min-h-screen">
       <div className="pointer-events-none absolute -right-24 top-10 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
@@ -106,10 +146,16 @@ function AdminWeeklyReportsPage() {
         title="Weekly Standup Reports"
         subtitle="Comprehensive AI-powered weekly performance reports generated for all employees."
         actions={
-          <Button onClick={fetchReports} variant="outline" className="gap-2 border-cyan-300/20 hover:bg-cyan-300/10 hover:text-cyan-400">
-            <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button onClick={fetchReports} variant="outline" className="gap-2 border-cyan-300/20 hover:bg-cyan-300/10 hover:text-cyan-400">
+              <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
+              Refresh
+            </Button>
+            <Button onClick={() => setIsGenerateOpen(true)} className="gap-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white border-0">
+              <Play size={16} />
+              Generate Reports
+            </Button>
+          </div>
         }
       />
 
@@ -234,6 +280,46 @@ function AdminWeeklyReportsPage() {
           </div>
         </div>
       )}
+
+      {/* Generate Reports Dialog */}
+      <Dialog open={isGenerateOpen} onOpenChange={(open) => !isGenerating && setIsGenerateOpen(open)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Generate Weekly Reports</DialogTitle>
+            <DialogDescription>
+              Select any date within the week you want to generate reports for. The system will automatically compute the correct Wednesday-to-Tuesday reporting period encompassing that date.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Reference Date (BS)</label>
+              <BSDateInput 
+                value={generateDate} 
+                onChange={setGenerateDate} 
+                disabled={isGenerating}
+              />
+            </div>
+            
+            {isGenerating && (
+              <div className="bg-muted/50 rounded-lg p-4 space-y-3 border border-border">
+                <div className="flex items-center gap-3 text-cyan-500">
+                  <Loader2 size={18} className="animate-spin" />
+                  <span className="font-semibold text-sm">Generating Reports...</span>
+                </div>
+                <p className="text-xs text-muted-foreground font-mono">{generateProgress}</p>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsGenerateOpen(false)} disabled={isGenerating}>Cancel</Button>
+            <Button onClick={handleGenerateReports} disabled={isGenerating || !generateDate} className="bg-cyan-500 hover:bg-cyan-600 text-white">
+              {isGenerating ? "Processing..." : "Generate Now"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
