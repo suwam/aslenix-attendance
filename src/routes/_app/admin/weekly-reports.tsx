@@ -413,7 +413,7 @@ function AdminReportsPage() {
                             variant="secondary"
                             size="sm"
                             disabled={exportingId === report.id}
-                            onClick={() => handleExport(report)}
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleExport(report); }}
                             className="gap-1.5 bg-fuchsia-500/10 text-fuchsia-500 border border-fuchsia-500/20 hover:bg-fuchsia-500/20 transition-all shadow-[0_0_12px_rgba(217,70,239,0.15)]"
                           >
                             {exportingId === report.id ? (

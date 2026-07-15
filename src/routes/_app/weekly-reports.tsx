@@ -136,7 +136,7 @@ function WeeklyReportsPage() {
                     </div>
                     <Button
                       type="button"
-                      onClick={() => handleExport(report)}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleExport(report); }}
                       disabled={exportingId === report.id}
                       className="gap-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white shadow-[0_0_20px_rgba(34,211,238,0.25)]"
                     >
