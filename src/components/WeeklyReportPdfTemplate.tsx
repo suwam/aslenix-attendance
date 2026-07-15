@@ -1,8 +1,6 @@
 import React, { forwardRef } from "react";
 import { format } from "date-fns";
 import { formatNepaliDate } from "@/lib/nepali-calendar";
-import { ShieldAlert } from "lucide-react";
-
 type ReportProfile = {
   full_name: string;
   department?: string | null;
@@ -21,17 +19,17 @@ const A4_HEIGHT = "297mm";
 function PdfPage({ children, pageNumber, totalPages }: { children: React.ReactNode; pageNumber: number; totalPages: number }) {
   return (
     <div
-      className="pdf-page relative flex flex-col bg-white text-slate-900 mx-auto overflow-hidden shadow-sm"
+      className="pdf-page relative flex flex-col bg-white text-slate-900 mx-auto shadow-sm"
       style={{
         width: A4_WIDTH,
-        height: A4_HEIGHT,
+        minHeight: A4_HEIGHT,
         padding: "20mm 20mm",
         boxSizing: "border-box",
         pageBreakAfter: "always",
         fontFamily: "'Inter', sans-serif"
       }}
     >
-      <div className="flex-1 min-h-0">
+      <div className="flex-1">
         {children}
       </div>
       
@@ -57,60 +55,61 @@ export const WeeklyReportPdfTemplate = forwardRef<HTMLDivElement, WeeklyReportPd
     const timeline = data.timeline || [];
 
     return (
-      <div ref={ref} className="bg-slate-100 flex flex-col items-center py-10 gap-10">
+      <div ref={ref} className="bg-white text-black flex flex-col items-center py-10">
         <PdfPage pageNumber={1} totalPages={1}>
-          <div className="flex items-center justify-between border-b-2 border-slate-900 pb-6 mb-8">
-            <div>
-              <h1 className="text-4xl font-black tracking-tight text-slate-900">ASLENIX</h1>
-              <p className="text-sm font-bold tracking-widest text-slate-500 uppercase mt-1">Standup Report</p>
-            </div>
-            <div className="text-right">
-              <h2 className="text-xl font-bold text-slate-900">{report.report_date ? "Daily Report" : "Summary Report"}</h2>
-              <p className="text-sm font-semibold text-slate-500 mt-1">
-                {report.report_date ? formatNepaliDate(report.report_date, "MMM DD, YYYY") : `${formatNepaliDate(report.week_start || report.month_start, "MMM DD, YYYY")} — ${formatNepaliDate(report.week_end || report.month_end, "MMM DD, YYYY")}`}
-              </p>
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold uppercase tracking-wider mb-6">Daily Standup Report</h1>
+            <div className="text-base leading-relaxed">
+              <div><span className="font-bold">Employee:</span> {profile.full_name}</div>
+              <div><span className="font-bold">Department:</span> {profile.department || "Team Member"}</div>
+              <div><span className="font-bold">Date:</span> {report.report_date ? `${formatNepaliDate(report.report_date, "YYYY-MM-DD")} (BS)` : `${formatNepaliDate(report.week_start || report.month_start, "YYYY-MM-DD")} to ${formatNepaliDate(report.week_end || report.month_end, "YYYY-MM-DD")} (BS)`}</div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 mb-8">
-            <div>
-              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Employee Profile</h3>
-              <p className="text-2xl font-black text-slate-900">{profile.full_name}</p>
-              <p className="text-base font-semibold text-slate-600 mt-1">{profile.department || "Team Member"}</p>
-            </div>
-            <div className="text-right">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Report Details</h3>
-              <p className="text-base font-bold text-slate-800">Generated: {format(new Date(), "MMM dd, yyyy")}</p>
-              <p className="text-sm font-semibold text-slate-600 mt-1">ID: {profile.employee_code || "N/A"}</p>
-            </div>
-          </div>
+          <div className="space-y-10">
+            {timeline.filter((d: any) => d.status === "Submitted").map((day: any, idx: number) => {
+              const works = day.today ? day.today.split('\n').filter((l: string) => l.trim().length > 0) : [];
+              const blockers = (day.blockers_text && day.blockers_text.toLowerCase() !== "none") 
+                ? day.blockers_text.split('\n').filter((l: string) => l.trim().length > 0)
+                : [];
 
-          <div className="space-y-6">
-            {timeline.filter((d: any) => d.status === "Submitted").map((day: any, idx: number) => (
-              <div key={idx} className="border border-slate-200 rounded-xl overflow-hidden bg-white">
-                <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex justify-between items-center">
-                  <span className="font-bold text-slate-800">{formatNepaliDate(day.date, "MMM DD, YYYY")}</span>
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{format(new Date(day.date), "EEEE")}</span>
-                </div>
-                <div className="p-4 space-y-4">
-                  <div>
-                    <h4 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Today I Worked On</h4>
-                    <p className="text-sm text-slate-700 whitespace-pre-wrap">{day.today || "No update provided."}</p>
-                  </div>
-                  {(day.blockers_text && day.blockers_text.toLowerCase() !== "none") && (
-                    <div className="bg-amber-50 rounded-lg p-3 border border-amber-100">
-                      <h4 className="text-xs font-bold uppercase tracking-widest text-amber-600 mb-1 flex items-center gap-1"><ShieldAlert size={14}/> Blockers</h4>
-                      <p className="text-sm text-amber-900 whitespace-pre-wrap">{day.blockers_text}</p>
-                    </div>
+              return (
+                <div key={idx} className="space-y-6">
+                  {!report.report_date && (
+                    <h2 className="text-lg font-bold border-b border-black pb-1">{formatNepaliDate(day.date, "YYYY-MM-DD")} (BS)</h2>
                   )}
+                  
+                  <div>
+                    <h2 className="text-lg font-bold mb-2">Today's Work</h2>
+                    {works.length > 0 ? (
+                      <ul className="list-disc pl-5 space-y-1">
+                        {works.map((w: string, i: number) => (
+                          <li key={i} className="text-base">{w.replace(/^- /, '')}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-base italic">No work updates submitted.</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <h2 className="text-lg font-bold mb-2">Blockers</h2>
+                    {blockers.length > 0 ? (
+                      <ul className="list-disc pl-5 space-y-1">
+                        {blockers.map((b: string, i: number) => (
+                          <li key={i} className="text-base">{b.replace(/^- /, '')}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-base italic">No blockers reported.</p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {timeline.filter((d: any) => d.status === "Submitted").length === 0 && (
-              <div className="text-center py-10 bg-slate-50 rounded-xl border border-slate-200">
-                <p className="text-slate-500 font-medium">No standup submissions found for this period.</p>
-              </div>
+              <p className="text-base italic">No standup submissions found for this period.</p>
             )}
           </div>
         </PdfPage>
