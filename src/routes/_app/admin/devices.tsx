@@ -259,20 +259,20 @@ function DeviceManagementPage() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {visibleRows.map(({ device, requests, employeeId }) => {
             const firstRequest = requests[0];
             const employee = device?.employee || firstRequest?.employee;
             return (
-              <div key={device?.id || employeeId} className="flex flex-col bg-card rounded-2xl shadow-sm border border-border p-6 overflow-hidden">
+              <div key={device?.id || employeeId} className="flex flex-col bg-card rounded-2xl shadow-sm border border-border p-6 overflow-hidden h-full">
                 <div className="flex flex-col h-full space-y-6">
                   {/* Header: Avatar, Name, Email, Status */}
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-bold text-primary">
                         {employeeInitials(employee, employeeId)}
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <h3 className="truncate text-[18px] font-bold text-foreground">{employeeName(employee, employeeId)}</h3>
                         {employee?.email && <p className="truncate text-[14px] text-muted-foreground">{employee.email}</p>}
                       </div>
@@ -284,22 +284,22 @@ function DeviceManagementPage() {
 
                   {/* Details section */}
                   <div className="flex flex-col space-y-4 divide-y divide-border/50">
-                    <div className="pt-0">
+                    <div className="pt-0 min-w-0">
                       <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Registered Device</p>
-                      <p className="text-[15px] font-medium text-foreground">{device?.device_name || "No active registered device"}</p>
+                      <p className="text-[15px] font-medium text-foreground truncate">{device?.device_name || "No active registered device"}</p>
                       {device?.device_fingerprint && <p className="text-[13px] text-muted-foreground mt-0.5 truncate" title={device.device_fingerprint}>Device ID: {device.device_fingerprint}</p>}
                     </div>
-                    <div className="pt-4">
+                    <div className="pt-4 min-w-0">
                       <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Browser</p>
-                      <p className="text-[15px] font-medium text-foreground">{device?.browser || "-"}</p>
+                      <p className="text-[15px] font-medium text-foreground truncate">{device?.browser || "-"}</p>
                     </div>
-                    <div className="pt-4">
+                    <div className="pt-4 min-w-0">
                       <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Operating System</p>
-                      <p className="text-[15px] font-medium text-foreground">{device?.operating_system || "-"}</p>
+                      <p className="text-[15px] font-medium text-foreground truncate">{device?.operating_system || "-"}</p>
                     </div>
-                    <div className="pt-4">
+                    <div className="pt-4 min-w-0">
                       <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Last Login</p>
-                      <p className="text-[15px] font-medium text-foreground">{device ? formatDate(device.last_login) : "Never"}</p>
+                      <p className="text-[15px] font-medium text-foreground truncate">{device ? formatDate(device.last_login) : "Never"}</p>
                     </div>
                   </div>
 
