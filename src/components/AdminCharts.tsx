@@ -949,16 +949,16 @@ function adjustHex(hex: string, amount: number) {
 
 function WeeklySummaryTile({ label, value, tone }: { label: string; value: string | number; tone: "blue" | "present" | "late" | "wfh" }) {
   const toneClass = {
-    blue: "from-cyan-300/16 to-blue-400/8 text-cyan-100",
-    present: "from-blue-400/18 to-blue-400/6 text-blue-100",
-    late: "from-amber-300/18 to-amber-400/6 text-amber-100",
-    wfh: "from-violet-300/18 to-violet-400/6 text-violet-100",
+    blue: "from-cyan-300/16 to-blue-400/8 text-black",
+    present: "from-blue-400/18 to-blue-400/6 text-black",
+    late: "from-amber-300/18 to-amber-400/6 text-black",
+    wfh: "from-violet-300/18 to-violet-400/6 text-black",
   }[tone];
 
   return (
     <div className={`rounded-lg border border-border bg-gradient-to-br ${toneClass} px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]`}>
-      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
-      <div className="mt-1 text-lg font-bold tabular-nums leading-none">{value}</div>
+      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/70">{label}</div>
+      <div className="mt-1 text-lg font-bold tabular-nums leading-none text-black">{value}</div>
     </div>
   );
 }
