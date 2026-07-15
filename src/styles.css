@@ -4100,10 +4100,10 @@
     justify-content: space-between;
     gap: 8px;
     border-radius: 14px;
-    border: 1px solid oklch(1 0 0 / 0.075);
-    background: oklch(1 0 0 / 0.028);
+    border: 1px solid var(--border);
+    background: var(--card);
     padding: 10px 12px;
-    color: oklch(1 0 0 / 0.86);
+    color: var(--foreground);
     font-size: 13px;
     font-weight: 800;
   }
@@ -4126,7 +4126,7 @@
     color: var(--warning);
   }
   .weekly-week-tab.locked {
-    color: oklch(1 0 0 / 0.48);
+    color: var(--muted-foreground);
     filter: saturate(.7);
   }
   .weekly-status-badge {

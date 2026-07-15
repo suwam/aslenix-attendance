@@ -5,6 +5,7 @@ import {
   BarChart3,
   CalendarDays,
   CheckCircle2,
+  ChevronRight,
   Clock3,
   Crown,
   Edit3,
@@ -155,6 +156,7 @@ function WeeklyFeedbackPage() {
   const [rating, setRating] = useState<Rating>("Excellent");
   const [strengths, setStrengths] = useState("");
   const [improvements, setImprovements] = useState("");
+  const [goals, setGoals] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const reviewWeeks = useMemo(() => getReviewWeeks(new Date()), []);
@@ -369,12 +371,14 @@ function WeeklyFeedbackPage() {
       setRating((selectedWeekReview.rating as Rating) || "Excellent");
       setStrengths(selectedWeekReview.strengths || "");
       setImprovements(selectedWeekReview.improvements || "");
-      setNotes(selectedWeekReview.admin_notes || selectedWeekReview.notes || "");
+      setGoals(selectedWeekReview.admin_notes || "");
+      setNotes(selectedWeekReview.notes || "");
       return;
     }
     setRating("Excellent");
     setStrengths("");
     setImprovements("");
+    setGoals("");
     setNotes("");
   }, [
     selectedId,
@@ -406,7 +410,7 @@ function WeeklyFeedbackPage() {
       strengths,
       improvements,
       notes,
-      admin_notes: null,
+      admin_notes: goals,
       score: selected.score,
       review_score: reviewScoreFromRating(rating),
     };
@@ -696,63 +700,118 @@ function WeeklyFeedbackPage() {
       </div>
 
       <Dialog open={feedbackDialogOpen && Boolean(selected)} onOpenChange={setFeedbackDialogOpen}>
-        <DialogContent className="weekly-feedback-dialog glass max-h-[92vh] max-w-6xl overflow-hidden border-border p-0">
+        <DialogContent className="flex max-h-[95vh] w-[96vw] max-w-7xl flex-col overflow-hidden rounded-2xl border-border bg-background p-0 shadow-2xl sm:flex-row">
           {selected && (
             <>
-              <DialogHeader className="weekly-feedback-dialog-header">
-                <div className="weekly-feedback-profile">
-                  <Avatar employee={selected} size="lg" />
-                  <div className="min-w-0">
-                    <DialogTitle className="truncate text-2xl">Weekly Performance Review</DialogTitle>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {selected.name} · {selected.department}
-                    </p>
+              {/* LEFT COLUMN: 70% */}
+              <div className="relative flex h-full flex-1 flex-col overflow-y-auto bg-slate-50/50 dark:bg-slate-950/50">
+                {/* Premium Header */}
+                <header className="flex flex-col gap-6 border-b border-border bg-card p-6 md:p-8">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div className="flex items-center gap-4">
+                      <Avatar employee={selected} size="lg" />
+                      <div>
+                        <h2 className="text-2xl font-bold tracking-tight text-foreground">{selected.name}</h2>
+                        <p className="text-sm font-medium text-muted-foreground">{selected.department}</p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-start gap-2 text-left md:items-end md:text-right">
+                      <StatusBadge status={selectedWeekStatus} />
+                      <div className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                        Week {selectedWeekNumber} Review • {formatNepaliDate(new Date().toISOString(), "DD MMM YYYY")} BS
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <StatusBadge status={selectedWeekStatus} />
-              </DialogHeader>
 
-              <div className="weekly-feedback-dialog-body">
-                <section className="weekly-feedback-dialog-main">
-                  <div className="weekly-feedback-metrics grid grid-cols-2 gap-3 md:grid-cols-4">
+                  {/* Animated Progress Bar */}
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between text-sm font-semibold">
+                      <span className="text-slate-700 dark:text-slate-300">Review Cycle Progress</span>
+                      <span className="text-primary">{Math.round((completedWeeks / reviewWeeks.length) * 100)}% ({completedWeeks} of {reviewWeeks.length} Completed)</span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                      <div 
+                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-1000 ease-out"
+                        style={{ width: `${(completedWeeks / reviewWeeks.length) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </header>
+
+                {/* Main Form Area */}
+                <div className="flex-1 p-6 pb-32 md:p-8">
+                  {/* Summary Metrics (moved above form) */}
+                  <div className="mb-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
                     <MiniMetric label="Score" value={selected.score} icon={Zap} />
                     <MiniMetric label="Tasks" value={selected.completedTasks} icon={CheckCircle2} />
                     <MiniMetric label="Overdue" value={selected.overdueTasks} icon={ShieldAlert} />
                     <MiniMetric label="Attendance" value={`${selected.attendancePct}%`} icon={CalendarDays} />
                   </div>
 
-                  <div className="weekly-feedback-form-card">
-                    <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-                      <div>
-                        <div className="text-xs uppercase tracking-wider text-muted-foreground">Review cycle progress</div>
-                        <div className="mt-1 text-xl font-bold">{completedWeeks}/{reviewWeeks.length} Weekly Reviews Completed</div>
-                      </div>
-                      <StatusBadge status={selectedWeekStatus} />
-                    </div>
+                  {/* Horizontal Stepper Navigation */}
+                  <div className="hide-scrollbar mb-10 flex items-center gap-2 overflow-x-auto pb-4">
+                    {reviewWeeks.map((week, idx) => {
+                      const review = selectedHistory.find((item) =>
+                        getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate)
+                      );
+                      const status = getWeekStatus(week, Boolean(review));
+                      const isSelected = selectedWeekNumber === week.weekNumber;
+                      
+                      let colors = "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400";
+                      let icon = null;
+                      if (status === "completed") {
+                        colors = "border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-900/40 dark:text-emerald-400";
+                        icon = <CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400" />;
+                      } else if (status === "pending" || isSelected) {
+                        if (isSelected) {
+                          colors = "bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-md ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-950";
+                        } else {
+                          colors = "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800/30 dark:bg-indigo-900/30 dark:text-indigo-400";
+                        }
+                      } else if (status === "locked") {
+                        colors = "cursor-not-allowed bg-slate-100 text-slate-400 opacity-70 dark:bg-slate-900 dark:text-slate-600";
+                        icon = <LockKeyhole size={14} />;
+                      }
 
-                    <div className="weekly-week-selector">
-                      {reviewWeeks.map((week) => {
-                        const review = selectedHistory.find((item) =>
-                          getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate),
-                        );
-                        const status = getWeekStatus(week, Boolean(review));
-                        return (
+                      return (
+                        <div key={week.weekNumber} className="flex shrink-0 items-center">
                           <button
-                            key={week.weekNumber}
                             type="button"
-                            onClick={() => setSelectedWeekNumber(week.weekNumber)}
-                            className={`weekly-week-tab ${selectedWeekNumber === week.weekNumber ? "selected" : ""} ${
-                              week.weekNumber === currentWeekNumber ? "current" : ""
-                            } ${status}`}
+                            onClick={() => status !== "locked" && setSelectedWeekNumber(week.weekNumber)}
+                            disabled={status === "locked"}
+                            className={`flex min-w-[110px] items-center justify-center gap-2 rounded-full border border-transparent px-4 py-2 transition-all ${colors} ${status !== "locked" ? "active:scale-95 hover:scale-105" : ""}`}
                           >
-                            <span>Week {week.weekNumber}</span>
-                            <WeekStatusIcon status={status} />
+                            {icon}
+                            <span className="text-sm font-bold tracking-wide">
+                              Week {week.weekNumber}
+                            </span>
                           </button>
-                        );
-                      })}
-                    </div>
+                          {idx < reviewWeeks.length - 1 && (
+                            <div className="mx-2 flex items-center justify-center text-slate-300 dark:text-slate-700">
+                              <ChevronRight size={16} />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
 
-                    <div className="mt-5 space-y-4">
+                  {/* Form Content */}
+                  {selectedWeekLocked ? (
+                    <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 py-16 text-center dark:border-slate-800 dark:bg-slate-900/50">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-800">
+                        <LockKeyhole size={32} className="text-slate-500 dark:text-slate-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Review Locked</h3>
+                        <p className="mt-2 max-w-sm text-sm text-slate-500 dark:text-slate-400">
+                          This review is currently locked. It will automatically become available on {selectedWeek?.unlockDate ? `Wednesday, ${selectedWeek.unlockDate} BS` : "the coming Wednesday"}.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-8">
+                      {/* Read Only Details Component */}
                       {selectedWeekReview && !canEditSelectedReview && (
                         <ReviewDetails
                           review={selectedWeekReview}
@@ -760,105 +819,170 @@ function WeeklyFeedbackPage() {
                           onEdit={() => setEditingReviewId(selectedWeekReview.id)}
                         />
                       )}
-                      {selectedWeekLocked && (
-                        <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">
-                          Week {selectedWeekNumber} is a future week and is locked for reviews.
+
+                      {/* Editable Form */}
+                      {(!selectedWeekReview || canEditSelectedReview) && (
+                        <div className="flex flex-col gap-8">
+                          <div>
+                            <Label className="mb-3 block text-sm font-bold text-foreground">Overall Weekly Rating</Label>
+                            <RatingSelector value={rating} onChange={setRating} disabled={formLocked} />
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                            <div>
+                              <Label className="mb-2 flex items-center gap-2 text-sm font-bold text-emerald-600">
+                                <TrendingUp size={16} />
+                                Strengths
+                              </Label>
+                              <Textarea
+                                value={strengths}
+                                onChange={(event) => setStrengths(event.target.value)}
+                                disabled={formLocked}
+                                rows={5}
+                                placeholder="What went especially well this week? Describe achievements, technical contributions, teamwork..."
+                                className="resize-none rounded-xl border-emerald-100 bg-emerald-50/30 p-4 leading-relaxed shadow-sm focus-visible:ring-emerald-500 dark:border-emerald-900/30 dark:bg-emerald-950/20"
+                              />
+                            </div>
+                            <div>
+                              <Label className="mb-2 flex items-center gap-2 text-sm font-bold text-orange-500">
+                                <Target size={16} />
+                                Areas for Improvement
+                              </Label>
+                              <Textarea
+                                value={improvements}
+                                onChange={(event) => setImprovements(event.target.value)}
+                                disabled={formLocked}
+                                rows={5}
+                                placeholder="What should improve next week? Mention blockers, challenges, communication issues..."
+                                className="resize-none rounded-xl border-orange-100 bg-orange-50/30 p-4 leading-relaxed shadow-sm focus-visible:ring-orange-500 dark:border-orange-900/30 dark:bg-orange-950/20"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <Label className="mb-2 flex items-center gap-2 text-sm font-bold text-indigo-600 dark:text-indigo-400">
+                              <Sparkles size={16} />
+                              Goals for Next Week
+                            </Label>
+                            <Textarea
+                              value={goals}
+                              onChange={(event) => setGoals(event.target.value)}
+                              disabled={formLocked}
+                              rows={4}
+                              placeholder="Define measurable goals and objectives for next week..."
+                              className="resize-none rounded-xl border-indigo-100 bg-indigo-50/30 p-4 leading-relaxed shadow-sm focus-visible:ring-indigo-500 dark:border-indigo-900/30 dark:bg-indigo-950/20"
+                            />
+                          </div>
+
+                          <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
+                            <Label className="mb-2 flex items-center justify-between text-sm font-bold text-slate-700 dark:text-slate-300">
+                              <div className="flex items-center gap-2">
+                                <LockKeyhole size={14} />
+                                Private Admin Notes
+                              </div>
+                              <span className="text-xs font-normal text-slate-500">Visible only to HR/Admins</span>
+                            </Label>
+                            <Textarea
+                              value={notes}
+                              onChange={(event) => setNotes(event.target.value)}
+                              disabled={formLocked}
+                              rows={3}
+                              placeholder="Internal notes visible only to administrators and HR..."
+                              className="mt-3 resize-none rounded-lg bg-white p-4 leading-relaxed dark:bg-slate-950"
+                            />
+                          </div>
                         </div>
                       )}
-
-                      <div className="flex flex-col gap-6">
-                        <div>
-                          <Label className="mb-3 block text-sm font-semibold text-foreground">Overall Weekly Rating</Label>
-                          <RatingSelector value={rating} onChange={setRating} disabled={formLocked} />
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                          <div>
-                            <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-emerald-600">
-                              <TrendingUp size={16} />
-                              Strengths
-                            </Label>
-                            <Textarea
-                              value={strengths}
-                              onChange={(event) => setStrengths(event.target.value)}
-                              disabled={formLocked}
-                              rows={5}
-                              placeholder="What went especially well this week?"
-                              className="resize-none border-emerald-100 bg-emerald-50/30 focus-visible:ring-emerald-500 dark:border-emerald-900/30 dark:bg-emerald-950/20"
-                            />
-                          </div>
-                          <div>
-                            <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-orange-500">
-                              <Target size={16} />
-                              Improvement Areas
-                            </Label>
-                            <Textarea
-                              value={improvements}
-                              onChange={(event) => setImprovements(event.target.value)}
-                              disabled={formLocked}
-                              rows={5}
-                              placeholder="What should improve next week?"
-                              className="resize-none border-orange-100 bg-orange-50/30 focus-visible:ring-orange-500 dark:border-orange-900/30 dark:bg-orange-950/20"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
-                          <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-400">
-                            <LockKeyhole size={14} />
-                            Private Admin Notes
-                          </Label>
-                          <Textarea
-                            value={notes}
-                            onChange={(event) => setNotes(event.target.value)}
-                            disabled={formLocked}
-                            rows={3}
-                            placeholder="Internal notes visible only to admins..."
-                            className="resize-none bg-white dark:bg-slate-950"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="mt-6 flex flex-col items-center gap-3 border-t border-border pt-6">
-                        <Button 
-                          onClick={saveFeedback} 
-                          disabled={saving || formLocked} 
-                          className="w-full max-w-sm rounded-xl py-6 text-lg shadow-lg transition-all hover:shadow-xl sm:w-auto sm:min-w-[300px]"
-                        >
-                          {canEditSelectedReview ? <Edit3 size={18} className="mr-2" /> : <Save size={18} className="mr-2" />}
-                          {saving ? "Saving..." : canEditSelectedReview ? "Update Review" : `Submit Week ${selectedWeekNumber} Feedback`}
-                        </Button>
-                        {selectedWeekReview && !canEditSelectedReview && (
-                          <p className="text-center text-sm font-medium text-emerald-600">
-                            ✓ Week {selectedWeekNumber} review already submitted
-                          </p>
-                        )}
-                      </div>
                     </div>
+                  )}
+                </div>
+
+                {/* Sticky Footer */}
+                {(!selectedWeekLocked && (!selectedWeekReview || canEditSelectedReview)) && (
+                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-end gap-3 border-t border-border bg-background/80 p-4 backdrop-blur-md">
+                    <Button 
+                      variant="outline"
+                      onClick={() => setFeedbackDialogOpen(false)}
+                      className="rounded-xl px-6"
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={saveFeedback} 
+                      disabled={saving || formLocked} 
+                      className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-8 text-white shadow-lg transition-all hover:brightness-110 hover:shadow-xl"
+                    >
+                      {canEditSelectedReview ? <Edit3 size={16} className="mr-2" /> : <Save size={16} className="mr-2" />}
+                      {saving ? "Saving..." : canEditSelectedReview ? "Update Review" : `Submit Week ${selectedWeekNumber} Review`}
+                    </Button>
                   </div>
-                </section>
+                )}
+              </div>
 
-                <aside className="weekly-feedback-dialog-side">
-                  <div className="weekly-review-panel-header">
-                    <div className="weekly-review-panel-icon">
-                      <History size={15} />
-                    </div>
-                    <div>
-                      <h3>Review weeks</h3>
-                      <p>{completedWeeks}/4 completed</p>
-                    </div>
+              {/* RIGHT COLUMN: Review History (30%) */}
+              <aside className="flex w-full flex-col border-l border-border bg-card sm:max-w-md">
+                <div className="flex items-center justify-between border-b border-border p-6">
+                  <div className="flex items-center gap-2">
+                    <History size={18} className="text-slate-500" />
+                    <h3 className="font-bold">Review History</h3>
                   </div>
-                  <div className="weekly-review-card-list">
+                  <div className="text-sm font-medium text-muted-foreground">{completedWeeks} / {reviewWeeks.length}</div>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-4">
+                  <div className="flex flex-col gap-3">
                     {reviewWeeks.map((week) => {
                       const review = selectedHistory.find((item) =>
-                        getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate),
+                        getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate)
                       );
                       const status = getWeekStatus(week, Boolean(review));
-                      return <CompactReviewCard key={week.weekNumber} weekNumber={week.weekNumber} weekStatus={status} reviewWeeks={reviewWeeks} review={review} />;
+                      
+                      return (
+                        <div 
+                          key={week.weekNumber}
+                          onClick={() => setSelectedWeekNumber(week.weekNumber)}
+                          className={`group relative cursor-pointer overflow-hidden rounded-xl border p-4 transition-all hover:shadow-md ${selectedWeekNumber === week.weekNumber ? "border-indigo-500 bg-indigo-50/30 dark:border-indigo-500/50 dark:bg-indigo-900/10" : "border-border bg-background hover:border-slate-300 dark:hover:border-slate-700"}`}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-bold text-foreground">Week {week.weekNumber}</h4>
+                                {status === "completed" && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400">Completed</span>}
+                                {status === "missed" && <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-rose-700 dark:bg-rose-900/50 dark:text-rose-400">Missed</span>}
+                                {status === "pending" && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:bg-amber-900/50 dark:text-amber-400">Pending</span>}
+                                {status === "locked" && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:bg-slate-800 dark:text-slate-400"><LockKeyhole size={10} className="inline mr-1" />Locked</span>}
+                              </div>
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                {review ? formatNepaliDate(review.created_at, "DD MMM YYYY") + " BS" : week.startDate}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {review && (
+                            <div className="mt-3 flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="flex flex-col">
+                                  <span className="text-[10px] uppercase text-muted-foreground">Rating</span>
+                                  <span className="text-sm font-semibold">{review.rating}</span>
+                                </div>
+                                <div className="h-6 w-px bg-border" />
+                                <div className="flex flex-col">
+                                  <span className="text-[10px] uppercase text-muted-foreground">Score</span>
+                                  <span className="text-sm font-semibold">{review.score}/100</span>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center text-sm font-medium text-indigo-600 opacity-0 transition-opacity group-hover:opacity-100 dark:text-indigo-400">
+                                View <ChevronRight size={16} />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
                     })}
                   </div>
-                </aside>
-              </div>
+                </div>
+              </aside>
             </>
           )}
         </DialogContent>
@@ -1171,7 +1295,13 @@ function getReviewWeekNumber(date: Date) {
     return startDate;
   });
   const today = startOfDay(date).getTime();
-  const currentWeekIndex = weekStarts.findLastIndex((weekStart) => weekStart.getTime() <= today);
+  let currentWeekIndex = -1;
+  for (let i = weekStarts.length - 1; i >= 0; i--) {
+    if (weekStarts[i].getTime() <= today) {
+      currentWeekIndex = i;
+      break;
+    }
+  }
   return Math.min(4, Math.max(1, currentWeekIndex + 1));
 }
 
