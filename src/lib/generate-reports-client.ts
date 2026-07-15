@@ -112,7 +112,10 @@ export async function generateReportsForWeekClient(
           status,
           hours,
           blockers: hasBlocker ? "Yes" : "No",
-          score: dailyScore
+          score: dailyScore,
+          today: s?.today || "",
+          yesterday: s?.yesterday || "",
+          blockers_text: s?.blockers || ""
         };
       });
 
