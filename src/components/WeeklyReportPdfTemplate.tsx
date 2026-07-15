@@ -198,7 +198,7 @@ export const WeeklyReportPdfTemplate = forwardRef<HTMLDivElement, WeeklyReportPd
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                     <XAxis dataKey="date" tickFormatter={(v) => format(new Date(v), "EEE")} stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                    <Area type="monotone" dataKey="score" stroke="#0ea5e9" strokeWidth={3} fillOpacity={1} fill="url(#colorScore)" />
+                    <Area type="monotone" dataKey="score" stroke="#0ea5e9" strokeWidth={3} fillOpacity={1} fill="url(#colorScore)" isAnimationActive={false} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -212,7 +212,7 @@ export const WeeklyReportPdfTemplate = forwardRef<HTMLDivElement, WeeklyReportPd
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                     <XAxis dataKey="date" tickFormatter={(v) => format(new Date(v), "EEE")} stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                    <Bar dataKey="hours" fill="#8b5cf6" radius={[4, 4, 0, 0]} maxBarSize={50} />
+                    <Bar dataKey="hours" fill="#8b5cf6" radius={[4, 4, 0, 0]} maxBarSize={50} isAnimationActive={false} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
