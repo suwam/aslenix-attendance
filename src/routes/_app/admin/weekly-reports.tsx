@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { formatNepaliDate, bsInputToAdDateString, getNepaliMonthRange } from "@/lib/nepali-calendar";
 import { WeeklyReportPdfTemplate } from "@/components/WeeklyReportPdfTemplate";
 import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import { captureSanitizedPdfPage } from "@/lib/pdf-utils";
 import { BSDateInput } from "@/components/BSDateInput";
 import { generateReportsForWeekClient, ReportType } from "@/lib/generate-reports-client";
 import {
@@ -143,9 +145,7 @@ function AdminReportsPage() {
       const pages = document.querySelectorAll('.pdf-page');
       if (!pages || pages.length === 0) throw new Error("No pages found to export");
 
-      const { default: jsPDF } = await import("jspdf");
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const { captureSanitizedPdfPage } = await import("@/lib/pdf-utils");
       
       for (let i = 0; i < pages.length; i++) {
         const pageEl = pages[i] as HTMLElement;
