@@ -59,7 +59,6 @@ const adminNav: NavItem[] = [
   { to: "/messages", label: "Messages", icon: MessageSquare },
   { to: "/admin/notifications", label: "Notifications", icon: BellDot },
   { to: "/admin/reports", label: "Reports", icon: FileBarChart2 },
-  { to: "/admin/settings", label: "Settings", icon: Settings },
   { to: "/admin/tasks", label: "Tasks", icon: ClipboardList },
   { to: "/admin/approvals", label: "User Approvals", icon: UserCheck },
   { to: "/admin/weekly-feedback", label: "Weekly Feedback", icon: MessageSquare },
@@ -78,7 +77,6 @@ const empNav: NavItem[] = [
   { to: "/tasks", label: "My Tasks", icon: ClipboardList },
   { to: "/notifications", label: "Notifications", icon: BellDot },
   { to: "/profile", label: "Profile", icon: UserIcon },
-  { to: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -175,9 +173,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     window.dispatchEvent(new Event("notifications:changed"));
   };
 
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+
   const handleSignOut = async () => {
-    await signOut();
-    nav({ to: "/login" });
+    if (window.confirm("Are you sure you want to log out?")) {
+      await signOut();
+      nav({ to: "/login" });
+    }
   };
 
   const isMessagesPage = currentPath === "/messages";
@@ -390,15 +392,45 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
             </PopoverContent>
           </Popover>
-          <div className="flex items-center gap-3 pl-2 border-l border-border">
-            <div className="hidden sm:block text-right leading-tight">
-              <div className="text-sm font-medium truncate max-w-[160px]">{profile?.full_name}</div>
-              <div className="text-[11px] text-muted-foreground capitalize">
-                {isAdmin ? "Administrator" : "Employee"}
+          <Popover open={profileDropdownOpen} onOpenChange={setProfileDropdownOpen}>
+            <PopoverTrigger asChild>
+              <button className="flex items-center gap-3 pl-4 border-l border-border hover:opacity-80 transition-opacity focus:outline-none">
+                <div className="hidden sm:block text-right leading-tight">
+                  <div className="text-sm font-medium truncate max-w-[160px]">{profile?.full_name}</div>
+                  <div className="text-[11px] text-muted-foreground capitalize">
+                    {isAdmin ? "Administrator" : profile?.position || "Employee"}
+                  </div>
+                </div>
+                <Avatar profile={profile} />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-56 p-2 rounded-xl shadow-lg border-border bg-card">
+              <div className="flex flex-col gap-1">
+                <div className="px-2 py-1.5 mb-1 border-b border-border">
+                  <p className="text-sm font-medium text-foreground truncate">{profile?.full_name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{isAdmin ? "Administrator" : profile?.position || "Employee"}</p>
+                </div>
+                <Link
+                  to={isAdmin ? "/admin/settings" : "/settings"}
+                  onClick={() => setProfileDropdownOpen(false)}
+                  className="flex items-center gap-2 px-2 py-2 text-sm text-foreground hover:bg-muted rounded-lg transition-colors"
+                >
+                  <Settings size={16} className="text-muted-foreground" />
+                  Settings
+                </Link>
+                <button
+                  onClick={() => {
+                    setProfileDropdownOpen(false);
+                    handleSignOut();
+                  }}
+                  className="flex items-center gap-2 px-2 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors w-full text-left"
+                >
+                  <LogOut size={16} className="text-destructive" />
+                  Logout
+                </button>
               </div>
-            </div>
-            <Avatar profile={profile} />
-          </div>
+            </PopoverContent>
+          </Popover>
         </header>
 
         <main className={`flex-1 max-w-[1600px] w-full mx-auto ${isMessagesPage ? "p-0 sm:p-0 lg:p-0 h-full min-h-0 overflow-hidden flex flex-col" : "p-4 sm:p-6 lg:p-8"}`}>
