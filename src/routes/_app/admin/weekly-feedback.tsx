@@ -811,7 +811,7 @@ function WeeklyFeedbackPage() {
                         <div>
                           <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Review Locked</h3>
                           <p className="mt-2 max-w-sm text-sm text-slate-500 dark:text-slate-400">
-                            This review is currently locked. It will automatically become available on {selectedWeek?.unlockDate ? `Wednesday, ${selectedWeek.unlockDate} BS` : "the coming Wednesday"}.
+                            This review is currently locked. It will automatically become available on {selectedWeek?.unlockDate ? `Wednesday, ${formatNepaliDate(new Date(`${selectedWeek.unlockDate}T00:00:00`).toISOString(), "DD MMM YYYY")} BS` : "the coming Wednesday"}.
                           </p>
                         </div>
                       </div>
@@ -1035,7 +1035,7 @@ function EmployeeCard({
 function WeeklyStat({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof Award }) {
   return (
     <GlassCard className="weekly-stat">
-      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-foreground shadow-[0_0_24px_rgba(125,92,255,.35)]">
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20">
         <Icon size={19} />
       </div>
       <div className="min-w-0">
@@ -1186,9 +1186,9 @@ function Avatar({ employee, size = "md" }: { employee: EmployeeWeek; size?: "md"
     .toUpperCase();
   const className = size === "lg" ? "h-16 w-16 text-lg" : "h-11 w-11 text-sm";
   return employee.avatarUrl ? (
-    <img src={employee.avatarUrl} alt="" className={`${className} shrink-0 rounded-2xl object-cover ring-2 ring-primary/40`} />
+    <img src={employee.avatarUrl} alt="" className={`${className} shrink-0 rounded-2xl object-cover ring-1 ring-slate-200 dark:ring-slate-800`} />
   ) : (
-    <div className={`${className} flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-violet-500 to-cyan-400 font-bold text-foreground shadow-[0_0_24px_rgba(125,92,255,.35)]`}>
+    <div className={`${className} flex shrink-0 items-center justify-center rounded-2xl bg-indigo-50 font-bold text-indigo-700 border border-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-300 dark:border-indigo-500/20`}>
       {initials}
     </div>
   );

@@ -3822,7 +3822,7 @@
     inset: auto 16px 0;
     height: 1px;
     opacity: .55;
-    background: linear-gradient(90deg, transparent, oklch(0.74 0.23 205), oklch(0.65 0.27 22), transparent);
+    background: linear-gradient(90deg, transparent, var(--primary), transparent);
   }
   .weekly-employee-card-top {
     position: relative;
@@ -3867,9 +3867,9 @@
     font-variant-numeric: tabular-nums;
   }
   .weekly-employee-rank.top {
-    border-color: #0F172A;
-    background: linear-gradient(135deg, oklch(0.82 0.17 75 / 0.18), oklch(0.65 0.27 22 / 0.12));
-    color: #0F172A;
+    border-color: var(--primary);
+    background: var(--primary);
+    color: white;
   }
   .weekly-employee-metrics {
     position: relative;
@@ -3883,12 +3883,12 @@
     outline-offset: 3px;
   }
   .weekly-employee-card.active {
-    border-color: oklch(0.65 0.27 22 / 0.56);
-    background: #e2e8f0;
+    border-color: var(--primary);
+    background: #f8fafc;
     box-shadow:
-      inset 0 1px 0 oklch(1 0 0 / 0.07),
-      0 0 0 1px oklch(0.65 0.27 22 / 0.1),
-      0 18px 54px -32px oklch(0.65 0.27 22 / 0.95);
+      inset 0 1px 0 rgba(255,255,255,0.5),
+      0 0 0 1px var(--primary),
+      0 12px 32px -28px rgba(0,0,0,0.1);
   }
   .weekly-feedback-dialog {
     border-radius: 22px;
@@ -4013,9 +4013,7 @@
   .weekly-progress {
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(90deg, #21d4fd, #8b5cf6 45%, #ff2d6f);
-    box-shadow: 0 0 18px oklch(0.65 0.25 300 / 0.45);
-    animation: eom-progress-glow 2.4s ease-in-out infinite;
+    background: var(--primary);
   }
   .weekly-progress-metric {
     min-width: 0;
