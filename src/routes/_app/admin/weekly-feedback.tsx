@@ -120,10 +120,10 @@ function RatingSelector({
   disabled?: boolean;
 }) {
   const options: { label: Rating; icon: React.ReactNode; colorClass: string }[] = [
-    { label: "Excellent", icon: <span className="text-xl">🌟</span>, colorClass: "hover:bg-emerald-50 hover:border-emerald-200 data-[state=active]:text-foreground data-[state=active]:border-transparent data-[state=active]:shadow-sm" },
-    { label: "Good", icon: <span className="text-xl">👍</span>, colorClass: "hover:bg-blue-50 hover:border-blue-200 data-[state=active]:text-foreground data-[state=active]:border-transparent data-[state=active]:shadow-sm" },
-    { label: "Average", icon: <span className="text-xl">😐</span>, colorClass: "hover:bg-amber-50 hover:border-amber-200 data-[state=active]:text-foreground data-[state=active]:border-transparent data-[state=active]:shadow-sm" },
-    { label: "Poor", icon: <span className="text-xl">⚠️</span>, colorClass: "hover:bg-rose-50 hover:border-rose-200 data-[state=active]:text-foreground data-[state=active]:border-transparent data-[state=active]:shadow-sm" },
+    { label: "Excellent", icon: <span className="text-xl">🌟</span>, colorClass: "hover:bg-emerald-50 hover:border-emerald-200 data-[state=active]:bg-slate-100 data-[state=active]:border-slate-300 data-[state=active]:text-foreground data-[state=active]:shadow-sm" },
+    { label: "Good", icon: <span className="text-xl">👍</span>, colorClass: "hover:bg-slate-50 hover:border-slate-200 data-[state=active]:bg-slate-100 data-[state=active]:border-slate-300 data-[state=active]:text-foreground data-[state=active]:shadow-sm" },
+    { label: "Average", icon: <span className="text-xl">😐</span>, colorClass: "hover:bg-amber-50 hover:border-amber-200 data-[state=active]:bg-slate-100 data-[state=active]:border-slate-300 data-[state=active]:text-foreground data-[state=active]:shadow-sm" },
+    { label: "Poor", icon: <span className="text-xl">⚠️</span>, colorClass: "hover:bg-rose-50 hover:border-rose-200 data-[state=active]:bg-slate-100 data-[state=active]:border-slate-300 data-[state=active]:text-foreground data-[state=active]:shadow-sm" },
   ];
 
   return (
@@ -134,7 +134,6 @@ function RatingSelector({
           type="button"
           disabled={disabled}
           data-state={value === opt.label ? "active" : "inactive"}
-          style={value === opt.label ? { background: "var(--gradient-brand)" } : {}}
           onClick={() => onChange(opt.label)}
           className={`flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-card p-4 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 ${opt.colorClass}`}
         >
@@ -768,10 +767,10 @@ function WeeklyFeedbackPage() {
                           icon = <CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400" />;
                         } else if (status === "pending" || isSelected) {
                           if (isSelected) {
-                            colors = "text-foreground shadow-sm ring-1 ring-border";
-                            customStyle = { background: "var(--gradient-brand)" };
+                            colors = "text-foreground shadow-sm ring-1 ring-border bg-slate-100 dark:bg-slate-800";
+                            customStyle = {};
                           } else {
-                            colors = "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800/30 dark:bg-indigo-900/30 dark:text-indigo-400";
+                            colors = "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800/30 dark:bg-slate-900/30 dark:text-slate-400";
                           }
                         } else if (status === "locked") {
                           colors = "cursor-not-allowed bg-slate-100 text-slate-400 opacity-70 dark:bg-slate-900 dark:text-slate-600";
@@ -1035,7 +1034,7 @@ function EmployeeCard({
 function WeeklyStat({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof Award }) {
   return (
     <GlassCard className="weekly-stat">
-      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20">
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
         <Icon size={19} />
       </div>
       <div className="min-w-0">
@@ -1188,7 +1187,7 @@ function Avatar({ employee, size = "md" }: { employee: EmployeeWeek; size?: "md"
   return employee.avatarUrl ? (
     <img src={employee.avatarUrl} alt="" className={`${className} shrink-0 rounded-2xl object-cover ring-1 ring-slate-200 dark:ring-slate-800`} />
   ) : (
-    <div className={`${className} flex shrink-0 items-center justify-center rounded-2xl bg-indigo-50 font-bold text-indigo-700 border border-indigo-100 dark:bg-indigo-500/10 dark:text-indigo-300 dark:border-indigo-500/20`}>
+    <div className={`${className} flex shrink-0 items-center justify-center rounded-2xl bg-slate-100 font-bold text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700`}>
       {initials}
     </div>
   );

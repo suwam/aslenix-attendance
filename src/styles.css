@@ -3822,7 +3822,7 @@
     inset: auto 16px 0;
     height: 1px;
     opacity: .55;
-    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+    background: linear-gradient(90deg, transparent, #cbd5e1, transparent);
   }
   .weekly-employee-card-top {
     position: relative;
@@ -3867,8 +3867,8 @@
     font-variant-numeric: tabular-nums;
   }
   .weekly-employee-rank.top {
-    border-color: var(--primary);
-    background: var(--primary);
+    border-color: #334155;
+    background: #334155;
     color: white;
   }
   .weekly-employee-metrics {
@@ -3883,11 +3883,11 @@
     outline-offset: 3px;
   }
   .weekly-employee-card.active {
-    border-color: var(--primary);
-    background: #f8fafc;
+    border-color: #cbd5e1;
+    background: #ffffff;
     box-shadow:
       inset 0 1px 0 rgba(255,255,255,0.5),
-      0 0 0 1px var(--primary),
+      0 0 0 1px #cbd5e1,
       0 12px 32px -28px rgba(0,0,0,0.1);
   }
   .weekly-feedback-dialog {
@@ -4013,7 +4013,7 @@
   .weekly-progress {
     height: 100%;
     border-radius: inherit;
-    background: var(--primary);
+    background: #475569;
   }
   .weekly-progress-metric {
     min-width: 0;
