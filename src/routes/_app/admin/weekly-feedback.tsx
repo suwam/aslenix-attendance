@@ -120,10 +120,10 @@ function RatingSelector({
   disabled?: boolean;
 }) {
   const options: { label: Rating; icon: React.ReactNode; colorClass: string }[] = [
-    { label: "Excellent", icon: <span className="text-xl">🌟</span>, colorClass: "hover:bg-emerald-50 hover:border-emerald-200 data-[state=active]:bg-emerald-50 data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-700" },
-    { label: "Good", icon: <span className="text-xl">👍</span>, colorClass: "hover:bg-blue-50 hover:border-blue-200 data-[state=active]:bg-blue-50 data-[state=active]:border-blue-500 data-[state=active]:text-blue-700" },
-    { label: "Average", icon: <span className="text-xl">😐</span>, colorClass: "hover:bg-amber-50 hover:border-amber-200 data-[state=active]:bg-amber-50 data-[state=active]:border-amber-500 data-[state=active]:text-amber-700" },
-    { label: "Poor", icon: <span className="text-xl">⚠️</span>, colorClass: "hover:bg-rose-50 hover:border-rose-200 data-[state=active]:bg-rose-50 data-[state=active]:border-rose-500 data-[state=active]:text-rose-700" },
+    { label: "Excellent", icon: <span className="text-xl">🌟</span>, colorClass: "hover:bg-emerald-50 hover:border-emerald-200 data-[state=active]:bg-gradient-to-br data-[state=active]:from-emerald-400 data-[state=active]:to-emerald-600 data-[state=active]:text-white data-[state=active]:border-transparent data-[state=active]:shadow-md" },
+    { label: "Good", icon: <span className="text-xl">👍</span>, colorClass: "hover:bg-blue-50 hover:border-blue-200 data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-400 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:border-transparent data-[state=active]:shadow-md" },
+    { label: "Average", icon: <span className="text-xl">😐</span>, colorClass: "hover:bg-amber-50 hover:border-amber-200 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-400 data-[state=active]:to-amber-600 data-[state=active]:text-white data-[state=active]:border-transparent data-[state=active]:shadow-md" },
+    { label: "Poor", icon: <span className="text-xl">⚠️</span>, colorClass: "hover:bg-rose-50 hover:border-rose-200 data-[state=active]:bg-gradient-to-br data-[state=active]:from-rose-400 data-[state=active]:to-rose-600 data-[state=active]:text-white data-[state=active]:border-transparent data-[state=active]:shadow-md" },
   ];
 
   return (
@@ -698,208 +698,211 @@ function WeeklyFeedbackPage() {
           </div>
         </GlassCard>
       </div>
-
       <Dialog open={feedbackDialogOpen && Boolean(selected)} onOpenChange={setFeedbackDialogOpen}>
         <DialogContent className="flex max-h-[95vh] w-[96vw] max-w-7xl flex-col overflow-hidden rounded-2xl border-border bg-background p-0 shadow-2xl sm:flex-row">
           {selected && (
             <>
-              {/* LEFT COLUMN: 70% */}
-              <div className="relative flex h-full flex-1 flex-col overflow-y-auto bg-slate-50/50 dark:bg-slate-950/50">
-                {/* Premium Header */}
-                <header className="flex flex-col gap-6 border-b border-border bg-card p-6 md:p-8">
-                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div className="flex items-center gap-4">
-                      <Avatar employee={selected} size="lg" />
-                      <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-foreground">{selected.name}</h2>
-                        <p className="text-sm font-medium text-muted-foreground">{selected.department}</p>
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-start gap-2 text-left md:items-end md:text-right">
-                      <StatusBadge status={selectedWeekStatus} />
-                      <div className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                        Week {selectedWeekNumber} Review • {formatNepaliDate(new Date().toISOString(), "DD MMM YYYY")} BS
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Animated Progress Bar */}
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between text-sm font-semibold">
-                      <span className="text-slate-700 dark:text-slate-300">Review Cycle Progress</span>
-                      <span className="text-primary">{Math.round((completedWeeks / reviewWeeks.length) * 100)}% ({completedWeeks} of {reviewWeeks.length} Completed)</span>
-                    </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                      <div 
-                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-1000 ease-out"
-                        style={{ width: `${(completedWeeks / reviewWeeks.length) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                </header>
-
-                {/* Main Form Area */}
-                <div className="flex-1 p-6 pb-32 md:p-8">
-                  {/* Summary Metrics (moved above form) */}
-                  <div className="mb-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
-                    <MiniMetric label="Score" value={selected.score} icon={Zap} />
-                    <MiniMetric label="Tasks" value={selected.completedTasks} icon={CheckCircle2} />
-                    <MiniMetric label="Overdue" value={selected.overdueTasks} icon={ShieldAlert} />
-                    <MiniMetric label="Attendance" value={`${selected.attendancePct}%`} icon={CalendarDays} />
-                  </div>
-
-                  {/* Horizontal Stepper Navigation */}
-                  <div className="hide-scrollbar mb-10 flex items-center gap-2 overflow-x-auto pb-4">
-                    {reviewWeeks.map((week, idx) => {
-                      const review = selectedHistory.find((item) =>
-                        getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate)
-                      );
-                      const status = getWeekStatus(week, Boolean(review));
-                      const isSelected = selectedWeekNumber === week.weekNumber;
-                      
-                      let colors = "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400";
-                      let icon = null;
-                      if (status === "completed") {
-                        colors = "border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-900/40 dark:text-emerald-400";
-                        icon = <CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400" />;
-                      } else if (status === "pending" || isSelected) {
-                        if (isSelected) {
-                          colors = "bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-md ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-950";
-                        } else {
-                          colors = "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800/30 dark:bg-indigo-900/30 dark:text-indigo-400";
-                        }
-                      } else if (status === "locked") {
-                        colors = "cursor-not-allowed bg-slate-100 text-slate-400 opacity-70 dark:bg-slate-900 dark:text-slate-600";
-                        icon = <LockKeyhole size={14} />;
-                      }
-
-                      return (
-                        <div key={week.weekNumber} className="flex shrink-0 items-center">
-                          <button
-                            type="button"
-                            onClick={() => status !== "locked" && setSelectedWeekNumber(week.weekNumber)}
-                            disabled={status === "locked"}
-                            className={`flex min-w-[110px] items-center justify-center gap-2 rounded-full border border-transparent px-4 py-2 transition-all ${colors} ${status !== "locked" ? "active:scale-95 hover:scale-105" : ""}`}
-                          >
-                            {icon}
-                            <span className="text-sm font-bold tracking-wide">
-                              Week {week.weekNumber}
-                            </span>
-                          </button>
-                          {idx < reviewWeeks.length - 1 && (
-                            <div className="mx-2 flex items-center justify-center text-slate-300 dark:text-slate-700">
-                              <ChevronRight size={16} />
-                            </div>
-                          )}
+              {/* LEFT COLUMN: Form & Header (70%) */}
+              <div className="relative flex h-full flex-1 flex-col bg-slate-50/50 dark:bg-slate-950/50">
+                
+                {/* Scrollable Content */}
+                <div className="flex-1 overflow-y-auto">
+                  {/* Premium Header */}
+                  <header className="flex flex-col gap-6 border-b border-border bg-card p-6 md:p-8">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                      <div className="flex items-center gap-4">
+                        <Avatar employee={selected} size="lg" />
+                        <div>
+                          <h2 className="text-2xl font-bold tracking-tight text-foreground">{selected.name}</h2>
+                          <p className="text-sm font-medium text-muted-foreground">{selected.department}</p>
                         </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Form Content */}
-                  {selectedWeekLocked ? (
-                    <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 py-16 text-center dark:border-slate-800 dark:bg-slate-900/50">
-                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-800">
-                        <LockKeyhole size={32} className="text-slate-500 dark:text-slate-400" />
                       </div>
-                      <div>
-                        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Review Locked</h3>
-                        <p className="mt-2 max-w-sm text-sm text-slate-500 dark:text-slate-400">
-                          This review is currently locked. It will automatically become available on {selectedWeek?.unlockDate ? `Wednesday, ${selectedWeek.unlockDate} BS` : "the coming Wednesday"}.
-                        </p>
+                      <div className="flex flex-col items-start gap-2 text-left md:items-end md:text-right">
+                        <StatusBadge status={selectedWeekStatus} />
+                        <div className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                          Week {selectedWeekNumber} Review • {formatNepaliDate(new Date().toISOString(), "DD MMM YYYY")} BS
+                        </div>
                       </div>
                     </div>
-                  ) : (
-                    <div className="flex flex-col gap-8">
-                      {/* Read Only Details Component */}
-                      {selectedWeekReview && !canEditSelectedReview && (
-                        <ReviewDetails
-                          review={selectedWeekReview}
-                          weekNumber={selectedWeekNumber}
-                          onEdit={() => setEditingReviewId(selectedWeekReview.id)}
+
+                    {/* Animated Progress Bar */}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between text-sm font-semibold">
+                        <span className="text-slate-700 dark:text-slate-300">Review Cycle Progress</span>
+                        <span className="text-primary">{Math.round((completedWeeks / reviewWeeks.length) * 100)}% ({completedWeeks} of {reviewWeeks.length} Completed)</span>
+                      </div>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                        <div 
+                          className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-1000 ease-out"
+                          style={{ width: `${(completedWeeks / reviewWeeks.length) * 100}%` }}
                         />
-                      )}
-
-                      {/* Editable Form */}
-                      {(!selectedWeekReview || canEditSelectedReview) && (
-                        <div className="flex flex-col gap-8">
-                          <div>
-                            <Label className="mb-3 block text-sm font-bold text-foreground">Overall Weekly Rating</Label>
-                            <RatingSelector value={rating} onChange={setRating} disabled={formLocked} />
-                          </div>
-
-                          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                            <div>
-                              <Label className="mb-2 flex items-center gap-2 text-sm font-bold text-emerald-600">
-                                <TrendingUp size={16} />
-                                Strengths
-                              </Label>
-                              <Textarea
-                                value={strengths}
-                                onChange={(event) => setStrengths(event.target.value)}
-                                disabled={formLocked}
-                                rows={5}
-                                placeholder="What went especially well this week? Describe achievements, technical contributions, teamwork..."
-                                className="resize-none rounded-xl border-emerald-100 bg-emerald-50/30 p-4 leading-relaxed shadow-sm focus-visible:ring-emerald-500 dark:border-emerald-900/30 dark:bg-emerald-950/20"
-                              />
-                            </div>
-                            <div>
-                              <Label className="mb-2 flex items-center gap-2 text-sm font-bold text-orange-500">
-                                <Target size={16} />
-                                Areas for Improvement
-                              </Label>
-                              <Textarea
-                                value={improvements}
-                                onChange={(event) => setImprovements(event.target.value)}
-                                disabled={formLocked}
-                                rows={5}
-                                placeholder="What should improve next week? Mention blockers, challenges, communication issues..."
-                                className="resize-none rounded-xl border-orange-100 bg-orange-50/30 p-4 leading-relaxed shadow-sm focus-visible:ring-orange-500 dark:border-orange-900/30 dark:bg-orange-950/20"
-                              />
-                            </div>
-                          </div>
-
-                          <div>
-                            <Label className="mb-2 flex items-center gap-2 text-sm font-bold text-indigo-600 dark:text-indigo-400">
-                              <Sparkles size={16} />
-                              Goals for Next Week
-                            </Label>
-                            <Textarea
-                              value={goals}
-                              onChange={(event) => setGoals(event.target.value)}
-                              disabled={formLocked}
-                              rows={4}
-                              placeholder="Define measurable goals and objectives for next week..."
-                              className="resize-none rounded-xl border-indigo-100 bg-indigo-50/30 p-4 leading-relaxed shadow-sm focus-visible:ring-indigo-500 dark:border-indigo-900/30 dark:bg-indigo-950/20"
-                            />
-                          </div>
-
-                          <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
-                            <Label className="mb-2 flex items-center justify-between text-sm font-bold text-slate-700 dark:text-slate-300">
-                              <div className="flex items-center gap-2">
-                                <LockKeyhole size={14} />
-                                Private Admin Notes
-                              </div>
-                              <span className="text-xs font-normal text-slate-500">Visible only to HR/Admins</span>
-                            </Label>
-                            <Textarea
-                              value={notes}
-                              onChange={(event) => setNotes(event.target.value)}
-                              disabled={formLocked}
-                              rows={3}
-                              placeholder="Internal notes visible only to administrators and HR..."
-                              className="mt-3 resize-none rounded-lg bg-white p-4 leading-relaxed dark:bg-slate-950"
-                            />
-                          </div>
-                        </div>
-                      )}
+                      </div>
                     </div>
-                  )}
+                  </header>
+
+                  {/* Main Form Area */}
+                  <div className="p-6 pb-16 md:p-8">
+                    {/* Summary Metrics (moved above form) */}
+                    <div className="mb-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                      <MiniMetric label="Score" value={selected.score} icon={Zap} />
+                      <MiniMetric label="Tasks" value={selected.completedTasks} icon={CheckCircle2} />
+                      <MiniMetric label="Overdue" value={selected.overdueTasks} icon={ShieldAlert} />
+                      <MiniMetric label="Attendance" value={`${selected.attendancePct}%`} icon={CalendarDays} />
+                    </div>
+
+                    {/* Horizontal Stepper Navigation */}
+                    <div className="hide-scrollbar mb-10 flex items-center gap-2 overflow-x-auto pb-4">
+                      {reviewWeeks.map((week, idx) => {
+                        const review = selectedHistory.find((item) =>
+                          getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate)
+                        );
+                        const status = getWeekStatus(week, Boolean(review));
+                        const isSelected = selectedWeekNumber === week.weekNumber;
+                        
+                        let colors = "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400";
+                        let icon = null;
+                        if (status === "completed") {
+                          colors = "border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-900/40 dark:text-emerald-400";
+                          icon = <CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400" />;
+                        } else if (status === "pending" || isSelected) {
+                          if (isSelected) {
+                            colors = "bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-md ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-950";
+                          } else {
+                            colors = "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800/30 dark:bg-indigo-900/30 dark:text-indigo-400";
+                          }
+                        } else if (status === "locked") {
+                          colors = "cursor-not-allowed bg-slate-100 text-slate-400 opacity-70 dark:bg-slate-900 dark:text-slate-600";
+                          icon = <LockKeyhole size={14} />;
+                        }
+
+                        return (
+                          <div key={week.weekNumber} className="flex shrink-0 items-center">
+                            <button
+                              type="button"
+                              onClick={() => status !== "locked" && setSelectedWeekNumber(week.weekNumber)}
+                              disabled={status === "locked"}
+                              className={`flex min-w-[110px] items-center justify-center gap-2 rounded-full border border-transparent px-4 py-2 transition-all ${colors} ${status !== "locked" ? "active:scale-95 hover:scale-105" : ""}`}
+                            >
+                              {icon}
+                              <span className="text-sm font-bold tracking-wide">
+                                Week {week.weekNumber}
+                              </span>
+                            </button>
+                            {idx < reviewWeeks.length - 1 && (
+                              <div className="mx-2 flex items-center justify-center text-slate-300 dark:text-slate-700">
+                                <ChevronRight size={16} />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Form Content */}
+                    {selectedWeekLocked ? (
+                      <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 py-16 text-center dark:border-slate-800 dark:bg-slate-900/50">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-800">
+                          <LockKeyhole size={32} className="text-slate-500 dark:text-slate-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Review Locked</h3>
+                          <p className="mt-2 max-w-sm text-sm text-slate-500 dark:text-slate-400">
+                            This review is currently locked. It will automatically become available on {selectedWeek?.unlockDate ? `Wednesday, ${selectedWeek.unlockDate} BS` : "the coming Wednesday"}.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-8">
+                        {/* Read Only Details Component */}
+                        {selectedWeekReview && !canEditSelectedReview && (
+                          <ReviewDetails
+                            review={selectedWeekReview}
+                            weekNumber={selectedWeekNumber}
+                            onEdit={() => setEditingReviewId(selectedWeekReview.id)}
+                          />
+                        )}
+
+                        {/* Editable Form */}
+                        {(!selectedWeekReview || canEditSelectedReview) && (
+                          <div className="flex flex-col gap-8">
+                            <div>
+                              <Label className="mb-3 block text-sm font-bold text-foreground">Overall Weekly Rating</Label>
+                              <RatingSelector value={rating} onChange={setRating} disabled={formLocked} />
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                              <div>
+                                <Label className="mb-2 flex items-center gap-2 text-sm font-bold text-emerald-600">
+                                  <TrendingUp size={16} />
+                                  Strengths
+                                </Label>
+                                <Textarea
+                                  value={strengths}
+                                  onChange={(event) => setStrengths(event.target.value)}
+                                  disabled={formLocked}
+                                  rows={5}
+                                  placeholder="What went especially well this week? Describe achievements, technical contributions, teamwork..."
+                                  className="resize-none rounded-xl border-emerald-100 bg-emerald-50/30 p-4 leading-relaxed shadow-sm focus-visible:ring-emerald-500 dark:border-emerald-900/30 dark:bg-emerald-950/20"
+                                />
+                              </div>
+                              <div>
+                                <Label className="mb-2 flex items-center gap-2 text-sm font-bold text-orange-500">
+                                  <Target size={16} />
+                                  Areas for Improvement
+                                </Label>
+                                <Textarea
+                                  value={improvements}
+                                  onChange={(event) => setImprovements(event.target.value)}
+                                  disabled={formLocked}
+                                  rows={5}
+                                  placeholder="What should improve next week? Mention blockers, challenges, communication issues..."
+                                  className="resize-none rounded-xl border-orange-100 bg-orange-50/30 p-4 leading-relaxed shadow-sm focus-visible:ring-orange-500 dark:border-orange-900/30 dark:bg-orange-950/20"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <Label className="mb-2 flex items-center gap-2 text-sm font-bold text-indigo-600 dark:text-indigo-400">
+                                <Sparkles size={16} />
+                                Goals for Next Week
+                              </Label>
+                              <Textarea
+                                value={goals}
+                                onChange={(event) => setGoals(event.target.value)}
+                                disabled={formLocked}
+                                rows={4}
+                                placeholder="Define measurable goals and objectives for next week..."
+                                className="resize-none rounded-xl border-indigo-100 bg-indigo-50/30 p-4 leading-relaxed shadow-sm focus-visible:ring-indigo-500 dark:border-indigo-900/30 dark:bg-indigo-950/20"
+                              />
+                            </div>
+
+                            <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/50">
+                              <Label className="mb-2 flex items-center justify-between text-sm font-bold text-slate-700 dark:text-slate-300">
+                                <div className="flex items-center gap-2">
+                                  <LockKeyhole size={14} />
+                                  Private Admin Notes
+                                </div>
+                                <span className="text-xs font-normal text-slate-500">Visible only to HR/Admins</span>
+                              </Label>
+                              <Textarea
+                                value={notes}
+                                onChange={(event) => setNotes(event.target.value)}
+                                disabled={formLocked}
+                                rows={3}
+                                placeholder="Internal notes visible only to administrators and HR..."
+                                className="mt-3 resize-none rounded-lg bg-white p-4 leading-relaxed dark:bg-slate-950"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                {/* Sticky Footer */}
+                {/* Fixed Footer */}
                 {(!selectedWeekLocked && (!selectedWeekReview || canEditSelectedReview)) && (
-                  <div className="absolute bottom-0 left-0 right-0 flex items-center justify-end gap-3 border-t border-border bg-background/80 p-4 backdrop-blur-md">
+                  <div className="flex shrink-0 items-center justify-end gap-3 border-t border-border bg-background/80 p-4 backdrop-blur-md">
                     <Button 
                       variant="outline"
                       onClick={() => setFeedbackDialogOpen(false)}
