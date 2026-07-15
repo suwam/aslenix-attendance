@@ -151,8 +151,23 @@ function AdminReportsPage() {
         const pageEl = pages[i] as HTMLElement;
         const imgData = await captureSanitizedPdfPage(pageEl);
         
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        
+        let heightLeft = pdfHeight;
+        let position = 0;
+        
         if (i > 0) pdf.addPage();
-        pdf.addImage(imgData, "JPEG", 0, 0, 210, 297);
+        pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, pdfHeight);
+        heightLeft -= 297; // 297 is A4 height in mm
+        
+        while (heightLeft > 0) {
+          position = heightLeft - pdfHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, pdfHeight);
+          heightLeft -= 297;
+        }
       }
       
       let dateLabel = report.report_date;
@@ -394,6 +409,7 @@ function AdminReportsPage() {
                         </td>
                         <td className="px-4 py-3 text-right space-x-2">
                           <Button
+                            type="button"
                             variant="secondary"
                             size="sm"
                             disabled={exportingId === report.id}

@@ -62,8 +62,23 @@ function WeeklyReportsPage() {
         const pageEl = pages[i] as HTMLElement;
         const imgData = await captureSanitizedPdfPage(pageEl);
         
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        
+        let heightLeft = pdfHeight;
+        let position = 0;
+        
         if (i > 0) pdf.addPage();
-        pdf.addImage(imgData, "JPEG", 0, 0, 210, 297);
+        pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, pdfHeight);
+        heightLeft -= 297; // 297 is A4 height in mm
+        
+        while (heightLeft > 0) {
+          position = heightLeft - pdfHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, pdfHeight);
+          heightLeft -= 297;
+        }
       }
       
       pdf.save(`My-Weekly-Report-${report.week_start}.pdf`);
@@ -120,6 +135,7 @@ function WeeklyReportsPage() {
                       </p>
                     </div>
                     <Button
+                      type="button"
                       onClick={() => handleExport(report)}
                       disabled={exportingId === report.id}
                       className="gap-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white shadow-[0_0_20px_rgba(34,211,238,0.25)]"
