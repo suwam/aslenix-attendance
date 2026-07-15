@@ -108,10 +108,10 @@ serve(async (req) => {
         timeout: 60000,
         attestationType: "none",
         authenticatorSelection: {
+          authenticatorAttachment: "platform",
           residentKey: "preferred",
           userVerification: "preferred",
         },
-        preferredAuthenticatorType: "localDevice",
       });
 
       await replaceChallenge(supabaseAdmin, userId, deviceFingerprint, options.challenge);

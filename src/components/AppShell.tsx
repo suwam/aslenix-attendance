@@ -228,7 +228,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        <UserCard onSignOut={handleSignOut} />
       </aside>
 
       {/* Mobile drawer */}
@@ -276,7 +275,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                 );
               })}
             </nav>
-            <UserCard onSignOut={handleSignOut} />
           </aside>
         </>
       )}
@@ -284,11 +282,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Main */}
       <div className={`flex-1 flex flex-col min-w-0 ${isMessagesPage ? "h-full overflow-hidden" : ""}`}>
         <header
-          className="sticky top-0 z-30 h-16 px-4 sm:px-6 flex items-center gap-3 border-b border-border"
-          style={{
-            background: "color-mix(in oklab, var(--background) 75%, transparent)",
-            backdropFilter: "blur(20px)",
-          }}
+          className="sticky top-0 z-30 h-16 px-4 sm:px-6 flex items-center gap-3 bg-background"
         >
           <button
             className="lg:hidden p-2 rounded-lg hover:bg-muted"
@@ -453,28 +447,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
         )}
       </div>
-    </div>
-  );
-}
-
-function UserCard({ onSignOut }: { onSignOut: () => void }) {
-  const { profile, isAdmin } = useAuth();
-  return (
-    <div className="glass rounded-xl p-3 flex items-center gap-3">
-      <Avatar profile={profile} />
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium truncate">{profile?.full_name}</div>
-        <div className="text-[11px] text-muted-foreground truncate">
-          {isAdmin ? "Administrator" : profile?.position || "Employee"}
-        </div>
-      </div>
-      <button
-        onClick={onSignOut}
-        className="p-2 rounded-lg hover:bg-destructive/15 hover:text-destructive transition-colors"
-        aria-label="Sign out"
-      >
-        <LogOut size={16} />
-      </button>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { PageHeader } from "@/components/PageHeader";
 import { motion } from "framer-motion";
 import {
   Bar,
@@ -740,47 +741,11 @@ function EmployeeDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <main className="min-h-screen min-w-0 max-w-full flex-1 space-y-6 overflow-x-hidden bg-[#F6F8FC] p-4 text-[#0F172A] sm:space-y-8 sm:p-6 lg:p-8">
-        <motion.section
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-[18px] bg-[linear-gradient(135deg,#EEF2FF_0%,#FFFFFF_60%,#F8FAFC_100%)] p-8 sm:p-10 lg:p-12 shadow-[0_8px_24px_rgba(15,23,42,0.06)] border border-[#E2E8F0]"
-        >
-          <div className="absolute inset-0 bg-[linear-gradient(110deg,transparent_0_30%,rgba(79,70,229,.03)_45%,transparent_60%)] opacity-30" />
-          <div className="relative grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-center">
-            <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 border-[#f1f0ee] bg-[#f1f0ee] text-2xl font-bold text-[#4F46E5] shadow-sm">
-                {profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" /> : initials(profile?.full_name || firstName)}
-              </div>
-              <div className="min-w-0">
-                <div className="mb-3 flex flex-wrap gap-2">
-                  <Badge icon={Sparkles} label="AI HRMS" />
-                  <Badge icon={MapPin} label="Aslenix Tech & Solution" />
-                </div>
-                <h1 className="max-w-3xl text-3xl font-bold leading-none tracking-tight text-[#0F172A] sm:text-5xl lg:text-6xl">Hello, {firstName}</h1>
-                <p className="mt-3 max-w-2xl text-sm font-medium leading-relaxed text-[#64748B] sm:text-base">
-                  {profile?.position || "Employee"} · {profile?.department || "Team Member"} · {quote}
-                </p>
-                <div className="mt-5 flex flex-wrap gap-3">
-                  <HeroChip icon={BadgeCheck} label={status} className="bg-[#EEF2FF] text-[#4338CA] border border-[#C4DAFF]/50" />
-                  <HeroChip icon={Calendar} label={`${nepaliToday} BS`} className="bg-[#F8FAFC] text-[#475569] border border-slate-200/50" />
-                  <HeroChip icon={CloudLikeIcon} label="Kathmandu · 24°C" className="bg-[#ECFEFF] text-[#0EA5E9] border border-cyan-200/50" />
-                </div>
-              </div>
-            </div>
-            <div className="grid gap-3">
-              <div className="rounded-[18px] border border-[#E2E8F0] bg-[#f1f0ee] p-5 shadow-sm">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#64748B]">Live Clock</div>
-                <LiveClock className="mt-2 text-3xl font-bold text-[#0F172A] tracking-tight" />
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <HeroMini label="Streak" value={`${attendanceStreak}d`} />
-                <HeroMini label="Score" value={`${employeeScore}`} />
-                <HeroMini label="Tasks" value={`${taskStats.pending}`} />
-              </div>
-            </div>
-          </div>
-        </motion.section>
+      <div className="space-y-6 sm:space-y-8">
+        <PageHeader 
+          title="Employee Dashboard" 
+          subtitle="Welcome back! Here's your attendance and work summary." 
+        />
 
         <motion.section
           initial={{ opacity: 0, y: 14 }}
@@ -927,7 +892,7 @@ function EmployeeDashboard() {
           <ActivityTimelinePanel items={recent} />
           <GlassPanel className="p-5 sm:p-6"><SectionTitle icon={BellDot} eyebrow="Live" title="Notification center" /><div className="mt-5 space-y-3">{notifications.map((item) => <NotificationCard key={item.title} {...item} />)}</div></GlassPanel>
         </section>
-      </main>
+      </div>
 
       {false && (
       <main className="employee-dashboard">
