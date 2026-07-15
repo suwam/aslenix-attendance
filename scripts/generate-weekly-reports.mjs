@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { format, subDays, eachDayOfInterval } from "date-fns";
-import NepaliDate from "nepali-date-converter";
+import NepaliDateMod from "nepali-date-converter";
+const NepaliDate = NepaliDateMod.default || NepaliDateMod;
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
