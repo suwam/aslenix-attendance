@@ -56,11 +56,11 @@ function WeeklyReportsPage() {
 
       const { default: jsPDF } = await import("jspdf");
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const { captureSanitizedPdfPage } = await import("@/lib/pdf-utils");
       
       for (let i = 0; i < pages.length; i++) {
         const pageEl = pages[i] as HTMLElement;
-        const canvas = await html2canvas(pageEl, { scale: 2, useCORS: true, logging: false });
-        const imgData = canvas.toDataURL("image/jpeg", 0.95);
+        const imgData = await captureSanitizedPdfPage(pageEl);
         
         if (i > 0) pdf.addPage();
         pdf.addImage(imgData, "JPEG", 0, 0, 210, 297);

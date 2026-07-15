@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Loader2, Download, FileBarChart, RefreshCw, Calendar as CalendarIcon, Play } from "lucide-react";
 import { toast } from "sonner";
-import { formatNepaliDate, bsInputToAdDateString } from "@/lib/nepali-calendar";
+import { formatNepaliDate, bsInputToAdDateString, getNepaliMonthRange } from "@/lib/nepali-calendar";
 import { WeeklyReportPdfTemplate } from "@/components/WeeklyReportPdfTemplate";
 import html2canvas from "html2canvas";
 import { BSDateInput } from "@/components/BSDateInput";
@@ -83,12 +83,42 @@ function AdminReportsPage() {
   const filtered = useMemo(() => {
     return reports.filter(r => {
       const q = search.toLowerCase();
-      if (!q) return true;
-      const name = (r.profiles?.full_name || "").toLowerCase();
-      const dept = (r.profiles?.department || "").toLowerCase();
-      return name.includes(q) || dept.includes(q);
+      let matchesSearch = true;
+      if (q) {
+        const name = (r.profiles?.full_name || "").toLowerCase();
+        const dept = (r.profiles?.department || "").toLowerCase();
+        matchesSearch = name.includes(q) || dept.includes(q);
+      }
+      
+      let matchesStatus = true;
+      if (generateStatus !== "all") {
+        matchesStatus = (r.status || "").toLowerCase() === generateStatus.toLowerCase();
+      }
+      
+      let matchesDate = true;
+      if (generateDate) {
+        const adDateStr = bsInputToAdDateString(generateDate);
+        if (adDateStr) {
+          if (displayType === "daily") {
+            matchesDate = r.report_date === adDateStr;
+          } else if (displayType === "weekly") {
+            matchesDate = r.week_start === adDateStr;
+            if (generateEndDate) {
+              const adEndStr = bsInputToAdDateString(generateEndDate);
+              if (adEndStr) {
+                matchesDate = r.week_start === adDateStr && r.week_end === adEndStr;
+              }
+            }
+          } else if (displayType === "monthly") {
+            const monthRange = getNepaliMonthRange(0, adDateStr);
+            matchesDate = r.month_start === monthRange.startAd;
+          }
+        }
+      }
+
+      return matchesSearch && matchesStatus && matchesDate;
     });
-  }, [reports, search]);
+  }, [reports, search, generateStatus, generateDate, generateEndDate, displayType]);
 
   const handleExport = async (report: any) => {
     try {
@@ -115,11 +145,11 @@ function AdminReportsPage() {
 
       const { default: jsPDF } = await import("jspdf");
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const { captureSanitizedPdfPage } = await import("@/lib/pdf-utils");
       
       for (let i = 0; i < pages.length; i++) {
         const pageEl = pages[i] as HTMLElement;
-        const canvas = await html2canvas(pageEl, { scale: 2, useCORS: true, logging: false });
-        const imgData = canvas.toDataURL("image/jpeg", 0.95);
+        const imgData = await captureSanitizedPdfPage(pageEl);
         
         if (i > 0) pdf.addPage();
         pdf.addImage(imgData, "JPEG", 0, 0, 210, 297);
