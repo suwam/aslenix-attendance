@@ -854,6 +854,9 @@ export type Database = {
           updated_at: string;
           week_number: number;
           week_start: string;
+          nepali_year: number | null;
+          nepali_month: number | null;
+          unlock_date: string | null;
         };
         Insert: {
           admin_id: string;
@@ -870,6 +873,9 @@ export type Database = {
           updated_at?: string;
           week_number: number;
           week_start: string;
+          nepali_year?: number | null;
+          nepali_month?: number | null;
+          unlock_date?: string | null;
         };
         Update: {
           admin_id?: string;
@@ -886,6 +892,9 @@ export type Database = {
           updated_at?: string;
           week_number?: number;
           week_start?: string;
+          nepali_year?: number | null;
+          nepali_month?: number | null;
+          unlock_date?: string | null;
         };
         Relationships: [];
       };

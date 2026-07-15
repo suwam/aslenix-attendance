@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/PageHeader";
+import { getWeeklyReviewCyclesForNepaliMonth } from "@/lib/nepali-calendar";
 import { motion } from "framer-motion";
 import {
   Bar,
@@ -142,6 +143,45 @@ const MOODS = [
   { value: "stressed", label: "Stressed", emoji: "😔" },
 ];
 
+function EmployeeWeeklyReviews({ reviews }: { reviews: any[] }) {
+  const reviewCycles = useMemo(() => getWeeklyReviewCyclesForNepaliMonth(new Date()), []);
+  const todayDate = format(new Date(), "yyyy-MM-dd");
+
+  return (
+    <GlassPanel className="p-5 sm:p-6">
+      <SectionTitle icon={Target} eyebrow="Performance" title="Weekly Reviews" />
+      <div className="mt-5 space-y-3">
+        {reviewCycles.map((cycle) => {
+          const review = reviews.find(r => 
+            (r.nepali_year === cycle.bsYear && r.nepali_month === cycle.bsMonth && r.week_number === cycle.weekNumber) || 
+            (!r.nepali_year && r.week_start === cycle.startDate && r.week_number === cycle.weekNumber)
+          );
+          
+          let statusLabel = "Available [Write Review]";
+          let statusStyle = "bg-[#EEF2FF] text-[#6B8AE5] border-[#C4DAFF]";
+          
+          if (review) {
+             statusLabel = "Completed";
+             statusStyle = "bg-[#ECFDF5] text-[#10B981] border-[#A7F3D0]";
+          } else if (cycle.unlockDate > todayDate) {
+             statusLabel = "Locked";
+             statusStyle = "bg-[#F1F5F9] text-[#64748B] border-[#E2E8F0]";
+          }
+
+          return (
+            <div key={cycle.weekNumber} className="flex items-center justify-between rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm">
+               <div className="font-semibold text-[#0F172A]">Week {cycle.weekNumber}</div>
+               <div className={`rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider ${statusStyle}`}>
+                  {statusLabel}
+               </div>
+            </div>
+          );
+        })}
+      </div>
+    </GlassPanel>
+  );
+}
+
 function EmployeeDashboard() {
   const { user, profile, isAdmin } = useAuth();
   const { deviceStatus, setupBiometrics, busy: biometricsBusy } = useDeviceStatus();
@@ -165,6 +205,7 @@ function EmployeeDashboard() {
   const [latestImprovement, setLatestImprovement] = useState<any>(null);
   const [improvementOpen, setImprovementOpen] = useState(false);
   const [notificationPopup, setNotificationPopup] = useState<NotificationRow | null>(null);
+  const [weeklyReviews, setWeeklyReviews] = useState<any[]>([]);
   const [nowTick, setNowTick] = useState(Date.now());
   const [busy, setBusy] = useState(false);
   const [taskFilter, setTaskFilter] = useState<"all" | "active" | "overdue">("all");
@@ -184,7 +225,7 @@ function EmployeeDashboard() {
     const monthEnd = nepaliMonth.endAd;
     const historyStart = format(subDays(new Date(), 14), "yyyy-MM-dd");
 
-    const [{ data: t }, { data: monthAttendance }, { data: historyRows }, awardResult, improvementResult, moodResult] =
+    const [{ data: t }, { data: monthAttendance }, { data: historyRows }, awardResult, improvementResult, moodResult, feedbackResult] =
       await Promise.all([
         supabase
           .from("attendance")
@@ -219,6 +260,12 @@ function EmployeeDashboard() {
           .eq("user_id", user.id)
           .gte("log_date", historyStart)
           .order("log_date", { ascending: false }),
+        (supabase as any)
+          .from("weekly_feedback")
+          .select("*")
+          .eq("employee_id", user.id)
+          .gte("week_start", monthStart)
+          .order("week_number", { ascending: true }),
       ]);
 
     setToday(t);
@@ -236,6 +283,8 @@ function EmployeeDashboard() {
       const cachedMood = typeof window !== "undefined" ? window.localStorage.getItem("employee-dashboard-mood") : null;
       setMood(todayMood?.mood || cachedMood || "good");
     }
+
+    setWeeklyReviews(feedbackResult?.data || []);
 
     const monthRows = monthAttendance ?? [];
     const hours = Math.round(monthRows.reduce((sum, row) => sum + Number(row.work_hours || 0), 0) * 10) / 10;
@@ -888,7 +937,8 @@ function EmployeeDashboard() {
           <GlassPanel className="p-5 sm:p-6"><SectionTitle icon={Calendar} eyebrow="Leave" title="Leave management" /><div className="mt-5 grid grid-cols-2 gap-3"><LeaveRing label="Annual" value={12} total={18} /><LeaveRing label="Sick" value={5} total={8} /><LeaveRing label="Casual" value={4} total={6} /><InfoTile label="Pending" value={`${pendingLeaveRequests}`} /></div></GlassPanel>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <section className="grid gap-6 xl:grid-cols-3">
+          <EmployeeWeeklyReviews reviews={weeklyReviews} />
           <ActivityTimelinePanel items={recent} />
           <GlassPanel className="p-5 sm:p-6"><SectionTitle icon={BellDot} eyebrow="Live" title="Notification center" /><div className="mt-5 space-y-3">{notifications.map((item) => <NotificationCard key={item.title} {...item} />)}</div></GlassPanel>
         </section>

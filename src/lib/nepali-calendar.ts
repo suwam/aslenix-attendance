@@ -98,3 +98,29 @@ function toLocalDate(date: Date | string) {
 
   return new Date(date);
 }
+
+export function getWeeklyReviewCyclesForNepaliMonth(date: Date | string = new Date()) {
+  const range = getCurrentNepaliMonthRange(date);
+  const startAd = new Date(`${range.startAd}T00:00:00`);
+  const endAd = new Date(`${range.endAd}T00:00:00`);
+  
+  const cycles = [];
+  let current = new Date(startAd);
+  let weekNumber = 1;
+  
+  while (current <= endAd) {
+    if (current.getDay() === 3) { // Wednesday
+      cycles.push({
+        weekNumber,
+        unlockDate: format(current, "yyyy-MM-dd"),
+        startDate: format(current, "yyyy-MM-dd"), // Keep for compatibility
+        bsYear: range.bsYear,
+        bsMonth: range.bsMonth,
+      });
+      weekNumber++;
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  
+  return cycles;
+}

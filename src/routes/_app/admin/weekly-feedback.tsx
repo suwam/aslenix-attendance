@@ -60,7 +60,7 @@ import { useAuth } from "@/lib/auth-context";
 import { productivityScore } from "@/lib/tasks-utils";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
 import { calculateWeightedAttendancePct, resolvedReviewScore, reviewScoreFromRating } from "@/lib/employee-scoring";
-import { formatNepaliDate, getCurrentNepaliMonthRange } from "@/lib/nepali-calendar";
+import { formatNepaliDate, getCurrentNepaliMonthRange, getWeeklyReviewCyclesForNepaliMonth } from "@/lib/nepali-calendar";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/admin/weekly-feedback")({
@@ -73,17 +73,20 @@ type WeekStatus = "completed" | "pending" | "missed" | "locked";
 type WeeklyFeedbackRow = {
   id: string;
   employee_id: string;
-  admin_id?: string;
+  week_number: number;
   week_start: string;
-  week_number?: number | null;
-  rating: Rating;
+  nepali_year?: number | null;
+  nepali_month?: number | null;
+  unlock_date?: string | null;
+  rating: string;
   strengths: string | null;
   improvements: string | null;
-  notes?: string | null;
-  admin_notes?: string | null;
+  admin_notes: string | null;
+  notes: string | null;
   score: number;
-  review_score?: number | null;
+  review_score: number;
   created_at: string;
+  updated_at: string;
 };
 
 type EmployeeWeek = {
@@ -118,13 +121,13 @@ function WeeklyFeedbackPage() {
   const [improvements, setImprovements] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
-  const currentWeekNumber = getReviewWeekNumber(new Date());
+  const reviewWeeks = useMemo(() => getReviewWeeks(new Date()), []);
+  const currentWeekNumber = getCurrentReviewWeek(new Date(), reviewWeeks);
   const [selectedWeekNumber, setSelectedWeekNumber] = useState(currentWeekNumber);
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
 
   const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString().slice(0, 10);
-  const reviewWeeks = useMemo(() => getReviewWeeks(new Date()), []);
 
   const load = async () => {
     setLoading(true);
@@ -234,12 +237,16 @@ function WeeklyFeedbackPage() {
   const selectedHistory = selected?.history || [];
   const selectedWeek = reviewWeeks.find((week) => week.weekNumber === selectedWeekNumber) || reviewWeeks[0];
   const selectedWeekReview = selectedHistory.find((item) =>
-    getFeedbackWeekNumber(item) === selectedWeekNumber && isSameReviewCycle(item.week_start, selectedWeek?.startDate),
+    (item.nepali_year === selectedWeek.bsYear && item.nepali_month === selectedWeek.bsMonth && item.week_number === selectedWeekNumber) ||
+    (!item.nepali_year && getFeedbackWeekNumber(item) === selectedWeekNumber && isSameReviewCycle(item.week_start, selectedWeek?.startDate))
   );
   const completedWeeks = reviewWeeks.filter((week) =>
-    selectedHistory.some((item) => getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate)),
+    selectedHistory.some((item) => 
+      (item.nepali_year === week.bsYear && item.nepali_month === week.bsMonth && item.week_number === week.weekNumber) ||
+      (!item.nepali_year && getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate))
+    )
   ).length;
-  const selectedWeekStatus = getWeekStatus(selectedWeekNumber, currentWeekNumber, Boolean(selectedWeekReview));
+  const selectedWeekStatus = getWeekStatus(selectedWeek, Boolean(selectedWeekReview));
   const selectedWeekLocked = selectedWeekStatus === "locked";
   const canEditSelectedReview = Boolean(selectedWeekReview && editingReviewId === selectedWeekReview.id);
   const formLocked = selectedWeekLocked || (Boolean(selectedWeekReview) && !canEditSelectedReview);
@@ -323,7 +330,7 @@ function WeeklyFeedbackPage() {
   useEffect(() => {
     setEditingReviewId(null);
     if (selectedWeekReview) {
-      setRating(selectedWeekReview.rating);
+      setRating((selectedWeekReview.rating as Rating) || "Excellent");
       setStrengths(selectedWeekReview.strengths || "");
       setImprovements(selectedWeekReview.improvements || "");
       setNotes(selectedWeekReview.admin_notes || selectedWeekReview.notes || "");
@@ -355,14 +362,17 @@ function WeeklyFeedbackPage() {
       employee_id: selected.userId,
       admin_id: user.id,
       week_start: selectedWeek.startDate,
-      week_number: selectedWeekNumber,
+      week_number: selectedWeek.weekNumber,
+      nepali_year: selectedWeek.bsYear,
+      nepali_month: selectedWeek.bsMonth,
+      unlock_date: selectedWeek.unlockDate,
       rating,
-      review_score: reviewScoreFromRating(rating),
-      strengths: strengths || null,
-      improvements: improvements || null,
-      admin_notes: notes || null,
-      notes: notes || null,
+      strengths,
+      improvements,
+      notes,
+      admin_notes: null,
       score: selected.score,
+      review_score: reviewScoreFromRating(rating),
     };
 
     if (selectedWeekReview && editingReviewId !== selectedWeekReview.id) {
@@ -601,7 +611,7 @@ function WeeklyFeedbackPage() {
                 const review = selectedHistory.find((item) =>
                   getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate),
                 );
-                const status = getWeekStatus(week.weekNumber, currentWeekNumber, Boolean(review));
+                const status = getWeekStatus(week, Boolean(review));
                 return (
                   <div key={week.weekNumber} className={`weekly-history-item ${status}`}>
                     <div className="weekly-history-dot" />
@@ -679,7 +689,7 @@ function WeeklyFeedbackPage() {
                     <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                       <div>
                         <div className="text-xs uppercase tracking-wider text-muted-foreground">Review cycle progress</div>
-                        <div className="mt-1 text-xl font-bold">{completedWeeks}/4 Weekly Reviews Completed</div>
+                        <div className="mt-1 text-xl font-bold">{completedWeeks}/{reviewWeeks.length} Weekly Reviews Completed</div>
                       </div>
                       <StatusBadge status={selectedWeekStatus} />
                     </div>
@@ -689,7 +699,7 @@ function WeeklyFeedbackPage() {
                         const review = selectedHistory.find((item) =>
                           getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate),
                         );
-                        const status = getWeekStatus(week.weekNumber, currentWeekNumber, Boolean(review));
+                        const status = getWeekStatus(week, Boolean(review));
                         return (
                           <button
                             key={week.weekNumber}
@@ -801,7 +811,8 @@ function WeeklyFeedbackPage() {
                       const review = selectedHistory.find((item) =>
                         getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate),
                       );
-                      return <CompactReviewCard key={week.weekNumber} weekNumber={week.weekNumber} review={review} />;
+                      const status = getWeekStatus(week, Boolean(review));
+                      return <CompactReviewCard key={week.weekNumber} weekNumber={week.weekNumber} weekStatus={status} reviewWeeks={reviewWeeks} review={review} />;
                     })}
                   </div>
                 </aside>
@@ -930,9 +941,13 @@ function ReviewDetail({ label, value }: { label: string; value: string | number 
 
 function CompactReviewCard({
   weekNumber,
+  weekStatus,
+  reviewWeeks,
   review,
 }: {
   weekNumber: number;
+  weekStatus: WeekStatus;
+  reviewWeeks: any[];
   review?: WeeklyFeedbackRow;
 }) {
   const score = review ? resolvedReviewScore(review) : null;
@@ -941,7 +956,7 @@ function CompactReviewCard({
       <div className="weekly-review-card-marker" />
       <div className="weekly-review-card-main">
         <div className="min-w-0">
-          <div className="weekly-review-card-kicker">Week {weekNumber}</div>
+          <div className="weekly-review-card-kicker">Week {weekNumber}{weekStatus === "locked" && ` • Available ${reviewWeeks.find(w => w.weekNumber === weekNumber)?.unlockDate}`}</div>
           <div className="weekly-review-card-title">{review?.rating || "Pending"}</div>
           <div className="weekly-review-card-date">
             {review ? `${formatNepaliDate(review.created_at, "DD MMM YYYY")} BS` : "No review yet"}
@@ -1080,37 +1095,42 @@ function makeWeeklyProgressInsight(name: string, score: number, growth: number, 
   return `${firstName} is trending steadily with a ${score}/100 score and balanced attendance-performance movement.`;
 }
 
-function getReviewWeekNumber(date: Date) {
-  const today = startOfDay(date).getTime();
-  const weekStarts = getReviewWeekStarts(date);
-  const currentWeekIndex = weekStarts.findLastIndex((weekStart) => weekStart.getTime() <= today);
-  return Math.min(4, Math.max(1, currentWeekIndex + 1));
+function getCurrentReviewWeek(date: Date, cycles: any[]) {
+  const today = format(date, "yyyy-MM-dd");
+  const current = [...cycles].reverse().find(c => c.unlockDate <= today);
+  return current?.weekNumber || 1;
 }
 
 function getReviewWeeks(date: Date) {
-  const weekStarts = getReviewWeekStarts(date);
-  return Array.from({ length: 4 }).map((_, index) => {
-    const weekNumber = index + 1;
-    const startDate = weekStarts[index];
-    const endDate = weekStarts[index + 1] ? new Date(weekStarts[index + 1]) : new Date(startDate);
-    endDate.setDate(endDate.getDate() + (weekStarts[index + 1] ? -1 : 6));
+  const cycles = getWeeklyReviewCyclesForNepaliMonth(date);
+  return cycles.map((cycle, index) => {
+    const endDate = cycles[index + 1] ? new Date(cycles[index + 1].unlockDate) : new Date(cycle.unlockDate);
+    if (cycles[index + 1]) endDate.setDate(endDate.getDate() - 1);
+    else endDate.setDate(endDate.getDate() + 6);
     return {
-      weekNumber,
-      startDate: toDateKey(startDate),
+      weekNumber: cycle.weekNumber,
+      unlockDate: cycle.unlockDate,
+      startDate: cycle.startDate,
       endDate: toDateKey(endDate),
+      bsYear: cycle.bsYear,
+      bsMonth: cycle.bsMonth,
     };
   });
 }
 
-function getReviewWeekStarts(date: Date) {
+function getReviewWeekNumber(date: Date) {
+  // Legacy fallback
   const cycleStart = getReviewCycleStart(date);
   const secondWeekStart = nextWeekdayAfter(cycleStart, REVIEW_UNLOCK_DAY);
-  return Array.from({ length: 4 }).map((_, index) => {
+  const weekStarts = Array.from({ length: 4 }).map((_, index) => {
     if (index === 0) return new Date(cycleStart);
     const startDate = new Date(secondWeekStart);
     startDate.setDate(secondWeekStart.getDate() + (index - 1) * 7);
     return startDate;
   });
+  const today = startOfDay(date).getTime();
+  const currentWeekIndex = weekStarts.findLastIndex((weekStart) => weekStart.getTime() <= today);
+  return Math.min(4, Math.max(1, currentWeekIndex + 1));
 }
 
 function getReviewCycleStart(date: Date) {
@@ -1149,10 +1169,10 @@ function isHrProfile(profile: { department?: string | null; position?: string | 
   return /\bhr\b/.test(text) || text.includes("human resources");
 }
 
-function getWeekStatus(weekNumber: number, currentWeekNumber: number, completed: boolean): WeekStatus {
+function getWeekStatus(week: any, completed: boolean): WeekStatus {
   if (completed) return "completed";
-  if (weekNumber > currentWeekNumber) return "locked";
-  if (weekNumber < currentWeekNumber) return "missed";
+  const today = format(new Date(), "yyyy-MM-dd");
+  if (week.unlockDate > today) return "locked";
   return "pending";
 }
 
