@@ -71,7 +71,6 @@ const empNav: NavItem[] = [
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/check-in", label: "Check-in", icon: Clock },
   { to: "/standup", label: "Daily Standup", icon: ClipboardList },
-  { to: "/weekly-reports", label: "Weekly Reports", icon: FileBarChart2 },
   { to: "/meetings", label: "Meetings", icon: CalendarClock },
   { to: "/messages", label: "Messages", icon: MessageSquare },
   { to: "/my-attendance", label: "My Attendance", icon: ClipboardList },
