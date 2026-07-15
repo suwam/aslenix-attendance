@@ -22,7 +22,7 @@ const A4_HEIGHT = "297mm";
 function PdfPage({ children, pageNumber, totalPages }: { children: React.ReactNode; pageNumber: number; totalPages: number }) {
   return (
     <div
-      className="relative flex flex-col bg-white text-slate-900 mx-auto overflow-hidden shadow-sm"
+      className="pdf-page relative flex flex-col bg-white text-slate-900 mx-auto overflow-hidden shadow-sm"
       style={{
         width: A4_WIDTH,
         height: A4_HEIGHT,

@@ -51,10 +51,7 @@ function WeeklyReportsPage() {
       // Wait for React to render the hidden component and for Recharts to animate/draw
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      if (!pdfContainerRef.current) throw new Error("Template ref not found");
-      
-      // Select all the rendered pages
-      const pages = pdfContainerRef.current.children[0]?.children;
+      const pages = document.querySelectorAll('.pdf-page');
       if (!pages || pages.length === 0) throw new Error("No pages found to export");
 
       const { default: jsPDF } = await import("jspdf");
@@ -71,9 +68,9 @@ function WeeklyReportsPage() {
       
       pdf.save(`My-Weekly-Report-${report.week_start}.pdf`);
       toast.success("PDF generated successfully");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error("Failed to generate PDF");
+      toast.error(`Failed to generate PDF: ${err.message || 'Unknown error'}`);
     } finally {
       setExportingId(null);
       setSelectedReport(null);

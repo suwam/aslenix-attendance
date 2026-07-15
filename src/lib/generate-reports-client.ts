@@ -5,11 +5,34 @@ import {
   calculateAiScores,
   generateWeeklyAiSummary
 } from "@/lib/weekly-report-utils";
+import { getNepaliMonthRange } from "@/lib/nepali-calendar";
 
-export async function generateReportsForWeekClient(referenceDate: Date | string = new Date(), onProgress?: (msg: string) => void) {
+export type ReportType = "daily" | "weekly" | "monthly";
+
+export async function generateReportsForWeekClient(
+  referenceDate: Date | string = new Date(),
+  reportType: ReportType = "weekly",
+  onProgress?: (msg: string) => void
+) {
   try {
-    const { startAd, endAd } = getPreviousReportingWeek(referenceDate);
-    if (onProgress) onProgress(`Fetching data for week: ${startAd} to ${endAd}...`);
+    let startAd: string;
+    let endAd: string;
+
+    if (reportType === "weekly") {
+      const weekRange = getPreviousReportingWeek(referenceDate);
+      startAd = weekRange.startAd;
+      endAd = weekRange.endAd;
+    } else if (reportType === "monthly") {
+      const monthRange = getNepaliMonthRange(0, referenceDate);
+      startAd = monthRange.startAd;
+      endAd = monthRange.endAd;
+    } else { // daily
+      const d = typeof referenceDate === "string" ? referenceDate : format(referenceDate, "yyyy-MM-dd");
+      startAd = d;
+      endAd = d;
+    }
+
+    if (onProgress) onProgress(`Fetching data for ${reportType} report: ${startAd} to ${endAd}...`);
 
     // Fetch all profiles
     const { data: profiles, error: profileErr } = await supabase.from("profiles").select("user_id, full_name, department, employee_code").eq("approval_status", "approved");
@@ -17,7 +40,7 @@ export async function generateReportsForWeekClient(referenceDate: Date | string 
 
     if (onProgress) onProgress(`Found ${profiles?.length || 0} approved employees. Processing data...`);
 
-    // Fetch all standups for the week
+    // Fetch all standups for the date range
     const { data: standups, error: standupErr } = await supabase
       .from("standups")
       .select("*")
@@ -25,7 +48,7 @@ export async function generateReportsForWeekClient(referenceDate: Date | string 
       .lte("date", endAd);
     if (standupErr) throw standupErr;
 
-    // Fetch all attendance for the week
+    // Fetch all attendance for the date range
     const { data: attendances, error: attErr } = await supabase
       .from("attendance")
       .select("*")
@@ -33,8 +56,8 @@ export async function generateReportsForWeekClient(referenceDate: Date | string 
       .lte("date", endAd);
     if (attErr) throw attErr;
 
-    const daysInWeek = eachDayOfInterval({ start: new Date(startAd), end: new Date(endAd) });
-    const totalWorkingDays = daysInWeek.filter(d => d.getDay() !== 6).length; // Exclude Saturdays
+    const daysInInterval = eachDayOfInterval({ start: new Date(startAd), end: new Date(endAd) });
+    const totalWorkingDays = daysInInterval.filter(d => d.getDay() !== 6).length; // Exclude Saturdays
 
     let successCount = 0;
 
@@ -48,7 +71,7 @@ export async function generateReportsForWeekClient(referenceDate: Date | string 
       let totalHours = 0;
       let totalBlockers = 0;
 
-      const timeline = daysInWeek.map(dayObj => {
+      const timeline = daysInInterval.map(dayObj => {
         const dStr = format(dayObj, "yyyy-MM-dd");
         const isSaturday = dayObj.getDay() === 6;
         const s = userStandups.find(s => s.date === dStr);
@@ -111,44 +134,45 @@ export async function generateReportsForWeekClient(referenceDate: Date | string 
 
       const ai_summary = generateWeeklyAiSummary(userStandups, totalHours, totalBlockers, avgScore);
 
-      // Check if it exists
-      const { data: existing } = await supabase
-        .from("weekly_standup_reports")
-        .select("id")
-        .eq("user_id", profile.user_id)
-        .eq("week_start", startAd)
-        .single();
+      const table = reportType === "daily" ? "daily_standup_reports" 
+                  : reportType === "monthly" ? "monthly_standup_reports" 
+                  : "weekly_standup_reports";
 
-      if (existing) {
-        const { error: updateErr } = await supabase
-          .from("weekly_standup_reports")
-          .update({
-            week_end: endAd,
-            status: "finalized",
-            analytics_data,
-            ai_summary
-          })
-          .eq("id", existing.id);
-        if (!updateErr) successCount++;
+      // Upsert logic for each report type
+      if (reportType === "daily") {
+        const { data: existing } = await supabase.from("daily_standup_reports").select("id").eq("user_id", profile.user_id).eq("report_date", startAd).single();
+        if (existing) {
+          const { error: updateErr } = await supabase.from("daily_standup_reports").update({ status: "finalized", analytics_data, ai_summary }).eq("id", existing.id);
+          if (!updateErr) successCount++;
+        } else {
+          const { error: insertErr } = await supabase.from("daily_standup_reports").insert({ user_id: profile.user_id, report_date: startAd, status: "finalized", analytics_data, ai_summary });
+          if (!insertErr) successCount++;
+        }
+      } else if (reportType === "monthly") {
+        const { data: existing } = await supabase.from("monthly_standup_reports").select("id").eq("user_id", profile.user_id).eq("month_start", startAd).single();
+        if (existing) {
+          const { error: updateErr } = await supabase.from("monthly_standup_reports").update({ month_end: endAd, status: "finalized", analytics_data, ai_summary }).eq("id", existing.id);
+          if (!updateErr) successCount++;
+        } else {
+          const { error: insertErr } = await supabase.from("monthly_standup_reports").insert({ user_id: profile.user_id, month_start: startAd, month_end: endAd, status: "finalized", analytics_data, ai_summary });
+          if (!insertErr) successCount++;
+        }
       } else {
-        const { error: insertErr } = await supabase
-          .from("weekly_standup_reports")
-          .insert({
-            user_id: profile.user_id,
-            week_start: startAd,
-            week_end: endAd,
-            status: "finalized",
-            analytics_data,
-            ai_summary
-          });
-        if (!insertErr) successCount++;
+        const { data: existing } = await supabase.from("weekly_standup_reports").select("id").eq("user_id", profile.user_id).eq("week_start", startAd).single();
+        if (existing) {
+          const { error: updateErr } = await supabase.from("weekly_standup_reports").update({ week_end: endAd, status: "finalized", analytics_data, ai_summary }).eq("id", existing.id);
+          if (!updateErr) successCount++;
+        } else {
+          const { error: insertErr } = await supabase.from("weekly_standup_reports").insert({ user_id: profile.user_id, week_start: startAd, week_end: endAd, status: "finalized", analytics_data, ai_summary });
+          if (!insertErr) successCount++;
+        }
       }
     }
 
     if (onProgress) onProgress(`Successfully generated ${successCount} reports!`);
     return { success: true, count: successCount, startAd, endAd };
   } catch (error: any) {
-    console.error("Manual report generation error:", error);
+    console.error(`Manual ${reportType} report generation error:`, error);
     return { success: false, error: error.message };
   }
 }
