@@ -169,15 +169,38 @@ async function run() {
 
     const ai_summary = generateWeeklyAiSummary(userStandups, totalHours, totalBlockers, avgScore);
 
-    // Upsert
-    await supabase.from("weekly_standup_reports").upsert({
-      user_id: profile.user_id,
-      week_start: startAd,
-      week_end: endAd,
-      status: "finalized",
-      analytics_data,
-      ai_summary
-    }, { onConflict: "user_id, week_start" });
+    // Check if it exists
+    const { data: existing } = await supabase
+      .from("weekly_standup_reports")
+      .select("id")
+      .eq("user_id", profile.user_id)
+      .eq("week_start", startAd)
+      .single();
+
+    if (existing) {
+      const { error: updateErr } = await supabase
+        .from("weekly_standup_reports")
+        .update({
+          week_end: endAd,
+          status: "finalized",
+          analytics_data,
+          ai_summary
+        })
+        .eq("id", existing.id);
+      if (updateErr) console.error(`Failed to update for user ${profile.user_id}:`, updateErr);
+    } else {
+      const { error: insertErr } = await supabase
+        .from("weekly_standup_reports")
+        .insert({
+          user_id: profile.user_id,
+          week_start: startAd,
+          week_end: endAd,
+          status: "finalized",
+          analytics_data,
+          ai_summary
+        });
+      if (insertErr) console.error(`Failed to insert for user ${profile.user_id}:`, insertErr);
+    }
   }
 
   console.log(`Generated reports for ${profiles.length} employees.`);
