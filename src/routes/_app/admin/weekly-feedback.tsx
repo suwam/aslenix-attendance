@@ -704,10 +704,10 @@ function WeeklyFeedbackPage() {
           {selected && (
             <>
               {/* LEFT COLUMN: Form & Header (70%) */}
-              <div className="relative flex h-full flex-1 flex-col bg-slate-50/50 dark:bg-slate-950/50">
+              <div className="relative flex min-h-0 flex-1 flex-col bg-slate-50/50 dark:bg-slate-950/50">
                 
                 {/* Scrollable Content */}
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 min-h-0 overflow-y-auto">
                   {/* Premium Header */}
                   <header className="flex flex-col gap-6 border-b border-border bg-card p-6 md:p-8">
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
