@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Check, Laptop, RefreshCw, ShieldCheck, Trash2, X } from "lucide-react";
+import { Check, Laptop, Lock, RefreshCw, ShieldCheck, Trash2, X } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
@@ -259,143 +259,138 @@ function DeviceManagementPage() {
           </Button>
         </div>
 
-        <div className="grid gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {visibleRows.map(({ device, requests, employeeId }) => {
             const firstRequest = requests[0];
             const employee = device?.employee || firstRequest?.employee;
             return (
-              <GlassCard key={device?.id || employeeId} className="p-5">
-                <div className="grid gap-5 lg:grid-cols-[minmax(220px,0.95fr)_minmax(0,2.2fr)_auto] lg:items-start">
-                  <div className="min-w-0">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+              <div key={device?.id || employeeId} className="flex flex-col bg-card rounded-2xl shadow-sm border border-border p-6 overflow-hidden">
+                <div className="flex flex-col h-full space-y-6">
+                  {/* Header: Avatar, Name, Email, Status */}
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base font-bold text-primary">
                         {employeeInitials(employee, employeeId)}
                       </div>
                       <div className="min-w-0">
-                        <h3 className="truncate text-base font-semibold text-foreground">{employeeName(employee, employeeId)}</h3>
-                        {employee?.email && <p className="mt-1 truncate text-xs text-muted-foreground">{employee.email}</p>}
+                        <h3 className="truncate text-[18px] font-bold text-foreground">{employeeName(employee, employeeId)}</h3>
+                        {employee?.email && <p className="truncate text-[14px] text-muted-foreground">{employee.email}</p>}
                       </div>
+                    </div>
+                    <div className="shrink-0 mt-1">
+                       {device ? <StatusBadge status={device.status} /> : <span className="text-[12px] font-semibold text-muted-foreground rounded-full bg-muted px-3 py-1">Unregistered</span>}
                     </div>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    <Detail label="Registered Device" value={device?.device_name || "No active registered device"} subvalue={device?.device_fingerprint} />
-                    <Detail label="Browser" value={device?.browser || "-"} />
-                    <Detail label="Operating System" value={device?.operating_system || "-"} />
-                    <Detail label="Last Login" value={device ? formatDate(device.last_login) : "Never"} />
+                  {/* Details section */}
+                  <div className="flex flex-col space-y-4 divide-y divide-border/50">
+                    <div className="pt-0">
+                      <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Registered Device</p>
+                      <p className="text-[15px] font-medium text-foreground">{device?.device_name || "No active registered device"}</p>
+                      {device?.device_fingerprint && <p className="text-[13px] text-muted-foreground mt-0.5 truncate" title={device.device_fingerprint}>Device ID: {device.device_fingerprint}</p>}
+                    </div>
+                    <div className="pt-4">
+                      <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Browser</p>
+                      <p className="text-[15px] font-medium text-foreground">{device?.browser || "-"}</p>
+                    </div>
+                    <div className="pt-4">
+                      <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Operating System</p>
+                      <p className="text-[15px] font-medium text-foreground">{device?.operating_system || "-"}</p>
+                    </div>
+                    <div className="pt-4">
+                      <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Last Login</p>
+                      <p className="text-[15px] font-medium text-foreground">{device ? formatDate(device.last_login) : "Never"}</p>
+                    </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                    {device ? <StatusBadge status={device.status} /> : <span className="text-sm text-muted-foreground">Unregistered</span>}
-                    {device?.status === "Active" && (
+                  <div className="flex-1"></div>
+
+                  {/* Pending Requests */}
+                  {requests.length > 0 && (
+                    <div className="pt-4 border-t border-border/50">
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">Pending Requests</p>
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">{requests.length}</span>
+                      </div>
+                      <div className="space-y-3">
+                        {requests.map((request) => (
+                           <div key={request.id} className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex flex-col gap-2">
+                             <div className="min-w-0">
+                               <div className="font-medium text-sm text-foreground truncate">{request.device_name}</div>
+                               <div className="text-xs text-muted-foreground truncate">
+                                 {request.browser} · {request.operating_system}
+                               </div>
+                               <div className="text-[11px] text-muted-foreground mt-1">
+                                  {formatDate(request.requested_at)}
+                                  {request.verification_method && ` · ${request.verification_method}`}
+                               </div>
+                             </div>
+                             <div className="flex flex-wrap gap-2 mt-1">
+                                <Button
+                                  size="sm"
+                                  className="flex-1 h-8 text-[11px]"
+                                  onClick={() =>
+                                    runAction(`approve-${request.id}`, () => approveRequest(request), "New device approved")
+                                  }
+                                  disabled={Boolean(busy)}
+                                >
+                                  <Check size={14} className="mr-1" /> Approve
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="flex-1 h-8 text-[11px]"
+                                  onClick={() =>
+                                    runAction(`reject-${request.id}`, () => rejectRequest(request.id), "Device request rejected")
+                                  }
+                                  disabled={Boolean(busy)}
+                                >
+                                  <X size={14} className="mr-1" /> Reject
+                                </Button>
+                             </div>
+                             {device && (
+                               <Button
+                                 size="sm"
+                                 variant="outline"
+                                 className="w-full h-8 text-[11px] mt-1"
+                                 onClick={() =>
+                                   runAction(`replace-${device.id}-${request.id}`, () => approveRequest(request, device.id), "Existing device replaced")
+                                 }
+                                 disabled={Boolean(busy)}
+                               >
+                                 <RefreshCw size={14} className="mr-1" /> Replace
+                               </Button>
+                             )}
+                           </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  {device?.status === "Active" && (
+                    <div className="flex items-center gap-3 pt-4 border-t border-border/50 mt-auto">
                       <Button
-                        size="sm"
                         variant="outline"
-                        onClick={() =>
-                          runAction(
-                            `remove-${device.id}`,
-                            () => removeDevice(device.id),
-                            "Device removed",
-                          )
-                        }
+                        className="flex-1 rounded-xl border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                        onClick={() => runAction(`remove-${device.id}`, () => removeDevice(device.id), "Device removed")}
                         disabled={Boolean(busy)}
                       >
-                        <Trash2 size={14} className="mr-1" />
+                        <Trash2 size={16} className="mr-1.5" />
                         Remove
                       </Button>
-                    )}
-                    {device?.status === "Active" && (
                       <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          runAction(
-                            `force-${device.id}`,
-                            () => forceLogoutDevice(device),
-                            "Device forced to log out",
-                          )
-                        }
+                        className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                        onClick={() => runAction(`force-${device.id}`, () => forceLogoutDevice(device), "Device forced to log out")}
                         disabled={Boolean(busy)}
                       >
+                        <Lock size={16} className="mr-1.5" />
                         Force Logout
                       </Button>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-4 border-t border-border/50 pt-4">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">Pending Device Requests</p>
-                    <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">{requests.length}</span>
-                  </div>
-
-                  {requests.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No pending requests</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {requests.map((request) => (
-                        <div key={request.id} className="flex flex-wrap items-center justify-between gap-3 border-l-2 border-primary/40 bg-muted/30 px-4 py-3">
-                          <div className="min-w-[220px]">
-                            <div className="font-semibold text-foreground">{request.device_name}</div>
-                            <div className="mt-1 text-xs text-muted-foreground">
-                              {request.browser} · {request.operating_system} · {formatDate(request.requested_at)}
-                              {request.verification_method && ` · ${request.verification_method}`}
-                            </div>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              size="sm"
-                              onClick={() =>
-                                runAction(
-                                  `approve-${request.id}`,
-                                  () => approveRequest(request),
-                                  "New device approved",
-                                )
-                              }
-                              disabled={Boolean(busy)}
-                            >
-                              <Check size={14} className="mr-1" />
-                              Approve
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() =>
-                                runAction(
-                                  `reject-${request.id}`,
-                                  () => rejectRequest(request.id),
-                                  "Device request rejected",
-                                )
-                              }
-                              disabled={Boolean(busy)}
-                            >
-                              <X size={14} className="mr-1" />
-                              Reject
-                            </Button>
-                            {device && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  runAction(
-                                    `replace-${device.id}-${request.id}`,
-                                    () => approveRequest(request, device.id),
-                                    "Existing device replaced",
-                                  )
-                                }
-                                disabled={Boolean(busy)}
-                              >
-                                <RefreshCw size={14} className="mr-1" />
-                                Replace
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
                     </div>
                   )}
                 </div>
-              </GlassCard>
+              </div>
             );
           })}
         </div>
