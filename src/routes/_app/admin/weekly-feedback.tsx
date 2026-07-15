@@ -120,10 +120,10 @@ function RatingSelector({
   disabled?: boolean;
 }) {
   const options: { label: Rating; icon: React.ReactNode; colorClass: string }[] = [
-    { label: "Excellent", icon: <span className="text-xl">🌟</span>, colorClass: "hover:bg-emerald-50 hover:border-emerald-200 data-[state=active]:bg-gradient-to-br data-[state=active]:from-emerald-400 data-[state=active]:to-emerald-600 data-[state=active]:text-white data-[state=active]:border-transparent data-[state=active]:shadow-md" },
-    { label: "Good", icon: <span className="text-xl">👍</span>, colorClass: "hover:bg-blue-50 hover:border-blue-200 data-[state=active]:bg-gradient-to-br data-[state=active]:from-blue-400 data-[state=active]:to-blue-600 data-[state=active]:text-white data-[state=active]:border-transparent data-[state=active]:shadow-md" },
-    { label: "Average", icon: <span className="text-xl">😐</span>, colorClass: "hover:bg-amber-50 hover:border-amber-200 data-[state=active]:bg-gradient-to-br data-[state=active]:from-amber-400 data-[state=active]:to-amber-600 data-[state=active]:text-white data-[state=active]:border-transparent data-[state=active]:shadow-md" },
-    { label: "Poor", icon: <span className="text-xl">⚠️</span>, colorClass: "hover:bg-rose-50 hover:border-rose-200 data-[state=active]:bg-gradient-to-br data-[state=active]:from-rose-400 data-[state=active]:to-rose-600 data-[state=active]:text-white data-[state=active]:border-transparent data-[state=active]:shadow-md" },
+    { label: "Excellent", icon: <span className="text-xl">🌟</span>, colorClass: "hover:bg-emerald-50 hover:border-emerald-200 data-[state=active]:text-foreground data-[state=active]:border-transparent data-[state=active]:shadow-sm" },
+    { label: "Good", icon: <span className="text-xl">👍</span>, colorClass: "hover:bg-blue-50 hover:border-blue-200 data-[state=active]:text-foreground data-[state=active]:border-transparent data-[state=active]:shadow-sm" },
+    { label: "Average", icon: <span className="text-xl">😐</span>, colorClass: "hover:bg-amber-50 hover:border-amber-200 data-[state=active]:text-foreground data-[state=active]:border-transparent data-[state=active]:shadow-sm" },
+    { label: "Poor", icon: <span className="text-xl">⚠️</span>, colorClass: "hover:bg-rose-50 hover:border-rose-200 data-[state=active]:text-foreground data-[state=active]:border-transparent data-[state=active]:shadow-sm" },
   ];
 
   return (
@@ -134,6 +134,7 @@ function RatingSelector({
           type="button"
           disabled={disabled}
           data-state={value === opt.label ? "active" : "inactive"}
+          style={value === opt.label ? { background: "var(--gradient-brand)" } : {}}
           onClick={() => onChange(opt.label)}
           className={`flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-card p-4 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 ${opt.colorClass}`}
         >
@@ -760,13 +761,15 @@ function WeeklyFeedbackPage() {
                         const isSelected = selectedWeekNumber === week.weekNumber;
                         
                         let colors = "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400";
+                        let customStyle = {};
                         let icon = null;
                         if (status === "completed") {
                           colors = "border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-900/40 dark:text-emerald-400";
                           icon = <CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400" />;
                         } else if (status === "pending" || isSelected) {
                           if (isSelected) {
-                            colors = "bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-md ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-950";
+                            colors = "text-foreground shadow-sm ring-1 ring-border";
+                            customStyle = { background: "var(--gradient-brand)" };
                           } else {
                             colors = "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800/30 dark:bg-indigo-900/30 dark:text-indigo-400";
                           }
@@ -781,6 +784,7 @@ function WeeklyFeedbackPage() {
                               type="button"
                               onClick={() => status !== "locked" && setSelectedWeekNumber(week.weekNumber)}
                               disabled={status === "locked"}
+                              style={customStyle}
                               className={`flex min-w-[110px] items-center justify-center gap-2 rounded-full border border-transparent px-4 py-2 transition-all ${colors} ${status !== "locked" ? "active:scale-95 hover:scale-105" : ""}`}
                             >
                               {icon}
