@@ -12,16 +12,22 @@ export type ReportType = "daily" | "weekly" | "monthly";
 export async function generateReportsForWeekClient(
   referenceDate: Date | string = new Date(),
   reportType: ReportType = "weekly",
-  onProgress?: (msg: string) => void
+  onProgress?: (msg: string) => void,
+  customEndDate?: Date | string
 ) {
   try {
     let startAd: string;
     let endAd: string;
 
     if (reportType === "weekly") {
-      const weekRange = getPreviousReportingWeek(referenceDate);
-      startAd = weekRange.startAd;
-      endAd = weekRange.endAd;
+      if (customEndDate) {
+        startAd = typeof referenceDate === "string" ? referenceDate : format(referenceDate, "yyyy-MM-dd");
+        endAd = typeof customEndDate === "string" ? customEndDate : format(customEndDate, "yyyy-MM-dd");
+      } else {
+        const weekRange = getPreviousReportingWeek(referenceDate);
+        startAd = weekRange.startAd;
+        endAd = weekRange.endAd;
+      }
     } else if (reportType === "monthly") {
       const monthRange = getNepaliMonthRange(0, referenceDate);
       startAd = monthRange.startAd;

@@ -28,10 +28,12 @@ function AdminReportsPage() {
   const [search, setSearch] = useState("");
   const [exportingId, setExportingId] = useState<string | null>(null);
   const [selectedReport, setSelectedReport] = useState<any | null>(null);
+  const pdfContainerRef = useRef<HTMLDivElement>(null);
   
   // Generation Filters State
   const [generateType, setGenerateType] = useState<ReportType>("daily");
   const [generateDate, setGenerateDate] = useState("");
+  const [generateEndDate, setGenerateEndDate] = useState("");
   const [generateStatus, setGenerateStatus] = useState("all");
   
   const [isGenerating, setIsGenerating] = useState(false);
@@ -94,8 +96,14 @@ function AdminReportsPage() {
       
       // We pass the start date as week_start to keep the template happy
       let reportForTemplate = { ...report };
-      if (displayType === "daily") reportForTemplate.week_start = report.report_date;
-      if (displayType === "monthly") reportForTemplate.week_start = report.month_start;
+      if (displayType === "daily") {
+        reportForTemplate.week_start = report.report_date;
+        reportForTemplate.week_end = report.report_date;
+      }
+      if (displayType === "monthly") {
+        reportForTemplate.week_start = report.month_start;
+        reportForTemplate.week_end = report.month_end;
+      }
 
       setSelectedReport(reportForTemplate);
       
@@ -137,15 +145,25 @@ function AdminReportsPage() {
       toast.error("Please select a date");
       return;
     }
+    if (generateType === "weekly" && !generateEndDate) {
+      toast.error("Please select an end date");
+      return;
+    }
     
     try {
       setIsGenerating(true);
       setGenerateProgress("Initializing...");
       
       const adDateStr = bsInputToAdDateString(generateDate);
-      if (!adDateStr) throw new Error("Invalid date");
+      if (!adDateStr) throw new Error("Invalid start date");
+
+      let adEndDateStr = undefined;
+      if (generateType === "weekly" && generateEndDate) {
+        adEndDateStr = bsInputToAdDateString(generateEndDate);
+        if (!adEndDateStr) throw new Error("Invalid end date");
+      }
       
-      const result = await generateReportsForWeekClient(adDateStr, generateType, (msg) => setGenerateProgress(msg));
+      const result = await generateReportsForWeekClient(adDateStr, generateType, (msg) => setGenerateProgress(msg), adEndDateStr);
       
       if (result.success) {
         toast.success(`Successfully generated ${result.count} ${generateType} reports!`);
@@ -197,15 +215,38 @@ function AdminReportsPage() {
             </Select>
           </div>
 
-          <div className="flex-1 w-full space-y-1.5">
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Date (BS)</label>
-            <BSDateInput 
-              value={generateDate} 
-              onChange={setGenerateDate} 
-              disabled={isGenerating}
-              className="bg-white/80 border-slate-200 h-10"
-            />
-          </div>
+          {generateType === "weekly" ? (
+            <div className="flex-[2] flex gap-4 w-full">
+              <div className="flex-1 space-y-1.5">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Start Date (BS)</label>
+                <BSDateInput 
+                  value={generateDate} 
+                  onChange={setGenerateDate} 
+                  disabled={isGenerating}
+                  className="bg-white/80 border-slate-200 h-10"
+                />
+              </div>
+              <div className="flex-1 space-y-1.5">
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">End Date (BS)</label>
+                <BSDateInput 
+                  value={generateEndDate} 
+                  onChange={setGenerateEndDate} 
+                  disabled={isGenerating}
+                  className="bg-white/80 border-slate-200 h-10"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 w-full space-y-1.5">
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Date (BS)</label>
+              <BSDateInput 
+                value={generateDate} 
+                onChange={setGenerateDate} 
+                disabled={isGenerating}
+                className="bg-white/80 border-slate-200 h-10"
+              />
+            </div>
+          )}
 
           <div className="flex-1 w-full space-y-1.5">
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</label>
