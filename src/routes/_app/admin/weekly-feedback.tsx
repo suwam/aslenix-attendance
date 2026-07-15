@@ -16,6 +16,7 @@ import {
   Search,
   ShieldAlert,
   Sparkles,
+  Target,
   TrendingUp,
   UserCheck,
   Zap,
@@ -107,6 +108,41 @@ type EmployeeWeek = {
 
 const ratingOptions: Rating[] = ["Excellent", "Good", "Average", "Poor"];
 const REVIEW_UNLOCK_DAY = 2;
+
+function RatingSelector({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: Rating;
+  onChange: (value: Rating) => void;
+  disabled?: boolean;
+}) {
+  const options: { label: Rating; icon: React.ReactNode; colorClass: string }[] = [
+    { label: "Excellent", icon: <span className="text-xl">🌟</span>, colorClass: "hover:bg-emerald-50 hover:border-emerald-200 data-[state=active]:bg-emerald-50 data-[state=active]:border-emerald-500 data-[state=active]:text-emerald-700" },
+    { label: "Good", icon: <span className="text-xl">👍</span>, colorClass: "hover:bg-blue-50 hover:border-blue-200 data-[state=active]:bg-blue-50 data-[state=active]:border-blue-500 data-[state=active]:text-blue-700" },
+    { label: "Average", icon: <span className="text-xl">😐</span>, colorClass: "hover:bg-amber-50 hover:border-amber-200 data-[state=active]:bg-amber-50 data-[state=active]:border-amber-500 data-[state=active]:text-amber-700" },
+    { label: "Poor", icon: <span className="text-xl">⚠️</span>, colorClass: "hover:bg-rose-50 hover:border-rose-200 data-[state=active]:bg-rose-50 data-[state=active]:border-rose-500 data-[state=active]:text-rose-700" },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {options.map((opt) => (
+        <button
+          key={opt.label}
+          type="button"
+          disabled={disabled}
+          data-state={value === opt.label ? "active" : "inactive"}
+          onClick={() => onChange(opt.label)}
+          className={`flex flex-col items-center justify-center gap-2 rounded-xl border border-border bg-card p-4 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 ${opt.colorClass}`}
+        >
+          {opt.icon}
+          <span className="text-sm font-semibold">{opt.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function WeeklyFeedbackPage() {
   const { user } = useAuth();
@@ -730,65 +766,71 @@ function WeeklyFeedbackPage() {
                         </div>
                       )}
 
-                      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                      <div className="flex flex-col gap-6">
                         <div>
-                          <Label>Weekly rating</Label>
-                          <Select value={rating} onValueChange={(value) => setRating(value as Rating)}>
-                            <SelectTrigger className="mt-1" disabled={formLocked}>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {ratingOptions.map((option) => (
-                                <SelectItem key={option} value={option}>
-                                  {option}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Label className="mb-3 block text-sm font-semibold text-foreground">Overall Weekly Rating</Label>
+                          <RatingSelector value={rating} onChange={setRating} disabled={formLocked} />
                         </div>
-                        <div>
-                          <Label>Admin notes</Label>
+
+                        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                          <div>
+                            <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-emerald-600">
+                              <TrendingUp size={16} />
+                              Strengths
+                            </Label>
+                            <Textarea
+                              value={strengths}
+                              onChange={(event) => setStrengths(event.target.value)}
+                              disabled={formLocked}
+                              rows={5}
+                              placeholder="What went especially well this week?"
+                              className="resize-none border-emerald-100 bg-emerald-50/30 focus-visible:ring-emerald-500 dark:border-emerald-900/30 dark:bg-emerald-950/20"
+                            />
+                          </div>
+                          <div>
+                            <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-orange-500">
+                              <Target size={16} />
+                              Improvement Areas
+                            </Label>
+                            <Textarea
+                              value={improvements}
+                              onChange={(event) => setImprovements(event.target.value)}
+                              disabled={formLocked}
+                              rows={5}
+                              placeholder="What should improve next week?"
+                              className="resize-none border-orange-100 bg-orange-50/30 focus-visible:ring-orange-500 dark:border-orange-900/30 dark:bg-orange-950/20"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/50">
+                          <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-600 dark:text-slate-400">
+                            <LockKeyhole size={14} />
+                            Private Admin Notes
+                          </Label>
                           <Textarea
                             value={notes}
                             onChange={(event) => setNotes(event.target.value)}
                             disabled={formLocked}
                             rows={3}
-                            placeholder="Private review notes..."
-                            className="mt-1"
-                          />
-                        </div>
-                        <div>
-                          <Label>Strengths</Label>
-                          <Textarea
-                            value={strengths}
-                            onChange={(event) => setStrengths(event.target.value)}
-                            disabled={formLocked}
-                            rows={4}
-                            placeholder="What went especially well this week?"
-                            className="mt-1"
-                          />
-                        </div>
-                        <div>
-                          <Label>Improvement section</Label>
-                          <Textarea
-                            value={improvements}
-                            onChange={(event) => setImprovements(event.target.value)}
-                            disabled={formLocked}
-                            rows={4}
-                            placeholder="What should improve next week?"
-                            className="mt-1"
+                            placeholder="Internal notes visible only to admins..."
+                            className="resize-none bg-white dark:bg-slate-950"
                           />
                         </div>
                       </div>
 
-                      <div className="weekly-feedback-submit-bar">
-                        <Button onClick={saveFeedback} disabled={saving || formLocked} className="neon-button rounded-xl">
-                          {canEditSelectedReview ? <Edit3 size={14} className="mr-1.5" /> : <Save size={14} className="mr-1.5" />}
-                          {saving ? "Saving..." : canEditSelectedReview ? "Update review" : `Submit Week ${selectedWeekNumber} feedback`}
+                      <div className="mt-6 flex flex-col items-center gap-3 border-t border-border pt-6">
+                        <Button 
+                          onClick={saveFeedback} 
+                          disabled={saving || formLocked} 
+                          className="w-full max-w-sm rounded-xl py-6 text-lg shadow-lg transition-all hover:shadow-xl sm:w-auto sm:min-w-[300px]"
+                        >
+                          {canEditSelectedReview ? <Edit3 size={18} className="mr-2" /> : <Save size={18} className="mr-2" />}
+                          {saving ? "Saving..." : canEditSelectedReview ? "Update Review" : `Submit Week ${selectedWeekNumber} Feedback`}
                         </Button>
                         {selectedWeekReview && !canEditSelectedReview && (
-                          <p className="text-center text-sm text-muted-foreground">
-                            Week {selectedWeekNumber} review already submitted
+                          <p className="text-center text-sm font-medium text-emerald-600">
+                            ✓ Week {selectedWeekNumber} review already submitted
                           </p>
                         )}
                       </div>
