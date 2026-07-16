@@ -55,7 +55,9 @@ type StandupLike = {
 };
 
 export function reviewScoreFromRating(rating?: string | null) {
-  return REVIEW_SCORE_BY_RATING[rating as ReviewRating] ?? 0;
+  if (!rating) return 0;
+  const normalized = rating.charAt(0).toUpperCase() + rating.slice(1).toLowerCase();
+  return REVIEW_SCORE_BY_RATING[normalized as ReviewRating] ?? 0;
 }
 
 export function resolvedReviewScore(review: ReviewLike) {
