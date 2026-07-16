@@ -274,15 +274,9 @@ function WeeklyFeedbackPage() {
   const selected = rows.find((row) => row.userId === selectedId) || rows[0];
   const selectedHistory = selected?.history || [];
   const selectedWeek = reviewWeeks.find((week) => week.weekNumber === selectedWeekNumber) || reviewWeeks[0];
-  const selectedWeekReview = selectedHistory.find((item) =>
-    (item.nepali_year === selectedWeek.bsYear && item.nepali_month === selectedWeek.bsMonth && item.week_number === selectedWeekNumber) ||
-    (!item.nepali_year && getFeedbackWeekNumber(item) === selectedWeekNumber && isSameReviewCycle(item.week_start, selectedWeek?.startDate))
-  );
+  const selectedWeekReview = selectedHistory.find((item) => isReviewForWeek(item, selectedWeek));
   const completedWeeks = reviewWeeks.filter((week) =>
-    selectedHistory.some((item) => 
-      (item.nepali_year === week.bsYear && item.nepali_month === week.bsMonth && item.week_number === week.weekNumber) ||
-      (!item.nepali_year && getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate))
-    )
+    selectedHistory.some((item) => isReviewForWeek(item, week))
   ).length;
   const selectedWeekStatus = getWeekStatus(selectedWeek, Boolean(selectedWeekReview));
   const selectedWeekLocked = selectedWeekStatus === "locked";
@@ -352,11 +346,7 @@ function WeeklyFeedbackPage() {
     ? makeWeeklyProgressInsight(selected.name, currentTrendRow.score, weeklyGrowth, selected.attendancePct, selectedTaskCompletion)
     : "Select an employee to view weekly progress insight.";
   const currentReviewWeek = reviewWeeks.find((week) => week.weekNumber === currentWeekNumber);
-  const reviewedThisWeek = feedbackRows.filter(
-    (row) =>
-      getFeedbackWeekNumber(row) === currentWeekNumber &&
-      isSameReviewCycle(row.week_start, currentReviewWeek?.startDate),
-  ).length;
+  const reviewedThisWeek = feedbackRows.filter((row) => isReviewForWeek(row, currentReviewWeek)).length;
   const totalReviews = feedbackRows.length;
   const avgHrRating = average(
     feedbackRows.map((row) => resolvedReviewScore(row)),
@@ -648,9 +638,7 @@ function WeeklyFeedbackPage() {
             </h3>
             <div className="space-y-3">
               {reviewWeeks.map((week) => {
-                const review = selectedHistory.find((item) =>
-                  getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate),
-                );
+                const review = selectedHistory.find((item) => isReviewForWeek(item, week));
                 const status = getWeekStatus(week, Boolean(review));
                 return (
                   <div key={week.weekNumber} className={`weekly-history-item ${status}`}>
@@ -753,9 +741,7 @@ function WeeklyFeedbackPage() {
                     {/* Horizontal Stepper Navigation */}
                     <div className="hide-scrollbar mb-10 flex items-center gap-2 overflow-x-auto pb-4">
                       {reviewWeeks.map((week, idx) => {
-                        const review = selectedHistory.find((item) =>
-                          getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate)
-                        );
+                        const review = selectedHistory.find((item) => isReviewForWeek(item, week));
                         const status = getWeekStatus(week, Boolean(review));
                         const isSelected = selectedWeekNumber === week.weekNumber;
                         
@@ -938,9 +924,7 @@ function WeeklyFeedbackPage() {
                 <div className="flex-1 overflow-y-auto p-4">
                   <div className="flex flex-col gap-3">
                     {reviewWeeks.map((week) => {
-                      const review = selectedHistory.find((item) =>
-                        getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate)
-                      );
+                      const review = selectedHistory.find((item) => isReviewForWeek(item, week));
                       const status = getWeekStatus(week, Boolean(review));
                       
                       return (
@@ -1332,7 +1316,7 @@ function toDateKey(date: Date) {
 }
 
 function getFeedbackWeekNumber(review: Pick<WeeklyFeedbackRow, "week_number" | "week_start">) {
-  return getReviewWeekNumber(new Date(`${review.week_start}T00:00:00`));
+  return review.week_number || getReviewWeekNumber(new Date(`${review.week_start}T00:00:00`));
 }
 
 function isSameReviewCycle(reviewDate: string, weekStart?: string) {
@@ -1340,6 +1324,14 @@ function isSameReviewCycle(reviewDate: string, weekStart?: string) {
   const reviewCycleStart = toDateKey(getReviewCycleStart(new Date(`${reviewDate}T00:00:00`)));
   const weekCycleStart = toDateKey(getReviewCycleStart(new Date(`${weekStart}T00:00:00`)));
   return reviewCycleStart === weekCycleStart;
+}
+
+function isReviewForWeek(item: WeeklyFeedbackRow, week: any) {
+  if (!week) return false;
+  if (item.nepali_year) {
+    return item.nepali_year === week.bsYear && item.nepali_month === week.bsMonth && item.week_number === week.weekNumber;
+  }
+  return getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate);
 }
 
 function isHrProfile(profile: { department?: string | null; position?: string | null }) {
