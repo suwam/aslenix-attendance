@@ -1328,10 +1328,10 @@ function isSameReviewCycle(reviewDate: string, weekStart?: string) {
 
 function isReviewForWeek(item: WeeklyFeedbackRow, week: any) {
   if (!week) return false;
-  if (item.nepali_year) {
+  if (item.nepali_year && item.week_number != null) {
     return item.nepali_year === week.bsYear && item.nepali_month === week.bsMonth && item.week_number === week.weekNumber;
   }
-  return getFeedbackWeekNumber(item) === week.weekNumber && isSameReviewCycle(item.week_start, week.startDate);
+  return isSameReviewCycle(item.week_start, week.startDate);
 }
 
 function isHrProfile(profile: { department?: string | null; position?: string | null }) {

@@ -154,7 +154,7 @@ function EmployeeWeeklyReviews({ reviews }: { reviews: any[] }) {
         {reviewCycles.map((cycle) => {
           const review = reviews.find(r => 
             (r.nepali_year === cycle.bsYear && r.nepali_month === cycle.bsMonth && r.week_number === cycle.weekNumber) || 
-            (!r.nepali_year && r.week_start === cycle.startDate && r.week_number === cycle.weekNumber)
+            (r.week_start === cycle.startDate)
           );
           
           let statusLabel = "Available [Write Review]";
