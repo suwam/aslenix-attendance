@@ -472,7 +472,7 @@ function EmployeeOfMonthPage() {
       });
 
       const winner = ranked[0];
-      const visibleWeekCount = Math.max(1, Math.min(4, Math.ceil(elapsedDays / 7)));
+      const visibleWeekCount = Math.max(1, Math.min(5, Math.ceil(elapsedDays / 7)));
       const winnerAttendanceRows = (attendance || []).filter((row) => row.user_id === winner?.userId);
       const weeklyRows = Array.from({ length: visibleWeekCount }).map((_, index) => {
         const weekStartDate = new Date(monthStartDate);
@@ -487,11 +487,11 @@ function EmployeeOfMonthPage() {
         const base = ranked[0]?.score || 0;
         return {
           week: `W${index + 1}`,
-          productivity: Math.max(8, Math.min(100, base - (3 - index) * 7 + index * 3)),
+          productivity: Math.max(8, Math.min(100, base - (visibleWeekCount - 1 - index) * 7 + index * 3)),
           attendance: calculateWeightedAttendancePct(weekAttendanceRows, weekElapsedDays),
-          standup: Math.max(8, Math.min(100, (ranked[0]?.standupScore || 0) - (3 - index) * 3)),
-          taskProgress: Math.max(0, Math.round((ranked[0]?.effortProgress || 0) * ((index + 1) / 4))),
-          tasksCompleted: Math.max(0, Math.round((ranked[0]?.completedEffortPoints || 0) * ((index + 1) / 4))),
+          standup: Math.max(8, Math.min(100, (ranked[0]?.standupScore || 0) - (visibleWeekCount - 1 - index) * 3)),
+          taskProgress: Math.max(0, Math.round((ranked[0]?.effortProgress || 0) * ((index + 1) / visibleWeekCount))),
+          tasksCompleted: Math.max(0, Math.round((ranked[0]?.completedEffortPoints || 0) * ((index + 1) / visibleWeekCount))),
         };
       });
 
