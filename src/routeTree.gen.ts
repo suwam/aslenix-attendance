@@ -18,7 +18,7 @@ import { Route as AccountLockedRouteImport } from './routes/account-locked'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VerifyEmployeeQrTokenRouteImport } from './routes/verify-employee.$qrToken'
-import { Route as AppTrustedDevicesRouteImport } from './routes/_app/trusted-devices'
+import { Route as AppWeeklyReportsRouteImport } from './routes/_app/weekly-reports'
 import { Route as AppTasksRouteImport } from './routes/_app/tasks'
 import { Route as AppStandupRouteImport } from './routes/_app/standup'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
@@ -33,6 +33,7 @@ import { Route as AppCheckInRouteImport } from './routes/_app/check-in'
 import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
 import { Route as AppAchievementsRouteImport } from './routes/_app/achievements'
 import { Route as AppAdminIndexRouteImport } from './routes/_app/admin/index'
+import { Route as AppAdminWeeklyReportsRouteImport } from './routes/_app/admin/weekly-reports'
 import { Route as AppAdminWeeklyFeedbackRouteImport } from './routes/_app/admin/weekly-feedback'
 import { Route as AppAdminTasksRouteImport } from './routes/_app/admin/tasks'
 import { Route as AppAdminStandupsRouteImport } from './routes/_app/admin/standups'
@@ -95,9 +96,9 @@ const VerifyEmployeeQrTokenRoute = VerifyEmployeeQrTokenRouteImport.update({
   path: '/verify-employee/$qrToken',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppTrustedDevicesRoute = AppTrustedDevicesRouteImport.update({
-  id: '/trusted-devices',
-  path: '/trusted-devices',
+const AppWeeklyReportsRoute = AppWeeklyReportsRouteImport.update({
+  id: '/weekly-reports',
+  path: '/weekly-reports',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTasksRoute = AppTasksRouteImport.update({
@@ -168,6 +169,11 @@ const AppAchievementsRoute = AppAchievementsRouteImport.update({
 const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminWeeklyReportsRoute = AppAdminWeeklyReportsRouteImport.update({
+  id: '/admin/weekly-reports',
+  path: '/admin/weekly-reports',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAdminWeeklyFeedbackRoute = AppAdminWeeklyFeedbackRouteImport.update({
@@ -278,7 +284,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/standup': typeof AppStandupRoute
   '/tasks': typeof AppTasksRoute
-  '/trusted-devices': typeof AppTrustedDevicesRoute
+  '/weekly-reports': typeof AppWeeklyReportsRoute
   '/verify-employee/$qrToken': typeof VerifyEmployeeQrTokenRoute
   '/admin/achievements': typeof AppAdminAchievementsRoute
   '/admin/approvals': typeof AppAdminApprovalsRoute
@@ -297,6 +303,7 @@ export interface FileRoutesByFullPath {
   '/admin/standups': typeof AppAdminStandupsRoute
   '/admin/tasks': typeof AppAdminTasksRoute
   '/admin/weekly-feedback': typeof AppAdminWeeklyFeedbackRoute
+  '/admin/weekly-reports': typeof AppAdminWeeklyReportsRoute
   '/admin/': typeof AppAdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -320,7 +327,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/standup': typeof AppStandupRoute
   '/tasks': typeof AppTasksRoute
-  '/trusted-devices': typeof AppTrustedDevicesRoute
+  '/weekly-reports': typeof AppWeeklyReportsRoute
   '/verify-employee/$qrToken': typeof VerifyEmployeeQrTokenRoute
   '/admin/achievements': typeof AppAdminAchievementsRoute
   '/admin/approvals': typeof AppAdminApprovalsRoute
@@ -339,6 +346,7 @@ export interface FileRoutesByTo {
   '/admin/standups': typeof AppAdminStandupsRoute
   '/admin/tasks': typeof AppAdminTasksRoute
   '/admin/weekly-feedback': typeof AppAdminWeeklyFeedbackRoute
+  '/admin/weekly-reports': typeof AppAdminWeeklyReportsRoute
   '/admin': typeof AppAdminIndexRoute
 }
 export interface FileRoutesById {
@@ -364,7 +372,7 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/standup': typeof AppStandupRoute
   '/_app/tasks': typeof AppTasksRoute
-  '/_app/trusted-devices': typeof AppTrustedDevicesRoute
+  '/_app/weekly-reports': typeof AppWeeklyReportsRoute
   '/verify-employee/$qrToken': typeof VerifyEmployeeQrTokenRoute
   '/_app/admin/achievements': typeof AppAdminAchievementsRoute
   '/_app/admin/approvals': typeof AppAdminApprovalsRoute
@@ -383,6 +391,7 @@ export interface FileRoutesById {
   '/_app/admin/standups': typeof AppAdminStandupsRoute
   '/_app/admin/tasks': typeof AppAdminTasksRoute
   '/_app/admin/weekly-feedback': typeof AppAdminWeeklyFeedbackRoute
+  '/_app/admin/weekly-reports': typeof AppAdminWeeklyReportsRoute
   '/_app/admin/': typeof AppAdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -408,7 +417,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/standup'
     | '/tasks'
-    | '/trusted-devices'
+    | '/weekly-reports'
     | '/verify-employee/$qrToken'
     | '/admin/achievements'
     | '/admin/approvals'
@@ -427,6 +436,7 @@ export interface FileRouteTypes {
     | '/admin/standups'
     | '/admin/tasks'
     | '/admin/weekly-feedback'
+    | '/admin/weekly-reports'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -450,7 +460,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/standup'
     | '/tasks'
-    | '/trusted-devices'
+    | '/weekly-reports'
     | '/verify-employee/$qrToken'
     | '/admin/achievements'
     | '/admin/approvals'
@@ -469,6 +479,7 @@ export interface FileRouteTypes {
     | '/admin/standups'
     | '/admin/tasks'
     | '/admin/weekly-feedback'
+    | '/admin/weekly-reports'
     | '/admin'
   id:
     | '__root__'
@@ -493,7 +504,7 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/standup'
     | '/_app/tasks'
-    | '/_app/trusted-devices'
+    | '/_app/weekly-reports'
     | '/verify-employee/$qrToken'
     | '/_app/admin/achievements'
     | '/_app/admin/approvals'
@@ -512,6 +523,7 @@ export interface FileRouteTypes {
     | '/_app/admin/standups'
     | '/_app/admin/tasks'
     | '/_app/admin/weekly-feedback'
+    | '/_app/admin/weekly-reports'
     | '/_app/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -592,11 +604,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VerifyEmployeeQrTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/trusted-devices': {
-      id: '/_app/trusted-devices'
-      path: '/trusted-devices'
-      fullPath: '/trusted-devices'
-      preLoaderRoute: typeof AppTrustedDevicesRouteImport
+    '/_app/weekly-reports': {
+      id: '/_app/weekly-reports'
+      path: '/weekly-reports'
+      fullPath: '/weekly-reports'
+      preLoaderRoute: typeof AppWeeklyReportsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/tasks': {
@@ -695,6 +707,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AppAdminIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/weekly-reports': {
+      id: '/_app/admin/weekly-reports'
+      path: '/admin/weekly-reports'
+      fullPath: '/admin/weekly-reports'
+      preLoaderRoute: typeof AppAdminWeeklyReportsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/admin/weekly-feedback': {
@@ -833,7 +852,7 @@ interface AppRouteChildren {
   AppSettingsRoute: typeof AppSettingsRoute
   AppStandupRoute: typeof AppStandupRoute
   AppTasksRoute: typeof AppTasksRoute
-  AppTrustedDevicesRoute: typeof AppTrustedDevicesRoute
+  AppWeeklyReportsRoute: typeof AppWeeklyReportsRoute
   AppAdminAchievementsRoute: typeof AppAdminAchievementsRoute
   AppAdminApprovalsRoute: typeof AppAdminApprovalsRoute
   AppAdminAttendanceRoute: typeof AppAdminAttendanceRoute
@@ -851,6 +870,7 @@ interface AppRouteChildren {
   AppAdminStandupsRoute: typeof AppAdminStandupsRoute
   AppAdminTasksRoute: typeof AppAdminTasksRoute
   AppAdminWeeklyFeedbackRoute: typeof AppAdminWeeklyFeedbackRoute
+  AppAdminWeeklyReportsRoute: typeof AppAdminWeeklyReportsRoute
   AppAdminIndexRoute: typeof AppAdminIndexRoute
 }
 
@@ -868,7 +888,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsRoute: AppSettingsRoute,
   AppStandupRoute: AppStandupRoute,
   AppTasksRoute: AppTasksRoute,
-  AppTrustedDevicesRoute: AppTrustedDevicesRoute,
+  AppWeeklyReportsRoute: AppWeeklyReportsRoute,
   AppAdminAchievementsRoute: AppAdminAchievementsRoute,
   AppAdminApprovalsRoute: AppAdminApprovalsRoute,
   AppAdminAttendanceRoute: AppAdminAttendanceRoute,
@@ -886,6 +906,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminStandupsRoute: AppAdminStandupsRoute,
   AppAdminTasksRoute: AppAdminTasksRoute,
   AppAdminWeeklyFeedbackRoute: AppAdminWeeklyFeedbackRoute,
+  AppAdminWeeklyReportsRoute: AppAdminWeeklyReportsRoute,
   AppAdminIndexRoute: AppAdminIndexRoute,
 }
 

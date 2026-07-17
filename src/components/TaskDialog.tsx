@@ -993,7 +993,6 @@ export function TaskDialog({
               )}
             </div>
           </div>
-        </div>
       </DialogContent>
     </Dialog>
   );
