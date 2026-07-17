@@ -298,7 +298,7 @@ function EmployeeDashboard() {
     const [directTaskResult, assigneeResult, teamLeadResult] = await Promise.all([
       supabase.from("tasks").select("*").eq("assigned_to", user.id),
       supabase.from("task_assignees").select("task_id").eq("user_id", user.id),
-      isTeamLead ? supabase.from("task_team_leads").select("task_id").eq("user_id", user.id) : Promise.resolve({ data: [] }),
+      supabase.from("task_team_leads").select("task_id").eq("user_id", user.id),
     ]);
     const assignedTaskIds =
       assigneeResult.error && isMissingSupabaseTableError(assigneeResult.error, "task_assignees")

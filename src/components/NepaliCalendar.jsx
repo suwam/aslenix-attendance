@@ -12,14 +12,14 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
+import { format, startOfDay } from "date-fns";
 import { BSDateInput } from "@/components/BSDateInput";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GlassCard } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 import { WEEKLY_OFF_DAY } from "@/lib/weekly-off";
+import NepaliDate from "nepali-date-converter";
 
 const MONTHS = [
   "Baisakh",
@@ -38,18 +38,88 @@ const MONTHS = [
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-const CALENDAR_DATA = {
-  2083: {
-    anchorAd: "2026-04-14",
-    monthDays: [31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
-  },
-};
-
 const DEFAULT_HOLIDAYS = [];
 
 const HOLIDAY_KEY = "aslenix-nepali-calendar-admin-holidays";
+
+function useLocalStorage(key, initialValue) {
+  const [value, setValue] = useState(() => {
+    if (typeof window === "undefined") return initialValue;
+    try {
+      const stored = window.localStorage.getItem(key);
+      return stored ? JSON.parse(stored) : initialValue;
+    } catch {
+      return initialValue;
+    }
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(key, JSON.stringify(value));
+  }, [key, value]);
+
+  return [value, setValue];
+}
+
+function getMonthMeta(year, month) {
+  if (month < 0) return getMonthMeta(year - 1, 11);
+  if (month > 11) return getMonthMeta(year + 1, 0);
+  return { year, month };
+}
+
+function buildMonth(year, month) {
+  const days = [];
+  const firstDay = new NepaliDate(year, month, 1);
+  const firstWeekday = firstDay.getDay();
+
+  for (let i = 0; i < firstWeekday; i++) days.push(null);
+
+  let d = 1;
+  while (true) {
+    const date = new NepaliDate(year, month, d);
+    if (date.getMonth() !== month) break;
+    days.push({
+      bsDate: `${date.getYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
+      date: date.getDate(),
+      weekday: date.getDay(),
+      adDate: date.getAD(),
+    });
+    d++;
+  }
+  return days;
+}
+
+function formatBsDate(y, m, d) {
+  return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+function isValidBsDate(bsDate) {
+  try {
+    const [y, m, d] = bsDate.split('-').map(Number);
+    const date = new NepaliDate(y, m - 1, d);
+    return date.getYear() === y && date.getMonth() === m - 1 && date.getDate() === d;
+  } catch {
+    return false;
+  }
+}
+
+function CalendarStat({ label, value, tone }) {
+  const tones = {
+    blue: "text-blue-500",
+    amber: "text-amber-500",
+    red: "text-red-500",
+  };
+  return (
+    <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card/50 p-2 text-center">
+      <span className={cn("text-xl font-black", tones[tone])}>{value}</span>
+      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
+    </div>
+  );
+}
+
 export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
-  const todayAd = useMemo(() => startOfDay(new Date()), []);
   const todayBs = useMemo(() => adToBs(todayAd), [todayAd]);
   const initialYear = todayBs?.year ?? 2083;
   const initialMonth = todayBs?.month ?? 0;
@@ -374,151 +444,5 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
       </div>
     </GlassCard>
   );
-}
 
-function CalendarStat({ label, value, tone }) {
-  const toneClass = {
-    blue: "border-accent/20 bg-accent/10 text-accent",
-    amber: "border-warning/20 bg-warning/10 text-warning",
-    red: "border-primary/20 bg-primary/10 text-primary",
-  }[tone];
-
-  return (
-    <div className={cn("rounded-xl border px-3 py-2 shadow-[0_0_22px_-18px_var(--primary)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-[0_0_26px_-14px_var(--accent)]", toneClass)}>
-      <div className="text-[10px] font-bold uppercase tracking-[0.12em] opacity-80">{label}</div>
-      <div className="mt-1 text-xl font-black leading-none tabular-nums">{value}</div>
-    </div>
-  );
-}
-
-function LegendItem({ icon: Icon, label, className }) {
-  return (
-    <div className="flex min-h-9 items-center gap-2 rounded-lg border border-border bg-card/45 px-3 py-2 text-xs text-muted-foreground shadow-[0_0_20px_-16px_var(--accent)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:border-border hover:shadow-[0_0_26px_-14px_var(--primary)]">
-      <Icon size={12} className={className} />
-      <span className="truncate">{label}</span>
-    </div>
-  );
-}
-
-function useLocalStorage(key, initialValue) {
-  const [value, setValue] = useState(() => {
-    if (typeof window === "undefined") return initialValue;
-    try {
-      const stored = window.localStorage.getItem(key);
-      return stored ? JSON.parse(stored) : initialValue;
-    } catch {
-      return initialValue;
-    }
-  });
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(key, JSON.stringify(value));
-  }, [key, value]);
-
-  return [value, setValue];
-}
-
-function buildMonth(year, month) {
-  const meta = getMonthMeta(year, month);
-  if (!meta) return [];
-
-  const firstAd = bsToAd(meta.year, meta.month, 1);
-  const leading = firstAd.getDay();
-  const totalDays = CALENDAR_DATA[meta.year].monthDays[meta.month];
-  const days = Array.from({ length: leading }, () => null);
-
-  for (let date = 1; date <= totalDays; date += 1) {
-    const adDate = bsToAd(meta.year, meta.month, date);
-    days.push({
-      year: meta.year,
-      month: meta.month,
-      date,
-      adDate,
-      weekday: adDate.getDay(),
-      bsDate: formatBsDate(meta.year, meta.month, date),
-    });
-  }
-
-  while (days.length % 7 !== 0) days.push(null);
-  return days;
-}
-
-function getMonthMeta(year, month) {
-  let nextYear = year;
-  let nextMonth = month;
-  if (nextMonth < 0) {
-    nextYear -= 1;
-    nextMonth = 11;
-  }
-  if (nextMonth > 11) {
-    nextYear += 1;
-    nextMonth = 0;
-  }
-  if (!CALENDAR_DATA[nextYear]) return null;
-  return { year: nextYear, month: nextMonth };
-}
-
-function adToBs(adDate) {
-  for (const [yearKey, data] of Object.entries(CALENDAR_DATA)) {
-    const year = Number(yearKey);
-    const anchor = parseAdDate(data.anchorAd);
-    const daysFromAnchor = differenceInDays(adDate, anchor);
-    const yearLength = data.monthDays.reduce((sum, days) => sum + days, 0);
-
-    if (daysFromAnchor < 0 || daysFromAnchor >= yearLength) continue;
-
-    let remaining = daysFromAnchor;
-    for (let month = 0; month < data.monthDays.length; month += 1) {
-      const monthLength = data.monthDays[month];
-      if (remaining < monthLength) {
-        const date = remaining + 1;
-        return {
-          year,
-          month,
-          date,
-          formatted: `${MONTHS[month]} ${date}, ${year}`,
-        };
-      }
-      remaining -= monthLength;
-    }
-  }
-
-  return null;
-}
-
-function bsToAd(year, month, date) {
-  const data = CALENDAR_DATA[year];
-  const daysBeforeMonth = data.monthDays.slice(0, month).reduce((sum, days) => sum + days, 0);
-  const result = parseAdDate(data.anchorAd);
-  result.setDate(result.getDate() + daysBeforeMonth + date - 1);
-  return result;
-}
-
-function parseAdDate(value) {
-  const [year, month, date] = value.split("-").map(Number);
-  return new Date(year, month - 1, date);
-}
-
-function differenceInDays(laterDate, earlierDate) {
-  const msPerDay = 24 * 60 * 60 * 1000;
-  return Math.floor((startOfDay(laterDate).getTime() - startOfDay(earlierDate).getTime()) / msPerDay);
-}
-
-function startOfDay(date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function formatBsDate(year, month, date) {
-  return `${year}-${String(month + 1).padStart(2, "0")}-${String(date).padStart(2, "0")}`;
-}
-
-function isValidBsDate(value) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) return false;
-  const year = Number(match[1]);
-  const month = Number(match[2]) - 1;
-  const date = Number(match[3]);
-  const data = CALENDAR_DATA[year];
-  return Boolean(data && month >= 0 && month < 12 && date >= 1 && date <= data.monthDays[month]);
 }

@@ -195,22 +195,21 @@ export function TaskDialog({
   useEffect(() => {
     if (!open) return;
     setStatus(defaultStatus || "todo");
-    if (isAdmin) {
-      Promise.all([
-        supabase
-          .from("profiles")
-          .select("user_id, full_name, avatar_url, approval_status"),
-        supabase.from("user_roles").select("user_id, role"),
-      ]).then(([{ data }, { data: roleRows }]) => {
-        const adminUserIds = new Set((roleRows ?? []).filter(r => r.role === 'admin' || r.role === 'super_admin' || r.role === 'hr_manager').map((row) => row.user_id));
-        const empData = (data || []).map((e: any) => {
-          const uRoles = (roleRows || []).filter(r => r.user_id === e.user_id).map(r => r.role);
-          return { ...e, role: uRoles[0] || 'employee', roles: uRoles };
-        });
-        setEmployees(empData.filter(e => e.approval_status === 'approved' && !adminUserIds.has(e.user_id)));
-        setAvailableTeamLeads(empData.filter(e => e.approval_status === 'approved' && e.roles.includes('team_lead')));
+    Promise.all([
+      supabase
+        .from("profiles")
+        .select("user_id, full_name, avatar_url, approval_status"),
+      supabase.from("user_roles").select("user_id, role"),
+    ]).then(([{ data }, { data: roleRows }]) => {
+      const adminUserIds = new Set((roleRows ?? []).filter(r => r.role === 'admin' || r.role === 'super_admin' || r.role === 'hr_manager').map((row) => row.user_id));
+      const empData = (data || []).map((e: any) => {
+        const uRoles = (roleRows || []).filter(r => r.user_id === e.user_id).map(r => r.role);
+        return { ...e, role: uRoles[0] || 'employee', roles: uRoles };
       });
-    }
+      setEmployees(empData.filter(e => e.approval_status === 'approved' && !adminUserIds.has(e.user_id)));
+      setAvailableTeamLeads(empData.filter(e => e.approval_status === 'approved' && !adminUserIds.has(e.user_id)));
+    });
+
     if (taskId) loadTask();
     else {
       resetForm();
