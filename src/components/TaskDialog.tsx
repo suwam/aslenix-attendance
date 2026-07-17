@@ -65,9 +65,13 @@ export function TaskDialog({
   onSaved?: (result?: { taskId?: string | null; transition?: WorkflowTransition }) => void | Promise<void>;
 }) {
   const { user, isAdmin } = useAuth();
-  const canEditTaskFields = isAdmin || !taskId || user?.id === defaultStatus; // simplified
-  const canDeleteTask = isAdmin && Boolean(taskId);
-  const isEmployeeTaskEdit = Boolean(taskId && !isAdmin);
+  const [teamLeads, setTeamLeads] = useState<string[]>([]);
+  
+  const isAssignedTeamLead = Boolean(user && teamLeads.includes(user.id));
+  const canEditTaskFields = isAdmin || isAssignedTeamLead || !taskId;
+  const canDeleteTask = (isAdmin || isAssignedTeamLead) && Boolean(taskId);
+  const isEmployeeTaskEdit = Boolean(taskId && !isAdmin && !isAssignedTeamLead);
+
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -87,7 +91,6 @@ export function TaskDialog({
   const [assignedToMany, setAssignedToMany] = useState<string[]>(user?.id ? [user.id] : []);
   const [tags, setTags] = useState("");
   const [employees, setEmployees] = useState<{ user_id: string; full_name: string; role: string; avatar_url?: string | null }[]>([]);
-  const [teamLeads, setTeamLeads] = useState<string[]>([]);
   const [availableTeamLeads, setAvailableTeamLeads] = useState<{ user_id: string; full_name: string; role: string; avatar_url?: string | null }[]>([]);
   const [activityLogs, setActivityLogs] = useState<TaskActivityLog[]>([]);
   const [activeTab, setActiveTab] = useState("details");
@@ -200,9 +203,12 @@ export function TaskDialog({
         supabase.from("user_roles").select("user_id, role"),
       ]).then(([{ data }, { data: roleRows }]) => {
         const adminUserIds = new Set((roleRows ?? []).filter(r => r.role === 'admin' || r.role === 'super_admin' || r.role === 'hr_manager').map((row) => row.user_id));
-        const empData = (data || []).map((e: any) => ({ ...e, role: roleRows?.find(r => r.user_id === e.user_id)?.role || 'employee' }));
+        const empData = (data || []).map((e: any) => {
+          const uRoles = (roleRows || []).filter(r => r.user_id === e.user_id).map(r => r.role);
+          return { ...e, role: uRoles[0] || 'employee', roles: uRoles };
+        });
         setEmployees(empData.filter(e => e.approval_status === 'approved' && !adminUserIds.has(e.user_id)));
-        setAvailableTeamLeads(empData);
+        setAvailableTeamLeads(empData.filter(e => e.approval_status === 'approved' && e.roles.includes('team_lead')));
       });
     }
     if (taskId) loadTask();
@@ -227,7 +233,7 @@ export function TaskDialog({
     }
 
     setLoading(true);
-    if (taskId && !isAdmin) {
+    if (taskId && !isAdmin && !isAssignedTeamLead) {
       let { error } = await supabase.from("tasks").update({ progress: nextProgress }).eq("id", taskId);
       let progressNoteNotSaved = false;
       if (!error && progressChanged) {
@@ -265,7 +271,7 @@ export function TaskDialog({
       .filter(Boolean);
     const selectedAssignees = Array.from(
       new Set(
-        (isAdmin
+        (isAdmin || isAssignedTeamLead
           ? assignedToMany.length
             ? assignedToMany
             : assignedTo
@@ -327,7 +333,7 @@ export function TaskDialog({
       savedTaskId = result.data?.id ?? null;
     }
     let usedLegacyAssignment = false;
-    if (!error && savedTaskId && isAdmin) {
+    if (!error && savedTaskId && (isAdmin || isAssignedTeamLead)) {
       const rows = selectedAssignees.map((assigneeId) => ({
         task_id: savedTaskId,
         user_id: assigneeId,
@@ -371,6 +377,11 @@ export function TaskDialog({
         await supabase.from("task_team_leads").delete().eq("task_id", savedTaskId);
         if (tlRows.length) await supabase.from("task_team_leads").insert(tlRows);
 
+        await notifyTaskAssignees(selectedAssignees, taskId ? "Task updated" : "New task assigned", {
+          title,
+          deadline: deadlineIso || "",
+        });
+      } else if (isAssignedTeamLead) {
         await notifyTaskAssignees(selectedAssignees, taskId ? "Task updated" : "New task assigned", {
           title,
           deadline: deadlineIso || "",
@@ -919,24 +930,26 @@ export function TaskDialog({
               />
             </div>
           </div>
-          {isAdmin && (
+          {(isAdmin || isAssignedTeamLead) && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div className="border border-border bg-muted/10 p-3 rounded-lg">
-                <TaskAssignees 
-                  label="Team Leads" 
-                  options={availableTeamLeads}
-                  selectedIds={teamLeads}
-                  onChange={setTeamLeads}
-                  disabled={!isAdmin}
-                />
-              </div>
+              {isAdmin && (
+                <div className="border border-border bg-muted/10 p-3 rounded-lg">
+                  <TaskAssignees 
+                    label="Team Leads" 
+                    options={availableTeamLeads}
+                    selectedIds={teamLeads}
+                    onChange={setTeamLeads}
+                    disabled={!isAdmin}
+                  />
+                </div>
+              )}
               <div className="border border-border bg-muted/10 p-3 rounded-lg">
                 <TaskAssignees 
                   label="Assign To" 
                   options={employees}
                   selectedIds={assignedToMany}
                   onChange={setAssignedToMany}
-                  disabled={!isAdmin}
+                  disabled={!isAdmin && !isAssignedTeamLead}
                 />
               </div>
             </div>

@@ -183,7 +183,7 @@ function EmployeeWeeklyReviews({ reviews }: { reviews: any[] }) {
 }
 
 function EmployeeDashboard() {
-  const { user, profile, isAdmin } = useAuth();
+  const { user, profile, isAdmin, isTeamLead } = useAuth();
   const { deviceStatus, setupBiometrics, busy: biometricsBusy } = useDeviceStatus();
   const [today, setToday] = useState<any>(null);
   const [monthStats, setMonthStats] = useState({ present: 0, late: 0, leave: 0, hours: 0 });
@@ -286,7 +286,7 @@ function EmployeeDashboard() {
 
     setWeeklyReviews(feedbackResult?.data || []);
 
-    const monthRows = monthAttendance ?? [];
+    const monthRows = monthAttendance || [];
     const hours = Math.round(monthRows.reduce((sum, row) => sum + Number(row.work_hours || 0), 0) * 10) / 10;
     setMonthStats({
       present: monthRows.filter((row) => ["present", "late", "wfh"].includes(row.status)).length,
@@ -295,16 +295,21 @@ function EmployeeDashboard() {
       hours,
     });
 
-    const [directTaskResult, assigneeResult] = await Promise.all([
+    const [directTaskResult, assigneeResult, teamLeadResult] = await Promise.all([
       supabase.from("tasks").select("*").eq("assigned_to", user.id),
       supabase.from("task_assignees").select("task_id").eq("user_id", user.id),
+      isTeamLead ? supabase.from("task_team_leads").select("task_id").eq("user_id", user.id) : Promise.resolve({ data: [] }),
     ]);
     const assignedTaskIds =
       assigneeResult.error && isMissingSupabaseTableError(assigneeResult.error, "task_assignees")
         ? []
         : (assigneeResult.data || []).map((row) => row.task_id).filter(Boolean);
-    const { data: multiAssignedTasks } = assignedTaskIds.length
-      ? await supabase.from("tasks").select("*").in("id", assignedTaskIds)
+    const teamLeadTaskIds = teamLeadResult.data ? teamLeadResult.data.map((row) => row.task_id).filter(Boolean) : [];
+    
+    const allTaskIds = Array.from(new Set([...assignedTaskIds, ...teamLeadTaskIds]));
+
+    const { data: multiAssignedTasks } = allTaskIds.length
+      ? await supabase.from("tasks").select("*").in("id", allTaskIds)
       : { data: [] };
     const taskRows = Array.from(
       new Map([...(directTaskResult.data || []), ...(multiAssignedTasks || [])].map((task) => [task.id, task])).values(),
