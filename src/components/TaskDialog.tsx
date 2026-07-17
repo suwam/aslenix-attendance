@@ -196,14 +196,13 @@ export function TaskDialog({
       Promise.all([
         supabase
           .from("profiles")
-          .select("user_id, full_name, avatar_url")
-          .eq("approval_status", "approved"),
-        supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager", "team_lead"]),
+          .select("user_id, full_name, avatar_url, approval_status"),
+        supabase.from("user_roles").select("user_id, role"),
       ]).then(([{ data }, { data: roleRows }]) => {
-        const adminUserIds = new Set((roleRows ?? []).filter(r => r.role !== 'team_lead').map((row) => row.user_id));
+        const adminUserIds = new Set((roleRows ?? []).filter(r => r.role === 'admin' || r.role === 'super_admin' || r.role === 'hr_manager').map((row) => row.user_id));
         const empData = (data || []).map((e: any) => ({ ...e, role: roleRows?.find(r => r.user_id === e.user_id)?.role || 'employee' }));
-        setEmployees(empData.filter(e => !adminUserIds.has(e.user_id)));
-        setAvailableTeamLeads(empData.filter(e => e.role === 'team_lead' || adminUserIds.has(e.user_id)));
+        setEmployees(empData.filter(e => e.approval_status === 'approved' && !adminUserIds.has(e.user_id)));
+        setAvailableTeamLeads(empData);
       });
     }
     if (taskId) loadTask();
