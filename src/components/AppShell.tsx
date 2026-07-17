@@ -187,7 +187,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className={`min-h-screen flex ${isMessagesPage ? "h-screen overflow-hidden" : ""}`}>
       <aside
-        className="hidden lg:flex flex-col w-64 shrink-0 sticky top-0 h-screen min-h-0 p-4 gap-2 border-r border-sidebar-border"
+        className="hidden lg:flex flex-col w-64 shrink-0 sticky top-0 h-screen min-h-0 p-4 gap-2 border-r border-sidebar-border print:hidden"
         style={{ background: "var(--sidebar)", backdropFilter: "blur(20px)" }}
       >
         <div className="px-2 py-3">
@@ -238,7 +238,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             onClick={() => setMobileOpen(false)}
           />
           <aside
-            className="lg:hidden fixed left-0 top-0 bottom-0 w-72 z-50 min-h-0 p-4 flex flex-col gap-2 border-r border-sidebar-border"
+            className="lg:hidden fixed left-0 top-0 bottom-0 w-72 z-50 min-h-0 p-4 flex flex-col gap-2 border-r border-sidebar-border print:hidden"
             style={{ background: "var(--sidebar)" }}
           >
             <div className="flex items-center justify-between px-2 py-3">
@@ -282,7 +282,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Main */}
       <div className={`flex-1 flex flex-col min-w-0 ${isMessagesPage ? "h-full overflow-hidden" : ""}`}>
         <header
-          className="sticky top-0 z-30 h-16 px-4 sm:px-6 flex items-center gap-3 bg-background"
+          className="sticky top-0 z-30 h-16 px-4 sm:px-6 flex items-center gap-3 bg-background print:hidden"
         >
           <button
             className="lg:hidden p-2 rounded-lg hover:bg-muted"
@@ -442,7 +442,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {!isAdmin && currentPath !== "/messages" && (
           <Link
             to="/messages"
-            className="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-r from-[#C4DAFF] to-[#E5CCFF] text-[#0F172A] shadow-md ring-1 ring-[#E2E8F0]/50 transition hover:-translate-y-1 hover:scale-105 sm:bottom-6 sm:right-6"
+            className="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-r from-[#C4DAFF] to-[#E5CCFF] text-[#0F172A] shadow-md ring-1 ring-[#E2E8F0]/50 transition hover:-translate-y-1 hover:scale-105 sm:bottom-6 sm:right-6 print:hidden"
             style={{ animation: "message-float 3.2s ease-in-out infinite" }}
             aria-label="Open messages"
           >

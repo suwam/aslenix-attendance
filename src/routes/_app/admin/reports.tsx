@@ -255,24 +255,35 @@ function ReportsPage() {
 
   return (
     <>
-      <PageHeader
-        title="Reports"
-        subtitle="Generate, filter and export daily, weekly or monthly attendance reports"
-        actions={
-          <>
-            <Button variant="outline" onClick={() => window.print()}>
-              <Printer size={14} className="mr-1" />
-              Print
-            </Button>
-            <Button onClick={exportCSV} className="neon-button rounded-lg">
-              <Download size={14} className="mr-1" />
-              Export CSV
-            </Button>
-          </>
-        }
-      />
+      <div className="print:hidden">
+        <PageHeader
+          title="Reports"
+          subtitle="Generate, filter and export daily, weekly or monthly attendance reports"
+          actions={
+            <>
+              <Button variant="outline" onClick={() => window.print()}>
+                <Printer size={14} className="mr-1" />
+                Print
+              </Button>
+              <Button onClick={exportCSV} className="neon-button rounded-lg">
+                <Download size={14} className="mr-1" />
+                Export CSV
+              </Button>
+            </>
+          }
+        />
+      </div>
 
-      <GlassCard className="mb-5">
+      <div className="hidden print:block mb-8">
+        <h1 className="text-3xl font-black uppercase tracking-tight">
+          Attendance of {period === "monthly" ? monthRange?.label || bsMonth : period === "weekly" ? `${formatNepaliDate(weekStart, "DD MMMM")} - ${formatNepaliDate(weekEnd, "DD MMMM YYYY")} BS` : bsDate}
+        </h1>
+        <p className="text-muted-foreground mt-2">
+          Generated on {format(new Date(), "MMM d, yyyy 'at' h:mm a")}
+        </p>
+      </div>
+
+      <GlassCard className="mb-5 print:hidden">
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
           <div>
             <label className="text-xs text-muted-foreground">Report type</label>
@@ -334,7 +345,7 @@ function ReportsPage() {
         </div>
       </GlassCard>
 
-      <GlassCard className="p-0 overflow-hidden">
+      <GlassCard className="p-0 overflow-hidden print:p-0 print:border-none print:bg-transparent print:shadow-none print:backdrop-blur-none">
         {loading ? (
           <div className="flex justify-center py-16">
             <Loader2 className="animate-spin text-primary" />
