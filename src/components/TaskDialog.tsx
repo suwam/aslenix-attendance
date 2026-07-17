@@ -2,6 +2,11 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TaskAssignees } from "./tasks/TaskAssignees";
+import { TaskDiscussion } from "./tasks/TaskDiscussion";
+import { TaskTimeline } from "./tasks/TaskTimeline";
+import { TaskActivityLog } from "@/lib/tasks-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -60,7 +65,7 @@ export function TaskDialog({
   onSaved?: (result?: { taskId?: string | null; transition?: WorkflowTransition }) => void | Promise<void>;
 }) {
   const { user, isAdmin } = useAuth();
-  const canEditTaskFields = isAdmin || !taskId;
+  const canEditTaskFields = isAdmin || !taskId || user?.id === defaultStatus; // simplified
   const canDeleteTask = isAdmin && Boolean(taskId);
   const isEmployeeTaskEdit = Boolean(taskId && !isAdmin);
   const [loading, setLoading] = useState(false);
@@ -81,7 +86,11 @@ export function TaskDialog({
   const [assignedTo, setAssignedTo] = useState<string>(user?.id || "");
   const [assignedToMany, setAssignedToMany] = useState<string[]>(user?.id ? [user.id] : []);
   const [tags, setTags] = useState("");
-  const [employees, setEmployees] = useState<{ user_id: string; full_name: string }[]>([]);
+  const [employees, setEmployees] = useState<{ user_id: string; full_name: string; role: string; avatar_url?: string | null }[]>([]);
+  const [teamLeads, setTeamLeads] = useState<string[]>([]);
+  const [availableTeamLeads, setAvailableTeamLeads] = useState<{ user_id: string; full_name: string; role: string; avatar_url?: string | null }[]>([]);
+  const [activityLogs, setActivityLogs] = useState<TaskActivityLog[]>([]);
+  const [activeTab, setActiveTab] = useState("details");
 
   const [comments, setComments] = useState<any[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -107,6 +116,9 @@ export function TaskDialog({
     setDeadlineTime("");
     setAssignedTo(isAdmin ? "" : user?.id || "");
     setAssignedToMany(isAdmin ? [] : user?.id ? [user.id] : []);
+    setTeamLeads([]);
+    setActivityLogs([]);
+    setActiveTab("details");
     setTags("");
     setComments([]);
     setAttachments([]);
@@ -114,7 +126,7 @@ export function TaskDialog({
 
   const loadTask = useCallback(async () => {
     if (!taskId) return;
-    const [{ data: t }, { data: c }, attachmentResult, progressResult, assigneeResult] = await Promise.all([
+    const [{ data: t }, { data: c }, attachmentResult, progressResult, assigneeResult, teamLeadsResult, logsResult] = await Promise.all([
       supabase.from("tasks").select("*").eq("id", taskId).maybeSingle(),
       supabase.from("task_comments").select("*").eq("task_id", taskId).order("created_at"),
       isAdmin
@@ -126,11 +138,17 @@ export function TaskDialog({
         .eq("task_id", taskId)
         .order("created_at", { ascending: false }),
       supabase.from("task_assignees").select("user_id").eq("task_id", taskId),
+      supabase.from("task_team_leads").select("user_id").eq("task_id", taskId),
+      supabase.from("task_activity_logs").select("*").eq("task_id", taskId).order("created_at", { ascending: false }),
     ]);
     const assignees =
       assigneeResult.error && isMissingSupabaseTableError(assigneeResult.error, "task_assignees")
         ? []
         : assigneeResult.data;
+    const teamLeadsData = teamLeadsResult?.error ? [] : teamLeadsResult?.data || [];
+    setTeamLeads(teamLeadsData.map((t: any) => t.user_id));
+    const logsData = logsResult?.error ? [] : logsResult?.data || [];
+    setActivityLogs(logsData as any);
     if (t) {
       setTitle(t.title);
       setDescription(t.description || "");
@@ -178,12 +196,14 @@ export function TaskDialog({
       Promise.all([
         supabase
           .from("profiles")
-          .select("user_id, full_name")
+          .select("user_id, full_name, avatar_url")
           .eq("approval_status", "approved"),
-        supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
+        supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager", "team_lead"]),
       ]).then(([{ data }, { data: roleRows }]) => {
-        const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
-        setEmployees((data || []).filter((employee) => !adminUserIds.has(employee.user_id)));
+        const adminUserIds = new Set((roleRows ?? []).filter(r => r.role !== 'team_lead').map((row) => row.user_id));
+        const empData = (data || []).map((e: any) => ({ ...e, role: roleRows?.find(r => r.user_id === e.user_id)?.role || 'employee' }));
+        setEmployees(empData.filter(e => !adminUserIds.has(e.user_id)));
+        setAvailableTeamLeads(empData.filter(e => e.role === 'team_lead' || adminUserIds.has(e.user_id)));
       });
     }
     if (taskId) loadTask();
@@ -334,11 +354,29 @@ export function TaskDialog({
         }
       }
     }
-    if (!error && savedTaskId && isAdmin) {
-      await notifyTaskAssignees(selectedAssignees, taskId ? "Task updated" : "New task assigned", {
-        title,
-        deadline: deadlineIso || "",
+    if (!error && savedTaskId) {
+      // Log activity
+      await supabase.from("task_activity_logs").insert({
+        task_id: savedTaskId,
+        user_id: user?.id,
+        action: taskId ? "status_changed" : "created",
+        new_value: { status: workflow.status, progress: workflow.progress },
       });
+
+      if (isAdmin) {
+        // Save team leads
+        const tlRows = teamLeads.map((uid) => ({
+          task_id: savedTaskId,
+          user_id: uid,
+        }));
+        await supabase.from("task_team_leads").delete().eq("task_id", savedTaskId);
+        if (tlRows.length) await supabase.from("task_team_leads").insert(tlRows);
+
+        await notifyTaskAssignees(selectedAssignees, taskId ? "Task updated" : "New task assigned", {
+          title,
+          deadline: deadlineIso || "",
+        });
+      }
     }
     let progressNoteNotSaved = false;
     if (!error && savedTaskId && progressIncreased) {
@@ -583,7 +621,14 @@ export function TaskDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-4">
+            <TabsTrigger value="details">Details</TabsTrigger>
+            <TabsTrigger value="discussion">Discussion</TabsTrigger>
+            <TabsTrigger value="timeline">Activity Timeline</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="details" className="space-y-4 mt-0">
           <div>
             <Label>Title</Label>
             <Input
@@ -875,103 +920,44 @@ export function TaskDialog({
               />
             </div>
           </div>
-
           {isAdmin && (
-            <div>
-              <Label>Assign to ({assignedToMany.length || 0})</Label>
-              <div className="mt-2 max-h-44 overflow-y-auto rounded-lg border border-border bg-muted/20 p-2">
-                {employees.map((e) => (
-                  <label
-                    key={e.user_id}
-                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/50"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={assignedToMany.includes(e.user_id)}
-                      onChange={() => toggleAssignee(e.user_id)}
-                      className="accent-primary"
-                    />
-                    <span>{e.full_name}</span>
-                  </label>
-                ))}
-                {employees.length === 0 && (
-                  <div className="px-2 py-4 text-center text-xs text-muted-foreground">
-                    No approved employees found
-                  </div>
-                )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div className="border border-border bg-muted/10 p-3 rounded-lg">
+                <TaskAssignees 
+                  label="Team Leads" 
+                  options={availableTeamLeads}
+                  selectedIds={teamLeads}
+                  onChange={setTeamLeads}
+                  disabled={!isAdmin}
+                />
+              </div>
+              <div className="border border-border bg-muted/10 p-3 rounded-lg">
+                <TaskAssignees 
+                  label="Assign To" 
+                  options={employees}
+                  selectedIds={assignedToMany}
+                  onChange={setAssignedToMany}
+                  disabled={!isAdmin}
+                />
               </div>
             </div>
           )}
+          </TabsContent>
+          <TabsContent value="discussion" className="h-[500px] mt-0">
+            <TaskDiscussion 
+              taskId={taskId || ""}
+              comments={comments}
+              mentionableUsers={[...availableTeamLeads, ...employees]}
+              onCommentAdded={loadTask}
+              canComment={Boolean(taskId)}
+            />
+          </TabsContent>
+          <TabsContent value="timeline" className="h-[500px] overflow-y-auto mt-0 bg-muted/10 border border-border rounded-lg">
+            <TaskTimeline logs={activityLogs} />
+          </TabsContent>
+        </Tabs>
 
-          {taskId && (
-            <>
-              {isAdmin && (
-              <div className="border-t border-border pt-4">
-                <Label className="mb-2 block">Attachments</Label>
-                <div className="space-y-1.5 mb-2">
-                  {attachments.map((a) => (
-                    <div
-                      key={a.id}
-                      className="flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/30"
-                    >
-                      <Paperclip size={14} className="text-muted-foreground" />
-                      <span className="flex-1 truncate">{a.file_name}</span>
-                      <button
-                        onClick={() => downloadFile(a.file_path, a.file_name)}
-                        className="p-1 hover:text-primary"
-                      >
-                        <Download size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <label className="inline-flex items-center gap-2 text-xs cursor-pointer text-primary hover:underline">
-                  <Paperclip size={12} /> Attach file
-                  <input
-                    type="file"
-                    className="hidden"
-                    onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0])}
-                  />
-                </label>
-              </div>
-              )}
-
-              <div className="border-t border-border pt-4">
-                <Label className="mb-2 block">Comments</Label>
-                <div className="space-y-2 mb-3 max-h-48 overflow-y-auto">
-                  {comments.map((c) => (
-                    <div key={c.id} className="text-sm p-2.5 rounded-lg bg-muted/30">
-                      <div className="flex justify-between text-xs text-muted-foreground mb-0.5">
-                        <span className="font-medium text-foreground">{c.author}</span>
-                        <span>{formatTaskDateTime(c.created_at)}</span>
-                      </div>
-                      <div>{c.comment}</div>
-                    </div>
-                  ))}
-                  {comments.length === 0 && (
-                    <div className="text-xs text-muted-foreground">No comments yet</div>
-                  )}
-                </div>
-                {isAdmin ? (
-                  <div className="flex gap-2">
-                    <Input
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="Write a comment..."
-                      onKeyDown={(e) => e.key === "Enter" && addComment()}
-                    />
-                    <Button onClick={addComment} size="icon" className="neon-button">
-                      <Send size={14} />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="text-xs text-muted-foreground">Comments are added by admins.</div>
-                )}
-              </div>
-            </>
-          )}
-
-          <div className="flex justify-between pt-4 border-t border-border">
+        <div className="flex justify-between pt-4 border-t border-border">
             <div>
               {canDeleteTask && (
                 <Button

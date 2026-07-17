@@ -84,3 +84,37 @@ export function productivityScore(opts: {
   const score = (completion * 0.5 + opts.onTimeRate * 0.3 + hoursRatio * 0.2) * 100;
   return Math.round(Math.min(100, Math.max(0, score)));
 }
+
+export type TaskCommentMention = {
+  id: string;
+  comment_id: string;
+  mentioned_user_id: string;
+  created_at: string;
+};
+
+export type TaskComment = {
+  id: string;
+  task_id: string;
+  user_id: string;
+  comment: string;
+  parent_comment_id: string | null;
+  attachment: any | null;
+  edited_at: string | null;
+  created_at: string;
+  updated_at: string;
+  author?: string;
+  avatar_url?: string | null;
+  mentions?: TaskCommentMention[];
+  replies?: TaskComment[];
+};
+
+export type TaskActivityLog = {
+  id: string;
+  task_id: string;
+  user_id: string | null;
+  action: string;
+  old_value: any | null;
+  new_value: any | null;
+  created_at: string;
+  author?: string;
+};

@@ -425,6 +425,7 @@ export type Database = {
           title: string;
           type: string;
           user_id: string;
+          reference_id: string | null;
         };
         Insert: {
           created_at?: string;
@@ -434,6 +435,7 @@ export type Database = {
           title: string;
           type?: string;
           user_id: string;
+          reference_id?: string | null;
         };
         Update: {
           created_at?: string;
@@ -443,6 +445,7 @@ export type Database = {
           title?: string;
           type?: string;
           user_id?: string;
+          reference_id?: string | null;
         };
         Relationships: [];
       };
@@ -703,6 +706,10 @@ export type Database = {
           id: string;
           task_id: string;
           user_id: string;
+          parent_comment_id: string | null;
+          attachment: Json | null;
+          edited_at: string | null;
+          updated_at: string;
         };
         Insert: {
           comment: string;
@@ -710,6 +717,10 @@ export type Database = {
           id?: string;
           task_id: string;
           user_id: string;
+          parent_comment_id?: string | null;
+          attachment?: Json | null;
+          edited_at?: string | null;
+          updated_at?: string;
         };
         Update: {
           comment?: string;
@@ -717,6 +728,10 @@ export type Database = {
           id?: string;
           task_id?: string;
           user_id?: string;
+          parent_comment_id?: string | null;
+          attachment?: Json | null;
+          edited_at?: string | null;
+          updated_at?: string;
         };
         Relationships: [
           {
@@ -726,7 +741,83 @@ export type Database = {
             referencedRelation: "tasks";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "task_comments_parent_comment_id_fkey";
+            columns: ["parent_comment_id"];
+            isOneToOne: false;
+            referencedRelation: "task_comments";
+            referencedColumns: ["id"];
+          }
         ];
+      };
+      comment_mentions: {
+        Row: {
+          id: string;
+          comment_id: string;
+          mentioned_user_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          comment_id: string;
+          mentioned_user_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          comment_id?: string;
+          mentioned_user_id?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      task_team_leads: {
+        Row: {
+          task_id: string;
+          user_id: string;
+          assigned_at: string;
+        };
+        Insert: {
+          task_id: string;
+          user_id: string;
+          assigned_at?: string;
+        };
+        Update: {
+          task_id?: string;
+          user_id?: string;
+          assigned_at?: string;
+        };
+        Relationships: [];
+      };
+      task_activity_logs: {
+        Row: {
+          id: string;
+          task_id: string;
+          user_id: string | null;
+          action: string;
+          old_value: Json | null;
+          new_value: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          task_id: string;
+          user_id?: string | null;
+          action: string;
+          old_value?: Json | null;
+          new_value?: Json | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          task_id?: string;
+          user_id?: string | null;
+          action?: string;
+          old_value?: Json | null;
+          new_value?: Json | null;
+          created_at?: string;
+        };
+        Relationships: [];
       };
       task_progress_updates: {
         Row: {
@@ -1046,7 +1137,7 @@ export type Database = {
       };
     };
     Enums: {
-      app_role: "super_admin" | "admin" | "hr_manager" | "employee" | "viewer";
+      app_role: "super_admin" | "admin" | "hr_manager" | "employee" | "viewer" | "team_lead";
       approval_status: "pending" | "approved" | "rejected" | "suspended";
       attendance_status:
         | "present"
@@ -1194,7 +1285,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["super_admin", "admin", "hr_manager", "employee", "viewer"],
+      app_role: ["super_admin", "admin", "hr_manager", "employee", "viewer", "team_lead"],
       approval_status: ["pending", "approved", "rejected", "suspended"],
       attendance_status: ["present", "late", "absent", "leave", "half_day", "wfh", "holiday", "weekend"],
       leave_status: ["pending", "approved", "rejected", "cancelled"],

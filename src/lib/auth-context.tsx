@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback 
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "super_admin" | "admin" | "hr_manager" | "employee" | "viewer";
+export type AppRole = "super_admin" | "admin" | "hr_manager" | "employee" | "viewer" | "team_lead";
 export type ApprovalStatus = "pending" | "approved" | "rejected" | "suspended";
 
 export interface Profile {
@@ -31,6 +31,7 @@ interface AuthState {
   roles: AppRole[];
   loading: boolean;
   isAdmin: boolean;
+  isTeamLead: boolean;
   isApproved: boolean;
   refresh: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -86,6 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadProfile]);
 
   const isAdmin = roles.some((r) => r === "super_admin" || r === "admin" || r === "hr_manager");
+  const isTeamLead = roles.some((r) => r === "team_lead");
   const isApproved = profile?.approval_status === "approved" && !profile?.is_suspended;
 
   const signOut = async () => {
@@ -96,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, session, profile, roles, loading, isAdmin, isApproved, refresh, signOut }}
+      value={{ user, session, profile, roles, loading, isAdmin, isTeamLead, isApproved, refresh, signOut }}
     >
       {children}
     </AuthContext.Provider>
