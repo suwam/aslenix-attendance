@@ -24,6 +24,7 @@ import {
   formatNepaliDate,
 } from "@/lib/nepali-calendar";
 import { isWeeklyOffDate } from "@/lib/weekly-off";
+import logoMarkUrl from "@/assets/aslenix-mark.png";
 
 export const Route = createFileRoute("/_app/admin/reports")({ component: ReportsPage });
 
@@ -275,12 +276,40 @@ function ReportsPage() {
       </div>
 
       <div className="hidden print:block mb-8">
-        <h1 className="text-3xl font-black uppercase tracking-tight">
-          Attendance of {period === "monthly" ? monthRange?.label || bsMonth : period === "weekly" ? `${formatNepaliDate(weekStart, "DD MMMM")} - ${formatNepaliDate(weekEnd, "DD MMMM YYYY")} BS` : bsDate}
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Generated on {format(new Date(), "MMM d, yyyy 'at' h:mm a")}
-        </p>
+        {/* Letterhead */}
+        <div className="flex justify-between items-start mb-6">
+          <div className="flex flex-col items-center justify-center flex-1 mt-6 mr-10">
+            <h1 className="text-[3.25rem] leading-none font-black tracking-[0.3em] text-black font-serif">
+              A S L E N I X
+            </h1>
+            <p className="text-[1.1rem] font-bold tracking-[0.4em] text-black mt-4">
+              T E C H & S O L U T I O N
+            </p>
+          </div>
+          
+          <div className="flex flex-col items-center shrink-0">
+            <div className="font-bold text-[15px] mb-2 text-black" style={{ fontFamily: "serif" }}>PAN No: 623611557</div>
+            <div className="flex flex-col items-center">
+              <img src={logoMarkUrl} alt="Logo" className="w-[88px] h-[88px] object-contain" />
+              <span className="text-[#1065F5] font-black tracking-widest uppercase text-xl">ASLENIX</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="text-[15px] font-bold text-black border-b-[1.5px] border-black pb-2 mb-2 flex flex-col gap-3" style={{ fontFamily: "serif" }}>
+          <div className="ml-2">Reg No: 391840/82/83</div>
+          <div className="flex justify-between items-center ml-2 mr-2">
+            <div>Ref No: ASL-{new Date().getFullYear()}-125</div>
+            <div>DATE: {formatBsInput()}</div>
+          </div>
+        </div>
+        
+        {/* Report Title */}
+        <div className="text-center mt-8 mb-4">
+          <h2 className="text-xl font-bold uppercase underline underline-offset-4 decoration-2">
+            ATTENDANCE OF {period === "monthly" ? monthRange?.label || bsMonth : period === "weekly" ? `${formatNepaliDate(weekStart, "DD MMMM")} - ${formatNepaliDate(weekEnd, "DD MMMM YYYY")} BS` : bsDate}
+          </h2>
+        </div>
       </div>
 
       <GlassCard className="mb-5 print:hidden">
