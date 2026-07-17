@@ -279,10 +279,10 @@ function ReportsPage() {
         {/* Letterhead */}
         <div className="flex justify-between items-start mb-6">
           <div className="flex flex-col items-center justify-center flex-1 mt-6 mr-10">
-            <h1 className="text-[3.25rem] leading-none font-black tracking-[0.3em] text-black font-serif">
+            <h1 className="text-[3.25rem] leading-none font-black tracking-[0.3em] text-black font-serif whitespace-nowrap">
               A S L E N I X
             </h1>
-            <p className="text-[1.1rem] font-bold tracking-[0.4em] text-black mt-4">
+            <p className="text-[1.1rem] font-bold tracking-[0.4em] text-black mt-4 whitespace-nowrap">
               T E C H & S O L U T I O N
             </p>
           </div>
@@ -296,12 +296,9 @@ function ReportsPage() {
           </div>
         </div>
         
-        <div className="text-[15px] font-bold text-black border-b-[1.5px] border-black pb-2 mb-2 flex flex-col gap-3" style={{ fontFamily: "serif" }}>
-          <div className="ml-2">Reg No: 391840/82/83</div>
-          <div className="flex justify-between items-center ml-2 mr-2">
-            <div>Ref No: ASL-{new Date().getFullYear()}-125</div>
-            <div>DATE: {formatBsInput()}</div>
-          </div>
+        <div className="text-[15px] font-bold text-black border-b-[1.5px] border-black pb-2 mb-2 flex justify-between items-center px-2" style={{ fontFamily: "serif" }}>
+          <div>Reg No: 391840/82/83</div>
+          <div>DATE: {formatBsInput()}</div>
         </div>
         
         {/* Report Title */}
