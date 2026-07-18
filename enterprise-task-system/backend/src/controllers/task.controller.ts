@@ -14,7 +14,14 @@ import { canManageTasks, type AuthRequest } from "../middleware/auth";
 import { logTaskActivity } from "../services/activity.service";
 import { notifyAdmins } from "../services/notification.service";
 
-const ADMIN_PATCH_FIELDS = ["title", "description", "deadline", "priority", "assignedTo", "status"] as const;
+const ADMIN_PATCH_FIELDS = [
+  "title",
+  "description",
+  "deadline",
+  "priority",
+  "assignedTo",
+  "status",
+] as const;
 
 function assertObjectId(id: string) {
   return Types.ObjectId.isValid(id);
@@ -62,7 +69,8 @@ export async function createTask(req: AuthRequest, res: Response) {
   const deadline = normalizeDeadline(req.body.deadline);
 
   if (!title) return res.status(422).json({ message: "Task title is required" });
-  if (!assertObjectId(assignedTo)) return res.status(422).json({ message: "Assigned employee is required" });
+  if (!assertObjectId(assignedTo))
+    return res.status(422).json({ message: "Assigned employee is required" });
   if (req.body.priority && !TASK_PRIORITIES.includes(req.body.priority)) {
     return res.status(422).json({ message: "Invalid priority" });
   }
@@ -113,9 +121,13 @@ export async function adminUpdateTask(req: AuthRequest, res: Response) {
   const task = await Task.findById(req.params.taskId);
   if (!task) return res.status(404).json({ message: "Task not found" });
 
-  const unknownFields = Object.keys(req.body).filter((key) => !ADMIN_PATCH_FIELDS.includes(key as never));
+  const unknownFields = Object.keys(req.body).filter(
+    (key) => !ADMIN_PATCH_FIELDS.includes(key as never),
+  );
   if (unknownFields.length) {
-    return res.status(422).json({ message: `Unsupported task fields: ${unknownFields.join(", ")}` });
+    return res
+      .status(422)
+      .json({ message: `Unsupported task fields: ${unknownFields.join(", ")}` });
   }
 
   const oldStatus = task.status;
@@ -130,11 +142,13 @@ export async function adminUpdateTask(req: AuthRequest, res: Response) {
   }
   if (req.body.description !== undefined) task.description = String(req.body.description || "");
   if (req.body.priority !== undefined) {
-    if (!TASK_PRIORITIES.includes(req.body.priority)) return res.status(422).json({ message: "Invalid priority" });
+    if (!TASK_PRIORITIES.includes(req.body.priority))
+      return res.status(422).json({ message: "Invalid priority" });
     task.priority = req.body.priority;
   }
   if (req.body.assignedTo !== undefined) {
-    if (!assertObjectId(String(req.body.assignedTo))) return res.status(422).json({ message: "Invalid assignee" });
+    if (!assertObjectId(String(req.body.assignedTo)))
+      return res.status(422).json({ message: "Invalid assignee" });
     task.assignedTo = req.body.assignedTo;
   }
   if (req.body.deadline !== undefined) {
@@ -145,7 +159,9 @@ export async function adminUpdateTask(req: AuthRequest, res: Response) {
   if (req.body.status !== undefined) {
     if (!isValidStatus(req.body.status)) return res.status(422).json({ message: "Invalid status" });
     if (!assertAdminTransition(oldStatus, req.body.status)) {
-      return res.status(422).json({ message: `Cannot move task from ${oldStatus} to ${req.body.status}` });
+      return res
+        .status(422)
+        .json({ message: `Cannot move task from ${oldStatus} to ${req.body.status}` });
     }
     task.status = req.body.status;
   }
@@ -211,7 +227,9 @@ export async function employeeUpdateProgress(req: AuthRequest, res: Response) {
     return res.status(403).json({ message: "Only the assigned employee can update progress" });
   }
   if (["approved", "completed"].includes(task.status)) {
-    return res.status(422).json({ message: "Approved or completed tasks cannot be updated by employees" });
+    return res
+      .status(422)
+      .json({ message: "Approved or completed tasks cannot be updated by employees" });
   }
 
   const nextProgress = Number(req.body.progress);
@@ -316,7 +334,9 @@ export async function reviewTask(req: AuthRequest, res: Response) {
     return res.status(422).json({ message: "Decision must be approve or reject" });
   }
   if (task.status !== "ready_for_review") {
-    return res.status(422).json({ message: "Only tasks ready for review can be approved or rejected" });
+    return res
+      .status(422)
+      .json({ message: "Only tasks ready for review can be approved or rejected" });
   }
 
   const oldStatus = task.status;

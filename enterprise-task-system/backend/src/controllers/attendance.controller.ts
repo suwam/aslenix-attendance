@@ -58,7 +58,8 @@ export async function breakStart(req: AuthRequest, res: Response) {
     { $push: { breaks: { startedAt: new Date(), endedAt: null } } },
     { new: true },
   );
-  if (!record) return res.status(422).json({ message: "Active attendance is required to start a break" });
+  if (!record)
+    return res.status(422).json({ message: "Active attendance is required to start a break" });
 
   await logAllowed(req);
   return res.json({ attendance: record });

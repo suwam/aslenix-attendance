@@ -115,62 +115,100 @@ export function BSDateInput({
             <CalendarDays size={16} />
           </button>
         </PopoverTrigger>
-        <PopoverContent align="end" sideOffset={10} collisionPadding={16} className={pickerPanelClass}>
+        <PopoverContent
+          align="end"
+          sideOffset={10}
+          collisionPadding={16}
+          className={pickerPanelClass}
+        >
           <div className="p-4">
             <div className="mb-4 flex items-center justify-between gap-2">
-            <Button type="button" variant="ghost" size="icon" className={pickerIconButtonClass} onClick={() => moveMonth(-1)}>
-              <ChevronLeft size={16} />
-            </Button>
-            <div className="text-center">
-              <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-muted-foreground">BS Calendar</div>
-              <div className="mt-1 text-base font-extrabold tabular-nums text-foreground">{monthLabel} BS</div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className={pickerIconButtonClass}
+                onClick={() => moveMonth(-1)}
+              >
+                <ChevronLeft size={16} />
+              </Button>
+              <div className="text-center">
+                <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-muted-foreground">
+                  BS Calendar
+                </div>
+                <div className="mt-1 text-base font-extrabold tabular-nums text-foreground">
+                  {monthLabel} BS
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className={pickerIconButtonClass}
+                onClick={() => moveMonth(1)}
+              >
+                <ChevronRight size={16} />
+              </Button>
             </div>
-            <Button type="button" variant="ghost" size="icon" className={pickerIconButtonClass} onClick={() => moveMonth(1)}>
-              <ChevronRight size={16} />
-            </Button>
-          </div>
-          <div className={cn("grid grid-cols-7 gap-1 p-2 text-center text-[11px] font-bold uppercase tracking-wider text-muted-foreground", pickerSectionClass)}>
-            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
-              <div key={day} className="py-1">{day}</div>
-            ))}
-          </div>
-          <div className={cn("mt-2 grid grid-cols-7 gap-1 p-2", pickerSectionClass)}>
-            {Array.from({ length: days.firstWeekday }).map((_, index) => (
-              <div key={`blank-${index}`} className="h-9" />
-            ))}
-            {Array.from({ length: days.totalDays }).map((_, index) => {
-              const day = index + 1;
-              const isSelected =
-                selected?.getYear() === viewMonth.year &&
-                selected?.getMonth() === viewMonth.month &&
-                selected?.getDate() === day;
-              const isToday = formatBsInput() === formatBsParts(viewMonth.year, viewMonth.month, day);
-
-              return (
-                <button
-                  key={day}
-                  type="button"
-                  onClick={() => selectDate(day)}
-                  className={cn(
-                    "grid h-9 place-items-center rounded-xl text-sm font-extrabold tabular-nums transition",
-                    "hover:bg-accent hover:text-accent-foreground",
-                    isSelected
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-foreground",
-                    !isSelected && isToday && "border border-primary/40 bg-primary/10 text-primary",
-                  )}
-                >
+            <div
+              className={cn(
+                "grid grid-cols-7 gap-1 p-2 text-center text-[11px] font-bold uppercase tracking-wider text-muted-foreground",
+                pickerSectionClass,
+              )}
+            >
+              {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
+                <div key={day} className="py-1">
                   {day}
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-            <span className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">Nepali date picker</span>
-            <Button type="button" variant="outline" className="h-9 rounded-xl px-4 text-xs font-bold" onClick={selectToday}>
-              Today
-            </Button>
-          </div>
+                </div>
+              ))}
+            </div>
+            <div className={cn("mt-2 grid grid-cols-7 gap-1 p-2", pickerSectionClass)}>
+              {Array.from({ length: days.firstWeekday }).map((_, index) => (
+                <div key={`blank-${index}`} className="h-9" />
+              ))}
+              {Array.from({ length: days.totalDays }).map((_, index) => {
+                const day = index + 1;
+                const isSelected =
+                  selected?.getYear() === viewMonth.year &&
+                  selected?.getMonth() === viewMonth.month &&
+                  selected?.getDate() === day;
+                const isToday =
+                  formatBsInput() === formatBsParts(viewMonth.year, viewMonth.month, day);
+
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => selectDate(day)}
+                    className={cn(
+                      "grid h-9 place-items-center rounded-xl text-sm font-extrabold tabular-nums transition",
+                      "hover:bg-accent hover:text-accent-foreground",
+                      isSelected
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-foreground",
+                      !isSelected &&
+                        isToday &&
+                        "border border-primary/40 bg-primary/10 text-primary",
+                    )}
+                  >
+                    {day}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                Nepali date picker
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-9 rounded-xl px-4 text-xs font-bold"
+                onClick={selectToday}
+              >
+                Today
+              </Button>
+            </div>
           </div>
         </PopoverContent>
       </Popover>
@@ -224,50 +262,79 @@ export function BSMonthInput({
             <CalendarDays size={16} />
           </button>
         </PopoverTrigger>
-        <PopoverContent align="end" sideOffset={10} collisionPadding={16} className={pickerPanelClass}>
+        <PopoverContent
+          align="end"
+          sideOffset={10}
+          collisionPadding={16}
+          className={pickerPanelClass}
+        >
           <div className="relative p-4">
-          <div className="mb-4 flex items-center justify-between gap-2">
-            <Button type="button" variant="ghost" size="icon" className={pickerIconButtonClass} onClick={() => setViewYear((year) => year - 1)}>
-              <ChevronLeft size={16} />
-            </Button>
-            <div className="text-center">
-              <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-muted-foreground">BS Month</div>
-              <div className="mt-1 text-base font-extrabold tabular-nums text-foreground">{viewYear} BS</div>
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className={pickerIconButtonClass}
+                onClick={() => setViewYear((year) => year - 1)}
+              >
+                <ChevronLeft size={16} />
+              </Button>
+              <div className="text-center">
+                <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-muted-foreground">
+                  BS Month
+                </div>
+                <div className="mt-1 text-base font-extrabold tabular-nums text-foreground">
+                  {viewYear} BS
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className={pickerIconButtonClass}
+                onClick={() => setViewYear((year) => year + 1)}
+              >
+                <ChevronRight size={16} />
+              </Button>
             </div>
-            <Button type="button" variant="ghost" size="icon" className={pickerIconButtonClass} onClick={() => setViewYear((year) => year + 1)}>
-              <ChevronRight size={16} />
-            </Button>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            {NEPALI_MONTH_NAMES.map((monthName, month) => {
-              const isSelected = selected?.year === viewYear && selected.month === month;
-              const isCurrent = currentMonth.getYear() === viewYear && currentMonth.getMonth() === month;
+            <div className="grid grid-cols-3 gap-2">
+              {NEPALI_MONTH_NAMES.map((monthName, month) => {
+                const isSelected = selected?.year === viewYear && selected.month === month;
+                const isCurrent =
+                  currentMonth.getYear() === viewYear && currentMonth.getMonth() === month;
 
-              return (
-                <button
-                  key={monthName}
-                  type="button"
-                  onClick={() => selectMonth(month)}
-                  className={cn(
-                    "rounded-xl border px-2 py-3 text-sm font-bold transition",
-                    "hover:border-primary/40 hover:bg-accent hover:text-accent-foreground",
-                    isSelected
-                      ? "border-transparent bg-primary text-primary-foreground shadow-sm"
-                      : "border-border bg-background text-foreground",
-                    !isSelected && isCurrent && "border-primary/50 text-primary",
-                  )}
-                >
-                  {monthName}
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-            <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Nepali month picker</span>
-            <Button type="button" variant="outline" className="h-9 rounded-xl border-border bg-card px-4 text-xs font-bold hover:bg-cyan-400/10 hover:text-cyan-100" onClick={selectCurrentMonth}>
-              This month
-            </Button>
-          </div>
+                return (
+                  <button
+                    key={monthName}
+                    type="button"
+                    onClick={() => selectMonth(month)}
+                    className={cn(
+                      "rounded-xl border px-2 py-3 text-sm font-bold transition",
+                      "hover:border-primary/40 hover:bg-accent hover:text-accent-foreground",
+                      isSelected
+                        ? "border-transparent bg-primary text-primary-foreground shadow-sm"
+                        : "border-border bg-background text-foreground",
+                      !isSelected && isCurrent && "border-primary/50 text-primary",
+                    )}
+                  >
+                    {monthName}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+              <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                Nepali month picker
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-9 rounded-xl border-border bg-card px-4 text-xs font-bold hover:bg-cyan-400/10 hover:text-cyan-100"
+                onClick={selectCurrentMonth}
+              >
+                This month
+              </Button>
+            </div>
           </div>
         </PopoverContent>
       </Popover>
@@ -306,7 +373,10 @@ export function BSDateTimeInput({
   return (
     <div className={cn("grid gap-2 sm:grid-cols-[minmax(0,1fr)_118px]", className)}>
       <BSDateInput value={bsDate} onChange={(nextDate) => update(nextDate, time)} />
-      <GlassTimeInput value={time} onChange={(nextTime) => update(bsDate || formatBsInput(), nextTime)} />
+      <GlassTimeInput
+        value={time}
+        onChange={(nextTime) => update(bsDate || formatBsInput(), nextTime)}
+      />
     </div>
   );
 }
@@ -344,14 +414,16 @@ export function GlassTimeInput({
           <Clock size={16} className="text-slate-400" />
         </button>
       </PopoverTrigger>
-      <PopoverContent 
-        align="end" 
+      <PopoverContent
+        align="end"
         className="w-[340px] overflow-hidden rounded-[28px] border border-[#E8ECF3] bg-[#FFFFFF] p-6 shadow-[0_24px_50px_rgba(0,0,0,0.08),0_4px_16px_rgba(0,0,0,0.04)]"
       >
         <div className="relative">
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#7A8599]">Time</div>
+              <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#7A8599]">
+                Time
+              </div>
               <div className="mt-1 text-[38px] font-extrabold tabular-nums tracking-tight text-[#1A1A1A] leading-none">
                 {hourValue}:{minuteValue}
               </div>
@@ -361,13 +433,23 @@ export function GlassTimeInput({
             </div>
           </div>
           <div className="flex gap-4">
-            <TimeColumn label="Hour" values={hours} selected={hourValue} onSelect={(hour) => select(hour, minuteValue)} />
-            <TimeColumn label="Minute" values={minutes} selected={minuteValue} onSelect={(minute) => select(hourValue, minute)} />
+            <TimeColumn
+              label="Hour"
+              values={hours}
+              selected={hourValue}
+              onSelect={(hour) => select(hour, minuteValue)}
+            />
+            <TimeColumn
+              label="Minute"
+              values={minutes}
+              selected={minuteValue}
+              onSelect={(minute) => select(hourValue, minute)}
+            />
           </div>
           <div className="mt-6 pt-2">
-            <Button 
-              type="button" 
-              className="h-[52px] w-full rounded-2xl bg-gradient-to-r from-[#00D2FF] to-[#FF4DA6] text-base font-bold text-white shadow-[0_8px_20px_rgba(255,77,166,0.25)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(255,77,166,0.35)] active:scale-[0.98]" 
+            <Button
+              type="button"
+              className="h-[52px] w-full rounded-2xl bg-gradient-to-r from-[#00D2FF] to-[#FF4DA6] text-base font-bold text-white shadow-[0_8px_20px_rgba(255,77,166,0.25)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_24px_rgba(255,77,166,0.35)] active:scale-[0.98]"
               onClick={() => setOpen(false)}
             >
               Done
@@ -403,15 +485,16 @@ function TimeColumn({
       if (idx !== -1) {
         isProgrammaticScroll.current = true;
         scrollRef.current.scrollTop = idx * ITEM_HEIGHT;
-        setTimeout(() => { isProgrammaticScroll.current = false; }, 100);
+        setTimeout(() => {
+          isProgrammaticScroll.current = false;
+        }, 100);
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, values]);
 
   const handleScroll = () => {
     if (!scrollRef.current) return;
-    
+
     const idx = Math.round(scrollRef.current.scrollTop / ITEM_HEIGHT);
     const validIdx = Math.max(0, Math.min(values.length - 1, idx));
     const newValue = values[validIdx];
@@ -436,27 +519,32 @@ function TimeColumn({
       scrollRef.current.scrollTo({ top: idx * ITEM_HEIGHT, behavior: "smooth" });
       setInternalValue(value);
       onSelect(value);
-      setTimeout(() => { isProgrammaticScroll.current = false; }, 400);
+      setTimeout(() => {
+        isProgrammaticScroll.current = false;
+      }, 400);
     }
   };
 
   return (
     <div className="flex flex-col items-center flex-1">
-      <div className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#7A8599] mb-3">{label}</div>
-      <div 
-        className="relative w-full h-[220px] rounded-[24px] bg-[#F7F8FC] overflow-hidden" 
-        style={{ 
-          maskImage: 'linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)', 
-          WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)' 
+      <div className="text-[11px] font-bold uppercase tracking-[0.25em] text-[#7A8599] mb-3">
+        {label}
+      </div>
+      <div
+        className="relative w-full h-[220px] rounded-[24px] bg-[#F7F8FC] overflow-hidden"
+        style={{
+          maskImage: "linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)",
+          WebkitMaskImage:
+            "linear-gradient(to bottom, transparent, black 30%, black 70%, transparent)",
         }}
       >
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[44px] bg-[#FFFFFF] shadow-[0_2px_8px_rgba(0,0,0,0.04)] rounded-xl pointer-events-none" />
-        
-        <div 
+
+        <div
           ref={scrollRef}
           onScroll={handleScroll}
           className="h-full w-full overflow-y-auto relative z-10 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-          style={{ paddingBottom: '88px', paddingTop: '88px', scrollSnapType: 'y mandatory' }}
+          style={{ paddingBottom: "88px", paddingTop: "88px", scrollSnapType: "y mandatory" }}
         >
           {values.map((value) => {
             const isSelected = internalValue === value;
@@ -465,14 +553,16 @@ function TimeColumn({
                 key={value}
                 onClick={() => handleItemClick(value)}
                 className="h-[44px] w-full flex items-center justify-center cursor-pointer"
-                style={{ scrollSnapAlign: 'center' }}
+                style={{ scrollSnapAlign: "center" }}
               >
-                <div className={cn(
-                  "flex items-center justify-center transition-all duration-300",
-                  isSelected 
-                    ? "w-[64px] h-[36px] bg-gradient-to-r from-[#00D2FF] to-[#FF4DA6] rounded-full shadow-[0_4px_14px_rgba(255,77,166,0.25)] text-[#FFFFFF] font-bold text-[19px] scale-110" 
-                    : "text-[#7A8599] font-medium text-[17px] opacity-60 scale-95 hover:opacity-100 hover:scale-100"
-                )}>
+                <div
+                  className={cn(
+                    "flex items-center justify-center transition-all duration-300",
+                    isSelected
+                      ? "w-[64px] h-[36px] bg-gradient-to-r from-[#00D2FF] to-[#FF4DA6] rounded-full shadow-[0_4px_14px_rgba(255,77,166,0.25)] text-[#FFFFFF] font-bold text-[19px] scale-110"
+                      : "text-[#7A8599] font-medium text-[17px] opacity-60 scale-95 hover:opacity-100 hover:scale-100",
+                  )}
+                >
                   {value}
                 </div>
               </div>
@@ -523,7 +613,10 @@ function formatBsMonthParts(year: number, month: number) {
 }
 
 function formatTimeParts(date: Date) {
-  return [String(date.getHours()).padStart(2, "0"), String(date.getMinutes()).padStart(2, "0")].join(":");
+  return [
+    String(date.getHours()).padStart(2, "0"),
+    String(date.getMinutes()).padStart(2, "0"),
+  ].join(":");
 }
 
 function parseTimeInput(value: string) {

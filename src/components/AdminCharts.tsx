@@ -135,7 +135,8 @@ export default function AdminCharts({
       wfh,
       absent,
       totalEmployees,
-      attendancePct: row.attendancePct ?? (totalEmployees ? Math.round((attended / totalEmployees) * 100) : 0),
+      attendancePct:
+        row.attendancePct ?? (totalEmployees ? Math.round((attended / totalEmployees) * 100) : 0),
       noData: row.noData ?? totalEmployees === 0,
     };
   });
@@ -143,7 +144,9 @@ export default function AdminCharts({
   const departmentRows = makeDepartmentRows(deptData);
   const departmentTotal = departmentRows.reduce((sum, row) => sum + row.value, 0);
   const activityItems = groupActivityItems(activity.map(normalizeActivityItem));
-  const filteredActivityItems = activityItems.filter((item) => activityFilter === "all" || item.category === activityFilter);
+  const filteredActivityItems = activityItems.filter(
+    (item) => activityFilter === "all" || item.category === activityFilter,
+  );
   const activitySummary = summarizeActivities(activityItems);
 
   return (
@@ -153,21 +156,31 @@ export default function AdminCharts({
           <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="text-lg font-semibold">Weekly attendance</h3>
-              <p className="mt-1 text-xs text-muted-foreground">Current BS month, up to the last 7 days</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Current BS month, up to the last 7 days
+              </p>
             </div>
             <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-100">
               Live HRMS
             </span>
           </div>
           <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-            <WeeklySummaryTile label="Avg attendance" value={`${summary.avgAttendance}%`} tone="blue" />
+            <WeeklySummaryTile
+              label="Avg attendance"
+              value={`${summary.avgAttendance}%`}
+              tone="blue"
+            />
             <WeeklySummaryTile label="Total present" value={summary.present} tone="present" />
             <WeeklySummaryTile label="Total late" value={summary.late} tone="late" />
             <WeeklySummaryTile label="Total WFH" value={summary.wfh} tone="wfh" />
           </div>
         </div>
         <ResponsiveContainer width="100%" height={280}>
-          <ComposedChart data={weeklyRows} margin={{ top: 18, right: 10, left: -18, bottom: 8 }} barCategoryGap="28%">
+          <ComposedChart
+            data={weeklyRows}
+            margin={{ top: 18, right: 10, left: -18, bottom: 8 }}
+            barCategoryGap="28%"
+          >
             <defs>
               <linearGradient id="presentBar" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#93c5fd" />
@@ -186,7 +199,13 @@ export default function AdminCharts({
                 <stop offset="100%" stopColor={ATTENDANCE_COLORS.absent} />
               </linearGradient>
               <filter id="todayGlow" x="-50%" y="-50%" width="200%" height="200%">
-                <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#67e8f9" floodOpacity="0.55" />
+                <feDropShadow
+                  dx="0"
+                  dy="0"
+                  stdDeviation="4"
+                  floodColor="#67e8f9"
+                  floodOpacity="0.55"
+                />
               </filter>
             </defs>
             <CartesianGrid vertical={false} stroke="oklch(1 0 0 / 0.07)" strokeDasharray="4 8" />
@@ -206,21 +225,75 @@ export default function AdminCharts({
               tickMargin={8}
               allowDecimals={false}
             />
-            <Tooltip cursor={{ fill: "oklch(1 0 0 / 0.045)", radius: 12 }} content={<WeeklyAttendanceTooltip />} />
-            <Bar dataKey="present" stackId="attendance" fill="url(#presentBar)" radius={[0, 0, 7, 7]} isAnimationActive animationDuration={650}>
-              {weeklyRows.map((entry) => <Cell key={`present-${entry.day}`} className="transition-opacity duration-200 hover:opacity-90" filter={entry.isToday ? "url(#todayGlow)" : undefined} />)}
+            <Tooltip
+              cursor={{ fill: "oklch(1 0 0 / 0.045)", radius: 12 }}
+              content={<WeeklyAttendanceTooltip />}
+            />
+            <Bar
+              dataKey="present"
+              stackId="attendance"
+              fill="url(#presentBar)"
+              radius={[0, 0, 7, 7]}
+              isAnimationActive
+              animationDuration={650}
+            >
+              {weeklyRows.map((entry) => (
+                <Cell
+                  key={`present-${entry.day}`}
+                  className="transition-opacity duration-200 hover:opacity-90"
+                  filter={entry.isToday ? "url(#todayGlow)" : undefined}
+                />
+              ))}
             </Bar>
-            <Bar dataKey="late" stackId="attendance" fill="url(#lateBar)" radius={[0, 0, 0, 0]} isAnimationActive animationDuration={700}>
-              {weeklyRows.map((entry) => <Cell key={`late-${entry.day}`} filter={entry.isToday ? "url(#todayGlow)" : undefined} />)}
+            <Bar
+              dataKey="late"
+              stackId="attendance"
+              fill="url(#lateBar)"
+              radius={[0, 0, 0, 0]}
+              isAnimationActive
+              animationDuration={700}
+            >
+              {weeklyRows.map((entry) => (
+                <Cell
+                  key={`late-${entry.day}`}
+                  filter={entry.isToday ? "url(#todayGlow)" : undefined}
+                />
+              ))}
             </Bar>
-            <Bar dataKey="wfh" stackId="attendance" fill="url(#wfhBar)" radius={[0, 0, 0, 0]} isAnimationActive animationDuration={760}>
-              {weeklyRows.map((entry) => <Cell key={`wfh-${entry.day}`} filter={entry.isToday ? "url(#todayGlow)" : undefined} />)}
+            <Bar
+              dataKey="wfh"
+              stackId="attendance"
+              fill="url(#wfhBar)"
+              radius={[0, 0, 0, 0]}
+              isAnimationActive
+              animationDuration={760}
+            >
+              {weeklyRows.map((entry) => (
+                <Cell
+                  key={`wfh-${entry.day}`}
+                  filter={entry.isToday ? "url(#todayGlow)" : undefined}
+                />
+              ))}
             </Bar>
-            <Bar dataKey="absent" stackId="attendance" fill="url(#absentBar)" radius={[7, 7, 0, 0]} minPointSize={weeklyRows.some((row) => row.noData) ? 3 : 0} isAnimationActive animationDuration={820}>
+            <Bar
+              dataKey="absent"
+              stackId="attendance"
+              fill="url(#absentBar)"
+              radius={[7, 7, 0, 0]}
+              minPointSize={weeklyRows.some((row) => row.noData) ? 3 : 0}
+              isAnimationActive
+              animationDuration={820}
+            >
               {weeklyRows.map((entry) => (
                 <Cell
                   key={`absent-${entry.day}`}
-                  stroke={entry.isToday ? "rgba(255,255,255,0.75)" : entry.noData ? "rgba(255,255,255,0.22)" : "transparent"}
+                  stroke={
+                    entry.isToday
+                      ? "rgba(255,255,255,0.75)"
+                      : entry.noData
+                        ? "rgba(255,255,255,0.22)"
+                        : "transparent"
+                  }
                   strokeWidth={entry.isToday ? 1.5 : entry.noData ? 1 : 0}
                   strokeDasharray={entry.noData ? "3 3" : undefined}
                   filter={entry.isToday ? "url(#todayGlow)" : undefined}
@@ -267,10 +340,20 @@ export default function AdminCharts({
         ) : (
           <>
             <ResponsiveContainer width="100%" height={248}>
-              <PieChart role="img" aria-label={`Department distribution chart with ${departmentTotal} employees`}>
+              <PieChart
+                role="img"
+                aria-label={`Department distribution chart with ${departmentTotal} employees`}
+              >
                 <defs>
                   {departmentRows.map((row) => (
-                    <linearGradient key={row.gradientId} id={row.gradientId} x1="0" y1="0" x2="1" y2="1">
+                    <linearGradient
+                      key={row.gradientId}
+                      id={row.gradientId}
+                      x1="0"
+                      y1="0"
+                      x2="1"
+                      y2="1"
+                    >
                       <stop offset="0%" stopColor={lightenHex(row.color, 28)} />
                       <stop offset="58%" stopColor={row.color} />
                       <stop offset="100%" stopColor={darkenHex(row.color, 10)} />
@@ -304,18 +387,39 @@ export default function AdminCharts({
                       stroke="rgba(8,13,28,0.88)"
                       strokeWidth={activeDepartmentIndex === i ? 4 : 3}
                       style={{
-                        filter: activeDepartmentIndex === i ? `drop-shadow(0 0 14px ${row.color}66)` : `drop-shadow(0 0 7px ${row.color}24)`,
+                        filter:
+                          activeDepartmentIndex === i
+                            ? `drop-shadow(0 0 14px ${row.color}66)`
+                            : `drop-shadow(0 0 7px ${row.color}24)`,
                         transition: "filter 180ms ease, opacity 180ms ease",
-                        opacity: activeDepartmentIndex == null || activeDepartmentIndex === i ? 1 : 0.58,
+                        opacity:
+                          activeDepartmentIndex == null || activeDepartmentIndex === i ? 1 : 0.58,
                         outline: "none",
                       }}
                     />
                   ))}
                 </Pie>
-                <text x="50%" y="47%" textAnchor="middle" dominantBaseline="middle" fill="#f1f0ee" fontSize="30" fontWeight="800">
+                <text
+                  x="50%"
+                  y="47%"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill="#f1f0ee"
+                  fontSize="30"
+                  fontWeight="800"
+                >
                   {departmentTotal}
                 </text>
-                <text x="50%" y="59%" textAnchor="middle" dominantBaseline="middle" fill="rgba(226,232,240,0.62)" fontSize="11" fontWeight="700" letterSpacing="0.8">
+                <text
+                  x="50%"
+                  y="59%"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill="rgba(226,232,240,0.62)"
+                  fontSize="11"
+                  fontWeight="700"
+                  letterSpacing="0.8"
+                >
                   Employees
                 </text>
                 <Tooltip content={<DepartmentTooltip />} />
@@ -346,14 +450,20 @@ export default function AdminCharts({
                       style={{ backgroundColor: department.color, color: department.color }}
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-xs font-bold text-muted-foreground">{department.name}</span>
+                      <span className="block truncate text-xs font-bold text-muted-foreground">
+                        {department.name}
+                      </span>
                       <span className="mt-0.5 block text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                         {department.percentage}% of workforce
                       </span>
                     </span>
                     <span className="text-right">
-                      <span className="block text-sm font-extrabold tabular-nums text-foreground">{department.value}</span>
-                      <span className="block text-[10px] font-semibold text-muted-foreground">Employees</span>
+                      <span className="block text-sm font-extrabold tabular-nums text-foreground">
+                        {department.value}
+                      </span>
+                      <span className="block text-[10px] font-semibold text-muted-foreground">
+                        Employees
+                      </span>
                     </span>
                   </button>
                 );
@@ -388,8 +498,8 @@ export default function AdminCharts({
                 onClick={() => setActivityFilter(filter.value)}
                 className={`rounded-full border px-3 py-1.5 text-[11px] font-bold transition-all duration-200 ${
                   activityFilter === filter.value
-                    ? "border-cyan-300/35 bg-cyan-300/12 text-cyan-100 shadow-[0_0_18px_rgba(103,232,249,0.14)]"
-                    : "border-border bg-card text-muted-foreground hover:border-border hover:bg-card hover:text-muted-foreground"
+                    ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-700 shadow-[0_0_18px_rgba(6,182,212,0.14)]"
+                    : "border-slate-200 bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700"
                 }`}
               >
                 {filter.label}
@@ -401,7 +511,7 @@ export default function AdminCharts({
           <div className="text-sm text-muted-foreground py-8 text-center">No activity yet</div>
         ) : (
           <div className="max-h-[28rem] overflow-y-auto pr-2 [scrollbar-color:rgba(103,232,249,0.35)_rgba(255,255,255,0.06)] [scrollbar-width:thin]">
-            <ul className="relative space-y-3 before:absolute before:left-[1.18rem] before:top-4 before:h-[calc(100%-2rem)] before:w-px before:bg-gradient-to-b before:from-cyan-300/30 before:via-[#f1f0ee]/10 before:to-transparent">
+            <ul className="relative space-y-3 before:absolute before:left-[1.18rem] before:top-4 before:h-[calc(100%-2rem)] before:w-px before:bg-gradient-to-b before:from-cyan-500/20 before:via-slate-200 before:to-transparent">
               {filteredActivityItems.length ? (
                 filteredActivityItems.map((item, index) => (
                   <ActivityTimelineItem
@@ -438,7 +548,10 @@ function summarizeWeeklyAttendance(rows: WeeklyAttendanceDay[]) {
   const wfh = rows.reduce((sum, row) => sum + Number(row.wfh ?? 0), 0);
   const trackedRows = rows.filter((row) => Number(row.totalEmployees ?? 0) > 0);
   const avgAttendance = trackedRows.length
-    ? Math.round(trackedRows.reduce((sum, row) => sum + Number(row.attendancePct ?? 0), 0) / trackedRows.length)
+    ? Math.round(
+        trackedRows.reduce((sum, row) => sum + Number(row.attendancePct ?? 0), 0) /
+          trackedRows.length,
+      )
     : 0;
   return { avgAttendance, present, late, wfh };
 }
@@ -451,12 +564,15 @@ const ACTIVITY_FILTERS: { label: string; value: ActivityFilter }[] = [
   { label: "Employees", value: "employee" },
 ];
 
-const ACTIVITY_META: Record<ActivityKind, {
-  icon: typeof BellDot;
-  color: string;
-  bg: string;
-  label: string;
-}> = {
+const ACTIVITY_META: Record<
+  ActivityKind,
+  {
+    icon: typeof BellDot;
+    color: string;
+    bg: string;
+    label: string;
+  }
+> = {
   attendance_approved: {
     icon: ShieldCheck,
     color: "#22c55e",
@@ -507,11 +623,25 @@ const ACTIVITY_META: Record<ActivityKind, {
   },
 };
 
-function ActivitySummaryPill({ label, value, className = "" }: { label: string; value: number; className?: string }) {
+function ActivitySummaryPill({
+  label,
+  value,
+  className = "",
+}: {
+  label: string;
+  value: number;
+  className?: string;
+}) {
   return (
-    <div className={`rounded-lg border border-border bg-card px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] ${className}`}>
-      <div className="text-[10px] font-semibold uppercase tracking-[0.13em] text-muted-foreground">{label}</div>
-      <div className="mt-1 text-base font-extrabold leading-none text-foreground tabular-nums">{value}</div>
+    <div
+      className={`rounded-lg border border-slate-200 bg-white/50 px-3 py-2 shadow-sm ${className}`}
+    >
+      <div className="text-[10px] font-semibold uppercase tracking-[0.13em] text-slate-500">
+        {label}
+      </div>
+      <div className="mt-1 text-base font-extrabold leading-none text-slate-800 tabular-nums">
+        {value}
+      </div>
     </div>
   );
 }
@@ -539,10 +669,10 @@ function ActivityTimelineItem({
 
   return (
     <li
-      className={`group relative flex gap-4 rounded-xl border p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:bg-card ${
+      className={`group relative flex gap-4 rounded-xl border p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50/50 ${
         newest
-          ? "border-border bg-card shadow-[0_0_30px_rgba(103,232,249,0.08),inset_0_1px_0_rgba(255,255,255,0.08)]"
-          : "border-border bg-card"
+          ? "border-slate-200 bg-white/60 shadow-[0_4px_20px_rgba(0,0,0,0.03)]"
+          : "border-slate-200 bg-white/40"
       }`}
     >
       <div className="relative z-10 flex shrink-0 flex-col items-center">
@@ -554,7 +684,7 @@ function ActivityTimelineItem({
           <Icon size={17} />
         </div>
         <span
-          className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border border-[#0b1020]"
+          className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-white"
           style={{ backgroundColor: priority.color }}
           title={`${priority.label} priority`}
         />
@@ -565,17 +695,21 @@ function ActivityTimelineItem({
             <div className="mb-1 flex flex-wrap items-center gap-2">
               <span
                 className="rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]"
-                style={{ color: meta.color, backgroundColor: meta.bg, borderColor: `${meta.color}38` }}
+                style={{
+                  color: meta.color,
+                  backgroundColor: meta.bg,
+                  borderColor: `${meta.color}38`,
+                }}
               >
                 {item.badge}
               </span>
               {newest && (
-                <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-cyan-100">
+                <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-cyan-600">
                   New
                 </span>
               )}
             </div>
-            <h4 className="truncate text-sm font-bold text-muted-foreground">{groupedTitle}</h4>
+            <h4 className="truncate text-sm font-bold text-slate-700">{groupedTitle}</h4>
             <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{subtitle}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2 md:justify-end">
@@ -604,7 +738,7 @@ function ActivityAction({ label, onClick }: { label: string; onClick?: () => voi
     <button
       type="button"
       onClick={onClick}
-      className="rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-semibold text-muted-foreground transition-colors hover:border-border hover:bg-card hover:text-foreground"
+      className="rounded-full border border-slate-200 bg-white/50 px-2.5 py-1 text-[11px] font-semibold text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-100 hover:text-slate-700"
     >
       {label}
     </button>
@@ -639,7 +773,11 @@ function ActivityDetailDialog({
                 <div className="mb-4 flex items-start gap-3">
                   <div
                     className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border shadow-[0_0_22px_currentColor]"
-                    style={{ color: meta.color, backgroundColor: meta.bg, borderColor: `${meta.color}42` }}
+                    style={{
+                      color: meta.color,
+                      backgroundColor: meta.bg,
+                      borderColor: `${meta.color}42`,
+                    }}
                   >
                     <Icon size={20} />
                   </div>
@@ -647,18 +785,28 @@ function ActivityDetailDialog({
                     <div className="flex flex-wrap items-center gap-2">
                       <span
                         className="rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]"
-                        style={{ color: meta.color, backgroundColor: meta.bg, borderColor: `${meta.color}38` }}
+                        style={{
+                          color: meta.color,
+                          backgroundColor: meta.bg,
+                          borderColor: `${meta.color}38`,
+                        }}
                       >
                         {item.badge}
                       </span>
                       <span
                         className="rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]"
-                        style={{ color: priority.color, borderColor: `${priority.color}38`, backgroundColor: `${priority.color}18` }}
+                        style={{
+                          color: priority.color,
+                          borderColor: `${priority.color}38`,
+                          backgroundColor: `${priority.color}18`,
+                        }}
                       >
                         {priority.label} priority
                       </span>
                     </div>
-                    <DialogTitle className="mt-2 text-xl font-bold text-foreground">{item.groupedTitle || item.title}</DialogTitle>
+                    <DialogTitle className="mt-2 text-xl font-bold text-foreground">
+                      {item.groupedTitle || item.title}
+                    </DialogTitle>
                     <DialogDescription className="mt-1 text-sm text-muted-foreground">
                       {meta.label} from {item.employeeName}
                     </DialogDescription>
@@ -667,13 +815,20 @@ function ActivityDetailDialog({
               </DialogHeader>
               <div className="space-y-4">
                 <div className="rounded-xl border border-border bg-card p-4">
-                  <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Details</div>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.message || "No extra details were provided."}</p>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                    Details
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    {item.message || "No extra details were provided."}
+                  </p>
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <ActivityDetailField label="Employee" value={item.employeeName} />
                   <ActivityDetailField label="Time" value={createdAt} />
-                  <ActivityDetailField label="Updates" value={item.groupedCount > 1 ? `${item.groupedCount} updates` : "Single update"} />
+                  <ActivityDetailField
+                    label="Updates"
+                    value={item.groupedCount > 1 ? `${item.groupedCount} updates` : "Single update"}
+                  />
                   <ActivityDetailField label="Category" value={item.badge} />
                 </div>
               </div>
@@ -688,7 +843,9 @@ function ActivityDetailDialog({
 function ActivityDetailField({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-border bg-card p-3">
-      <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
+      <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+        {label}
+      </div>
       <div className="mt-1 text-sm font-semibold text-muted-foreground">{value}</div>
     </div>
   );
@@ -696,7 +853,13 @@ function ActivityDetailField({ label, value }: { label: string; value: string })
 
 function EmployeeAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string | null }) {
   if (avatarUrl) {
-    return <img src={avatarUrl} alt="" className="h-8 w-8 rounded-full object-cover ring-1 ring-[#f1f0ee]/15" />;
+    return (
+      <img
+        src={avatarUrl}
+        alt=""
+        className="h-8 w-8 rounded-full object-cover ring-1 ring-[#f1f0ee]/15"
+      />
+    );
   }
 
   return (
@@ -731,11 +894,20 @@ function normalizeActivityItem(item: any): ActivityFeedItem {
 
 function detectActivityKind(text: string): ActivityKind {
   if (text.includes("correction")) return "attendance_correction";
-  if (text.includes("attendance") && (text.includes("approved") || text.includes("auto") || text.includes("checkout"))) return "attendance_approved";
+  if (
+    text.includes("attendance") &&
+    (text.includes("approved") || text.includes("auto") || text.includes("checkout"))
+  )
+    return "attendance_approved";
   if (text.includes("completed") && text.includes("task")) return "task_completed";
-  if (text.includes("task") || text.includes("moved to") || text.includes("updated")) return "task_updated";
+  if (text.includes("task") || text.includes("moved to") || text.includes("updated"))
+    return "task_updated";
   if (text.includes("leave")) return "leave_request";
-  if (text.includes("employee") && (text.includes("added") || text.includes("approved") || text.includes("joined"))) return "employee_added";
+  if (
+    text.includes("employee") &&
+    (text.includes("added") || text.includes("approved") || text.includes("joined"))
+  )
+    return "employee_added";
   if (text.includes("announcement") || text.includes("notice")) return "announcement";
   return "system";
 }
@@ -757,8 +929,15 @@ function activityBadge(category: ActivityFeedItem["category"]): ActivityFeedItem
 }
 
 function detectPriority(text: string, kind: ActivityKind): ActivityFeedItem["priority"] {
-  if (text.includes("urgent") || text.includes("rejected") || text.includes("overdue") || kind === "attendance_correction") return "high";
-  if (text.includes("pending") || text.includes("request") || kind === "leave_request") return "medium";
+  if (
+    text.includes("urgent") ||
+    text.includes("rejected") ||
+    text.includes("overdue") ||
+    kind === "attendance_correction"
+  )
+    return "high";
+  if (text.includes("pending") || text.includes("request") || kind === "leave_request")
+    return "medium";
   return "low";
 }
 
@@ -774,9 +953,10 @@ function groupActivityItems(items: ActivityFeedItem[]) {
 
   items.forEach((item) => {
     const date = new Date(item.createdAt);
-    const key = item.kind === "task_updated"
-      ? `task:${taskGroupingTitle(item)}:${format(date, "yyyy-MM-dd")}`
-      : item.id;
+    const key =
+      item.kind === "task_updated"
+        ? `task:${taskGroupingTitle(item)}:${format(date, "yyyy-MM-dd")}`
+        : item.id;
 
     const existing = grouped.get(key);
     if (existing) {
@@ -787,7 +967,10 @@ function groupActivityItems(items: ActivityFeedItem[]) {
       return;
     }
 
-    const next = { ...item, groupedTitle: item.kind === "task_updated" ? taskGroupingTitle(item) : undefined };
+    const next = {
+      ...item,
+      groupedTitle: item.kind === "task_updated" ? taskGroupingTitle(item) : undefined,
+    };
     grouped.set(key, next);
     ordered.push(next);
   });
@@ -797,11 +980,13 @@ function groupActivityItems(items: ActivityFeedItem[]) {
 
 function taskGroupingTitle(item: ActivityFeedItem) {
   const source = item.title || item.message;
-  return source
-    .replace(/\bmoved to\b.*$/i, "")
-    .replace(/\btask\b/gi, "")
-    .replace(/[:|-]\s*(updated|completed|in progress|review).*$/i, "")
-    .trim() || item.title;
+  return (
+    source
+      .replace(/\bmoved to\b.*$/i, "")
+      .replace(/\btask\b/gi, "")
+      .replace(/[:|-]\s*(updated|completed|in progress|review).*$/i, "")
+      .trim() || item.title
+  );
 }
 
 function summarizeActivities(items: ActivityFeedItem[]) {
@@ -822,14 +1007,16 @@ function extractEmployeeName(title: string, message: string) {
 }
 
 function initials(name: string) {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2) || "AS";
+  return (
+    name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "AS"
+  );
 }
 
 function makeDepartmentRows(deptData: any[]): DepartmentRow[] {
@@ -848,26 +1035,20 @@ function makeDepartmentRows(deptData: any[]): DepartmentRow[] {
 }
 
 function getDepartmentColor(name: string, index: number) {
-  const key = String(name || "").toLowerCase().replace(/[^a-z]/g, "");
-  if (key.includes("uiux") || (key.includes("ui") && key.includes("ux"))) return DEPARTMENT_COLORS.uiux;
+  const key = String(name || "")
+    .toLowerCase()
+    .replace(/[^a-z]/g, "");
+  if (key.includes("uiux") || (key.includes("ui") && key.includes("ux")))
+    return DEPARTMENT_COLORS.uiux;
   if (key === "hr" || key.includes("humanresources")) return DEPARTMENT_COLORS.hr;
   if (key.includes("marketing")) return DEPARTMENT_COLORS.marketing;
-  if (key.includes("development") || key.includes("developer") || key.includes("engineering")) return DEPARTMENT_COLORS.development;
+  if (key.includes("development") || key.includes("developer") || key.includes("engineering"))
+    return DEPARTMENT_COLORS.development;
   return COLORS[index % COLORS.length];
 }
 
 function renderActiveDepartmentShape(props: any) {
-  const {
-    cx,
-    cy,
-    innerRadius,
-    outerRadius,
-    startAngle,
-    endAngle,
-    fill,
-    payload,
-    percent,
-  } = props;
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent } = props;
 
   return (
     <g>
@@ -918,7 +1099,10 @@ function DepartmentTooltip({ active, payload }: any) {
   return (
     <div className="min-w-48 rounded-xl border border-border bg-[#101827]/95 p-3 text-xs text-foreground shadow-[0_18px_60px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl">
       <div className="mb-2 flex items-center gap-2 border-b border-border pb-2">
-        <span className="h-2.5 w-2.5 rounded-full shadow-[0_0_14px_currentColor]" style={{ backgroundColor: row.color, color: row.color }} />
+        <span
+          className="h-2.5 w-2.5 rounded-full shadow-[0_0_14px_currentColor]"
+          style={{ backgroundColor: row.color, color: row.color }}
+        />
         <div>
           <div className="font-bold">{row.name}</div>
           <div className="text-[11px] text-muted-foreground">Department share</div>
@@ -942,12 +1126,22 @@ function adjustHex(hex: string, amount: number) {
   if (!hex.startsWith("#") || hex.length !== 7) return hex;
   const channels = [1, 3, 5].map((start) => {
     const value = parseInt(hex.slice(start, start + 2), 16);
-    return Math.max(0, Math.min(255, value + amount)).toString(16).padStart(2, "0");
+    return Math.max(0, Math.min(255, value + amount))
+      .toString(16)
+      .padStart(2, "0");
   });
   return `#${channels.join("")}`;
 }
 
-function WeeklySummaryTile({ label, value, tone }: { label: string; value: string | number; tone: "blue" | "present" | "late" | "wfh" }) {
+function WeeklySummaryTile({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string | number;
+  tone: "blue" | "present" | "late" | "wfh";
+}) {
   const toneClass = {
     blue: "from-cyan-300/16 to-blue-400/8 text-black",
     present: "from-blue-400/18 to-blue-400/6 text-black",
@@ -956,8 +1150,12 @@ function WeeklySummaryTile({ label, value, tone }: { label: string; value: strin
   }[tone];
 
   return (
-    <div className={`rounded-lg border border-border bg-gradient-to-br ${toneClass} px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]`}>
-      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/70">{label}</div>
+    <div
+      className={`rounded-lg border border-border bg-gradient-to-br ${toneClass} px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]`}
+    >
+      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/70">
+        {label}
+      </div>
       <div className="mt-1 text-lg font-bold tabular-nums leading-none text-black">{value}</div>
     </div>
   );
@@ -972,10 +1170,17 @@ function WeeklyAttendanceTooltip({ active, payload }: any) {
     <div className="min-w-52 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-900 shadow-xl">
       <div className="mb-2 flex items-center justify-between gap-4 border-b border-slate-100 pb-2">
         <div>
-          <div className="font-semibold text-slate-900">{row.day}{row.isToday ? " · Today" : ""}</div>
-          <div className="text-[11px] text-slate-500">{row.date ? formatNepaliDate(row.date, "DD MMM YYYY") + " BS" : "Weekly snapshot"}</div>
+          <div className="font-semibold text-slate-900">
+            {row.day}
+            {row.isToday ? " · Today" : ""}
+          </div>
+          <div className="text-[11px] text-slate-500">
+            {row.date ? formatNepaliDate(row.date, "DD MMM YYYY") + " BS" : "Weekly snapshot"}
+          </div>
         </div>
-        <div className="rounded-full bg-slate-100 px-2 py-1 font-bold text-slate-800 tabular-nums">{row.attendancePct ?? 0}%</div>
+        <div className="rounded-full bg-slate-100 px-2 py-1 font-bold text-slate-800 tabular-nums">
+          {row.attendancePct ?? 0}%
+        </div>
       </div>
       <TooltipRow label="Total employees" value={row.totalEmployees ?? 0} />
       <TooltipRow label="Present" value={row.present ?? 0} color={ATTENDANCE_COLORS.present} />
@@ -983,16 +1188,30 @@ function WeeklyAttendanceTooltip({ active, payload }: any) {
       <TooltipRow label="WFH" value={row.wfh ?? 0} color={ATTENDANCE_COLORS.wfh} />
       <TooltipRow label="Absent" value={row.absent ?? 0} color={ATTENDANCE_COLORS.absent} />
       <TooltipRow label="Attendance percentage" value={`${row.attendancePct ?? 0}%`} />
-      {row.noData && <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px] text-slate-500">No attendance records captured for this day.</div>}
+      {row.noData && (
+        <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px] text-slate-500">
+          No attendance records captured for this day.
+        </div>
+      )}
     </div>
   );
 }
 
-function TooltipRow({ label, value, color }: { label: string; value: string | number; color?: string }) {
+function TooltipRow({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: string | number;
+  color?: string;
+}) {
   return (
     <div className="flex items-center justify-between gap-4 py-1">
       <span className="flex items-center gap-2 text-slate-600">
-        {color && <span className="h-2.5 w-2.5 rounded-full shadow-sm" style={{ backgroundColor: color }} />}
+        {color && (
+          <span className="h-2.5 w-2.5 rounded-full shadow-sm" style={{ backgroundColor: color }} />
+        )}
         {label}
       </span>
       <strong className="tabular-nums text-slate-900 font-semibold">{value}</strong>
@@ -1004,12 +1223,26 @@ function WeeklyAxisTick({ x, y, payload }: any) {
   const row = payload?.payload as WeeklyAttendanceDay | undefined;
   return (
     <g transform={`translate(${x},${y})`}>
-      <text x={0} y={0} dy={10} textAnchor="middle" fill={row?.isToday ? "#e0f7ff" : "oklch(0.76 0.03 250)"} fontSize={11} fontWeight={row?.isToday ? 800 : 600}>
+      <text
+        x={0}
+        y={0}
+        dy={10}
+        textAnchor="middle"
+        fill={row?.isToday ? "#e0f7ff" : "oklch(0.76 0.03 250)"}
+        fontSize={11}
+        fontWeight={row?.isToday ? 800 : 600}
+      >
         {payload.value}
       </text>
       {row?.isToday && (
         <g transform="translate(-18,16)">
-          <rect width="36" height="16" rx="8" fill="rgba(103,232,249,0.14)" stroke="rgba(103,232,249,0.38)" />
+          <rect
+            width="36"
+            height="16"
+            rx="8"
+            fill="rgba(103,232,249,0.14)"
+            stroke="rgba(103,232,249,0.38)"
+          />
           <text x="18" y="11" textAnchor="middle" fill="#cffafe" fontSize="8" fontWeight="800">
             Today
           </text>
@@ -1039,7 +1272,10 @@ function TrendDot(props: any) {
 function AttendanceLegend({ color, label }: { color: string; label: string }) {
   return (
     <span className="flex items-center gap-1.5">
-      <span className="h-2.5 w-2.5 rounded-full shadow-[0_0_12px_currentColor]" style={{ backgroundColor: color, color }} />
+      <span
+        className="h-2.5 w-2.5 rounded-full shadow-[0_0_12px_currentColor]"
+        style={{ backgroundColor: color, color }}
+      />
       {label}
     </span>
   );

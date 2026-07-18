@@ -167,17 +167,17 @@ function NotifPage() {
       ) : (
         <div className="max-h-[calc(100dvh-18rem)] overflow-y-auto pr-2 [scrollbar-color:rgba(103,232,249,0.35)_rgba(255,255,255,0.06)] [scrollbar-width:thin]">
           <ul className="relative space-y-3 before:absolute before:left-[1.18rem] before:top-4 before:h-[calc(100%-2rem)] before:w-px before:bg-gradient-to-b before:from-cyan-300/30 before:via-[#f1f0ee]/10 before:to-transparent">
-          {rows.map((n) => (
-            <NotificationTimelineItem
-              key={n.id}
-              notification={n}
-              onViewDetails={(notification) => {
-                if (!notification.is_read) markOneRead(notification);
-                setSelectedNotification(notification);
-              }}
-              onMarkRead={markOneRead}
-            />
-          ))}
+            {rows.map((n) => (
+              <NotificationTimelineItem
+                key={n.id}
+                notification={n}
+                onViewDetails={(notification) => {
+                  if (!notification.is_read) markOneRead(notification);
+                  setSelectedNotification(notification);
+                }}
+                onMarkRead={markOneRead}
+              />
+            ))}
           </ul>
         </div>
       )}
@@ -212,10 +212,14 @@ function NotificationMetric({
     <GlassCard className="border-border bg-card">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {label}
+          </div>
           <div className="mt-3 text-3xl font-bold tabular-nums text-foreground">{value}</div>
         </div>
-        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${colors[tone]}`}>
+        <div
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${colors[tone]}`}
+        >
           <Icon size={19} />
         </div>
       </div>
@@ -223,12 +227,15 @@ function NotificationMetric({
   );
 }
 
-const NOTIFICATION_META: Record<NotificationKind, {
-  icon: typeof BellDot;
-  color: string;
-  bg: string;
-  label: string;
-}> = {
+const NOTIFICATION_META: Record<
+  NotificationKind,
+  {
+    icon: typeof BellDot;
+    color: string;
+    bg: string;
+    label: string;
+  }
+> = {
   attendance: {
     icon: ShieldCheck,
     color: "#22c55e",
@@ -320,7 +327,11 @@ function NotificationTimelineItem({
             <div className="mb-1 flex flex-wrap items-center gap-2">
               <span
                 className="rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]"
-                style={{ color: meta.color, backgroundColor: meta.bg, borderColor: `${meta.color}38` }}
+                style={{
+                  color: meta.color,
+                  backgroundColor: meta.bg,
+                  borderColor: `${meta.color}38`,
+                }}
               >
                 {meta.label}
               </span>
@@ -330,8 +341,12 @@ function NotificationTimelineItem({
                 </span>
               )}
             </div>
-            <h2 className="truncate text-sm font-bold text-muted-foreground">{notification.title}</h2>
-            <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{notification.message}</p>
+            <h2 className="truncate text-sm font-bold text-muted-foreground">
+              {notification.title}
+            </h2>
+            <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
+              {notification.message}
+            </p>
           </div>
           <time
             dateTime={notification.created_at}
@@ -392,7 +407,11 @@ function NotificationDetailDialog({
                 <div className="mb-4 flex items-start gap-3">
                   <div
                     className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border shadow-[0_0_22px_currentColor]"
-                    style={{ color: meta.color, backgroundColor: meta.bg, borderColor: `${meta.color}42` }}
+                    style={{
+                      color: meta.color,
+                      backgroundColor: meta.bg,
+                      borderColor: `${meta.color}42`,
+                    }}
                   >
                     <Icon size={20} />
                   </div>
@@ -400,20 +419,27 @@ function NotificationDetailDialog({
                     <div className="flex flex-wrap items-center gap-2">
                       <span
                         className="rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]"
-                        style={{ color: meta.color, backgroundColor: meta.bg, borderColor: `${meta.color}38` }}
+                        style={{
+                          color: meta.color,
+                          backgroundColor: meta.bg,
+                          borderColor: `${meta.color}38`,
+                        }}
                       >
                         {meta.label}
                       </span>
-                      <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] ${
-                        notification.is_read
-                          ? "border-border bg-card text-muted-foreground"
-                          : "border-cyan-300/20 bg-cyan-300/10 text-foreground"
-                      }`}
+                      <span
+                        className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] ${
+                          notification.is_read
+                            ? "border-border bg-card text-muted-foreground"
+                            : "border-cyan-300/20 bg-cyan-300/10 text-foreground"
+                        }`}
                       >
                         {notification.is_read ? "Read" : "New"}
                       </span>
                     </div>
-                    <DialogTitle className="mt-2 text-xl font-bold text-foreground">{notification.title}</DialogTitle>
+                    <DialogTitle className="mt-2 text-xl font-bold text-foreground">
+                      {notification.title}
+                    </DialogTitle>
                     <DialogDescription className="mt-1 text-sm text-muted-foreground">
                       {createdAt}
                     </DialogDescription>
@@ -422,13 +448,18 @@ function NotificationDetailDialog({
               </DialogHeader>
               <div className="space-y-4">
                 <div className="rounded-xl border border-border bg-card p-4">
-                  <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Details</div>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                    Details
+                  </div>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">
                     {notification.message || "No extra details were provided."}
                   </p>
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <NotificationDetailField label="Status" value={notification.is_read ? "Read" : "New"} />
+                  <NotificationDetailField
+                    label="Status"
+                    value={notification.is_read ? "Read" : "New"}
+                  />
                   <NotificationDetailField label="Category" value={meta.label} />
                 </div>
               </div>
@@ -443,21 +474,26 @@ function NotificationDetailDialog({
 function NotificationDetailField({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-border bg-card p-3">
-      <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
+      <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+        {label}
+      </div>
       <div className="mt-1 text-sm font-semibold text-muted-foreground">{value}</div>
     </div>
   );
 }
 
 function detectNotificationKind(notification: NotificationRow): NotificationKind {
-  const text = `${notification.type || ""} ${notification.title || ""} ${notification.message || ""}`.toLowerCase();
+  const text =
+    `${notification.type || ""} ${notification.title || ""} ${notification.message || ""}`.toLowerCase();
   if (text.includes("correction")) return "attendance_correction";
-  if (text.includes("attendance") || text.includes("check-in") || text.includes("checkout")) return "attendance";
+  if (text.includes("attendance") || text.includes("check-in") || text.includes("checkout"))
+    return "attendance";
   if (text.includes("completed") && text.includes("task")) return "task_completed";
   if (text.includes("task") || text.includes("review")) return "task";
   if (text.includes("leave")) return "leave";
   if (text.includes("employee") || text.includes("profile")) return "employee";
-  if (text.includes("announcement") || text.includes("notice") || text.includes("meeting")) return "announcement";
+  if (text.includes("announcement") || text.includes("notice") || text.includes("meeting"))
+    return "announcement";
   return "system";
 }
 

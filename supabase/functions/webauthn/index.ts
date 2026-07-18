@@ -26,7 +26,7 @@ function bytesToBase64(bytes: Uint8Array): string {
 
 function stringToBytes(value: string): Uint8Array {
   const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
-  const padding = "=".repeat((4 - normalized.length % 4) % 4);
+  const padding = "=".repeat((4 - (normalized.length % 4)) % 4);
   const rawData = atob(normalized + padding);
   const outputArray = new Uint8Array(rawData.length);
 
@@ -59,13 +59,11 @@ async function replaceChallenge(
     .eq("employee_id", employeeId)
     .eq("device_fingerprint", deviceFingerprint);
 
-  const { error } = await supabaseAdmin
-    .from("webauthn_challenges")
-    .insert({
-      employee_id: employeeId,
-      device_fingerprint: deviceFingerprint,
-      challenge,
-    });
+  const { error } = await supabaseAdmin.from("webauthn_challenges").insert({
+    employee_id: employeeId,
+    device_fingerprint: deviceFingerprint,
+    challenge,
+  });
 
   if (error) throw error;
 }
@@ -85,7 +83,7 @@ serve(async (req) => {
 
     if (action === "generate-registration-options") {
       const { userId, deviceFingerprint, rpID, username } = payload;
-      
+
       const { data: existing } = await supabaseAdmin
         .from("device_passkeys")
         .select("id")
@@ -98,7 +96,7 @@ serve(async (req) => {
       }
 
       const rpName = "ASLENIX HRMS";
-      
+
       const options = await generateRegOptions({
         rpName,
         rpID,
@@ -115,7 +113,7 @@ serve(async (req) => {
       });
 
       await replaceChallenge(supabaseAdmin, userId, deviceFingerprint, options.challenge);
-      
+
       return new Response(JSON.stringify({ options }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -153,7 +151,8 @@ serve(async (req) => {
           transports: credential.transports || [],
         });
 
-        await supabaseAdmin.from("webauthn_challenges")
+        await supabaseAdmin
+          .from("webauthn_challenges")
           .delete()
           .eq("employee_id", userId)
           .eq("device_fingerprint", deviceFingerprint);
@@ -182,10 +181,12 @@ serve(async (req) => {
       const options = await generateAuthOptions({
         rpID,
         timeout: 60000,
-        allowCredentials: [{
-          id: passkey.credential_id,
-          transports: passkey.transports || undefined,
-        }],
+        allowCredentials: [
+          {
+            id: passkey.credential_id,
+            transports: passkey.transports || undefined,
+          },
+        ],
         userVerification: "preferred",
       });
 
@@ -239,11 +240,12 @@ serve(async (req) => {
           .update({ counter: verification.authenticationInfo.newCounter })
           .eq("id", passkey.id);
 
-        await supabaseAdmin.from("webauthn_challenges")
+        await supabaseAdmin
+          .from("webauthn_challenges")
           .delete()
           .eq("employee_id", userId)
           .eq("device_fingerprint", deviceFingerprint);
-          
+
         return new Response(JSON.stringify({ verified: true }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -253,7 +255,10 @@ serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ error: "Invalid action" }), { status: 400, headers: corsHeaders });
+    return new Response(JSON.stringify({ error: "Invalid action" }), {
+      status: 400,
+      headers: corsHeaders,
+    });
   } catch (error: any) {
     console.error(error);
     return new Response(JSON.stringify({ error: error.message }), {

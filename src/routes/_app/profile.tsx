@@ -171,16 +171,30 @@ function ProfilePage() {
                   className="h-32 w-32 rounded-3xl object-cover ring-2 ring-primary/40"
                 />
               ) : (
-                <div className="flex h-32 w-32 items-center justify-center rounded-3xl text-3xl font-bold text-foreground shadow-sm" style={{ background: "var(--gradient-brand)" }}>
+                <div
+                  className="flex h-32 w-32 items-center justify-center rounded-3xl text-3xl font-bold text-foreground shadow-sm"
+                  style={{ background: "var(--gradient-brand)" }}
+                >
                   {initials}
                 </div>
               )}
-              <label className="absolute -bottom-2 -right-2 flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border border-border text-foreground ring-4 ring-background transition hover:scale-105" style={{ background: "var(--gradient-brand)" }}>
+              <label
+                className="absolute -bottom-2 -right-2 flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border border-border text-foreground ring-4 ring-background transition hover:scale-105"
+                style={{ background: "var(--gradient-brand)" }}
+              >
                 {uploading ? <Loader2 size={17} className="animate-spin" /> : <Camera size={17} />}
-                <input type="file" accept="image/*" className="hidden" onChange={uploadAvatar} disabled={uploading} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={uploadAvatar}
+                  disabled={uploading}
+                />
               </label>
             </div>
-            <div className="mt-6 text-2xl font-bold text-foreground">{form.full_name || "Unnamed employee"}</div>
+            <div className="mt-6 text-2xl font-bold text-foreground">
+              {form.full_name || "Unnamed employee"}
+            </div>
             <div className="mt-1 flex min-w-0 items-center justify-center gap-2 text-sm text-muted-foreground">
               <Mail size={14} className="shrink-0" />
               <span className="truncate">{form.email}</span>
@@ -196,12 +210,17 @@ function ProfilePage() {
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
                   <h3 className="font-semibold text-foreground">Profile completion</h3>
-                  <p className="text-xs text-muted-foreground">{completedFields} of {completionFields.length} details filled</p>
+                  <p className="text-xs text-muted-foreground">
+                    {completedFields} of {completionFields.length} details filled
+                  </p>
                 </div>
                 <div className="text-3xl font-bold tabular-nums gradient-text">{completion}%</div>
               </div>
               <div className="h-2 overflow-hidden rounded-full bg-card">
-                <div className="h-full rounded-full transition-all" style={{ width: `${completion}%`, background: "var(--gradient-brand)" }} />
+                <div
+                  className="h-full rounded-full transition-all"
+                  style={{ width: `${completion}%`, background: "var(--gradient-brand)" }}
+                />
               </div>
             </GlassCard>
           )}
@@ -218,49 +237,82 @@ function ProfilePage() {
 
         <div className="grid gap-5">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <InfoTile icon={IdCard} label="Employee code" value={form.employee_code || "Not assigned"} />
+            <InfoTile
+              icon={IdCard}
+              label="Employee code"
+              value={form.employee_code || "Not assigned"}
+            />
             <InfoTile icon={CalendarDays} label="Joining date" value={joinedLabel} />
-            <InfoTile icon={HeartPulse} label="Emergency ready" value={form.emergency_contact ? "Available" : "Missing"} />
+            <InfoTile
+              icon={HeartPulse}
+              label="Emergency ready"
+              value={form.emergency_contact ? "Available" : "Missing"}
+            />
           </div>
 
           <GlassCard className="border-border bg-card">
             <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Personal information</h3>
-                <p className="text-sm text-muted-foreground">Keep your contact and workplace details up to date.</p>
+                <p className="text-sm text-muted-foreground">
+                  Keep your contact and workplace details up to date.
+                </p>
               </div>
               <Button onClick={save} disabled={saving} className="neon-button h-11 rounded-xl">
-                {saving ? <Loader2 size={14} className="mr-2 animate-spin" /> : <Save size={14} className="mr-2" />}
+                {saving ? (
+                  <Loader2 size={14} className="mr-2 animate-spin" />
+                ) : (
+                  <Save size={14} className="mr-2" />
+                )}
                 {saving ? "Saving..." : "Save changes"}
               </Button>
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <ProfileField label="Full name" icon={UserRound}>
-                <Input value={form.full_name || ""} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+                <Input
+                  value={form.full_name || ""}
+                  onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                />
               </ProfileField>
               <ProfileField label="Phone" icon={Phone}>
-                <Input value={form.phone || ""} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                <Input
+                  value={form.phone || ""}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                />
               </ProfileField>
               <ProfileField label="Department" icon={Briefcase}>
-                <Input value={form.department || ""} onChange={(e) => setForm({ ...form, department: e.target.value })} />
+                <Input
+                  value={form.department || ""}
+                  onChange={(e) => setForm({ ...form, department: e.target.value })}
+                />
               </ProfileField>
               <ProfileField label="Position" icon={IdCard}>
-                <Input value={form.position || ""} onChange={(e) => setForm({ ...form, position: e.target.value })} />
+                <Input
+                  value={form.position || ""}
+                  onChange={(e) => setForm({ ...form, position: e.target.value })}
+                />
               </ProfileField>
               <ProfileField label="Joining date (BS)" icon={CalendarDays}>
                 <BSDateInput
                   value={form.joining_date ? formatBsInput(form.joining_date) : ""}
-                  onChange={(value) => setForm({ ...form, joining_date: value ? bsInputToAdDateString(value) : null })}
+                  onChange={(value) =>
+                    setForm({ ...form, joining_date: value ? bsInputToAdDateString(value) : null })
+                  }
                 />
               </ProfileField>
               <ProfileField label="Address" icon={MapPin} className="sm:col-span-2">
-                <Input value={form.address || ""} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+                <Input
+                  value={form.address || ""}
+                  onChange={(e) => setForm({ ...form, address: e.target.value })}
+                />
               </ProfileField>
               <ProfileField label="Blood group" icon={HeartPulse}>
                 <Select
                   value={form.blood_group || "not-set"}
-                  onValueChange={(value) => setForm({ ...form, blood_group: value === "not-set" ? "" : value })}
+                  onValueChange={(value) =>
+                    setForm({ ...form, blood_group: value === "not-set" ? "" : value })
+                  }
                 >
                   <SelectTrigger className="rounded-xl border-border bg-card">
                     <SelectValue placeholder="Select blood group" />
@@ -268,13 +320,18 @@ function ProfilePage() {
                   <SelectContent>
                     <SelectItem value="not-set">Not set</SelectItem>
                     {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map((group) => (
-                      <SelectItem key={group} value={group}>{group}</SelectItem>
+                      <SelectItem key={group} value={group}>
+                        {group}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </ProfileField>
               <ProfileField label="Emergency contact" icon={Phone}>
-                <Input value={form.emergency_contact || ""} onChange={(e) => setForm({ ...form, emergency_contact: e.target.value })} />
+                <Input
+                  value={form.emergency_contact || ""}
+                  onChange={(e) => setForm({ ...form, emergency_contact: e.target.value })}
+                />
               </ProfileField>
             </div>
           </GlassCard>
@@ -306,7 +363,9 @@ function InfoTile({
     <GlassCard className="border-border bg-card">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {label}
+          </div>
           <div className="mt-3 truncate text-xl font-bold text-foreground">{value}</div>
         </div>
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
@@ -337,7 +396,9 @@ function QuickProfileLink({
         </span>
         <span className="truncate">{label}</span>
       </span>
-      <span className="text-xs text-muted-foreground transition group-hover:text-primary">Open</span>
+      <span className="text-xs text-muted-foreground transition group-hover:text-primary">
+        Open
+      </span>
     </Link>
   );
 }

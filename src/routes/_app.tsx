@@ -56,7 +56,8 @@ function ProtectedLayout() {
         <div className="max-w-md rounded-3xl border border-border bg-background p-8 shadow-xl">
           <h1 className="text-xl font-semibold">Unable to load your profile</h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            We could not load your account details. Please refresh the page or contact your administrator.
+            We could not load your account details. Please refresh the page or contact your
+            administrator.
           </p>
         </div>
       </div>

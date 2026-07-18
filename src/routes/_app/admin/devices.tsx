@@ -60,7 +60,11 @@ type DevicePayload = {
 };
 
 function DeviceManagementPage() {
-  const [payload, setPayload] = useState<DevicePayload>({ devices: [], pendingRequests: [], auditLogs: [] });
+  const [payload, setPayload] = useState<DevicePayload>({
+    devices: [],
+    pendingRequests: [],
+    auditLogs: [],
+  });
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [maxDevices, setMaxDevices] = useState(2);
@@ -76,12 +80,16 @@ function DeviceManagementPage() {
       ] = await Promise.all([
         (supabase as any)
           .from("employee_devices")
-          .select("id,employee_id,device_fingerprint,browser,operating_system,device_name,status,registered_at,last_login,force_logout_at")
+          .select(
+            "id,employee_id,device_fingerprint,browser,operating_system,device_name,status,registered_at,last_login,force_logout_at",
+          )
           .eq("status", "Active")
           .order("last_login", { ascending: false }),
         (supabase as any)
           .from("pending_device_requests")
-          .select("id,employee_id,device_fingerprint,browser,operating_system,device_name,requested_at,status,verification_method,replace_device_id")
+          .select(
+            "id,employee_id,device_fingerprint,browser,operating_system,device_name,requested_at,status,verification_method,replace_device_id",
+          )
           .eq("status", "Pending")
           .order("requested_at", { ascending: false }),
         (supabase as any)
@@ -105,7 +113,10 @@ function DeviceManagementPage() {
       const pendingRequests = (requestRows ?? []) as PendingDeviceRequest[];
       setMaxDevices(Number(settingsRow?.max_trusted_devices ?? 2));
       const employeeIds = [
-        ...new Set([...devices.map((device) => device.employee_id), ...pendingRequests.map((request) => request.employee_id)]),
+        ...new Set([
+          ...devices.map((device) => device.employee_id),
+          ...pendingRequests.map((request) => request.employee_id),
+        ]),
       ];
 
       const { data: profiles, error: profilesError } = employeeIds.length
@@ -134,7 +145,10 @@ function DeviceManagementPage() {
           ...device,
           employee: profileMap.get(device.employee_id),
         })),
-        pendingRequests: pendingRequests.map((request) => ({ ...request, employee: profileMap.get(request.employee_id) })),
+        pendingRequests: pendingRequests.map((request) => ({
+          ...request,
+          employee: profileMap.get(request.employee_id),
+        })),
         auditLogs: (auditRows ?? []) as TrustedDeviceAuditLog[],
       });
     } catch (error) {
@@ -157,13 +171,15 @@ function DeviceManagementPage() {
   }, [payload.pendingRequests]);
 
   const visibleRows = useMemo(() => {
-    const rows: Array<{ device?: EmployeeDevice; requests: PendingDeviceRequest[]; employeeId: string }> = payload.devices.map(
-      (device) => ({
-        device,
-        requests: requestsByEmployee.get(device.employee_id) || [],
-        employeeId: device.employee_id,
-      }),
-    );
+    const rows: Array<{
+      device?: EmployeeDevice;
+      requests: PendingDeviceRequest[];
+      employeeId: string;
+    }> = payload.devices.map((device) => ({
+      device,
+      requests: requestsByEmployee.get(device.employee_id) || [],
+      employeeId: device.employee_id,
+    }));
 
     payload.pendingRequests.forEach((request) => {
       if (!rows.some((row) => row.employeeId === request.employee_id)) {
@@ -216,7 +232,10 @@ function DeviceManagementPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Device Management" subtitle="Approve, replace, and remove employee attendance devices" />
+      <PageHeader
+        title="Device Management"
+        subtitle="Approve, replace, and remove employee attendance devices"
+      />
 
       <div className="grid gap-4 md:grid-cols-3">
         <Metric icon={Laptop} label="Registered Devices" value={payload.devices.length} />
@@ -227,11 +246,16 @@ function DeviceManagementPage() {
       <GlassCard className="flex flex-wrap items-end justify-between gap-4 p-5">
         <div>
           <h2 className="text-lg font-semibold text-foreground">Registered Device Policy</h2>
-          <p className="text-sm text-muted-foreground">Default is 2 registered devices per employee. HR can adjust the limit for the whole organization.</p>
+          <p className="text-sm text-muted-foreground">
+            Default is 2 registered devices per employee. HR can adjust the limit for the whole
+            organization.
+          </p>
         </div>
         <div className="flex items-end gap-3">
           <label className="block">
-            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Max Devices</span>
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              Max Devices
+            </span>
             <input
               type="number"
               min={1}
@@ -251,7 +275,9 @@ function DeviceManagementPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-foreground">Employee Devices</h2>
-            <p className="text-sm text-muted-foreground">Only active registered devices can check in, check out, or manage breaks.</p>
+            <p className="text-sm text-muted-foreground">
+              Only active registered devices can check in, check out, or manage breaks.
+            </p>
           </div>
           <Button variant="outline" onClick={load} disabled={loading}>
             <RefreshCw size={16} className="mr-2" />
@@ -264,7 +290,10 @@ function DeviceManagementPage() {
             const firstRequest = requests[0];
             const employee = device?.employee || firstRequest?.employee;
             return (
-              <div key={device?.id || employeeId} className="flex flex-col bg-card rounded-2xl shadow-sm border border-border p-6 overflow-hidden h-full">
+              <div
+                key={device?.id || employeeId}
+                className="flex flex-col bg-card rounded-2xl shadow-sm border border-border p-6 overflow-hidden h-full"
+              >
                 <div className="flex flex-col h-full space-y-6">
                   {/* Header: Avatar, Name, Email, Status */}
                   <div className="flex items-start justify-between gap-4">
@@ -273,33 +302,68 @@ function DeviceManagementPage() {
                         {employeeInitials(employee, employeeId)}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="truncate text-[18px] font-bold text-foreground">{employeeName(employee, employeeId)}</h3>
-                        {employee?.email && <p className="truncate text-[14px] text-muted-foreground">{employee.email}</p>}
+                        <h3 className="truncate text-[18px] font-bold text-foreground">
+                          {employeeName(employee, employeeId)}
+                        </h3>
+                        {employee?.email && (
+                          <p className="truncate text-[14px] text-muted-foreground">
+                            {employee.email}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="shrink-0 mt-1">
-                       {device ? <StatusBadge status={device.status} /> : <span className="text-[12px] font-semibold text-muted-foreground rounded-full bg-muted px-3 py-1">Unregistered</span>}
+                      {device ? (
+                        <StatusBadge status={device.status} />
+                      ) : (
+                        <span className="text-[12px] font-semibold text-muted-foreground rounded-full bg-muted px-3 py-1">
+                          Unregistered
+                        </span>
+                      )}
                     </div>
                   </div>
 
                   {/* Details section */}
                   <div className="flex flex-col space-y-4 divide-y divide-border/50">
                     <div className="pt-0 min-w-0">
-                      <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Registered Device</p>
-                      <p className="text-[15px] font-medium text-foreground truncate">{device?.device_name || "No active registered device"}</p>
-                      {device?.device_fingerprint && <p className="text-[13px] text-muted-foreground mt-0.5 truncate" title={device.device_fingerprint}>Device ID: {device.device_fingerprint}</p>}
+                      <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                        Registered Device
+                      </p>
+                      <p className="text-[15px] font-medium text-foreground truncate">
+                        {device?.device_name || "No active registered device"}
+                      </p>
+                      {device?.device_fingerprint && (
+                        <p
+                          className="text-[13px] text-muted-foreground mt-0.5 truncate"
+                          title={device.device_fingerprint}
+                        >
+                          Device ID: {device.device_fingerprint}
+                        </p>
+                      )}
                     </div>
                     <div className="pt-4 min-w-0">
-                      <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Browser</p>
-                      <p className="text-[15px] font-medium text-foreground truncate">{device?.browser || "-"}</p>
+                      <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                        Browser
+                      </p>
+                      <p className="text-[15px] font-medium text-foreground truncate">
+                        {device?.browser || "-"}
+                      </p>
                     </div>
                     <div className="pt-4 min-w-0">
-                      <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Operating System</p>
-                      <p className="text-[15px] font-medium text-foreground truncate">{device?.operating_system || "-"}</p>
+                      <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                        Operating System
+                      </p>
+                      <p className="text-[15px] font-medium text-foreground truncate">
+                        {device?.operating_system || "-"}
+                      </p>
                     </div>
                     <div className="pt-4 min-w-0">
-                      <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">Last Login</p>
-                      <p className="text-[15px] font-medium text-foreground truncate">{device ? formatDate(device.last_login) : "Never"}</p>
+                      <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                        Last Login
+                      </p>
+                      <p className="text-[15px] font-medium text-foreground truncate">
+                        {device ? formatDate(device.last_login) : "Never"}
+                      </p>
                     </div>
                   </div>
 
@@ -309,59 +373,80 @@ function DeviceManagementPage() {
                   {requests.length > 0 && (
                     <div className="pt-4 border-t border-border/50">
                       <div className="mb-3 flex items-center justify-between gap-3">
-                        <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">Pending Requests</p>
-                        <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">{requests.length}</span>
+                        <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Pending Requests
+                        </p>
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                          {requests.length}
+                        </span>
                       </div>
                       <div className="space-y-3">
                         {requests.map((request) => (
-                           <div key={request.id} className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex flex-col gap-2">
-                             <div className="min-w-0">
-                               <div className="font-medium text-sm text-foreground truncate">{request.device_name}</div>
-                               <div className="text-xs text-muted-foreground truncate">
-                                 {request.browser} · {request.operating_system}
-                               </div>
-                               <div className="text-[11px] text-muted-foreground mt-1">
-                                  {formatDate(request.requested_at)}
-                                  {request.verification_method && ` · ${request.verification_method}`}
-                               </div>
-                             </div>
-                             <div className="flex flex-wrap gap-2 mt-1">
-                                <Button
-                                  size="sm"
-                                  className="flex-1 h-8 text-[11px]"
-                                  onClick={() =>
-                                    runAction(`approve-${request.id}`, () => approveRequest(request), "New device approved")
-                                  }
-                                  disabled={Boolean(busy)}
-                                >
-                                  <Check size={14} className="mr-1" /> Approve
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="flex-1 h-8 text-[11px]"
-                                  onClick={() =>
-                                    runAction(`reject-${request.id}`, () => rejectRequest(request.id), "Device request rejected")
-                                  }
-                                  disabled={Boolean(busy)}
-                                >
-                                  <X size={14} className="mr-1" /> Reject
-                                </Button>
-                             </div>
-                             {device && (
-                               <Button
-                                 size="sm"
-                                 variant="outline"
-                                 className="w-full h-8 text-[11px] mt-1"
-                                 onClick={() =>
-                                   runAction(`replace-${device.id}-${request.id}`, () => approveRequest(request, device.id), "Existing device replaced")
-                                 }
-                                 disabled={Boolean(busy)}
-                               >
-                                 <RefreshCw size={14} className="mr-1" /> Replace
-                               </Button>
-                             )}
-                           </div>
+                          <div
+                            key={request.id}
+                            className="rounded-xl border border-primary/20 bg-primary/5 p-3 flex flex-col gap-2"
+                          >
+                            <div className="min-w-0">
+                              <div className="font-medium text-sm text-foreground truncate">
+                                {request.device_name}
+                              </div>
+                              <div className="text-xs text-muted-foreground truncate">
+                                {request.browser} · {request.operating_system}
+                              </div>
+                              <div className="text-[11px] text-muted-foreground mt-1">
+                                {formatDate(request.requested_at)}
+                                {request.verification_method && ` · ${request.verification_method}`}
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              <Button
+                                size="sm"
+                                className="flex-1 h-8 text-[11px]"
+                                onClick={() =>
+                                  runAction(
+                                    `approve-${request.id}`,
+                                    () => approveRequest(request),
+                                    "New device approved",
+                                  )
+                                }
+                                disabled={Boolean(busy)}
+                              >
+                                <Check size={14} className="mr-1" /> Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1 h-8 text-[11px]"
+                                onClick={() =>
+                                  runAction(
+                                    `reject-${request.id}`,
+                                    () => rejectRequest(request.id),
+                                    "Device request rejected",
+                                  )
+                                }
+                                disabled={Boolean(busy)}
+                              >
+                                <X size={14} className="mr-1" /> Reject
+                              </Button>
+                            </div>
+                            {device && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full h-8 text-[11px] mt-1"
+                                onClick={() =>
+                                  runAction(
+                                    `replace-${device.id}-${request.id}`,
+                                    () => approveRequest(request, device.id),
+                                    "Existing device replaced",
+                                  )
+                                }
+                                disabled={Boolean(busy)}
+                              >
+                                <RefreshCw size={14} className="mr-1" /> Replace
+                              </Button>
+                            )}
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -373,7 +458,13 @@ function DeviceManagementPage() {
                       <Button
                         variant="outline"
                         className="flex-1 rounded-xl border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
-                        onClick={() => runAction(`remove-${device.id}`, () => removeDevice(device.id), "Device removed")}
+                        onClick={() =>
+                          runAction(
+                            `remove-${device.id}`,
+                            () => removeDevice(device.id),
+                            "Device removed",
+                          )
+                        }
                         disabled={Boolean(busy)}
                       >
                         <Trash2 size={16} className="mr-1.5" />
@@ -381,7 +472,13 @@ function DeviceManagementPage() {
                       </Button>
                       <Button
                         className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-colors"
-                        onClick={() => runAction(`force-${device.id}`, () => forceLogoutDevice(device), "Device forced to log out")}
+                        onClick={() =>
+                          runAction(
+                            `force-${device.id}`,
+                            () => forceLogoutDevice(device),
+                            "Device forced to log out",
+                          )
+                        }
                         disabled={Boolean(busy)}
                       >
                         <Lock size={16} className="mr-1.5" />
@@ -396,9 +493,13 @@ function DeviceManagementPage() {
         </div>
 
         {!loading && visibleRows.length === 0 && (
-          <div className="py-12 text-center text-sm text-muted-foreground">No registered devices found.</div>
+          <div className="py-12 text-center text-sm text-muted-foreground">
+            No registered devices found.
+          </div>
         )}
-        {loading && <div className="py-12 text-center text-sm text-muted-foreground">Loading devices...</div>}
+        {loading && (
+          <div className="py-12 text-center text-sm text-muted-foreground">Loading devices...</div>
+        )}
       </section>
     </div>
   );
@@ -425,16 +526,18 @@ async function approveRequest(request: PendingDeviceRequest, replaceDeviceId?: s
   if (activeError) throw activeError;
 
   if ((activeDevices ?? []).length >= maxTrustedDevices && !replaceDeviceId) {
-    throw new Error(`Employee already has ${maxTrustedDevices} registered devices. Approve a replacement request instead.`);
+    throw new Error(
+      `Employee already has ${maxTrustedDevices} registered devices. Approve a replacement request instead.`,
+    );
   }
 
   const { error: requestError } = await (supabase as any)
     .from("pending_device_requests")
-    .update({ 
-      status: "Approved", 
-      reviewed_at: now, 
+    .update({
+      status: "Approved",
+      reviewed_at: now,
       reviewed_by: user?.id ?? null,
-      replace_device_id: replaceDeviceId || null 
+      replace_device_id: replaceDeviceId || null,
     })
     .eq("id", request.id);
 
@@ -456,7 +559,11 @@ async function rejectRequest(requestId: string) {
   } = await supabase.auth.getUser();
   const { error } = await (supabase as any)
     .from("pending_device_requests")
-    .update({ status: "Rejected", reviewed_at: new Date().toISOString(), reviewed_by: user?.id ?? null })
+    .update({
+      status: "Rejected",
+      reviewed_at: new Date().toISOString(),
+      reviewed_by: user?.id ?? null,
+    })
     .eq("id", requestId);
 
   if (error) throw error;
@@ -536,7 +643,9 @@ async function forceLogoutDevice(device: EmployeeDevice) {
 function Detail({ label, value, subvalue }: { label: string; value: string; subvalue?: string }) {
   return (
     <div className="min-w-0">
-      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+        {label}
+      </p>
       <p className="mt-2 truncate text-sm font-semibold text-foreground">{value}</p>
       {subvalue && <p className="mt-1 truncate text-xs text-muted-foreground">{subvalue}</p>}
     </div>
@@ -555,7 +664,15 @@ function StatusBadge({ status }: { status: EmployeeDevice["status"] }) {
   );
 }
 
-function Metric({ icon: Icon, label, value }: { icon: typeof Laptop; label: string; value: number }) {
+function Metric({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Laptop;
+  label: string;
+  value: number;
+}) {
   return (
     <GlassCard className="p-5">
       <div className="flex items-center justify-between gap-3">
@@ -583,5 +700,7 @@ function employeeInitials(value: EmployeeSummary | undefined, fallback: string) 
 
 function formatDate(value: string) {
   if (!value) return "Never";
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(
+    new Date(value),
+  );
 }

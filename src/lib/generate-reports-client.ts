@@ -3,7 +3,7 @@ import { format, eachDayOfInterval } from "date-fns";
 import {
   getPreviousReportingWeek,
   calculateAiScores,
-  generateWeeklyAiSummary
+  generateWeeklyAiSummary,
 } from "@/lib/weekly-report-utils";
 import { getNepaliMonthRange } from "@/lib/nepali-calendar";
 
@@ -13,7 +13,7 @@ export async function generateReportsForWeekClient(
   referenceDate: Date | string = new Date(),
   reportType: ReportType = "weekly",
   onProgress?: (msg: string) => void,
-  customEndDate?: Date | string
+  customEndDate?: Date | string,
 ) {
   try {
     let startAd: string;
@@ -21,8 +21,10 @@ export async function generateReportsForWeekClient(
 
     if (reportType === "weekly") {
       if (customEndDate) {
-        startAd = typeof referenceDate === "string" ? referenceDate : format(referenceDate, "yyyy-MM-dd");
-        endAd = typeof customEndDate === "string" ? customEndDate : format(customEndDate, "yyyy-MM-dd");
+        startAd =
+          typeof referenceDate === "string" ? referenceDate : format(referenceDate, "yyyy-MM-dd");
+        endAd =
+          typeof customEndDate === "string" ? customEndDate : format(customEndDate, "yyyy-MM-dd");
       } else {
         const weekRange = getPreviousReportingWeek(referenceDate);
         startAd = weekRange.startAd;
@@ -32,8 +34,10 @@ export async function generateReportsForWeekClient(
       const monthRange = getNepaliMonthRange(0, referenceDate);
       startAd = monthRange.startAd;
       endAd = monthRange.endAd;
-    } else { // daily
-      const d = typeof referenceDate === "string" ? referenceDate : format(referenceDate, "yyyy-MM-dd");
+    } else {
+      // daily
+      const d =
+        typeof referenceDate === "string" ? referenceDate : format(referenceDate, "yyyy-MM-dd");
       startAd = d;
       endAd = d;
     }
@@ -41,10 +45,14 @@ export async function generateReportsForWeekClient(
     if (onProgress) onProgress(`Fetching data for ${reportType} report: ${startAd} to ${endAd}...`);
 
     // Fetch all profiles
-    const { data: profiles, error: profileErr } = await supabase.from("profiles").select("user_id, full_name, department, employee_code").eq("approval_status", "approved");
+    const { data: profiles, error: profileErr } = await supabase
+      .from("profiles")
+      .select("user_id, full_name, department, employee_code")
+      .eq("approval_status", "approved");
     if (profileErr) throw profileErr;
 
-    if (onProgress) onProgress(`Found ${profiles?.length || 0} approved employees. Processing data...`);
+    if (onProgress)
+      onProgress(`Found ${profiles?.length || 0} approved employees. Processing data...`);
 
     // Fetch all standups for the date range
     const { data: standups, error: standupErr } = await supabase
@@ -63,13 +71,13 @@ export async function generateReportsForWeekClient(
     if (attErr) throw attErr;
 
     const daysInInterval = eachDayOfInterval({ start: new Date(startAd), end: new Date(endAd) });
-    const totalWorkingDays = daysInInterval.filter(d => d.getDay() !== 6).length; // Exclude Saturdays
+    const totalWorkingDays = daysInInterval.filter((d) => d.getDay() !== 6).length; // Exclude Saturdays
 
     let successCount = 0;
 
     for (const profile of profiles || []) {
-      const userStandups = standups?.filter(s => s.user_id === profile.user_id) || [];
-      const userAttendance = attendances?.filter(a => a.user_id === profile.user_id) || [];
+      const userStandups = standups?.filter((s) => s.user_id === profile.user_id) || [];
+      const userAttendance = attendances?.filter((a) => a.user_id === profile.user_id) || [];
 
       let totalScore = 0;
       let totalFocus = 0;
@@ -77,26 +85,36 @@ export async function generateReportsForWeekClient(
       let totalHours = 0;
       let totalBlockers = 0;
 
-      const timeline = daysInInterval.map(dayObj => {
+      const timeline = daysInInterval.map((dayObj) => {
         const dStr = format(dayObj, "yyyy-MM-dd");
         const isSaturday = dayObj.getDay() === 6;
-        const s = userStandups.find(s => s.date === dStr);
-        const a = userAttendance.find(a => a.date === dStr);
+        const s = userStandups.find((s) => s.date === dStr);
+        const a = userAttendance.find((a) => a.date === dStr);
 
         let status = "Missing";
         if (s) status = "Submitted";
         else if (a) status = "Present, No Standup";
         else if (isSaturday) status = "Weekend";
 
-        const hasBlocker = !!(s?.blockers && s.blockers.length > 5 && s.blockers.toLowerCase() !== "none");
+        const hasBlocker = !!(
+          s?.blockers &&
+          s.blockers.length > 5 &&
+          s.blockers.toLowerCase() !== "none"
+        );
         const hasPlan = !!(s?.today && s.today.length > 10);
         const hasUpdate = !!(s?.yesterday && s.yesterday.length > 10);
-        const hours = s?.work_hours ? Number(s.work_hours) : (a?.work_hours ? Number(a.work_hours) : 0);
+        const hours = s?.work_hours
+          ? Number(s.work_hours)
+          : a?.work_hours
+            ? Number(a.work_hours)
+            : 0;
 
         if (hasBlocker) totalBlockers++;
         totalHours += hours;
 
-        let dailyScore = 0, dailyFocus = 0, dailyMood = 0;
+        let dailyScore = 0,
+          dailyFocus = 0,
+          dailyMood = 0;
         if (s) {
           const ai = calculateAiScores(hours, hasBlocker, hasPlan, hasUpdate);
           dailyScore = ai.score;
@@ -115,17 +133,22 @@ export async function generateReportsForWeekClient(
           score: dailyScore,
           today: s?.today || "",
           yesterday: s?.yesterday || "",
-          blockers_text: s?.blockers || ""
+          blockers_text: s?.blockers || "",
         };
       });
 
       const totalStandupsSubmitted = userStandups.length;
       const missingStandups = Math.max(0, totalWorkingDays - totalStandupsSubmitted);
-      const avgScore = totalStandupsSubmitted > 0 ? Math.round(totalScore / totalStandupsSubmitted) : 0;
-      const avgFocus = totalStandupsSubmitted > 0 ? Math.round(totalFocus / totalStandupsSubmitted) : 0;
-      const avgMood = totalStandupsSubmitted > 0 ? Math.round(totalMood / totalStandupsSubmitted) : 0;
-      const avgHours = totalStandupsSubmitted > 0 ? Number((totalHours / totalStandupsSubmitted).toFixed(1)) : 0;
-      const attendancePercentage = totalWorkingDays > 0 ? Math.round((userAttendance.length / totalWorkingDays) * 100) : 0;
+      const avgScore =
+        totalStandupsSubmitted > 0 ? Math.round(totalScore / totalStandupsSubmitted) : 0;
+      const avgFocus =
+        totalStandupsSubmitted > 0 ? Math.round(totalFocus / totalStandupsSubmitted) : 0;
+      const avgMood =
+        totalStandupsSubmitted > 0 ? Math.round(totalMood / totalStandupsSubmitted) : 0;
+      const avgHours =
+        totalStandupsSubmitted > 0 ? Number((totalHours / totalStandupsSubmitted).toFixed(1)) : 0;
+      const attendancePercentage =
+        totalWorkingDays > 0 ? Math.round((userAttendance.length / totalWorkingDays) * 100) : 0;
 
       const analytics_data = {
         totalWorkingDays,
@@ -138,41 +161,88 @@ export async function generateReportsForWeekClient(
         avgFocus,
         avgMood,
         attendancePercentage,
-        timeline
+        timeline,
       };
 
       const ai_summary = generateWeeklyAiSummary(userStandups, totalHours, totalBlockers, avgScore);
 
-      const table = reportType === "daily" ? "daily_standup_reports" 
-                  : reportType === "monthly" ? "monthly_standup_reports" 
-                  : "weekly_standup_reports";
+      const table =
+        reportType === "daily"
+          ? "daily_standup_reports"
+          : reportType === "monthly"
+            ? "monthly_standup_reports"
+            : "weekly_standup_reports";
 
       // Upsert logic for each report type
       if (reportType === "daily") {
-        const { data: existing } = await supabase.from("daily_standup_reports").select("id").eq("user_id", profile.user_id).eq("report_date", startAd).single();
+        const { data: existing } = await supabase
+          .from("daily_standup_reports")
+          .select("id")
+          .eq("user_id", profile.user_id)
+          .eq("report_date", startAd)
+          .single();
         if (existing) {
-          const { error: updateErr } = await supabase.from("daily_standup_reports").update({ status: "finalized", analytics_data, ai_summary }).eq("id", existing.id);
+          const { error: updateErr } = await supabase
+            .from("daily_standup_reports")
+            .update({ status: "finalized", analytics_data, ai_summary })
+            .eq("id", existing.id);
           if (!updateErr) successCount++;
         } else {
-          const { error: insertErr } = await supabase.from("daily_standup_reports").insert({ user_id: profile.user_id, report_date: startAd, status: "finalized", analytics_data, ai_summary });
+          const { error: insertErr } = await supabase.from("daily_standup_reports").insert({
+            user_id: profile.user_id,
+            report_date: startAd,
+            status: "finalized",
+            analytics_data,
+            ai_summary,
+          });
           if (!insertErr) successCount++;
         }
       } else if (reportType === "monthly") {
-        const { data: existing } = await supabase.from("monthly_standup_reports").select("id").eq("user_id", profile.user_id).eq("month_start", startAd).single();
+        const { data: existing } = await supabase
+          .from("monthly_standup_reports")
+          .select("id")
+          .eq("user_id", profile.user_id)
+          .eq("month_start", startAd)
+          .single();
         if (existing) {
-          const { error: updateErr } = await supabase.from("monthly_standup_reports").update({ month_end: endAd, status: "finalized", analytics_data, ai_summary }).eq("id", existing.id);
+          const { error: updateErr } = await supabase
+            .from("monthly_standup_reports")
+            .update({ month_end: endAd, status: "finalized", analytics_data, ai_summary })
+            .eq("id", existing.id);
           if (!updateErr) successCount++;
         } else {
-          const { error: insertErr } = await supabase.from("monthly_standup_reports").insert({ user_id: profile.user_id, month_start: startAd, month_end: endAd, status: "finalized", analytics_data, ai_summary });
+          const { error: insertErr } = await supabase.from("monthly_standup_reports").insert({
+            user_id: profile.user_id,
+            month_start: startAd,
+            month_end: endAd,
+            status: "finalized",
+            analytics_data,
+            ai_summary,
+          });
           if (!insertErr) successCount++;
         }
       } else {
-        const { data: existing } = await supabase.from("weekly_standup_reports").select("id").eq("user_id", profile.user_id).eq("week_start", startAd).single();
+        const { data: existing } = await supabase
+          .from("weekly_standup_reports")
+          .select("id")
+          .eq("user_id", profile.user_id)
+          .eq("week_start", startAd)
+          .single();
         if (existing) {
-          const { error: updateErr } = await supabase.from("weekly_standup_reports").update({ week_end: endAd, status: "finalized", analytics_data, ai_summary }).eq("id", existing.id);
+          const { error: updateErr } = await supabase
+            .from("weekly_standup_reports")
+            .update({ week_end: endAd, status: "finalized", analytics_data, ai_summary })
+            .eq("id", existing.id);
           if (!updateErr) successCount++;
         } else {
-          const { error: insertErr } = await supabase.from("weekly_standup_reports").insert({ user_id: profile.user_id, week_start: startAd, week_end: endAd, status: "finalized", analytics_data, ai_summary });
+          const { error: insertErr } = await supabase.from("weekly_standup_reports").insert({
+            user_id: profile.user_id,
+            week_start: startAd,
+            week_end: endAd,
+            status: "finalized",
+            analytics_data,
+            ai_summary,
+          });
           if (!insertErr) successCount++;
         }
       }

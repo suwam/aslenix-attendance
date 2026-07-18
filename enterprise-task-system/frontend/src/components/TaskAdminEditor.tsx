@@ -62,7 +62,10 @@ export function TaskAdminEditor({
           <ReadOnly label="Title" value={task.title} />
           <ReadOnly label="Description" value={task.description || "No description"} multiline />
           <div className="grid gap-3 sm:grid-cols-2">
-            <ReadOnly label="Deadline" value={task.deadline ? new Date(task.deadline).toLocaleDateString() : "No deadline"} />
+            <ReadOnly
+              label="Deadline"
+              value={task.deadline ? new Date(task.deadline).toLocaleDateString() : "No deadline"}
+            />
             <ReadOnly label="Priority" value={task.priority} />
             <ReadOnly label="Assigned employee" value={task.assignedTo.name} />
             <ReadOnly label="Status" value={task.status.replaceAll("_", " ")} />
@@ -173,7 +176,15 @@ export function TaskAdminEditor({
   );
 }
 
-function ReadOnly({ label, value, multiline = false }: { label: string; value: string; multiline?: boolean }) {
+function ReadOnly({
+  label,
+  value,
+  multiline = false,
+}: {
+  label: string;
+  value: string;
+  multiline?: boolean;
+}) {
   return (
     <label className="grid gap-1 text-xs text-slate-500">
       {label}

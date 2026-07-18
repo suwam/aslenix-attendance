@@ -1,11 +1,14 @@
-const fs = require('fs');
-let code = fs.readFileSync('src/routes/_app/check-in.tsx', 'utf8');
+const fs = require("fs");
+let code = fs.readFileSync("src/routes/_app/check-in.tsx", "utf8");
 
-if (!code.includes('useDeviceStatus')) {
-  code = code.replace('import { useAuth } from "@/lib/auth-context";', 'import { useAuth } from "@/lib/auth-context";\nimport { useDeviceStatus } from "@/hooks/use-device-status";');
+if (!code.includes("useDeviceStatus")) {
+  code = code.replace(
+    'import { useAuth } from "@/lib/auth-context";',
+    'import { useAuth } from "@/lib/auth-context";\nimport { useDeviceStatus } from "@/hooks/use-device-status";',
+  );
 }
 
-const startStr = '  const [deviceStatus, setDeviceStatus] = useState<';
+const startStr = "  const [deviceStatus, setDeviceStatus] = useState<";
 const endStr = '  return (\n    <>\n      <PageHeader title="Check-in"';
 
 const startIdx = code.indexOf(startStr);
@@ -41,10 +44,10 @@ if (startIdx !== -1 && endIdx !== -1) {
   }
 
 `;
-  
+
   code = code.substring(0, startIdx) + replacement + code.substring(endIdx);
-  fs.writeFileSync('src/routes/_app/check-in.tsx', code);
-  console.log('Successfully updated check-in.tsx');
+  fs.writeFileSync("src/routes/_app/check-in.tsx", code);
+  console.log("Successfully updated check-in.tsx");
 } else {
-  console.log('Failed to find start or end bounds');
+  console.log("Failed to find start or end bounds");
 }

@@ -51,7 +51,10 @@ function QRIdsPage() {
           "user_id,full_name,email,department,position,employee_code,qr_token,qr_status,approval_status,avatar_url,is_suspended",
         )
         .order("full_name"),
-      supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
+      supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", ["admin", "super_admin", "hr_manager"]),
     ]);
     const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
     setUsers((data ?? []).filter((user) => !adminUserIds.has(user.user_id)) as any);

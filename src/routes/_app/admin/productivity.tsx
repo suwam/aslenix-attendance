@@ -112,10 +112,16 @@ function ProductivityCommandCenter() {
         .eq("approval_status", "approved")
         .eq("is_suspended", false)
         .order("full_name"),
-      supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
+      supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", ["admin", "super_admin", "hr_manager"]),
       supabase.from("tasks").select("*"),
       supabase.from("task_assignees").select("task_id,user_id"),
-      supabase.from("attendance").select("*").gte("date", subDays(new Date(), 30).toISOString().slice(0, 10)),
+      supabase
+        .from("attendance")
+        .select("*")
+        .gte("date", subDays(new Date(), 30).toISOString().slice(0, 10)),
       (supabase as any)
         .from("weekly_feedback")
         .select("*")
@@ -129,8 +135,12 @@ function ProductivityCommandCenter() {
     const feedbackRows = feedbackResult.error ? [] : feedbackResult.data || [];
     const allTasks = (tasks || []) as TaskRow[];
     const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
-    const employeeProfiles = (profiles ?? []).filter((profile) => !adminUserIds.has(profile.user_id));
-    setTaskProgress(Object.fromEntries(allTasks.map((task) => [task.id, Number(task.progress || 0)])));
+    const employeeProfiles = (profiles ?? []).filter(
+      (profile) => !adminUserIds.has(profile.user_id),
+    );
+    setTaskProgress(
+      Object.fromEntries(allTasks.map((task) => [task.id, Number(task.progress || 0)])),
+    );
 
     const ranked = employeeProfiles
       .map((profile) => {
@@ -141,7 +151,9 @@ function ProductivityCommandCenter() {
               (assignee) => assignee.task_id === task.id && assignee.user_id === profile.user_id,
             ),
         );
-        const employeeAttendance = (attendance || []).filter((row) => row.user_id === profile.user_id);
+        const employeeAttendance = (attendance || []).filter(
+          (row) => row.user_id === profile.user_id,
+        );
         const attendanceToday = employeeAttendance.find((row) => row.date === today);
         const weekAttendance = employeeAttendance.filter((row) => row.date >= weekStart);
         const monthAttendance = employeeAttendance.filter((row) => row.date >= monthStart);
@@ -169,10 +181,14 @@ function ProductivityCommandCenter() {
             task.status !== "completed",
         ).length;
         const taskProgressAvg = average(assignedTasks.map((task) => Number(task.progress || 0)));
-        const attendedToday = attendanceToday && ["present", "late", "wfh"].includes(attendanceToday.status || "");
+        const attendedToday =
+          attendanceToday && ["present", "late", "wfh"].includes(attendanceToday.status || "");
         const attendanceScore = attendedToday ? (attendanceToday?.is_late ? 78 : 100) : 38;
         const punctualityScore = Math.max(45, 100 - lateCount * 8);
-        const consistencyScore = Math.min(100, Math.round((presentWeekDays / elapsedWeekDays()) * 100));
+        const consistencyScore = Math.min(
+          100,
+          Math.round((presentWeekDays / elapsedWeekDays()) * 100),
+        );
         const overduePenalty = Math.min(22, overdueTasks * 6);
         const completionBoost = Math.min(12, completedToday * 4);
         const dailyScore = clampScore(
@@ -187,8 +203,14 @@ function ProductivityCommandCenter() {
         const previous = feedbackRows.find(
           (item: any) => item.employee_id === profile.user_id && item.week_start < weekStart,
         );
-        const weeklyAverage = clampScore(dailyScore * 0.72 + consistencyScore * 0.18 + punctualityScore * 0.1);
-        const monthScore = clampScore(dailyScore * 0.58 + presentMonthDays * 2.2 + completionRate(completedTasks, assignedTasks.length) * 0.2);
+        const weeklyAverage = clampScore(
+          dailyScore * 0.72 + consistencyScore * 0.18 + punctualityScore * 0.1,
+        );
+        const monthScore = clampScore(
+          dailyScore * 0.58 +
+            presentMonthDays * 2.2 +
+            completionRate(completedTasks, assignedTasks.length) * 0.2,
+        );
 
         return {
           userId: profile.user_id,
@@ -244,9 +266,25 @@ function ProductivityCommandCenter() {
   const chartRows = useMemo(() => buildDailyTrend(employees), [employees]);
   const leaderboard = employees;
   const taskChart = [
-    { name: "Completed", value: sum(employees.map((employee) => employee.completedTasks)), fill: "#21d4fd" },
-    { name: "Active", value: sum(employees.map((employee) => employee.tasks.length - employee.completedTasks - employee.overdueTasks)), fill: "#8b5cf6" },
-    { name: "Overdue", value: sum(employees.map((employee) => employee.overdueTasks)), fill: "#ff2d6f" },
+    {
+      name: "Completed",
+      value: sum(employees.map((employee) => employee.completedTasks)),
+      fill: "#21d4fd",
+    },
+    {
+      name: "Active",
+      value: sum(
+        employees.map(
+          (employee) => employee.tasks.length - employee.completedTasks - employee.overdueTasks,
+        ),
+      ),
+      fill: "#8b5cf6",
+    },
+    {
+      name: "Overdue",
+      value: sum(employees.map((employee) => employee.overdueTasks)),
+      fill: "#ff2d6f",
+    },
   ].filter((item) => item.value > 0);
   const scoreBreakdown = selected
     ? [
@@ -265,20 +303,37 @@ function ProductivityCommandCenter() {
     sum(employees.map((employee) => employee.tasks.length)),
   );
   const attentionEmployees = employees
-    .filter((employee) => employee.overdueTasks > 0 || employee.attendanceScore < 80 || employee.taskProgress < 55)
+    .filter(
+      (employee) =>
+        employee.overdueTasks > 0 || employee.attendanceScore < 80 || employee.taskProgress < 55,
+    )
     .slice(0, 4);
   const attendanceConcerns = employees.filter((employee) => employee.attendanceScore < 80).length;
-  const burnoutRisk = employees.filter((employee) => employee.overdueTasks >= 2 || (employee.tasks.length >= 6 && employee.taskProgress < 55)).length;
-  const activeTasks = sum(employees.map((employee) => employee.tasks.length - employee.completedTasks));
+  const burnoutRisk = employees.filter(
+    (employee) =>
+      employee.overdueTasks >= 2 || (employee.tasks.length >= 6 && employee.taskProgress < 55),
+  ).length;
+  const activeTasks = sum(
+    employees.map((employee) => employee.tasks.length - employee.completedTasks),
+  );
   const teamHealth = clampScore(
     average(employees.map((employee) => employee.consistencyScore)) * 0.42 +
       average(employees.map((employee) => employee.punctualityScore)) * 0.28 +
       Math.max(0, 100 - burnoutRisk * 12) * 0.3,
   );
-  const workloadBalance = clampScore(100 - Math.min(60, Math.abs(average(employees.map((employee) => employee.tasks.length)) - 4) * 10));
-  const aiEfficiency = clampScore(Math.round((teamScore * 0.45 + executionRate * 0.35 + workloadBalance * 0.2)));
-  const forecast = clampScore(Math.round(teamScore * 0.58 + weeklyScore * 0.24 + executionRate * 0.18));
-  const confidence = clampScore(72 + Math.min(18, employees.length * 2) - Math.min(12, overdueRisk * 2));
+  const workloadBalance = clampScore(
+    100 -
+      Math.min(60, Math.abs(average(employees.map((employee) => employee.tasks.length)) - 4) * 10),
+  );
+  const aiEfficiency = clampScore(
+    Math.round(teamScore * 0.45 + executionRate * 0.35 + workloadBalance * 0.2),
+  );
+  const forecast = clampScore(
+    Math.round(teamScore * 0.58 + weeklyScore * 0.24 + executionRate * 0.18),
+  );
+  const confidence = clampScore(
+    72 + Math.min(18, employees.length * 2) - Math.min(12, overdueRisk * 2),
+  );
   const momentumDepartment = topMomentumDepartment(employees);
 
   if (loading) {
@@ -306,12 +361,53 @@ function ProductivityCommandCenter() {
 
       <div className="productivity-shell space-y-6">
         <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6">
-          <SignalCard label="Productivity score" value={teamScore} icon={BrainCircuit} suffix="/100" trend={`+${Math.max(1, teamScore - 72)}% vs last week`} sparkline={sparklineValues(teamScore)} />
-          <SignalCard label="Team health" value={teamHealth} icon={Users} suffix="/100" trend={`${workloadBalance}% workload balance`} sparkline={sparklineValues(teamHealth)} />
-          <SignalCard label="Execution rate" value={executionRate} icon={Gauge} suffix="%" trend={`${completedToday} completed today`} sparkline={sparklineValues(executionRate)} />
-          <SignalCard label="AI efficiency" value={aiEfficiency} icon={Sparkles} suffix="%" trend={`${confidence}% model confidence`} sparkline={sparklineValues(aiEfficiency)} />
-          <SignalCard label="Burnout risk" value={burnoutRisk} icon={ShieldAlert} trend={`${overdueRisk} overdue tasks`} tone="risk" sparkline={sparklineValues(100 - burnoutRisk * 18)} />
-          <SignalCard label="Active tasks" value={activeTasks} icon={Target} trend={`${executionRate}% completion rate`} sparkline={sparklineValues(Math.min(100, activeTasks * 8))} />
+          <SignalCard
+            label="Productivity score"
+            value={teamScore}
+            icon={BrainCircuit}
+            suffix="/100"
+            trend={`+${Math.max(1, teamScore - 72)}% vs last week`}
+            sparkline={sparklineValues(teamScore)}
+          />
+          <SignalCard
+            label="Team health"
+            value={teamHealth}
+            icon={Users}
+            suffix="/100"
+            trend={`${workloadBalance}% workload balance`}
+            sparkline={sparklineValues(teamHealth)}
+          />
+          <SignalCard
+            label="Execution rate"
+            value={executionRate}
+            icon={Gauge}
+            suffix="%"
+            trend={`${completedToday} completed today`}
+            sparkline={sparklineValues(executionRate)}
+          />
+          <SignalCard
+            label="AI efficiency"
+            value={aiEfficiency}
+            icon={Sparkles}
+            suffix="%"
+            trend={`${confidence}% model confidence`}
+            sparkline={sparklineValues(aiEfficiency)}
+          />
+          <SignalCard
+            label="Burnout risk"
+            value={burnoutRisk}
+            icon={ShieldAlert}
+            trend={`${overdueRisk} overdue tasks`}
+            tone="risk"
+            sparkline={sparklineValues(100 - burnoutRisk * 18)}
+          />
+          <SignalCard
+            label="Active tasks"
+            value={activeTasks}
+            icon={Target}
+            trend={`${executionRate}% completion rate`}
+            sparkline={sparklineValues(Math.min(100, activeTasks * 8))}
+          />
         </section>
 
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.12fr_.88fr]">
@@ -323,7 +419,8 @@ function ProductivityCommandCenter() {
                   Neural productivity engine online
                 </div>
                 <h2 className="max-w-2xl text-3xl font-bold sm:text-5xl">
-                  AI forecasts <span className="gradient-text">{forecast}%</span> weekly execution confidence.
+                  AI forecasts <span className="gradient-text">{forecast}%</span> weekly execution
+                  confidence.
                 </h2>
                 <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">
                   {makeExecutiveSummary({
@@ -335,9 +432,15 @@ function ProductivityCommandCenter() {
                   })}
                 </p>
                 <div className="mt-5 grid gap-2 text-sm text-foreground/82">
-                  <AiBullet text={`${topEmployee?.name || "Top performer"} is leading execution with a ${topEmployee?.dailyScore || 0}/100 AI score.`} />
-                  <AiBullet text={`${attentionEmployees.length || 0} employees need coaching signals reviewed today.`} />
-                  <AiBullet text={`Forecast engine confidence is ${confidence}% based on attendance, task velocity, and workload risk.`} />
+                  <AiBullet
+                    text={`${topEmployee?.name || "Top performer"} is leading execution with a ${topEmployee?.dailyScore || 0}/100 AI score.`}
+                  />
+                  <AiBullet
+                    text={`${attentionEmployees.length || 0} employees need coaching signals reviewed today.`}
+                  />
+                  <AiBullet
+                    text={`Forecast engine confidence is ${confidence}% based on attendance, task velocity, and workload risk.`}
+                  />
                 </div>
                 <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
                   {scoreBreakdown.map((metric) => (
@@ -380,9 +483,14 @@ function ProductivityCommandCenter() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-bold gradient-text tabular-nums">{employee.dailyScore}</div>
-                    <div className={`text-[10px] uppercase ${employee.trend >= 0 ? "text-success" : "text-destructive"}`}>
-                      {employee.trend >= 0 ? "+" : ""}{employee.trend}
+                    <div className="text-lg font-bold gradient-text tabular-nums">
+                      {employee.dailyScore}
+                    </div>
+                    <div
+                      className={`text-[10px] uppercase ${employee.trend >= 0 ? "text-success" : "text-destructive"}`}
+                    >
+                      {employee.trend >= 0 ? "+" : ""}
+                      {employee.trend}
                     </div>
                   </div>
                 </button>
@@ -398,9 +506,24 @@ function ProductivityCommandCenter() {
               AI Copilot Assistant
             </h3>
             <div className="grid gap-3">
-              <CopilotMessage role="AI Copilot" text={`Execution confidence is ${forecast}%. Prioritize ${overdueRisk} overdue task${overdueRisk === 1 ? "" : "s"} before assigning new work.`} />
-              <CopilotMessage role="Team Alert" text={burnoutRisk ? `${burnoutRisk} employee${burnoutRisk === 1 ? "" : "s"} show elevated workload pressure. Review task distribution today.` : "No burnout pattern detected. Team workload is within expected operating range."} tone="warning" />
-              <CopilotMessage role="Suggested Action" text={`${topEmployee?.name || "Top performer"} can mentor peers on execution rhythm. Schedule a lightweight coaching check-in for attention-list employees.`} tone="success" />
+              <CopilotMessage
+                role="AI Copilot"
+                text={`Execution confidence is ${forecast}%. Prioritize ${overdueRisk} overdue task${overdueRisk === 1 ? "" : "s"} before assigning new work.`}
+              />
+              <CopilotMessage
+                role="Team Alert"
+                text={
+                  burnoutRisk
+                    ? `${burnoutRisk} employee${burnoutRisk === 1 ? "" : "s"} show elevated workload pressure. Review task distribution today.`
+                    : "No burnout pattern detected. Team workload is within expected operating range."
+                }
+                tone="warning"
+              />
+              <CopilotMessage
+                role="Suggested Action"
+                text={`${topEmployee?.name || "Top performer"} can mentor peers on execution rhythm. Schedule a lightweight coaching check-in for attention-list employees.`}
+                tone="success"
+              />
               <div className="rounded-2xl border border-cyan-300/15 bg-cyan-300/10 px-4 py-3 text-sm text-cyan-50/90">
                 Ask AI: "Which team members need support before Friday?"
               </div>
@@ -413,9 +536,21 @@ function ProductivityCommandCenter() {
               AI Recommendation Center
             </h3>
             <div className="grid gap-3">
-              <RecommendationCard priority="High" title="Recover overdue execution" text={`Close or reassign ${overdueRisk} overdue task${overdueRisk === 1 ? "" : "s"} to protect the weekly forecast.`} />
-              <RecommendationCard priority="Medium" title="Improve attendance stability" text={`${attendanceConcerns} employee${attendanceConcerns === 1 ? "" : "s"} need punctuality coaching or schedule clarity.`} />
-              <RecommendationCard priority="Low" title="Scale top performer habits" text={`Convert ${topEmployee?.name || "the leader"}'s execution pattern into a short team playbook.`} />
+              <RecommendationCard
+                priority="High"
+                title="Recover overdue execution"
+                text={`Close or reassign ${overdueRisk} overdue task${overdueRisk === 1 ? "" : "s"} to protect the weekly forecast.`}
+              />
+              <RecommendationCard
+                priority="Medium"
+                title="Improve attendance stability"
+                text={`${attendanceConcerns} employee${attendanceConcerns === 1 ? "" : "s"} need punctuality coaching or schedule clarity.`}
+              />
+              <RecommendationCard
+                priority="Low"
+                title="Scale top performer habits"
+                text={`Convert ${topEmployee?.name || "the leader"}'s execution pattern into a short team playbook.`}
+              />
             </div>
           </GlassCard>
         </section>
@@ -428,7 +563,9 @@ function ProductivityCommandCenter() {
             </h3>
             <div className="space-y-3">
               {attentionEmployees.length ? (
-                attentionEmployees.map((employee) => <AttentionRow key={employee.userId} employee={employee} />)
+                attentionEmployees.map((employee) => (
+                  <AttentionRow key={employee.userId} employee={employee} />
+                ))
               ) : (
                 <div className="rounded-2xl border border-success/20 bg-success/10 p-5 text-sm text-success">
                   No coaching alerts right now. Team execution is stable.
@@ -443,10 +580,26 @@ function ProductivityCommandCenter() {
               AI Forecast Engine
             </h3>
             <div className="grid gap-3 md:grid-cols-4">
-              <ForecastCard label="End-week productivity" value={`${forecast}%`} detail="Projected completion health" />
-              <ForecastCard label="Burnout risk" value={burnoutRisk} detail="Employees with elevated load" />
-              <ForecastCard label="Attendance risk" value={attendanceConcerns} detail="Punctuality or presence concerns" />
-              <ForecastCard label="Promotion signal" value={employees.filter((employee) => employee.dailyScore >= 88).length} detail="High-potential performers" />
+              <ForecastCard
+                label="End-week productivity"
+                value={`${forecast}%`}
+                detail="Projected completion health"
+              />
+              <ForecastCard
+                label="Burnout risk"
+                value={burnoutRisk}
+                detail="Employees with elevated load"
+              />
+              <ForecastCard
+                label="Attendance risk"
+                value={attendanceConcerns}
+                detail="Punctuality or presence concerns"
+              />
+              <ForecastCard
+                label="Promotion signal"
+                value={employees.filter((employee) => employee.dailyScore >= 88).length}
+                detail="High-potential performers"
+              />
             </div>
           </GlassCard>
         </section>
@@ -460,9 +613,18 @@ function ProductivityCommandCenter() {
             <div className="grid gap-4 md:grid-cols-[1fr_.9fr]">
               <ProductivityHeatmap employees={employees} />
               <div className="grid gap-3">
-                <IntelligenceMetric label="Collaboration score" value={clampScore(Math.round((teamHealth + executionRate) / 2))} />
-                <IntelligenceMetric label="Focus time index" value={clampScore(100 - Math.min(42, activeTasks * 2))} />
-                <IntelligenceMetric label="Attendance intelligence" value={clampScore(100 - attendanceConcerns * 12)} />
+                <IntelligenceMetric
+                  label="Collaboration score"
+                  value={clampScore(Math.round((teamHealth + executionRate) / 2))}
+                />
+                <IntelligenceMetric
+                  label="Focus time index"
+                  value={clampScore(100 - Math.min(42, activeTasks * 2))}
+                />
+                <IntelligenceMetric
+                  label="Attendance intelligence"
+                  value={clampScore(100 - attendanceConcerns * 12)}
+                />
                 <IntelligenceMetric label="Workload distribution" value={workloadBalance} />
               </div>
             </div>
@@ -491,7 +653,9 @@ function ProductivityCommandCenter() {
                 <p className="text-sm text-muted-foreground">{selected?.department}</p>
               </div>
               <div className="rounded-2xl border border-border bg-card px-4 py-3 text-right">
-                <div className="text-3xl font-bold gradient-text tabular-nums">{selected?.dailyScore || 0}</div>
+                <div className="text-3xl font-bold gradient-text tabular-nums">
+                  {selected?.dailyScore || 0}
+                </div>
                 <div className="text-[10px] uppercase text-muted-foreground">AI score</div>
               </div>
             </div>
@@ -500,7 +664,10 @@ function ProductivityCommandCenter() {
               <CompactMetric label="Weekly avg" value={selected?.weeklyAverage || 0} />
               <CompactMetric label="Month rank" value={`#${selected?.rank || 0}`} />
               <CompactMetric label="Completed" value={selected?.completedTasks || 0} />
-              <CompactMetric label="Trend" value={`${(selected?.trend || 0) >= 0 ? "+" : ""}${selected?.trend || 0}`} />
+              <CompactMetric
+                label="Trend"
+                value={`${(selected?.trend || 0) >= 0 ? "+" : ""}${selected?.trend || 0}`}
+              />
             </div>
 
             <div className="mt-5 grid gap-3 md:grid-cols-3">
@@ -541,7 +708,9 @@ function ProductivityCommandCenter() {
                         <div className="truncate font-medium">{task.title}</div>
                         <div className="mt-1 text-xs capitalize text-muted-foreground">
                           {(task.status || "todo").replaceAll("_", " ")}
-                          {task.deadline ? ` · Due ${format(new Date(task.deadline), "MMM d")}` : ""}
+                          {task.deadline
+                            ? ` · Due ${format(new Date(task.deadline), "MMM d")}`
+                            : ""}
                         </div>
                       </div>
                       <div className="rounded-xl bg-card px-2.5 py-1 text-sm font-bold tabular-nums">
@@ -558,7 +727,10 @@ function ProductivityCommandCenter() {
                       onValueCommit={([next]) => saveTaskProgress(task.id, next ?? 0)}
                     />
                     <div className="mt-3 h-2 overflow-hidden rounded-full bg-card">
-                      <div className="productivity-progress h-full rounded-full" style={{ width: `${value}%` }} />
+                      <div
+                        className="productivity-progress h-full rounded-full"
+                        style={{ width: `${value}%` }}
+                      />
                     </div>
                   </div>
                 );
@@ -589,9 +761,25 @@ function ProductivityCommandCenter() {
                 <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 0.06)" />
                 <XAxis dataKey="day" stroke="oklch(0.7 0.03 250)" fontSize={12} />
                 <YAxis stroke="oklch(0.7 0.03 250)" fontSize={12} />
-                <Tooltip contentStyle={tooltipStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipItemStyle} />
-                <Area type="monotone" dataKey="score" stroke="#21d4fd" strokeWidth={3} fill="url(#scoreGlow)" />
-                <Area type="monotone" dataKey="attendance" stroke="#ff2d6f" fill="transparent" strokeWidth={2} />
+                <Tooltip
+                  contentStyle={tooltipStyle}
+                  itemStyle={tooltipItemStyle}
+                  labelStyle={tooltipItemStyle}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="score"
+                  stroke="#21d4fd"
+                  strokeWidth={3}
+                  fill="url(#scoreGlow)"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="attendance"
+                  stroke="#ff2d6f"
+                  fill="transparent"
+                  strokeWidth={2}
+                />
               </AreaChart>
             </ResponsiveContainer>
           </GlassCard>
@@ -604,12 +792,23 @@ function ProductivityCommandCenter() {
             {taskChart.length ? (
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
-                  <Pie data={taskChart} dataKey="value" nameKey="name" innerRadius={68} outerRadius={105} paddingAngle={4}>
+                  <Pie
+                    data={taskChart}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={68}
+                    outerRadius={105}
+                    paddingAngle={4}
+                  >
                     {taskChart.map((entry) => (
                       <Cell key={entry.name} fill={entry.fill} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={tooltipStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipItemStyle} />
+                  <Tooltip
+                    contentStyle={tooltipStyle}
+                    itemStyle={tooltipItemStyle}
+                    labelStyle={tooltipItemStyle}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -627,15 +826,21 @@ function ProductivityCommandCenter() {
               Performance Comparison
             </h3>
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={employees.slice(0, 7).map((employee) => ({
-                name: employee.name.split(" ")[0],
-                daily: employee.dailyScore,
-                weekly: employee.weeklyAverage,
-              }))}>
+              <BarChart
+                data={employees.slice(0, 7).map((employee) => ({
+                  name: employee.name.split(" ")[0],
+                  daily: employee.dailyScore,
+                  weekly: employee.weeklyAverage,
+                }))}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 0.06)" />
                 <XAxis dataKey="name" stroke="oklch(0.7 0.03 250)" fontSize={12} />
                 <YAxis stroke="oklch(0.7 0.03 250)" fontSize={12} />
-                <Tooltip contentStyle={tooltipStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipItemStyle} />
+                <Tooltip
+                  contentStyle={tooltipStyle}
+                  itemStyle={tooltipItemStyle}
+                  labelStyle={tooltipItemStyle}
+                />
                 <Bar dataKey="daily" fill="#21d4fd" radius={[8, 8, 0, 0]} />
                 <Bar dataKey="weekly" fill="#ff2d6f" radius={[8, 8, 0, 0]} />
               </BarChart>
@@ -653,7 +858,9 @@ function ProductivityCommandCenter() {
                   <Avatar employee={employee} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-semibold">{employee.name}</div>
-                    <div className="text-xs text-muted-foreground">{employee.completedTasks} completed tasks</div>
+                    <div className="text-xs text-muted-foreground">
+                      {employee.completedTasks} completed tasks
+                    </div>
                   </div>
                   <div className="w-36 max-w-[38vw]">
                     <div className="mb-1 flex justify-between text-[10px] uppercase text-muted-foreground">
@@ -661,7 +868,10 @@ function ProductivityCommandCenter() {
                       <span>{employee.monthScore}</span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-card">
-                      <div className="productivity-progress h-full rounded-full" style={{ width: `${employee.monthScore}%` }} />
+                      <div
+                        className="productivity-progress h-full rounded-full"
+                        style={{ width: `${employee.monthScore}%` }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -693,11 +903,13 @@ function SignalCard({
 }) {
   return (
     <GlassCard className="productivity-signal">
-      <div className={`flex h-11 w-11 items-center justify-center rounded-xl text-foreground shadow-[0_0_26px_rgba(33,212,253,.35)] ${
-        tone === "risk"
-          ? "bg-gradient-to-br from-rose-500 via-orange-400 to-amber-300"
-          : "bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500"
-      }`}>
+      <div
+        className={`flex h-11 w-11 items-center justify-center rounded-xl text-foreground shadow-[0_0_26px_rgba(33,212,253,.35)] ${
+          tone === "risk"
+            ? "bg-gradient-to-br from-rose-500 via-orange-400 to-amber-300"
+            : "bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500"
+        }`}
+      >
         <Icon size={19} />
       </div>
       <div className="min-w-0 flex-1">
@@ -729,7 +941,10 @@ function MiniSparkline({ values, tone }: { values: number[]; tone: "default" | "
 
 function ScoreGauge({ value }: { value: number }) {
   return (
-    <div className="productivity-gauge" style={{ "--score": `${value}%` } as CSSProperties & Record<string, string>}>
+    <div
+      className="productivity-gauge"
+      style={{ "--score": `${value}%` } as CSSProperties & Record<string, string>}
+    >
       <div className="productivity-gauge-inner">
         <BrainCircuit size={28} className="text-foreground" />
         <div className="text-5xl font-bold tabular-nums">{value}</div>
@@ -757,7 +972,15 @@ function ForecastPill({ label, value }: { label: string; value: string | number 
   );
 }
 
-function ForecastCard({ label, value, detail }: { label: string; value: string | number; detail: string }) {
+function ForecastCard({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: string | number;
+  detail: string;
+}) {
   return (
     <div className="rounded-2xl border border-border bg-card p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan-300/25 hover:bg-card">
       <div className="text-2xl font-bold gradient-text tabular-nums">{value}</div>
@@ -767,7 +990,15 @@ function ForecastCard({ label, value, detail }: { label: string; value: string |
   );
 }
 
-function CopilotMessage({ role, text, tone = "default" }: { role: string; text: string; tone?: "default" | "warning" | "success" }) {
+function CopilotMessage({
+  role,
+  text,
+  tone = "default",
+}: {
+  role: string;
+  text: string;
+  tone?: "default" | "warning" | "success";
+}) {
   const toneClass = {
     default: "border-cyan-300/15 bg-cyan-300/10 text-cyan-50/90",
     warning: "border-warning/20 bg-warning/10 text-warning",
@@ -785,13 +1016,28 @@ function CopilotMessage({ role, text, tone = "default" }: { role: string; text: 
   );
 }
 
-function RecommendationCard({ priority, title, text }: { priority: "High" | "Medium" | "Low"; title: string; text: string }) {
-  const tone = priority === "High" ? "bg-destructive/15 text-destructive" : priority === "Medium" ? "bg-warning/15 text-warning" : "bg-card text-muted-foreground";
+function RecommendationCard({
+  priority,
+  title,
+  text,
+}: {
+  priority: "High" | "Medium" | "Low";
+  title: string;
+  text: string;
+}) {
+  const tone =
+    priority === "High"
+      ? "bg-destructive/15 text-destructive"
+      : priority === "Medium"
+        ? "bg-warning/15 text-warning"
+        : "bg-card text-muted-foreground";
   return (
     <div className="rounded-2xl border border-border bg-card p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan-300/25 hover:bg-card">
       <div className="mb-2 flex items-center justify-between gap-3">
         <h4 className="font-semibold text-muted-foreground">{title}</h4>
-        <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${tone}`}>{priority}</span>
+        <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${tone}`}>
+          {priority}
+        </span>
       </div>
       <p className="text-sm leading-6 text-muted-foreground">{text}</p>
     </div>
@@ -801,13 +1047,17 @@ function RecommendationCard({ priority, title, text }: { priority: "High" | "Med
 function ProductivityHeatmap({ employees }: { employees: EmployeePulse[] }) {
   const cells = Array.from({ length: 35 }).map((_, index) => {
     const employee = employees[index % Math.max(1, employees.length)];
-    const value = employee ? clampScore(employee.dailyScore - ((index * 7) % 28) + (index % 5) * 4) : 0;
+    const value = employee
+      ? clampScore(employee.dailyScore - ((index * 7) % 28) + (index % 5) * 4)
+      : 0;
     return value;
   });
 
   return (
     <div>
-      <div className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">Productivity heatmap</div>
+      <div className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+        Productivity heatmap
+      </div>
       <div className="grid grid-cols-7 gap-1.5">
         {cells.map((value, index) => (
           <span
@@ -833,7 +1083,10 @@ function IntelligenceMetric({ label, value }: { label: string; value: number }) 
         <span className="text-foreground tabular-nums">{value}%</span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-card">
-        <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-violet-400 to-pink-400" style={{ width: `${value}%` }} />
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-violet-400 to-pink-400"
+          style={{ width: `${value}%` }}
+        />
       </div>
     </div>
   );
@@ -851,10 +1104,25 @@ function TaskIntelligenceMatrix({
   forecast: number;
 }) {
   const rows = [
-    { label: "Completion progress", value: completed, detail: `${forecast}% predicted weekly completion`, tone: "cyan" },
+    {
+      label: "Completion progress",
+      value: completed,
+      detail: `${forecast}% predicted weekly completion`,
+      tone: "cyan",
+    },
     { label: "Active workload", value: active, detail: "Open tasks in motion", tone: "violet" },
-    { label: "Overdue risk", value: overdue, detail: overdue ? "Immediate review recommended" : "No overdue drag", tone: "rose" },
-    { label: "Workload forecast", value: clampScore(100 - overdue * 12), detail: "Capacity confidence", tone: "emerald" },
+    {
+      label: "Overdue risk",
+      value: overdue,
+      detail: overdue ? "Immediate review recommended" : "No overdue drag",
+      tone: "rose",
+    },
+    {
+      label: "Workload forecast",
+      value: clampScore(100 - overdue * 12),
+      detail: "Capacity confidence",
+      tone: "emerald",
+    },
   ];
 
   return (
@@ -871,18 +1139,38 @@ function TaskIntelligenceMatrix({
 }
 
 function StatusBadge({ employee }: { employee: EmployeePulse }) {
-  if (employee.dailyScore >= 88) return <span className="rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-bold uppercase text-success">Elite</span>;
-  if (employee.overdueTasks > 0 || employee.attendanceScore < 80) return <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-bold uppercase text-destructive">Risk</span>;
-  if (employee.trend > 8) return <span className="rounded-full bg-cyan-300/15 px-2 py-0.5 text-[10px] font-bold uppercase text-foreground">Rising</span>;
-  return <span className="rounded-full bg-card px-2 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">Stable</span>;
+  if (employee.dailyScore >= 88)
+    return (
+      <span className="rounded-full bg-success/15 px-2 py-0.5 text-[10px] font-bold uppercase text-success">
+        Elite
+      </span>
+    );
+  if (employee.overdueTasks > 0 || employee.attendanceScore < 80)
+    return (
+      <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-bold uppercase text-destructive">
+        Risk
+      </span>
+    );
+  if (employee.trend > 8)
+    return (
+      <span className="rounded-full bg-cyan-300/15 px-2 py-0.5 text-[10px] font-bold uppercase text-foreground">
+        Rising
+      </span>
+    );
+  return (
+    <span className="rounded-full bg-card px-2 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
+      Stable
+    </span>
+  );
 }
 
 function AttentionRow({ employee }: { employee: EmployeePulse }) {
-  const reason = employee.overdueTasks > 0
-    ? `${employee.overdueTasks} overdue task${employee.overdueTasks > 1 ? "s" : ""}`
-    : employee.attendanceScore < 80
-      ? "Attendance consistency risk"
-      : "Task progress below target";
+  const reason =
+    employee.overdueTasks > 0
+      ? `${employee.overdueTasks} overdue task${employee.overdueTasks > 1 ? "s" : ""}`
+      : employee.attendanceScore < 80
+        ? "Attendance consistency risk"
+        : "Task progress below target";
 
   return (
     <div className="rounded-2xl border border-border bg-card p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-warning/30 hover:bg-card">
@@ -892,7 +1180,9 @@ function AttentionRow({ employee }: { employee: EmployeePulse }) {
           <div className="truncate font-semibold">{employee.name}</div>
           <div className="text-xs text-muted-foreground">{employee.department}</div>
         </div>
-        <div className="rounded-full bg-warning/15 px-2.5 py-1 text-xs font-bold text-warning">Coach</div>
+        <div className="rounded-full bg-warning/15 px-2.5 py-1 text-xs font-bold text-warning">
+          Coach
+        </div>
       </div>
       <div className="mt-3 grid gap-2 text-sm md:grid-cols-[.75fr_1.25fr]">
         <div className="rounded-xl border border-border bg-card px-3 py-2">
@@ -900,7 +1190,9 @@ function AttentionRow({ employee }: { employee: EmployeePulse }) {
           <div className="mt-1 font-semibold text-muted-foreground">{reason}</div>
         </div>
         <div className="rounded-xl border border-border bg-card px-3 py-2">
-          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">AI recommendation</div>
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            AI recommendation
+          </div>
           <div className="mt-1 text-muted-foreground">{employee.improvement}</div>
         </div>
       </div>
@@ -908,7 +1200,15 @@ function AttentionRow({ employee }: { employee: EmployeePulse }) {
   );
 }
 
-function NeuralMetric({ label, value, icon: Icon }: { label: string; value: number; icon: typeof Target }) {
+function NeuralMetric({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: number;
+  icon: typeof Target;
+}) {
   return (
     <div className="rounded-2xl border border-border bg-card p-3">
       <Icon size={15} className="mb-2 text-foreground" />
@@ -945,9 +1245,15 @@ function Avatar({ employee, large = false }: { employee: EmployeePulse; large?: 
     .toUpperCase();
   const size = large ? "h-16 w-16 text-lg" : "h-11 w-11 text-sm";
   return employee.avatarUrl ? (
-    <img src={employee.avatarUrl} alt="" className={`${size} shrink-0 rounded-2xl object-cover ring-2 ring-cyan-300/40`} />
+    <img
+      src={employee.avatarUrl}
+      alt=""
+      className={`${size} shrink-0 rounded-2xl object-cover ring-2 ring-cyan-300/40`}
+    />
   ) : (
-    <div className={`${size} flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 font-bold text-foreground shadow-[0_0_24px_rgba(125,92,255,.35)]`}>
+    <div
+      className={`${size} flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 font-bold text-foreground shadow-[0_0_24px_rgba(125,92,255,.35)]`}
+    >
       {initials}
     </div>
   );
@@ -1009,7 +1315,10 @@ function makeExecutiveSummary({
 function topMomentumDepartment(employees: EmployeePulse[]) {
   const departments = new Map<string, number[]>();
   employees.forEach((employee) => {
-    departments.set(employee.department, [...(departments.get(employee.department) || []), employee.dailyScore]);
+    departments.set(employee.department, [
+      ...(departments.get(employee.department) || []),
+      employee.dailyScore,
+    ]);
   });
   const ranked = Array.from(departments.entries())
     .map(([department, scores]) => ({ department, score: average(scores) }))
@@ -1020,7 +1329,8 @@ function topMomentumDepartment(employees: EmployeePulse[]) {
 function makeInsight(score: number, overdue: number, progress: number, consistency: number) {
   if (score >= 88) return "High-confidence performer with strong execution momentum today.";
   if (overdue > 0) return "Overdue load is suppressing the score. Prioritize deadline recovery.";
-  if (progress < 45) return "Task progress is below target; a focused progress update would lift the score.";
+  if (progress < 45)
+    return "Task progress is below target; a focused progress update would lift the score.";
   if (consistency < 70) return "Attendance consistency is the main opportunity this week.";
   return "Stable productivity pattern with room to push completion velocity.";
 }

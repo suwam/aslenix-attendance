@@ -133,7 +133,10 @@ export async function approveDeviceRequest(requestId: string, reviewerId: Types.
     throw Object.assign(new Error("Pending device request not found"), { statusCode: 404 });
   }
 
-  await EmployeeDevice.updateMany({ employeeId: request.employeeId, status: "Active" }, { status: "Inactive" });
+  await EmployeeDevice.updateMany(
+    { employeeId: request.employeeId, status: "Active" },
+    { status: "Inactive" },
+  );
   const device = await EmployeeDevice.findOneAndUpdate(
     { employeeId: request.employeeId, deviceFingerprint: request.deviceFingerprint },
     {
@@ -189,7 +192,11 @@ export async function removeEmployeeDevice(deviceId: string) {
   return device;
 }
 
-export async function replaceEmployeeDevice(deviceId: string, requestId: string, reviewerId: Types.ObjectId) {
+export async function replaceEmployeeDevice(
+  deviceId: string,
+  requestId: string,
+  reviewerId: Types.ObjectId,
+) {
   await removeEmployeeDevice(deviceId);
   return approveDeviceRequest(requestId, reviewerId);
 }

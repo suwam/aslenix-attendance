@@ -25,7 +25,12 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function run() {
   const { data: profiles } = await supabase.from("profiles").select("*");
-  console.log("PROFILES:", profiles ? profiles.map(p => ({ user_id: p.user_id, name: p.full_name, position: p.position })) : null);
+  console.log(
+    "PROFILES:",
+    profiles
+      ? profiles.map((p) => ({ user_id: p.user_id, name: p.full_name, position: p.position }))
+      : null,
+  );
 
   const { data: roles } = await supabase.from("user_roles").select("*");
   console.log("ROLES:", roles);

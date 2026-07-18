@@ -67,7 +67,7 @@ function MyLeaves() {
         .from("leave_requests")
         .select("*")
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
+        .order("created_at", { ascending: false }),
     ]);
     setRows(requestsData.data ?? []);
     setBalances(balanceData.data ?? []);
@@ -82,24 +82,30 @@ function MyLeaves() {
     if (!user) return;
     const startDate = bsInputToAdDateString(form.start_date);
     const endDate = bsInputToAdDateString(form.is_half_day ? form.start_date : form.end_date);
-    if (!startDate || (!form.is_half_day && !endDate)) return toast.error("Enter valid BS dates in YYYY-MM-DD format");
+    if (!startDate || (!form.is_half_day && !endDate))
+      return toast.error("Enter valid BS dates in YYYY-MM-DD format");
     setBusy(true);
-    const { error } = await supabase
-      .from("leave_requests")
-      .insert({ 
-        leave_type: form.leave_type as any,
-        start_date: startDate,
-        end_date: endDate,
-        reason: form.reason,
-        user_id: user.id,
-        is_half_day: form.is_half_day,
-        half_day_session: form.is_half_day ? form.half_day_session : null
-      });
+    const { error } = await supabase.from("leave_requests").insert({
+      leave_type: form.leave_type as any,
+      start_date: startDate,
+      end_date: endDate,
+      reason: form.reason,
+      user_id: user.id,
+      is_half_day: form.is_half_day,
+      half_day_session: form.is_half_day ? form.half_day_session : null,
+    });
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Leave requested");
     setOpen(false);
-    setForm({ leave_type: "casual", start_date: "", end_date: "", reason: "", is_half_day: false, half_day_session: "morning" });
+    setForm({
+      leave_type: "casual",
+      start_date: "",
+      end_date: "",
+      reason: "",
+      is_half_day: false,
+      half_day_session: "morning",
+    });
     load();
   };
 
@@ -149,9 +155,12 @@ function MyLeaves() {
             const remaining = total - used;
             return (
               <GlassCard key={t.v} className="p-3 border-border bg-card">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{t.l}</div>
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  {t.l}
+                </div>
                 <div className="mt-1 flex items-baseline gap-1 text-2xl font-bold text-foreground">
-                  {remaining} <span className="text-xs font-normal text-muted-foreground">left</span>
+                  {remaining}{" "}
+                  <span className="text-xs font-normal text-muted-foreground">left</span>
                 </div>
                 <div className="mt-1.5 flex justify-between text-[10px] text-muted-foreground">
                   <span>Total: {total}</span>
@@ -166,7 +175,12 @@ function MyLeaves() {
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <LeaveMetric label="Pending requests" value={pendingCount} icon={Clock} tone="amber" />
         <LeaveMetric label="Approved" value={approvedCount} icon={CheckCircle2} tone="green" />
-        <LeaveMetric label="Requested days" value={totalRequestedDays} icon={CalendarDays} tone="blue" />
+        <LeaveMetric
+          label="Requested days"
+          value={totalRequestedDays}
+          icon={CalendarDays}
+          tone="blue"
+        />
       </div>
 
       {open && (
@@ -186,7 +200,10 @@ function MyLeaves() {
             </div>
           </div>
 
-          <form onSubmit={submit} className="grid grid-cols-1 gap-5 p-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <form
+            onSubmit={submit}
+            className="grid grid-cols-1 gap-5 p-6 lg:grid-cols-[320px_minmax(0,1fr)]"
+          >
             <div className="rounded-2xl border border-border bg-card p-4">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <CalendarClock size={22} />
@@ -197,9 +214,16 @@ function MyLeaves() {
               </p>
               {form.start_date && (form.is_half_day || form.end_date) && (
                 <div className="mt-4 rounded-xl border border-border bg-card p-3">
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground">Duration</div>
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Duration
+                  </div>
                   <div className="mt-1 text-2xl font-bold text-foreground">
-                    {getLeaveDays(form.start_date, form.is_half_day ? form.start_date : form.end_date, form.is_half_day)} {form.is_half_day ? "day" : "days"}
+                    {getLeaveDays(
+                      form.start_date,
+                      form.is_half_day ? form.start_date : form.end_date,
+                      form.is_half_day,
+                    )}{" "}
+                    {form.is_half_day ? "day" : "days"}
                   </div>
                 </div>
               )}
@@ -225,7 +249,9 @@ function MyLeaves() {
                 </Select>
               </div>
               <div className="sm:col-span-2">
-                <Label className="mb-2 block text-sm font-semibold text-foreground">Leave Duration</Label>
+                <Label className="mb-2 block text-sm font-semibold text-foreground">
+                  Leave Duration
+                </Label>
                 <Select
                   value={form.is_half_day ? "half" : "full"}
                   onValueChange={(v) => setForm({ ...form, is_half_day: v === "half" })}
@@ -240,7 +266,9 @@ function MyLeaves() {
                 </Select>
               </div>
               <div>
-                <Label className="mb-2 block text-sm font-semibold text-foreground">{form.is_half_day ? "Leave date (BS)" : "Start date (BS)"}</Label>
+                <Label className="mb-2 block text-sm font-semibold text-foreground">
+                  {form.is_half_day ? "Leave date (BS)" : "Start date (BS)"}
+                </Label>
                 <BSDateInput
                   required
                   value={form.start_date}
@@ -250,7 +278,9 @@ function MyLeaves() {
               </div>
               {!form.is_half_day ? (
                 <div>
-                  <Label className="mb-2 block text-sm font-semibold text-foreground">End date (BS)</Label>
+                  <Label className="mb-2 block text-sm font-semibold text-foreground">
+                    End date (BS)
+                  </Label>
                   <BSDateInput
                     required
                     value={form.end_date}
@@ -260,7 +290,9 @@ function MyLeaves() {
                 </div>
               ) : (
                 <div>
-                  <Label className="mb-2 block text-sm font-semibold text-foreground">Half-Day Session</Label>
+                  <Label className="mb-2 block text-sm font-semibold text-foreground">
+                    Half-Day Session
+                  </Label>
                   <Select
                     value={form.half_day_session}
                     onValueChange={(v) => setForm({ ...form, half_day_session: v })}
@@ -290,7 +322,11 @@ function MyLeaves() {
                   Your request will appear as pending until an admin reviews it.
                 </div>
                 <Button type="submit" disabled={busy} className="neon-button h-11 rounded-xl px-6">
-                  {busy ? <Loader2 size={15} className="mr-2 animate-spin" /> : <Send size={15} className="mr-2" />}
+                  {busy ? (
+                    <Loader2 size={15} className="mr-2 animate-spin" />
+                  ) : (
+                    <Send size={15} className="mr-2" />
+                  )}
                   {busy ? "Submitting..." : "Submit request"}
                 </Button>
               </div>
@@ -327,7 +363,9 @@ function MyLeaves() {
                     </div>
                     <div className="mt-1 text-sm text-muted-foreground">
                       {getLeaveDays(r.start_date, r.end_date, r.is_half_day)} requested days
-                      {r.is_half_day && r.half_day_session && ` (${r.half_day_session === 'morning' ? 'Morning' : 'Afternoon'})`}
+                      {r.is_half_day &&
+                        r.half_day_session &&
+                        ` (${r.half_day_session === "morning" ? "Morning" : "Afternoon"})`}
                     </div>
                   </div>
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-card text-primary">
@@ -346,7 +384,12 @@ function MyLeaves() {
                   </div>
                 )}
                 {r.status === "pending" && (
-                  <Button size="sm" variant="outline" className="w-fit rounded-xl" onClick={() => cancel(r.id)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-fit rounded-xl"
+                    onClick={() => cancel(r.id)}
+                  >
                     <X size={14} className="mr-1.5" />
                     Cancel
                   </Button>
@@ -381,10 +424,14 @@ function LeaveMetric({
     <GlassCard className="border-border bg-card">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {label}
+          </div>
           <div className="mt-3 text-3xl font-bold tabular-nums text-foreground">{value}</div>
         </div>
-        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${colors[tone]}`}>
+        <div
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${colors[tone]}`}
+        >
           <Icon size={19} />
         </div>
       </div>
@@ -412,7 +459,9 @@ function LeaveStatusPill({ status }: { status: string }) {
           : Clock;
 
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-wider ${className}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-wider ${className}`}
+    >
       <Icon size={12} />
       {status}
     </span>

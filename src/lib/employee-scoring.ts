@@ -24,9 +24,12 @@ export const TASK_COMPLEXITY_LABELS: Record<TaskComplexity, string> = {
 };
 
 export const TASK_COMPLEXITY_DESCRIPTIONS: Record<TaskComplexity, string> = {
-  small: "Quick, low-risk work that can usually finish in a few hours, such as a small fix, caption, asset resize, or simple QA pass.",
-  medium: "A normal deliverable that takes focused work, such as a feature slice, blog post, email campaign, SEO update, or test plan.",
-  large: "Multi-step work with planning or coordination, such as a landing page, ad campaign setup, full QA cycle, or HR policy rollout.",
+  small:
+    "Quick, low-risk work that can usually finish in a few hours, such as a small fix, caption, asset resize, or simple QA pass.",
+  medium:
+    "A normal deliverable that takes focused work, such as a feature slice, blog post, email campaign, SEO update, or test plan.",
+  large:
+    "Multi-step work with planning or coordination, such as a landing page, ad campaign setup, full QA cycle, or HR policy rollout.",
   epic: "Long-term, high-impact work across days or weeks, such as a product launch, major campaign, architecture change, or full SEO strategy.",
 };
 
@@ -79,7 +82,8 @@ export function calculateTaskProgressMetrics(tasks: TaskProgressLike[]) {
     .reduce((sum, task) => sum + effortPointsForTask(task), 0);
   const earnedEffortPoints = tasks.reduce(
     (sum, task) =>
-      sum + effortPointsForTask(task) * (Math.min(100, Math.max(0, Number(task.progress || 0))) / 100),
+      sum +
+      effortPointsForTask(task) * (Math.min(100, Math.max(0, Number(task.progress || 0))) / 100),
     0,
   );
   const totalTaskProgress = tasks.reduce(
@@ -119,7 +123,12 @@ export function calculateTaskProgressMetrics(tasks: TaskProgressLike[]) {
 
 export function normalizedTaskComplexity(value?: string | null): TaskComplexity {
   const normalized = String(value || "").toLowerCase();
-  if (normalized === "small" || normalized === "medium" || normalized === "large" || normalized === "epic") {
+  if (
+    normalized === "small" ||
+    normalized === "medium" ||
+    normalized === "large" ||
+    normalized === "epic"
+  ) {
     return normalized;
   }
   return "medium";
@@ -162,14 +171,23 @@ export function calculateStandupScore(rows: StandupLike[], elapsedDays: number) 
 
   const submittedRows = Array.from(submittedByDate.values());
   const submittedDays = submittedRows.length;
-  const submissionRate = Math.min(100, Math.round((submittedDays / Math.max(1, elapsedDays)) * 100));
+  const submissionRate = Math.min(
+    100,
+    Math.round((submittedDays / Math.max(1, elapsedDays)) * 100),
+  );
   const averageQuality = submittedDays
-    ? Math.round(submittedRows.reduce((sum, row) => sum + standupQualityScore(row), 0) / submittedDays)
+    ? Math.round(
+        submittedRows.reduce((sum, row) => sum + standupQualityScore(row), 0) / submittedDays,
+      )
     : 0;
   const blockerCommunication = submittedDays
-    ? Math.round(submittedRows.reduce((sum, row) => sum + blockerCommunicationScore(row), 0) / submittedDays)
+    ? Math.round(
+        submittedRows.reduce((sum, row) => sum + blockerCommunicationScore(row), 0) / submittedDays,
+      )
     : 0;
-  const score = Math.round(submissionRate * 0.5 + averageQuality * 0.3 + blockerCommunication * 0.2);
+  const score = Math.round(
+    submissionRate * 0.5 + averageQuality * 0.3 + blockerCommunication * 0.2,
+  );
 
   return {
     score,
@@ -249,5 +267,8 @@ function blockerCommunicationScore(row: StandupLike) {
 }
 
 function wordCount(value?: string | null) {
-  return String(value || "").trim().split(/\s+/).filter(Boolean).length;
+  return String(value || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
 }

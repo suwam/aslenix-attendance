@@ -66,7 +66,7 @@ export function TaskAssignees({
         {icon}
         {label}
       </Label>
-      
+
       <div className="flex flex-wrap gap-2">
         {selectedUsers.map((user) => (
           <div

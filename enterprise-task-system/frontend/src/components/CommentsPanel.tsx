@@ -35,7 +35,12 @@ export function CommentsPanel({
                 {comment.authorName} - {comment.authorRole}
                 {comment.isReviewComment ? " review" : ""}
               </span>
-              <time>{new Date(comment.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time>
+              <time>
+                {new Date(comment.createdAt).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </time>
             </div>
             <p className="text-sm text-slate-200">{comment.body}</p>
           </article>

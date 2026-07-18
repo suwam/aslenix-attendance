@@ -11,7 +11,9 @@ import {
 const rpName = "ASLENIX Attendance";
 
 export const generateRegistrationOptions = createServerFn({ method: "POST" })
-  .inputValidator((d: { userId: string; deviceFingerprint: string; rpID: string; username: string }) => d)
+  .inputValidator(
+    (d: { userId: string; deviceFingerprint: string; rpID: string; username: string }) => d,
+  )
   .handler(async ({ data }) => {
     const { userId, deviceFingerprint, rpID, username } = data;
 
@@ -51,7 +53,9 @@ export const generateRegistrationOptions = createServerFn({ method: "POST" })
   });
 
 export const verifyRegistrationResponse = createServerFn({ method: "POST" })
-  .inputValidator((d: { userId: string; deviceFingerprint: string; rpID: string; response: any }) => d)
+  .inputValidator(
+    (d: { userId: string; deviceFingerprint: string; rpID: string; response: any }) => d,
+  )
   .handler(async ({ data }) => {
     const { userId, deviceFingerprint, rpID, response } = data;
 
@@ -87,7 +91,8 @@ export const verifyRegistrationResponse = createServerFn({ method: "POST" })
     });
 
     if (verification.verified && verification.registrationInfo) {
-      const { credential, credentialDeviceType, credentialBackedUp } = verification.registrationInfo;
+      const { credential, credentialDeviceType, credentialBackedUp } =
+        verification.registrationInfo;
 
       // Base64 encode the public key so it can be safely stored in TEXT/BYTEA
       const publicKeyBase64 = Buffer.from(credential.publicKey).toString("base64");
@@ -149,7 +154,9 @@ export const generateAuthenticationOptions = createServerFn({ method: "POST" })
   });
 
 export const verifyAuthenticationResponse = createServerFn({ method: "POST" })
-  .inputValidator((d: { userId: string; deviceFingerprint: string; rpID: string; response: any }) => d)
+  .inputValidator(
+    (d: { userId: string; deviceFingerprint: string; rpID: string; response: any }) => d,
+  )
   .handler(async ({ data }) => {
     const { userId, deviceFingerprint, rpID, response } = data;
 
@@ -202,7 +209,7 @@ export const verifyAuthenticationResponse = createServerFn({ method: "POST" })
         .from("device_passkeys")
         .update({ counter: verification.authenticationInfo.newCounter })
         .eq("id", passkey.id);
-      
+
       return { verified: true };
     }
 

@@ -53,7 +53,10 @@ export const hrmsApi = {
     });
   },
   myDeviceStatus() {
-    return request<{ activeDevice: EmployeeDevice | null; pendingRequests: PendingDeviceRequest[] }>("/devices/me");
+    return request<{
+      activeDevice: EmployeeDevice | null;
+      pendingRequests: PendingDeviceRequest[];
+    }>("/devices/me");
   },
   deviceManagement() {
     return request<DeviceManagementPayload>("/devices");

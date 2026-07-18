@@ -9,10 +9,16 @@ export type DeviceMetadata = {
 
 export function readDeviceMetadata(req: Request): DeviceMetadata {
   return {
-    deviceFingerprint: String(req.body.deviceFingerprint || req.header("x-device-fingerprint") || "").trim(),
+    deviceFingerprint: String(
+      req.body.deviceFingerprint || req.header("x-device-fingerprint") || "",
+    ).trim(),
     browser: String(req.body.browser || req.header("x-device-browser") || "Unknown browser").trim(),
-    operatingSystem: String(req.body.operatingSystem || req.header("x-device-os") || "Unknown OS").trim(),
-    deviceName: String(req.body.deviceName || req.header("x-device-name") || "Unknown device").trim(),
+    operatingSystem: String(
+      req.body.operatingSystem || req.header("x-device-os") || "Unknown OS",
+    ).trim(),
+    deviceName: String(
+      req.body.deviceName || req.header("x-device-name") || "Unknown device",
+    ).trim(),
   };
 }
 

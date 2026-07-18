@@ -54,7 +54,10 @@ export const taskApi = {
       body: JSON.stringify({ body, isReviewComment }),
     });
   },
-  attach(taskId: string, payload: { fileName: string; fileUrl: string; mimeType: string; size: number }) {
+  attach(
+    taskId: string,
+    payload: { fileName: string; fileUrl: string; mimeType: string; size: number },
+  ) {
     return request(`/tasks/${taskId}/attachments`, {
       method: "POST",
       body: JSON.stringify(payload),

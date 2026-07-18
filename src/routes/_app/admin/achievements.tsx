@@ -48,12 +48,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { productivityScore } from "@/lib/tasks-utils";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
@@ -183,28 +178,30 @@ function AdminAchievementsPage() {
         { data: attendance },
         persistedResult,
         feedbackResult,
-      ] =
-        await Promise.all([
-          supabase
-            .from("profiles")
-            .select("user_id, full_name, department, avatar_url")
-            .eq("approval_status", "approved")
-            .eq("is_suspended", false),
-          supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
-          supabase.from("tasks").select("*"),
-          supabase.from("task_assignees").select("task_id,user_id"),
-          supabase
-            .from("attendance")
-            .select("user_id,date,status,work_hours")
-            .gte("date", monthStartDate)
-            .lte("date", monthEndDate),
-          supabase.from("employee_achievements").select("*"),
-          supabase
-            .from("weekly_feedback")
-            .select("employee_id,review_score,week_start")
-            .gte("week_start", monthStartDate)
-            .lte("week_start", monthEndDate),
-        ]);
+      ] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("user_id, full_name, department, avatar_url")
+          .eq("approval_status", "approved")
+          .eq("is_suspended", false),
+        supabase
+          .from("user_roles")
+          .select("user_id, role")
+          .in("role", ["admin", "super_admin", "hr_manager"]),
+        supabase.from("tasks").select("*"),
+        supabase.from("task_assignees").select("task_id,user_id"),
+        supabase
+          .from("attendance")
+          .select("user_id,date,status,work_hours")
+          .gte("date", monthStartDate)
+          .lte("date", monthEndDate),
+        supabase.from("employee_achievements").select("*"),
+        supabase
+          .from("weekly_feedback")
+          .select("employee_id,review_score,week_start")
+          .gte("week_start", monthStartDate)
+          .lte("week_start", monthEndDate),
+      ]);
       const persistedRows = persistedResult.error ? [] : persistedResult.data || [];
       if (persistedResult.error) {
         console.warn("Unable to load persisted employee achievements", persistedResult.error);
@@ -220,11 +217,14 @@ function AdminAchievementsPage() {
           : assigneeResult.data || [];
       const elapsedDays =
         Math.floor(
-          (new Date(`${monthEndDate}T00:00:00`).getTime() - new Date(`${monthStartDate}T00:00:00`).getTime()) /
+          (new Date(`${monthEndDate}T00:00:00`).getTime() -
+            new Date(`${monthStartDate}T00:00:00`).getTime()) /
             86400000,
         ) + 1;
       const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
-      const employeeProfiles = (profiles || []).filter((profile) => !adminUserIds.has(profile.user_id));
+      const employeeProfiles = (profiles || []).filter(
+        (profile) => !adminUserIds.has(profile.user_id),
+      );
       const employeeUserIds = new Set(employeeProfiles.map((profile) => profile.user_id));
 
       const generated = employeeProfiles.flatMap((profile) => {
@@ -244,14 +244,18 @@ function AdminAchievementsPage() {
         const tasksAssigned = assignedTasks.length;
         const averageProgress = tasksAssigned
           ? Math.round(
-              assignedTasks.reduce((sum: number, task: any) => sum + Number(task.progress || 0), 0) /
-                tasksAssigned,
+              assignedTasks.reduce(
+                (sum: number, task: any) => sum + Number(task.progress || 0),
+                0,
+              ) / tasksAssigned,
             )
           : 0;
         const pendingTasks = assignedTasks.filter(
           (task: any) => task.status !== "completed" && Number(task.progress || 0) < 100,
         ).length;
-        const reviewsCompleted = weeklyFeedbackRows.filter((row) => row.employee_id === profile.user_id).length;
+        const reviewsCompleted = weeklyFeedbackRows.filter(
+          (row) => row.employee_id === profile.user_id,
+        ).length;
         const overdueTasks = assignedTasks.filter(
           (task: any) =>
             task.deadline &&
@@ -274,19 +278,21 @@ function AdminAchievementsPage() {
         const score = productivityScore({
           completed: completedTasks,
           total: Math.max(assignedTasks.length, completedTasks),
-          onTimeRate: assignedTasks.length ? Math.max(0, 1 - overdueTasks / assignedTasks.length) : 1,
+          onTimeRate: assignedTasks.length
+            ? Math.max(0, 1 - overdueTasks / assignedTasks.length)
+            : 1,
           hours,
           targetHours: 160,
         });
         const achievementScore = Math.min(
           100,
-          Math.round(score * 0.55 + averageProgress * 0.3 + Math.min(100, reviewsCompleted * 25) * 0.15),
+          Math.round(
+            score * 0.55 + averageProgress * 0.3 + Math.min(100, reviewsCompleted * 25) * 0.15,
+          ),
         );
         const streak = countRecentStreak(activeDates, 30);
         const earned = [
-          score >= 80
-            ? { badge: "Productivity Hero", badgeType: "productivity" as const }
-            : null,
+          score >= 80 ? { badge: "Productivity Hero", badgeType: "productivity" as const } : null,
           completedTasks >= 5 && overdueTasks === 0
             ? { badge: "Fast Finisher", badgeType: "tasks" as const }
             : null,
@@ -301,7 +307,9 @@ function AdminAchievementsPage() {
             : null,
           streak >= 30 ? { badge: "30-Day Streak", badgeType: "streak" as const } : null,
           completedTasks >= 5 ? { badge: "Fast Worker", badgeType: "tasks" as const } : null,
-          attendancePct >= 90 ? { badge: "Attendance Pro", badgeType: "attendance" as const } : null,
+          attendancePct >= 90
+            ? { badge: "Attendance Pro", badgeType: "attendance" as const }
+            : null,
           overdueTasks === 0 && assignedTasks.length > 0
             ? { badge: "No Overdue Tasks", badgeType: "quality" as const }
             : null,
@@ -330,11 +338,7 @@ function AdminAchievementsPage() {
           attendancePct,
           date: new Date(Date.now() - index * 86400000).toISOString(),
           status:
-            item.badge === "Performance Review"
-              ? "Pending"
-              : score >= 95
-                ? "Approved"
-                : "Pending",
+            item.badge === "Performance Review" ? "Pending" : score >= 95 ? "Approved" : "Pending",
           streak,
           overdueTasks,
           history: earned.map((badge) => badge.badge),
@@ -359,9 +363,10 @@ function AdminAchievementsPage() {
       });
 
       const extraRows = persistedRows
-        .filter((item) =>
-          employeeUserIds.has(item.user_id) &&
-          !generated.some((row) => row.userId === item.user_id && row.badge === item.badge),
+        .filter(
+          (item) =>
+            employeeUserIds.has(item.user_id) &&
+            !generated.some((row) => row.userId === item.user_id && row.badge === item.badge),
         )
         .map((item) => {
           const profile = employeeProfiles.find((profile) => profile.user_id === item.user_id);
@@ -391,7 +396,10 @@ function AdminAchievementsPage() {
 
       setRows(
         [...mergedRows, ...extraRows].sort(
-          (a, b) => b.score - a.score || b.completedTasks - a.completedTasks || b.attendancePct - a.attendancePct,
+          (a, b) =>
+            b.score - a.score ||
+            b.completedTasks - a.completedTasks ||
+            b.attendancePct - a.attendancePct,
         ),
       );
       setLoading(false);
@@ -425,7 +433,9 @@ function AdminAchievementsPage() {
     [rows, search, badgeFilter, departmentFilter, scoreFilter],
   );
 
-  const uniqueRewarded = new Set(rows.filter((row) => row.badge !== "Performance Review").map((row) => row.userId));
+  const uniqueRewarded = new Set(
+    rows.filter((row) => row.badge !== "Performance Review").map((row) => row.userId),
+  );
   const highest = rows.reduce<EmployeeAchievement | null>(
     (best, row) => (!best || row.score > best.score ? row : best),
     null,
@@ -452,12 +462,16 @@ function AdminAchievementsPage() {
   const pendingCount = rows.filter((row) => row.status === "Pending").length;
   const manualCount = rows.filter((row) => row.status === "Manual").length;
   const selectedKey = selected ? `${selected.userId}-${selected.badge}` : "";
-  const employeeOptions = Array.from(new Map(rows.map((row) => [row.userId, row])).values()).sort((a, b) =>
-    a.name.localeCompare(b.name),
+  const employeeOptions = Array.from(new Map(rows.map((row) => [row.userId, row])).values()).sort(
+    (a, b) => a.name.localeCompare(b.name),
   );
   const assignmentEmployees = employeeOptions.filter((row) => {
     const query = assignSearch.trim().toLowerCase();
-    return !query || row.name.toLowerCase().includes(query) || row.department.toLowerCase().includes(query);
+    return (
+      !query ||
+      row.name.toLowerCase().includes(query) ||
+      row.department.toLowerCase().includes(query)
+    );
   });
   const selectedEmployeeRows = selected ? rows.filter((row) => row.userId === selected.userId) : [];
   const selectedAchievements = selectedEmployeeRows
@@ -480,20 +494,16 @@ function AdminAchievementsPage() {
     ),
   };
 
-  const badgeTypeByName: Record<string, EmployeeAchievement['badgeType']> = {
-    ...(Object.fromEntries(achievementCatalog.map((item) => [item.badge, item.badgeType])) as Record<
-      string,
-      EmployeeAchievement["badgeType"]
-    >),
+  const badgeTypeByName: Record<string, EmployeeAchievement["badgeType"]> = {
+    ...(Object.fromEntries(
+      achievementCatalog.map((item) => [item.badge, item.badgeType]),
+    ) as Record<string, EmployeeAchievement["badgeType"]>),
   };
 
   const normalizeStatus = (status: string | null | undefined): EmployeeAchievement["status"] =>
     status === "Approved" || status === "Manual" ? status : "Pending";
 
-  const updateRow = (
-    target: EmployeeAchievement,
-    updates: Partial<EmployeeAchievement>,
-  ) => {
+  const updateRow = (target: EmployeeAchievement, updates: Partial<EmployeeAchievement>) => {
     setRows((prev) =>
       prev.map((item) =>
         item.userId === target.userId && item.badge === target.badge
@@ -518,18 +528,16 @@ function AdminAchievementsPage() {
       return;
     }
 
-    const { error } = await supabase
-      .from("employee_achievements")
-      .upsert(
-        {
-          user_id: target.userId,
-          badge: target.badge,
-          badge_type: target.badgeType,
-          status: "Approved",
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,badge" },
-      );
+    const { error } = await supabase.from("employee_achievements").upsert(
+      {
+        user_id: target.userId,
+        badge: target.badge,
+        badge_type: target.badgeType,
+        status: "Approved",
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,badge" },
+    );
 
     if (error) {
       console.error("employee_achievements upsert error", error);
@@ -575,7 +583,9 @@ function AdminAchievementsPage() {
       return;
     }
 
-    const existingRow = rows.find((row) => row.userId === selected.userId && row.badge === manualBadge);
+    const existingRow = rows.find(
+      (row) => row.userId === selected.userId && row.badge === manualBadge,
+    );
     const assignedRow: EmployeeAchievement = {
       ...(existingRow || selected),
       badge: manualBadge,
@@ -586,7 +596,9 @@ function AdminAchievementsPage() {
     };
 
     setRows((prev) => {
-      const exists = prev.some((item) => item.userId === assignedRow.userId && item.badge === manualBadge);
+      const exists = prev.some(
+        (item) => item.userId === assignedRow.userId && item.badge === manualBadge,
+      );
       if (exists) {
         return prev.map((item) =>
           item.userId === assignedRow.userId && item.badge === manualBadge ? assignedRow : item,
@@ -613,11 +625,15 @@ function AdminAchievementsPage() {
 
     if (error) {
       console.error("employee_achievements delete error", error);
-      toast.error(`Unable to remove the badge: ${error.message || error.details || "check console"}`);
+      toast.error(
+        `Unable to remove the badge: ${error.message || error.details || "check console"}`,
+      );
       return;
     }
 
-    setRows((prev) => prev.filter((item) => !(item.userId === target.userId && item.badge === target.badge)));
+    setRows((prev) =>
+      prev.filter((item) => !(item.userId === target.userId && item.badge === target.badge)),
+    );
     if (selected && selected.userId === target.userId && selected.badge === target.badge) {
       setSelected(null);
     }
@@ -725,10 +741,7 @@ function AdminAchievementsPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <BSMonthInput
-                  value={monthFilter}
-                  onChange={setMonthFilter}
-                />
+                <BSMonthInput value={monthFilter} onChange={setMonthFilter} />
               </div>
 
               <div className="admin-achievement-commandbar">
@@ -749,11 +762,21 @@ function AdminAchievementsPage() {
                   <span>{pendingCount} pending</span>
                   <span>{manualCount} manual</span>
                 </div>
-                <Button variant="outline" className="rounded-xl" onClick={handleManualAssign} disabled={!selected}>
+                <Button
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={handleManualAssign}
+                  disabled={!selected}
+                >
                   <PlusCircle size={14} className="mr-1.5" />
                   Assign badge
                 </Button>
-                <Button variant="outline" className="rounded-xl" onClick={() => handleApprove()} disabled={!selected}>
+                <Button
+                  variant="outline"
+                  className="rounded-xl"
+                  onClick={() => handleApprove()}
+                  disabled={!selected}
+                >
                   <BadgeCheck size={14} className="mr-1.5" />
                   Approve
                 </Button>
@@ -805,14 +828,54 @@ function AdminAchievementsPage() {
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={chartRows}>
                   <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 0.06)" />
-                  <XAxis dataKey="name" stroke="oklch(0.7 0.03 250)" fontSize={12} tick={<PerformanceXAxisTick />} />
+                  <XAxis
+                    dataKey="name"
+                    stroke="oklch(0.7 0.03 250)"
+                    fontSize={12}
+                    tick={<PerformanceXAxisTick />}
+                  />
                   <YAxis stroke="oklch(0.7 0.03 250)" fontSize={12} />
                   <Tooltip content={<PerformanceTooltip />} />
-                  <Bar dataKey="tasksAssigned" name="Tasks Assigned" fill="#8b5cf6" radius={[8, 8, 0, 0]} isAnimationActive animationDuration={900} />
-                  <Bar dataKey="tasksCompleted" name="Tasks Completed" fill="#21d4fd" radius={[8, 8, 0, 0]} isAnimationActive animationDuration={900} />
-                  <Bar dataKey="averageProgress" name="Average Progress %" fill="#f6c453" radius={[8, 8, 0, 0]} isAnimationActive animationDuration={900} />
-                  <Bar dataKey="reviewsCompleted" name="Reviews Completed" fill="#34d399" radius={[8, 8, 0, 0]} isAnimationActive animationDuration={900} />
-                  <Bar dataKey="achievementScore" name="Achievement Score" fill="#ff2d6f" radius={[8, 8, 0, 0]} isAnimationActive animationDuration={900} />
+                  <Bar
+                    dataKey="tasksAssigned"
+                    name="Tasks Assigned"
+                    fill="#8b5cf6"
+                    radius={[8, 8, 0, 0]}
+                    isAnimationActive
+                    animationDuration={900}
+                  />
+                  <Bar
+                    dataKey="tasksCompleted"
+                    name="Tasks Completed"
+                    fill="#21d4fd"
+                    radius={[8, 8, 0, 0]}
+                    isAnimationActive
+                    animationDuration={900}
+                  />
+                  <Bar
+                    dataKey="averageProgress"
+                    name="Average Progress %"
+                    fill="#f6c453"
+                    radius={[8, 8, 0, 0]}
+                    isAnimationActive
+                    animationDuration={900}
+                  />
+                  <Bar
+                    dataKey="reviewsCompleted"
+                    name="Reviews Completed"
+                    fill="#34d399"
+                    radius={[8, 8, 0, 0]}
+                    isAnimationActive
+                    animationDuration={900}
+                  />
+                  <Bar
+                    dataKey="achievementScore"
+                    name="Achievement Score"
+                    fill="#ff2d6f"
+                    radius={[8, 8, 0, 0]}
+                    isAnimationActive
+                    animationDuration={900}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </GlassCard>
@@ -869,9 +932,14 @@ function AdminAchievementsPage() {
                   </SelectContent>
                 </Select>
                 <div className="rounded-2xl border border-border bg-card p-3 text-sm text-muted-foreground">
-                  {selectedBadgeMeta?.description || "Select an achievement to preview the description."}
+                  {selectedBadgeMeta?.description ||
+                    "Select an achievement to preview the description."}
                 </div>
-                <Input type="date" value={assignDate} onChange={(event) => setAssignDate(event.target.value)} />
+                <Input
+                  type="date"
+                  value={assignDate}
+                  onChange={(event) => setAssignDate(event.target.value)}
+                />
                 <Textarea
                   value={feedback}
                   onChange={(event) => setFeedback(event.target.value)}
@@ -884,15 +952,19 @@ function AdminAchievementsPage() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {selectedAchievements.length ? (
-                      selectedAchievements.slice(0, 5).map((achievement) => (
-                        <BadgePill
-                          key={`${achievement.userId}-${achievement.badge}`}
-                          badge={achievement.badge}
-                          type={achievement.badgeType}
-                        />
-                      ))
+                      selectedAchievements
+                        .slice(0, 5)
+                        .map((achievement) => (
+                          <BadgePill
+                            key={`${achievement.userId}-${achievement.badge}`}
+                            badge={achievement.badge}
+                            type={achievement.badgeType}
+                          />
+                        ))
                     ) : (
-                      <span className="text-sm text-muted-foreground">No achievements assigned yet.</span>
+                      <span className="text-sm text-muted-foreground">
+                        No achievements assigned yet.
+                      </span>
                     )}
                   </div>
                 </div>
@@ -906,7 +978,11 @@ function AdminAchievementsPage() {
                     Remove
                   </Button>
                 </div>
-                <Button variant="outline" className="w-full rounded-xl" onClick={() => toast.success("Feedback saved") }>
+                <Button
+                  variant="outline"
+                  className="w-full rounded-xl"
+                  onClick={() => toast.success("Feedback saved")}
+                >
                   <MessageSquare size={14} className="mr-1.5" />
                   Feedback
                 </Button>
@@ -917,7 +993,10 @@ function AdminAchievementsPage() {
         </div>
       )}
 
-      <EmployeeDetailModal employee={selected} onOpenChange={(open) => !open && setSelected(null)} />
+      <EmployeeDetailModal
+        employee={selected}
+        onOpenChange={(open) => !open && setSelected(null)}
+      />
     </>
   );
 }
@@ -925,7 +1004,9 @@ function AdminAchievementsPage() {
 function AnalyticsSummaryItem({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-3">
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
       <div className="mt-1 truncate text-sm font-bold text-foreground">{value}</div>
     </div>
   );
@@ -936,7 +1017,14 @@ function PerformanceXAxisTick(props: any) {
   return (
     <g transform={`translate(${x},${y})`}>
       <rect x={-15} y={4} width={30} height={24} rx={10} fill="oklch(1 0 0 / 0.055)" />
-      <text x={0} y={20} textAnchor="middle" fill="oklch(0.9 0.03 250)" fontSize={10} fontWeight={700}>
+      <text
+        x={0}
+        y={20}
+        textAnchor="middle"
+        fill="oklch(0.9 0.03 250)"
+        fontSize={10}
+        fontWeight={700}
+      >
         {payload.value}
       </text>
     </g>
@@ -992,7 +1080,9 @@ function AchievementHistory({ rows }: { rows: EmployeeAchievement[] }) {
                   <BadgePill badge={row.badge} type={row.badgeType} />
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground">Assigned by Admin</div>
-                <div className="text-xs text-muted-foreground">{format(new Date(row.date), "dd MMM yyyy")}</div>
+                <div className="text-xs text-muted-foreground">
+                  {format(new Date(row.date), "dd MMM yyyy")}
+                </div>
               </div>
             </div>
           ))
@@ -1037,76 +1127,78 @@ function AchievementTable({
             const isSelected = selectedKey === rowKey;
 
             return (
-            <tr
-              key={`${rowKey}-${index}`}
-              className={isSelected ? "is-selected" : ""}
-              onClick={() => onSelect(row)}
-            >
-              <td className="p-4">
-                <div className="flex items-center gap-3">
-                  <Avatar row={row} />
-                  <div className="min-w-0">
-                    <div className="truncate font-semibold">{row.name}</div>
-                    <div className="text-xs text-muted-foreground">{row.history.length || 1} badge signals</div>
+              <tr
+                key={`${rowKey}-${index}`}
+                className={isSelected ? "is-selected" : ""}
+                onClick={() => onSelect(row)}
+              >
+                <td className="p-4">
+                  <div className="flex items-center gap-3">
+                    <Avatar row={row} />
+                    <div className="min-w-0">
+                      <div className="truncate font-semibold">{row.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {row.history.length || 1} badge signals
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </td>
-              <td className="p-4 text-muted-foreground">{row.department}</td>
-              <td className="p-4">
-                <BadgePill badge={row.badge} type={row.badgeType} />
-              </td>
-              <td className="p-4">
-                <ScoreMeter value={row.score} />
-              </td>
-              <td className="p-4 tabular-nums">{row.completedTasks}</td>
-              <td className="p-4 tabular-nums">{row.attendancePct}%</td>
-              <td className="p-4 text-muted-foreground">{format(new Date(row.date), "MMM d")}</td>
-              <td className="p-4">
-                <span className={`admin-achievement-status ${row.status.toLowerCase()}`}>
-                  {row.status}
-                </span>
-              </td>
-              <td className="p-4">
-                <div className="flex gap-1.5">
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onSelect(row);
-                    }}
-                    className="admin-achievement-action primary"
-                    aria-label={`View ${row.name}`}
-                    title="View details"
-                  >
-                    <Eye size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onAction("Achievement approved", row);
-                    }}
-                    className="admin-achievement-action success"
-                    aria-label={`Approve ${row.badge} for ${row.name}`}
-                    title="Approve"
-                  >
-                    <BadgeCheck size={14} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onAction("Badge removed", row);
-                    }}
-                    className="admin-achievement-action danger"
-                    aria-label={`Remove ${row.badge} from ${row.name}`}
-                    title="Remove"
-                  >
-                    <MinusCircle size={14} />
-                  </button>
-                </div>
-              </td>
-            </tr>
+                </td>
+                <td className="p-4 text-muted-foreground">{row.department}</td>
+                <td className="p-4">
+                  <BadgePill badge={row.badge} type={row.badgeType} />
+                </td>
+                <td className="p-4">
+                  <ScoreMeter value={row.score} />
+                </td>
+                <td className="p-4 tabular-nums">{row.completedTasks}</td>
+                <td className="p-4 tabular-nums">{row.attendancePct}%</td>
+                <td className="p-4 text-muted-foreground">{format(new Date(row.date), "MMM d")}</td>
+                <td className="p-4">
+                  <span className={`admin-achievement-status ${row.status.toLowerCase()}`}>
+                    {row.status}
+                  </span>
+                </td>
+                <td className="p-4">
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onSelect(row);
+                      }}
+                      className="admin-achievement-action primary"
+                      aria-label={`View ${row.name}`}
+                      title="View details"
+                    >
+                      <Eye size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onAction("Achievement approved", row);
+                      }}
+                      className="admin-achievement-action success"
+                      aria-label={`Approve ${row.badge} for ${row.name}`}
+                      title="Approve"
+                    >
+                      <BadgeCheck size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onAction("Badge removed", row);
+                      }}
+                      className="admin-achievement-action danger"
+                      aria-label={`Remove ${row.badge} from ${row.name}`}
+                      title="Remove"
+                    >
+                      <MinusCircle size={14} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
             );
           })}
           {rows.length === 0 && (
@@ -1174,7 +1266,10 @@ function ActivityFeed({ rows }: { rows: EmployeeAchievement[] }) {
       </h3>
       <div className="space-y-3">
         {rows.map((row, index) => (
-          <div key={`${row.userId}-${row.badge}-${index}`} className="flex gap-3 rounded-2xl bg-card p-3">
+          <div
+            key={`${row.userId}-${row.badge}-${index}`}
+            className="flex gap-3 rounded-2xl bg-card p-3"
+          >
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-foreground">
               <Award size={15} />
             </div>
@@ -1207,9 +1302,21 @@ function EmployeeDetailModal({
 }) {
   const analytics = employee
     ? [
-        { label: "W1", score: Math.max(0, employee.score - 18), attendance: Math.max(0, employee.attendancePct - 16) },
-        { label: "W2", score: Math.max(0, employee.score - 10), attendance: Math.max(0, employee.attendancePct - 9) },
-        { label: "W3", score: Math.max(0, employee.score - 4), attendance: Math.max(0, employee.attendancePct - 4) },
+        {
+          label: "W1",
+          score: Math.max(0, employee.score - 18),
+          attendance: Math.max(0, employee.attendancePct - 16),
+        },
+        {
+          label: "W2",
+          score: Math.max(0, employee.score - 10),
+          attendance: Math.max(0, employee.attendancePct - 9),
+        },
+        {
+          label: "W3",
+          score: Math.max(0, employee.score - 4),
+          attendance: Math.max(0, employee.attendancePct - 4),
+        },
         { label: "W4", score: employee.score, attendance: employee.attendancePct },
       ]
     : [];
@@ -1229,22 +1336,35 @@ function EmployeeDetailModal({
                   <h3 className="text-2xl font-bold">{employee.name}</h3>
                   <p className="text-sm text-muted-foreground">{employee.department}</p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {[employee.badge, ...employee.history].filter(Boolean).slice(0, 5).map((badge) => (
-                      <BadgePill key={badge} badge={badge} type={employee.badgeType} />
-                    ))}
+                    {[employee.badge, ...employee.history]
+                      .filter(Boolean)
+                      .slice(0, 5)
+                      .map((badge) => (
+                        <BadgePill key={badge} badge={badge} type={employee.badgeType} />
+                      ))}
                   </div>
                 </div>
                 <div className="rounded-2xl border border-border bg-card p-4 text-center">
                   <div className="text-3xl font-bold gradient-text">{employee.score}</div>
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground">Score</div>
+                  <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Score
+                  </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <DetailStat label="Assigned" value={employee.tasksAssigned} icon={PlusCircle} />
                 <DetailStat label="Completed" value={employee.completedTasks} icon={CheckCircle2} />
-                <DetailStat label="Avg Progress" value={`${employee.averageProgress}%`} icon={BarChart3} />
-                <DetailStat label="Reviews" value={employee.reviewsCompleted} icon={MessageSquare} />
+                <DetailStat
+                  label="Avg Progress"
+                  value={`${employee.averageProgress}%`}
+                  icon={BarChart3}
+                />
+                <DetailStat
+                  label="Reviews"
+                  value={employee.reviewsCompleted}
+                  icon={MessageSquare}
+                />
               </div>
 
               <GlassCard>
@@ -1260,9 +1380,25 @@ function EmployeeDetailModal({
                     <CartesianGrid strokeDasharray="3 3" stroke="oklch(1 0 0 / 0.06)" />
                     <XAxis dataKey="label" stroke="oklch(0.7 0.03 250)" fontSize={12} />
                     <YAxis stroke="oklch(0.7 0.03 250)" fontSize={12} />
-                    <Tooltip contentStyle={tooltipStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipItemStyle} />
-                    <Area type="monotone" dataKey="score" stroke="#ff2d6f" fill="url(#achievementModalScore)" strokeWidth={3} />
-                    <Area type="monotone" dataKey="attendance" stroke="#21d4fd" fill="transparent" strokeWidth={2} />
+                    <Tooltip
+                      contentStyle={tooltipStyle}
+                      itemStyle={tooltipItemStyle}
+                      labelStyle={tooltipItemStyle}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="score"
+                      stroke="#ff2d6f"
+                      fill="url(#achievementModalScore)"
+                      strokeWidth={3}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="attendance"
+                      stroke="#21d4fd"
+                      fill="transparent"
+                      strokeWidth={2}
+                    />
                   </AreaChart>
                 </ResponsiveContainer>
               </GlassCard>
@@ -1272,7 +1408,9 @@ function EmployeeDetailModal({
                 <div className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">
                   <div className="font-semibold text-foreground">{employee.badge}</div>
                   <div className="mt-1">{achievementDescription(employee.badge)}</div>
-                  <div className="mt-3 text-xs">Assigned by Admin - {format(new Date(employee.date), "dd MMM yyyy, HH:mm")}</div>
+                  <div className="mt-3 text-xs">
+                    Assigned by Admin - {format(new Date(employee.date), "dd MMM yyyy, HH:mm")}
+                  </div>
                 </div>
               </GlassCard>
             </div>
@@ -1305,7 +1443,15 @@ function AdminAchievementStat({
   );
 }
 
-function DetailStat({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof Trophy }) {
+function DetailStat({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: string | number;
+  icon: typeof Trophy;
+}) {
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
       <Icon size={16} className="mb-2 text-primary" />
@@ -1315,13 +1461,7 @@ function DetailStat({ label, value, icon: Icon }: { label: string; value: string
   );
 }
 
-function BadgePill({
-  badge,
-  type,
-}: {
-  badge: string;
-  type: EmployeeAchievement["badgeType"];
-}) {
+function BadgePill({ badge, type }: { badge: string; type: EmployeeAchievement["badgeType"] }) {
   const Icon =
     type === "productivity"
       ? Zap
@@ -1350,9 +1490,15 @@ function Avatar({
   const initials = getInitials(row.name);
   const className = size === "lg" ? "h-16 w-16 text-lg" : "h-10 w-10 text-xs";
   return row.avatarUrl ? (
-    <img src={row.avatarUrl} alt="" className={`${className} shrink-0 rounded-2xl object-cover ring-2 ring-primary/40`} />
+    <img
+      src={row.avatarUrl}
+      alt=""
+      className={`${className} shrink-0 rounded-2xl object-cover ring-2 ring-primary/40`}
+    />
   ) : (
-    <div className={`${className} flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-violet-500 to-cyan-400 font-bold text-foreground shadow-[0_0_24px_rgba(125,92,255,.35)]`}>
+    <div
+      className={`${className} flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-500 via-violet-500 to-cyan-400 font-bold text-foreground shadow-[0_0_24px_rgba(125,92,255,.35)]`}
+    >
       {initials}
     </div>
   );

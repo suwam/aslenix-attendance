@@ -52,7 +52,7 @@ export function TaskDiscussion({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [mentionQuery, setMentionQuery] = useState<{ query: string; index: number } | null>(null);
-  
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -106,25 +106,27 @@ export function TaskDiscussion({
         if (error) throw error;
 
         // Process mentions
-        const mentionNames = mentionableUsers.filter(mu => newComment.includes(`@${mu.full_name}`));
+        const mentionNames = mentionableUsers.filter((mu) =>
+          newComment.includes(`@${mu.full_name}`),
+        );
         if (mentionNames.length > 0 && insertedComment) {
-           await supabase.from("comment_mentions").insert(
-             mentionNames.map(m => ({
-               comment_id: insertedComment.id,
-               mentioned_user_id: m.user_id
-             }))
-           );
-           
-           // Create notifications
-           await supabase.from("notifications").insert(
-             mentionNames.map(m => ({
-               user_id: m.user_id,
-               title: "You were mentioned in a task",
-               message: `Someone mentioned you in a comment.`,
-               type: "task_mention",
-               reference_id: taskId,
-             }))
-           );
+          await supabase.from("comment_mentions").insert(
+            mentionNames.map((m) => ({
+              comment_id: insertedComment.id,
+              mentioned_user_id: m.user_id,
+            })),
+          );
+
+          // Create notifications
+          await supabase.from("notifications").insert(
+            mentionNames.map((m) => ({
+              user_id: m.user_id,
+              title: "You were mentioned in a task",
+              message: `Someone mentioned you in a comment.`,
+              type: "task_mention",
+              reference_id: taskId,
+            })),
+          );
         }
 
         toast.success("Comment added");
@@ -149,13 +151,13 @@ export function TaskDiscussion({
   };
 
   const filteredMentions = mentionableUsers.filter((u) =>
-    u.full_name.toLowerCase().includes(mentionQuery?.query.toLowerCase() || "")
+    u.full_name.toLowerCase().includes(mentionQuery?.query.toLowerCase() || ""),
   );
 
   // Group threads
   const threads = comments.filter((c) => !c.parent_comment_id);
   const replies = comments.filter((c) => c.parent_comment_id);
-  
+
   threads.forEach((t) => {
     t.replies = replies.filter((r) => r.parent_comment_id === t.id);
   });
@@ -175,7 +177,7 @@ export function TaskDiscussion({
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">{formatDate(c.created_at)}</span>
               {c.edited_at && <span className="text-[10px] text-muted-foreground">(edited)</span>}
-              {(user?.id === c.user_id) && (
+              {user?.id === c.user_id && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className="text-muted-foreground hover:text-foreground transition-colors p-0.5">
@@ -192,7 +194,10 @@ export function TaskDiscussion({
                     >
                       <Pencil size={14} className="mr-2" /> Edit
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive" onClick={() => deleteComment(c.id)}>
+                    <DropdownMenuItem
+                      className="text-destructive"
+                      onClick={() => deleteComment(c.id)}
+                    >
                       <Trash2 size={14} className="mr-2" /> Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -245,12 +250,18 @@ export function TaskDiscussion({
             </div>
           )}
           {editingId && (
-             <div className="mb-2 flex items-center justify-between rounded-md bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground">
-             <span>Editing comment</span>
-             <button onClick={() => { setEditingId(null); setNewComment(""); }} className="hover:text-foreground">
-               Cancel
-             </button>
-           </div>
+            <div className="mb-2 flex items-center justify-between rounded-md bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground">
+              <span>Editing comment</span>
+              <button
+                onClick={() => {
+                  setEditingId(null);
+                  setNewComment("");
+                }}
+                className="hover:text-foreground"
+              >
+                Cancel
+              </button>
+            </div>
           )}
 
           {mentionQuery && filteredMentions.length > 0 && (
@@ -291,9 +302,7 @@ export function TaskDiscussion({
                 <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-muted">
                   <Paperclip size={16} />
                 </button>
-                <div className="text-[10px] text-muted-foreground">
-                  Press Enter to send
-                </div>
+                <div className="text-[10px] text-muted-foreground">Press Enter to send</div>
               </div>
             </div>
             <Button

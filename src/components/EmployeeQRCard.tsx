@@ -81,7 +81,9 @@ export const EmployeeQRCard = forwardRef<HTMLDivElement, { profile: QRProfile; s
           )}
           <div className="min-w-0">
             <div className="text-foreground font-semibold truncate">{profile.full_name}</div>
-            <div className="text-[11px] text-muted-foreground truncate">{profile.position || "—"}</div>
+            <div className="text-[11px] text-muted-foreground truncate">
+              {profile.position || "—"}
+            </div>
             <div className="text-[10px] text-muted-foreground truncate">
               {profile.department || "Unassigned"}
             </div>
@@ -90,11 +92,15 @@ export const EmployeeQRCard = forwardRef<HTMLDivElement, { profile: QRProfile; s
 
         <div className="relative mt-4 flex items-center justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <div className="text-[9px] uppercase tracking-wider text-muted-foreground">Employee ID</div>
+            <div className="text-[9px] uppercase tracking-wider text-muted-foreground">
+              Employee ID
+            </div>
             <div className="text-sm font-mono text-foreground truncate">
               {profile.employee_code || "—"}
             </div>
-            <div className="text-[9px] uppercase tracking-wider text-muted-foreground mt-2">Email</div>
+            <div className="text-[9px] uppercase tracking-wider text-muted-foreground mt-2">
+              Email
+            </div>
             <div className="text-[10px] text-muted-foreground truncate">{profile.email}</div>
           </div>
           <div

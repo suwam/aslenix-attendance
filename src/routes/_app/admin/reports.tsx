@@ -42,7 +42,10 @@ function ReportsPage() {
   const todayDate = format(new Date(), "yyyy-MM-dd");
   const isFutureDate = date > todayDate;
   const isWeeklyOff = isWeeklyOffDate(date);
-  const weekStart = format(startOfWeek(new Date(`${date}T00:00:00`), { weekStartsOn: 0 }), "yyyy-MM-dd");
+  const weekStart = format(
+    startOfWeek(new Date(`${date}T00:00:00`), { weekStartsOn: 0 }),
+    "yyyy-MM-dd",
+  );
   const weekEnd = format(addDays(new Date(`${weekStart}T00:00:00`), 5), "yyyy-MM-dd");
   const monthStart = monthRange?.startAd ?? date;
   const monthEnd = monthRange?.endAd ?? date;
@@ -69,7 +72,10 @@ function ReportsPage() {
         .select("user_id, full_name, email, department")
         .eq("approval_status", "approved")
         .order("full_name"),
-      supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
+      supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", ["admin", "super_admin", "hr_manager"]),
     ]);
 
     const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
@@ -108,7 +114,10 @@ function ReportsPage() {
         .select("user_id, full_name, email, department")
         .eq("approval_status", "approved")
         .order("full_name"),
-      supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
+      supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", ["admin", "super_admin", "hr_manager"]),
     ]);
 
     const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
@@ -124,22 +133,31 @@ function ReportsPage() {
       const records = attendanceByUser.get(profile.user_id) ?? [];
       const elapsedEndDate = endDate > todayDate ? todayDate : endDate;
       const elapsedWorkDates =
-        startDate <= todayDate ? dateRange(startDate, elapsedEndDate).filter((day) => !isWeeklyOffDate(day)) : [];
+        startDate <= todayDate
+          ? dateRange(startDate, elapsedEndDate).filter((day) => !isWeeklyOffDate(day))
+          : [];
       const elapsedRecords = records.filter((record) => record.date <= todayDate);
       const recordedWorkDates = new Set(
-        elapsedRecords.filter((record) => !isWeeklyOffDate(record.date)).map((record) => record.date),
+        elapsedRecords
+          .filter((record) => !isWeeklyOffDate(record.date))
+          .map((record) => record.date),
       );
       return {
         ...profile,
         records,
-        presentDays: elapsedRecords.filter((record) => ["present", "late", "wfh"].includes(record.status)).length,
+        presentDays: elapsedRecords.filter((record) =>
+          ["present", "late", "wfh"].includes(record.status),
+        ).length,
         lateDays: elapsedRecords.filter((record) => record.is_late).length,
         earlyCheckoutDays: elapsedRecords.filter((record) => record.is_early_checkout).length,
         leaveDays: elapsedRecords.filter((record) => record.status === "leave").length,
         wfhDays: elapsedRecords.filter((record) => record.status === "wfh").length,
         editedDays: elapsedRecords.filter((record) => record.is_edited).length,
         absentDays: Math.max(elapsedWorkDates.length - recordedWorkDates.size, 0),
-        totalHours: elapsedRecords.reduce((total, record) => total + Number(record.work_hours || 0), 0),
+        totalHours: elapsedRecords.reduce(
+          (total, record) => total + Number(record.work_hours || 0),
+          0,
+        ),
       };
     });
 
@@ -286,25 +304,37 @@ function ReportsPage() {
               T E C H & S O L U T I O N
             </p>
           </div>
-          
+
           <div className="flex flex-col items-center shrink-0">
-            <div className="font-bold text-[15px] mb-2 text-black" style={{ fontFamily: "serif" }}>PAN No: 623611557</div>
+            <div className="font-bold text-[15px] mb-2 text-black" style={{ fontFamily: "serif" }}>
+              PAN No: 623611557
+            </div>
             <div className="flex flex-col items-center">
               <img src={logoMarkUrl} alt="Logo" className="w-[88px] h-[88px] object-contain" />
-              <span className="text-[#1065F5] font-black tracking-widest uppercase text-xl">ASLENIX</span>
+              <span className="text-[#1065F5] font-black tracking-widest uppercase text-xl">
+                ASLENIX
+              </span>
             </div>
           </div>
         </div>
-        
-        <div className="text-[15px] font-bold text-black border-b-[1.5px] border-black pb-2 mb-2 flex justify-between items-center px-2" style={{ fontFamily: "serif" }}>
+
+        <div
+          className="text-[15px] font-bold text-black border-b-[1.5px] border-black pb-2 mb-2 flex justify-between items-center px-2"
+          style={{ fontFamily: "serif" }}
+        >
           <div>Reg No: 391840/82/83</div>
           <div>DATE: {formatBsInput()}</div>
         </div>
-        
+
         {/* Report Title */}
         <div className="text-center mt-8 mb-4">
           <h2 className="text-xl font-bold uppercase underline underline-offset-4 decoration-2">
-            ATTENDANCE OF {period === "monthly" ? monthRange?.label || bsMonth : period === "weekly" ? `${formatNepaliDate(weekStart, "DD MMMM")} - ${formatNepaliDate(weekEnd, "DD MMMM YYYY")} BS` : bsDate}
+            ATTENDANCE OF{" "}
+            {period === "monthly"
+              ? monthRange?.label || bsMonth
+              : period === "weekly"
+                ? `${formatNepaliDate(weekStart, "DD MMMM")} - ${formatNepaliDate(weekEnd, "DD MMMM YYYY")} BS`
+                : bsDate}
           </h2>
         </div>
       </div>
@@ -326,7 +356,11 @@ function ReportsPage() {
           </div>
           <div>
             <label className="text-xs text-muted-foreground">
-              {period === "monthly" ? "Month (BS)" : period === "weekly" ? "Week date (BS)" : "Date (BS)"}
+              {period === "monthly"
+                ? "Month (BS)"
+                : period === "weekly"
+                  ? "Week date (BS)"
+                  : "Date (BS)"}
             </label>
             {period === "monthly" ? (
               <BSMonthInput value={bsMonth} onChange={setBsMonth} />
@@ -335,7 +369,8 @@ function ReportsPage() {
             )}
             {period === "weekly" && (
               <div className="mt-1 text-xs text-muted-foreground">
-                {formatNepaliDate(weekStart, "DD MMMM")} - {formatNepaliDate(weekEnd, "DD MMMM YYYY")} BS
+                {formatNepaliDate(weekStart, "DD MMMM")} -{" "}
+                {formatNepaliDate(weekEnd, "DD MMMM YYYY")} BS
               </div>
             )}
             {period === "monthly" && (
@@ -378,10 +413,17 @@ function ReportsPage() {
           </div>
         ) : rows.length === 0 ? (
           <div className="text-center py-16 text-muted-foreground">
-            No records for this {period === "monthly" ? "month" : period === "weekly" ? "week" : "day"}.
+            No records for this{" "}
+            {period === "monthly" ? "month" : period === "weekly" ? "week" : "day"}.
           </div>
         ) : period === "weekly" || period === "monthly" ? (
-          <AggregateReportTable rows={rows} startDate={aggregateStart} endDate={aggregateEnd} label={aggregateLabel} period={period} />
+          <AggregateReportTable
+            rows={rows}
+            startDate={aggregateStart}
+            endDate={aggregateEnd}
+            label={aggregateLabel}
+            period={period}
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -417,9 +459,7 @@ function ReportsPage() {
                       </td>
                       <td className="p-3">{attendance?.work_location || "—"}</td>
                       <td className="p-3 tabular-nums">
-                        {attendance?.work_hours
-                          ? formatWorkHours(attendance.work_hours)
-                          : "—"}
+                        {attendance?.work_hours ? formatWorkHours(attendance.work_hours) : "—"}
                       </td>
                       <td className="p-3">
                         <span className="capitalize text-xs">
@@ -499,7 +539,9 @@ function AggregateReportTable({
           {rows.map((row) => (
             <tr key={row.user_id} className="border-b border-border/40 hover:bg-muted/20">
               <td className="p-3">
-                {period === "monthly" ? `${label} BS` : `${formatNepaliDate(startDate, "DD MMMM")} - ${formatNepaliDate(endDate, "DD MMMM YYYY")} BS`}
+                {period === "monthly"
+                  ? `${label} BS`
+                  : `${formatNepaliDate(startDate, "DD MMMM")} - ${formatNepaliDate(endDate, "DD MMMM YYYY")} BS`}
               </td>
               <td className="p-3 font-medium">{row.full_name || "—"}</td>
               <td className="p-3 text-muted-foreground">{row.department || "—"}</td>

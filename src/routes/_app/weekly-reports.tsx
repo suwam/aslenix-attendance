@@ -21,7 +21,7 @@ function WeeklyReportsPage() {
   const [loading, setLoading] = useState(true);
   const [exportingId, setExportingId] = useState<string | null>(null);
   const [selectedReport, setSelectedReport] = useState<any | null>(null);
-  
+
   const pdfContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,30 +49,30 @@ function WeeklyReportsPage() {
     try {
       setExportingId(report.id);
       setSelectedReport(report);
-      
+
       // Wait for React to render the hidden component and for Recharts to animate/draw
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const pages = document.querySelectorAll('.pdf-page');
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      const pages = document.querySelectorAll(".pdf-page");
       if (!pages || pages.length === 0) throw new Error("No pages found to export");
 
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      
+
       for (let i = 0; i < pages.length; i++) {
         const pageEl = pages[i] as HTMLElement;
         const imgData = await captureSanitizedPdfPage(pageEl);
-        
+
         const imgProps = pdf.getImageProperties(imgData);
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-        
+
         let heightLeft = pdfHeight;
         let position = 0;
-        
+
         if (i > 0) pdf.addPage();
         pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, pdfHeight);
         heightLeft -= 297; // 297 is A4 height in mm
-        
+
         while (heightLeft > 0) {
           position = heightLeft - pdfHeight;
           pdf.addPage();
@@ -80,12 +80,12 @@ function WeeklyReportsPage() {
           heightLeft -= 297;
         }
       }
-      
+
       pdf.save(`My-Weekly-Report-${report.week_start}.pdf`);
       toast.success("PDF generated successfully");
     } catch (err: any) {
       console.error(err);
-      toast.error(`Failed to generate PDF: ${err.message || 'Unknown error'}`);
+      toast.error(`Failed to generate PDF: ${err.message || "Unknown error"}`);
     } finally {
       setExportingId(null);
       setSelectedReport(null);
@@ -118,11 +118,14 @@ function WeeklyReportsPage() {
             </GlassCard>
           ) : (
             reports.map((report, idx) => (
-              <GlassCard key={report.id} className="border border-cyan-300/15 bg-card/60 hover:bg-card/90 transition-all shadow-lg p-0 overflow-hidden relative group">
+              <GlassCard
+                key={report.id}
+                className="border border-cyan-300/15 bg-card/60 hover:bg-card/90 transition-all shadow-lg p-0 overflow-hidden relative group"
+              >
                 {idx === 0 && (
-                   <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[0.65rem] font-bold uppercase tracking-wider px-3 py-1 rounded-bl-lg shadow-sm">
-                     Latest Report
-                   </div>
+                  <div className="absolute top-0 right-0 bg-emerald-500 text-white text-[0.65rem] font-bold uppercase tracking-wider px-3 py-1 rounded-bl-lg shadow-sm">
+                    Latest Report
+                  </div>
                 )}
                 <div className="p-6">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/50 pb-5 mb-5">
@@ -131,32 +134,54 @@ function WeeklyReportsPage() {
                         Week of {formatNepaliDate(report.week_start, "MMMM DD")}
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        {formatNepaliDate(report.week_start, "MMM DD, YYYY")} — {formatNepaliDate(report.week_end, "MMM DD, YYYY")}
+                        {formatNepaliDate(report.week_start, "MMM DD, YYYY")} —{" "}
+                        {formatNepaliDate(report.week_end, "MMM DD, YYYY")}
                       </p>
                     </div>
                     <Button
                       type="button"
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleExport(report); }}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleExport(report);
+                      }}
                       disabled={exportingId === report.id}
                       className="gap-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white shadow-[0_0_20px_rgba(34,211,238,0.25)]"
                     >
-                      {exportingId === report.id ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                      {exportingId === report.id ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <Download size={16} />
+                      )}
                       Download Official PDF
                     </Button>
                   </div>
-                  
+
                   <div className="grid sm:grid-cols-3 gap-4 mb-6">
                     <div className="bg-muted/30 rounded-xl p-4 border border-border">
-                      <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-1">Productivity Score</p>
-                      <p className="text-3xl font-black text-foreground">{report.analytics_data?.avgScore || 0}</p>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-1">
+                        Productivity Score
+                      </p>
+                      <p className="text-3xl font-black text-foreground">
+                        {report.analytics_data?.avgScore || 0}
+                      </p>
                     </div>
                     <div className="bg-muted/30 rounded-xl p-4 border border-border">
-                      <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-1">Total Hours Logged</p>
-                      <p className="text-3xl font-black text-foreground">{report.analytics_data?.totalHours || 0}h</p>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-1">
+                        Total Hours Logged
+                      </p>
+                      <p className="text-3xl font-black text-foreground">
+                        {report.analytics_data?.totalHours || 0}h
+                      </p>
                     </div>
                     <div className="bg-muted/30 rounded-xl p-4 border border-border">
-                      <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-1">Standups Submitted</p>
-                      <p className="text-3xl font-black text-foreground">{report.analytics_data?.totalStandupsSubmitted || 0}/{report.analytics_data?.totalWorkingDays || 0}</p>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground mb-1">
+                        Standups Submitted
+                      </p>
+                      <p className="text-3xl font-black text-foreground">
+                        {report.analytics_data?.totalStandupsSubmitted || 0}/
+                        {report.analytics_data?.totalWorkingDays || 0}
+                      </p>
                     </div>
                   </div>
 
@@ -173,7 +198,7 @@ function WeeklyReportsPage() {
             ))
           )}
         </div>
-        
+
         <div className="space-y-6 hidden lg:block">
           <GlassCard className="border border-fuchsia-300/15 bg-card shadow-[0_0_30px_rgba(217,70,239,0.06)] p-5 text-sm">
             <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
@@ -181,10 +206,22 @@ function WeeklyReportsPage() {
               Maximize Your Score
             </h3>
             <ul className="space-y-3 mt-4 text-muted-foreground">
-              <li className="flex gap-2 items-start"><span className="text-emerald-400">•</span> Submit your standup every day consistently.</li>
-              <li className="flex gap-2 items-start"><span className="text-emerald-400">•</span> Clearly articulate your plan for tomorrow.</li>
-              <li className="flex gap-2 items-start"><span className="text-emerald-400">•</span> Report blockers early so they don't drag down your execution score.</li>
-              <li className="flex gap-2 items-start"><span className="text-emerald-400">•</span> Maintain stable working hours to avoid burnout flags.</li>
+              <li className="flex gap-2 items-start">
+                <span className="text-emerald-400">•</span> Submit your standup every day
+                consistently.
+              </li>
+              <li className="flex gap-2 items-start">
+                <span className="text-emerald-400">•</span> Clearly articulate your plan for
+                tomorrow.
+              </li>
+              <li className="flex gap-2 items-start">
+                <span className="text-emerald-400">•</span> Report blockers early so they don't drag
+                down your execution score.
+              </li>
+              <li className="flex gap-2 items-start">
+                <span className="text-emerald-400">•</span> Maintain stable working hours to avoid
+                burnout flags.
+              </li>
             </ul>
           </GlassCard>
         </div>

@@ -6,10 +6,25 @@ import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { BSDateInput } from "@/components/BSDateInput";
 import { Label } from "@/components/ui/label";
-import { Loader2, Check, X, Edit3, AlertTriangle, Trash2, ArrowLeftRight, RotateCcw } from "lucide-react";
+import {
+  Loader2,
+  Check,
+  X,
+  Edit3,
+  AlertTriangle,
+  Trash2,
+  ArrowLeftRight,
+  RotateCcw,
+} from "lucide-react";
 import { toast } from "sonner";
 import { differenceInDays, formatDistanceToNowStrict } from "date-fns";
 import { bsInputToAdDateString, formatNepaliDate } from "@/lib/nepali-calendar";
@@ -24,7 +39,7 @@ function LeavesPage() {
   const [loading, setLoading] = useState(true);
   const [comments, setComments] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
-  
+
   const [editingLeave, setEditingLeave] = useState<any | null>(null);
   const [editForm, setEditForm] = useState({ start_date: "", end_date: "" });
   const [editBusy, setEditBusy] = useState(false);
@@ -116,14 +131,15 @@ function LeavesPage() {
     const mappedLeaves = employeeLeaves.map((l) => {
       const duration = l.is_half_day
         ? 0.5
-        : Math.max(
-            1,
-            differenceInDays(new Date(l.end_date), new Date(l.start_date)) + 1,
-          );
+        : Math.max(1, differenceInDays(new Date(l.end_date), new Date(l.start_date)) + 1);
 
       const conflicts = attendanceRecords.filter((a) => {
-        const isWorkStatus = ["present", "late", "wfh", "half_day", "half_day_present"].includes(a.status);
-        return a.user_id === l.user_id && a.date >= l.start_date && a.date <= l.end_date && isWorkStatus;
+        const isWorkStatus = ["present", "late", "wfh", "half_day", "half_day_present"].includes(
+          a.status,
+        );
+        return (
+          a.user_id === l.user_id && a.date >= l.start_date && a.date <= l.end_date && isWorkStatus
+        );
       });
 
       const conflictLog = auditLogs.find((log) => log.leave_id === l.id) || null;
@@ -138,7 +154,7 @@ function LeavesPage() {
     });
 
     setAllRows(mappedLeaves);
-    
+
     let filtered = mappedLeaves;
     if (tab !== "all") filtered = filtered.filter((l) => l.status === tab);
     setFilteredRows(filtered);
@@ -162,12 +178,12 @@ function LeavesPage() {
     const { error } = await supabase.rpc(rpcName, {
       p_leave_id: leave.id,
       p_admin_id: user?.id,
-      p_comment: comments[leave.id] || ""
+      p_comment: comments[leave.id] || "",
     });
-    
+
     setBusy(null);
     if (error) return toast.error(error.message);
-    
+
     toast.success(`Leave ${status}`);
     load();
   };
@@ -180,17 +196,17 @@ function LeavesPage() {
 
     if (action === "delete_attendance_approve_leave") {
       const confirmDelete = window.confirm(
-        "Are you sure you want to soft delete the recorded attendance for this employee? This action is reversible by administrators."
+        "Are you sure you want to soft delete the recorded attendance for this employee? This action is reversible by administrators.",
       );
       if (!confirmDelete) return;
     } else if (action === "keep_attendance_reject_leave") {
       const confirmReject = window.confirm(
-        "Are you sure you want to reject this leave request and keep the existing attendance records?"
+        "Are you sure you want to reject this leave request and keep the existing attendance records?",
       );
       if (!confirmReject) return;
     } else if (action === "convert_to_half_day_leave") {
       const confirmHalf = window.confirm(
-        "Are you sure you want to convert this to half-day present attendance and half-day approved leave?"
+        "Are you sure you want to convert this to half-day present attendance and half-day approved leave?",
       );
       if (!confirmHalf) return;
     }
@@ -201,7 +217,7 @@ function LeavesPage() {
       p_admin_id: user?.id,
       p_action: action,
       p_comment: resolutionComment,
-      p_reason: resolutionReason
+      p_reason: resolutionReason,
     });
     setResolving(false);
 
@@ -216,14 +232,14 @@ function LeavesPage() {
 
   const handleRevertConflict = async (leaveId: string) => {
     const confirmRevert = window.confirm(
-      "Are you sure you want to revert this conflict resolution? This will restore the leave request to pending and revert all attendance changes."
+      "Are you sure you want to revert this conflict resolution? This will restore the leave request to pending and revert all attendance changes.",
     );
     if (!confirmRevert) return;
 
     setRevertingId(leaveId);
     const { error } = await supabase.rpc("revert_leave_conflict_resolution", {
       p_leave_id: leaveId,
-      p_admin_id: user?.id
+      p_admin_id: user?.id,
     });
     setRevertingId(null);
 
@@ -236,15 +252,18 @@ function LeavesPage() {
   const submitModification = async () => {
     if (!editingLeave) return;
     const startDate = bsInputToAdDateString(editForm.start_date);
-    const endDate = bsInputToAdDateString(editingLeave.is_half_day ? editForm.start_date : editForm.end_date);
-    if (!startDate || (!editingLeave.is_half_day && !endDate)) return toast.error("Enter valid BS dates in YYYY-MM-DD format");
+    const endDate = bsInputToAdDateString(
+      editingLeave.is_half_day ? editForm.start_date : editForm.end_date,
+    );
+    if (!startDate || (!editingLeave.is_half_day && !endDate))
+      return toast.error("Enter valid BS dates in YYYY-MM-DD format");
 
     setEditBusy(true);
     const { error } = await supabase.rpc("modify_leave_request", {
       p_leave_id: editingLeave.id,
       p_admin_id: user?.id,
       p_new_start: startDate,
-      p_new_end: endDate
+      p_new_end: endDate,
     });
     setEditBusy(false);
 
@@ -294,7 +313,9 @@ function LeavesPage() {
             key={t.k}
             onClick={() => setTab(t.k)}
             className={`group rounded-3xl border border-border p-4 text-left transition-all ${
-              tab === t.k ? "bg-card shadow-[0_16px_40px_-24px_rgba(255,255,255,0.6)]" : "bg-transparent hover:border-border"
+              tab === t.k
+                ? "bg-card shadow-[0_16px_40px_-24px_rgba(255,255,255,0.6)]"
+                : "bg-transparent hover:border-border"
             }`}
           >
             <div className="text-sm font-semibold text-foreground">{t.label}</div>
@@ -339,9 +360,12 @@ function LeavesPage() {
                         </div>
                       )}
                       <div className="min-w-0">
-                        <div className="text-lg font-semibold truncate">{r.profile?.full_name || "Unknown"}</div>
+                        <div className="text-lg font-semibold truncate">
+                          {r.profile?.full_name || "Unknown"}
+                        </div>
                         <div className="text-sm text-muted-foreground truncate">
-                          {r.profile?.department || "No department"} · {r.profile?.email || "No email"}
+                          {r.profile?.department || "No department"} ·{" "}
+                          {r.profile?.email || "No email"}
                         </div>
                       </div>
                     </div>
@@ -353,7 +377,9 @@ function LeavesPage() {
                           Attendance Conflict
                         </span>
                       )}
-                      <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase ${statusPill(r.status)}`}>
+                      <span
+                        className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase ${statusPill(r.status)}`}
+                      >
                         {r.status.replace(/_/g, " ")}
                       </span>
                       <span className="rounded-full border border-border bg-card px-3 py-1 text-[11px] uppercase text-muted-foreground">
@@ -364,17 +390,25 @@ function LeavesPage() {
 
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div className="rounded-3xl bg-card p-4">
-                      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Leave type</div>
-                      <div className="mt-2 text-sm font-semibold">{formatLeaveType(r.leave_type)}</div>
+                      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Leave type
+                      </div>
+                      <div className="mt-2 text-sm font-semibold">
+                        {formatLeaveType(r.leave_type)}
+                      </div>
                     </div>
                     <div className="rounded-3xl bg-card p-4">
-                      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Dates</div>
+                      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Dates
+                      </div>
                       <div className="mt-2 text-sm font-semibold">
                         {formatNepaliDate(r.start_date, "DD MMM")} → {formatBsDate(r.end_date)}
                       </div>
                     </div>
                     <div className="rounded-3xl bg-card p-4">
-                      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Duration</div>
+                      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Duration
+                      </div>
                       <div className="mt-2 text-sm font-semibold">
                         {r.is_half_day
                           ? `Half Day ${r.half_day_session ? `(${r.half_day_session === "morning" ? "Morning" : "Afternoon"})` : ""}`
@@ -385,7 +419,9 @@ function LeavesPage() {
 
                   {r.reason && (
                     <div className="rounded-3xl bg-card p-4 text-sm leading-6 text-muted-foreground">
-                      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Reason</div>
+                      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                        Reason
+                      </div>
                       <p className="mt-2 text-base text-foreground">{r.reason}</p>
                     </div>
                   )}
@@ -397,22 +433,30 @@ function LeavesPage() {
                     <div className="mt-4 space-y-3 text-sm text-muted-foreground">
                       <div className="flex items-center justify-between gap-3">
                         <span>Submitted</span>
-                        <span className="font-semibold text-foreground">{requestedAgo(r.created_at)}</span>
+                        <span className="font-semibold text-foreground">
+                          {requestedAgo(r.created_at)}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between gap-3">
                         <span>Requested by</span>
-                        <span className="font-semibold text-foreground">{r.profile?.full_name || "Employee"}</span>
+                        <span className="font-semibold text-foreground">
+                          {r.profile?.full_name || "Employee"}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between gap-3">
                         <span>Approval</span>
-                        <span className="font-semibold text-foreground">{r.status === "pending" ? "Waiting" : "Completed"}</span>
+                        <span className="font-semibold text-foreground">
+                          {r.status === "pending" ? "Waiting" : "Completed"}
+                        </span>
                       </div>
                     </div>
                   </div>
 
                   {r.status === "pending" ? (
                     <div className="rounded-3xl bg-card p-5">
-                      <div className="mb-3 text-sm font-semibold text-foreground">Review controls</div>
+                      <div className="mb-3 text-sm font-semibold text-foreground">
+                        Review controls
+                      </div>
                       <Textarea
                         placeholder="Add a comment (optional)"
                         value={comments[r.id] || ""}
@@ -446,9 +490,9 @@ function LeavesPage() {
                       <div className="mb-3 flex items-center justify-between">
                         <div className="text-sm font-semibold text-foreground">Review summary</div>
                         {r.status === "approved" && (
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             className="h-8 rounded-lg text-xs"
                             onClick={() => {
                               setEditingLeave(r);
@@ -462,12 +506,18 @@ function LeavesPage() {
                       </div>
                       <div className="space-y-3 text-sm text-muted-foreground">
                         <div>
-                          <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Comment</div>
-                          <p className="mt-2 text-foreground">{r.admin_comment || "No admin note provided."}</p>
+                          <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                            Comment
+                          </div>
+                          <p className="mt-2 text-foreground">
+                            {r.admin_comment || "No admin note provided."}
+                          </p>
                         </div>
                         <div className="flex items-center justify-between gap-3">
                           <span>Date updated</span>
-                          <span className="font-semibold text-foreground">{formatBsDate(r.updated_at || r.created_at)}</span>
+                          <span className="font-semibold text-foreground">
+                            {formatBsDate(r.updated_at || r.created_at)}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -501,34 +551,59 @@ function LeavesPage() {
                   </div>
                   <div className="grid gap-4 rounded-2xl bg-card/50 p-4 text-xs md:grid-cols-5 text-muted-foreground border border-border/40">
                     <div>
-                      <div className="uppercase tracking-wider text-[10px] font-semibold text-muted-foreground/80">Action Performed</div>
+                      <div className="uppercase tracking-wider text-[10px] font-semibold text-muted-foreground/80">
+                        Action Performed
+                      </div>
                       <div className="mt-1 font-semibold text-foreground">
-                        {r.conflictLog.action_performed === "keep_attendance_reject_leave" && "Keep Attendance & Reject"}
-                        {r.conflictLog.action_performed === "delete_attendance_approve_leave" && "Delete Attendance & Approve"}
-                        {r.conflictLog.action_performed === "convert_to_half_day_leave" && "Convert to Half-Day"}
+                        {r.conflictLog.action_performed === "keep_attendance_reject_leave" &&
+                          "Keep Attendance & Reject"}
+                        {r.conflictLog.action_performed === "delete_attendance_approve_leave" &&
+                          "Delete Attendance & Approve"}
+                        {r.conflictLog.action_performed === "convert_to_half_day_leave" &&
+                          "Convert to Half-Day"}
                       </div>
                     </div>
                     <div>
-                      <div className="uppercase tracking-wider text-[10px] font-semibold text-muted-foreground/80">Performed By</div>
-                      <div className="mt-1 font-semibold text-foreground">{r.conflictLog.performed_by_name}</div>
-                    </div>
-                    <div>
-                      <div className="uppercase tracking-wider text-[10px] font-semibold text-muted-foreground/80">Date & Time</div>
+                      <div className="uppercase tracking-wider text-[10px] font-semibold text-muted-foreground/80">
+                        Performed By
+                      </div>
                       <div className="mt-1 font-semibold text-foreground">
-                        {new Date(r.conflictLog.created_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                        {r.conflictLog.performed_by_name}
                       </div>
                     </div>
                     <div>
-                      <div className="uppercase tracking-wider text-[10px] font-semibold text-muted-foreground/80">Previous → New Status</div>
+                      <div className="uppercase tracking-wider text-[10px] font-semibold text-muted-foreground/80">
+                        Date & Time
+                      </div>
+                      <div className="mt-1 font-semibold text-foreground">
+                        {new Date(r.conflictLog.created_at).toLocaleString([], {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="uppercase tracking-wider text-[10px] font-semibold text-muted-foreground/80">
+                        Previous → New Status
+                      </div>
                       <div className="mt-1 font-semibold text-foreground flex items-center gap-1.5">
-                        <span className="uppercase text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{r.conflictLog.previous_status}</span>
+                        <span className="uppercase text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                          {r.conflictLog.previous_status}
+                        </span>
                         <span>→</span>
-                        <span className="uppercase text-[10px] px-1.5 py-0.5 rounded bg-success/10 text-success">{r.conflictLog.new_status.replace(/_/g, " ")}</span>
+                        <span className="uppercase text-[10px] px-1.5 py-0.5 rounded bg-success/10 text-success">
+                          {r.conflictLog.new_status.replace(/_/g, " ")}
+                        </span>
                       </div>
                     </div>
                     <div>
-                      <div className="uppercase tracking-wider text-[10px] font-semibold text-muted-foreground/80">Audit Reason</div>
-                      <div className="mt-1 font-semibold text-foreground truncate" title={r.conflictLog.reason || "None"}>
+                      <div className="uppercase tracking-wider text-[10px] font-semibold text-muted-foreground/80">
+                        Audit Reason
+                      </div>
+                      <div
+                        className="mt-1 font-semibold text-foreground truncate"
+                        title={r.conflictLog.reason || "None"}
+                      >
                         {r.conflictLog.reason || "—"}
                       </div>
                     </div>
@@ -546,7 +621,8 @@ function LeavesPage() {
           <DialogHeader>
             <DialogTitle>Modify Leave Dates</DialogTitle>
             <div className="text-sm text-muted-foreground">
-              Update the approved dates for this leave request. This will recalculate the leave balance and attendance automatically.
+              Update the approved dates for this leave request. This will recalculate the leave
+              balance and attendance automatically.
             </div>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -563,7 +639,9 @@ function LeavesPage() {
             </div>
             {!editingLeave?.is_half_day && (
               <div>
-                <Label className="mb-2 block text-sm font-semibold text-foreground">New end date (BS)</Label>
+                <Label className="mb-2 block text-sm font-semibold text-foreground">
+                  New end date (BS)
+                </Label>
                 <BSDateInput
                   required
                   value={editForm.end_date}
@@ -574,8 +652,14 @@ function LeavesPage() {
             )}
           </div>
           <DialogFooter className="flex-row justify-end space-x-2">
-            <Button variant="outline" onClick={() => setEditingLeave(null)}>Cancel</Button>
-            <Button onClick={submitModification} disabled={editBusy} className="neon-button rounded-xl">
+            <Button variant="outline" onClick={() => setEditingLeave(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={submitModification}
+              disabled={editBusy}
+              className="neon-button rounded-xl"
+            >
               {editBusy && <Loader2 size={14} className="mr-2 animate-spin" />}
               Save Changes
             </Button>
@@ -592,7 +676,8 @@ function LeavesPage() {
               <DialogTitle className="text-xl">Attendance Conflict Detected</DialogTitle>
             </div>
             <div className="text-sm text-muted-foreground mt-1">
-              This employee has already recorded attendance for one or more dates included in this leave request. Please choose how to proceed.
+              This employee has already recorded attendance for one or more dates included in this
+              leave request. Please choose how to proceed.
             </div>
           </DialogHeader>
 
@@ -600,13 +685,22 @@ function LeavesPage() {
             <div className="space-y-4 py-3">
               {/* Attendance Details Section */}
               <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-                <div className="text-xs uppercase font-bold tracking-wider text-muted-foreground">Conflicting Attendance Details</div>
+                <div className="text-xs uppercase font-bold tracking-wider text-muted-foreground">
+                  Conflicting Attendance Details
+                </div>
                 <div className="space-y-2.5 max-h-40 overflow-y-auto divide-y divide-border/40">
                   {conflictLeave.conflicts?.map((c: any) => (
-                    <div key={c.id} className="pt-2.5 first:pt-0 flex flex-wrap items-center justify-between text-sm gap-2">
+                    <div
+                      key={c.id}
+                      className="pt-2.5 first:pt-0 flex flex-wrap items-center justify-between text-sm gap-2"
+                    >
                       <div>
-                        <span className="font-semibold text-foreground">{formatNepaliDate(c.date, "DD MMM YYYY")} BS</span>
-                        <span className="text-xs text-muted-foreground block">AD Date: {c.date}</span>
+                        <span className="font-semibold text-foreground">
+                          {formatNepaliDate(c.date, "DD MMM YYYY")} BS
+                        </span>
+                        <span className="text-xs text-muted-foreground block">
+                          AD Date: {c.date}
+                        </span>
                       </div>
                       <div className="flex items-center gap-4 text-right">
                         <div>
@@ -621,11 +715,17 @@ function LeavesPage() {
                           <div className="text-xs text-muted-foreground">Times</div>
                           <div className="text-xs font-semibold text-foreground">
                             {c.check_in_time
-                              ? new Date(c.check_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                              ? new Date(c.check_in_time).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
                               : "—"}{" "}
                             -{" "}
                             {c.check_out_time
-                              ? new Date(c.check_out_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                              ? new Date(c.check_out_time).toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
                               : "—"}
                           </div>
                         </div>
@@ -643,7 +743,9 @@ function LeavesPage() {
               {/* Form Input for comment & audit log reason */}
               <div className="space-y-3">
                 <div>
-                  <Label className="block text-sm font-semibold mb-1 text-foreground">HR Comments (Optional)</Label>
+                  <Label className="block text-sm font-semibold mb-1 text-foreground">
+                    HR Comments (Optional)
+                  </Label>
                   <Textarea
                     placeholder="Provide comments for the employee request (will be visible to employee)"
                     value={resolutionComment}
@@ -677,9 +779,12 @@ function LeavesPage() {
                     <X size={16} />
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-foreground">Keep Attendance & Reject Leave</div>
+                    <div className="text-sm font-semibold text-foreground">
+                      Keep Attendance & Reject Leave
+                    </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
-                      Leave status becomes REJECTED. Attendance records remain unchanged. HR comment and action log are saved.
+                      Leave status becomes REJECTED. Attendance records remain unchanged. HR comment
+                      and action log are saved.
                     </div>
                   </div>
                 </button>
@@ -693,9 +798,12 @@ function LeavesPage() {
                     <Trash2 size={16} />
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-foreground">Delete Attendance & Approve Leave</div>
+                    <div className="text-sm font-semibold text-foreground">
+                      Delete Attendance & Approve Leave
+                    </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
-                      Soft deletes conflicting attendance records (recoverable). Leave status becomes APPROVED. Creates audit log.
+                      Soft deletes conflicting attendance records (recoverable). Leave status
+                      becomes APPROVED. Creates audit log.
                     </div>
                   </div>
                 </button>
@@ -704,7 +812,7 @@ function LeavesPage() {
                   disabled={
                     resolving ||
                     !conflictLeave.conflicts?.every(
-                      (c: any) => c.work_hours === null || Number(c.work_hours) < 8.0
+                      (c: any) => c.work_hours === null || Number(c.work_hours) < 8.0,
                     )
                   }
                   onClick={() => handleResolveConflict("convert_to_half_day_leave")}
@@ -717,11 +825,12 @@ function LeavesPage() {
                     <div className="text-sm font-semibold text-foreground">
                       Convert to Half-Day Leave{" "}
                       {!conflictLeave.conflicts?.every(
-                        (c: any) => c.work_hours === null || Number(c.work_hours) < 8.0
+                        (c: any) => c.work_hours === null || Number(c.work_hours) < 8.0,
                       ) && "(Disabled: employee worked 8+ hours)"}
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
-                      Attendance status becomes HALF_DAY_PRESENT. Leave status becomes HALF_DAY_APPROVED. Balance and payroll recalculated.
+                      Attendance status becomes HALF_DAY_PRESENT. Leave status becomes
+                      HALF_DAY_APPROVED. Balance and payroll recalculated.
                     </div>
                   </div>
                 </button>

@@ -11,7 +11,11 @@ export function isMissingSupabaseTableError(error: unknown, tableName: string) {
   );
 }
 
-export function isMissingSupabaseColumnError(error: unknown, tableName: string, columnName: string) {
+export function isMissingSupabaseColumnError(
+  error: unknown,
+  tableName: string,
+  columnName: string,
+) {
   if (!error || typeof error !== "object") return false;
 
   const fields = error as { code?: string; message?: string; details?: string };
@@ -20,7 +24,9 @@ export function isMissingSupabaseColumnError(error: unknown, tableName: string, 
   return (
     fields.code === "42703" ||
     fields.code === "PGRST204" ||
-    (text.includes(`'${columnName}'`) && text.includes(`'${tableName}'`) && text.includes("schema cache")) ||
+    (text.includes(`'${columnName}'`) &&
+      text.includes(`'${tableName}'`) &&
+      text.includes("schema cache")) ||
     text.includes(`column "${columnName}" of relation "${tableName}" does not exist`)
   );
 }

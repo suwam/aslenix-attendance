@@ -11,7 +11,14 @@ import {
 
 export { getBrowserAndOS };
 
-export type DeviceStatus = "loading" | "registered" | "pending" | "rejected" | "inactive" | "unregistered" | "setup_required";
+export type DeviceStatus =
+  | "loading"
+  | "registered"
+  | "pending"
+  | "rejected"
+  | "inactive"
+  | "unregistered"
+  | "setup_required";
 
 export type RegisteredDevice = {
   id: string;
@@ -27,14 +34,19 @@ export type RegisteredDevice = {
 
 export function useDeviceStatus() {
   const { user, isAdmin } = useAuth();
-  const [deviceStatus, setDeviceStatus] = useState<DeviceStatus>(isAdmin ? "registered" : "loading");
+  const [deviceStatus, setDeviceStatus] = useState<DeviceStatus>(
+    isAdmin ? "registered" : "loading",
+  );
   const [localFingerprint, setLocalFingerprint] = useState("");
   const [registeredDevices, setRegisteredDevices] = useState<RegisteredDevice[]>([]);
   const [maxRegisteredDevices, setMaxRegisteredDevices] = useState(2);
   const [pendingReq, setPendingReq] = useState<any | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const invokeWebAuthn = async <T,>(action: string, payload: Record<string, unknown>): Promise<T> => {
+  const invokeWebAuthn = async <T,>(
+    action: string,
+    payload: Record<string, unknown>,
+  ): Promise<T> => {
     const { data, error } = await supabase.functions.invoke("webauthn", {
       body: { action, payload },
     });
@@ -58,7 +70,7 @@ export function useDeviceStatus() {
     const handleForceCheck = () => {
       if (user) checkDevice();
     };
-    
+
     window.addEventListener("force-device-check", handleForceCheck);
     return () => window.removeEventListener("force-device-check", handleForceCheck);
   }, [user]);
@@ -69,29 +81,32 @@ export function useDeviceStatus() {
       setDeviceStatus("registered");
       return;
     }
-    
+
     const fingerprint = await getTrustedDeviceFingerprint();
     setLocalFingerprint(fingerprint);
 
-    const [{ data: currentDevice }, { data: activeDevices }, { data: settings }] = await Promise.all([
-      supabase
-      .from("employee_devices")
-      .select("*")
-      .eq("employee_id", user.id)
-      .eq("device_fingerprint", fingerprint)
-        .maybeSingle(),
-      (supabase as any)
-        .from("employee_devices")
-        .select("id,device_name,device_fingerprint,browser,operating_system,status,registered_at,last_login,force_logout_at")
-        .eq("employee_id", user.id)
-        .eq("status", "Active")
-        .order("last_login", { ascending: false }),
-      (supabase as any)
-        .from("device_security_settings")
-        .select("max_trusted_devices")
-        .eq("id", true)
-        .maybeSingle(),
-    ]);
+    const [{ data: currentDevice }, { data: activeDevices }, { data: settings }] =
+      await Promise.all([
+        supabase
+          .from("employee_devices")
+          .select("*")
+          .eq("employee_id", user.id)
+          .eq("device_fingerprint", fingerprint)
+          .maybeSingle(),
+        (supabase as any)
+          .from("employee_devices")
+          .select(
+            "id,device_name,device_fingerprint,browser,operating_system,status,registered_at,last_login,force_logout_at",
+          )
+          .eq("employee_id", user.id)
+          .eq("status", "Active")
+          .order("last_login", { ascending: false }),
+        (supabase as any)
+          .from("device_security_settings")
+          .select("max_trusted_devices")
+          .eq("id", true)
+          .maybeSingle(),
+      ]);
 
     const devices = (activeDevices ?? []) as RegisteredDevice[];
     const maxDevices = Number(settings?.max_trusted_devices ?? 2);
@@ -146,16 +161,14 @@ export function useDeviceStatus() {
     if (devices.length >= maxDevices && (!request || request.status === "Approved")) {
       const { browser, os } = getBrowserAndOS();
       const name = `${os} ${browser}`;
-      const { error } = await (supabase as any)
-        .from("pending_device_requests")
-        .insert({
-          employee_id: user.id,
-          device_fingerprint: fingerprint,
-          browser,
-          operating_system: os,
-          device_name: name,
-          status: "Pending",
-        });
+      const { error } = await (supabase as any).from("pending_device_requests").insert({
+        employee_id: user.id,
+        device_fingerprint: fingerprint,
+        browser,
+        operating_system: os,
+        device_name: name,
+        status: "Pending",
+      });
 
       if (!error) {
         await logTrustedDeviceEvent({
@@ -192,12 +205,15 @@ export function useDeviceStatus() {
       const attResp = await startRegistration({ optionsJSON: options });
 
       // 3. Verify response with WebAuthn endpoint
-      const verificationResp = await invokeWebAuthn<{ verified: boolean }>("verify-registration-response", {
-        userId: user.id,
-        deviceFingerprint: localFingerprint,
-        rpID,
-        response: attResp,
-      });
+      const verificationResp = await invokeWebAuthn<{ verified: boolean }>(
+        "verify-registration-response",
+        {
+          userId: user.id,
+          deviceFingerprint: localFingerprint,
+          rpID,
+          response: attResp,
+        },
+      );
 
       if (verificationResp.verified) {
         // 4. Successful passkey registration -> Now save to employee_devices
@@ -245,7 +261,9 @@ export function useDeviceStatus() {
             },
             { onConflict: "employee_id,device_fingerprint" },
           )
-          .select("id,device_name,device_fingerprint,browser,operating_system,status,registered_at,last_login,force_logout_at")
+          .select(
+            "id,device_name,device_fingerprint,browser,operating_system,status,registered_at,last_login,force_logout_at",
+          )
           .single();
         if (error) throw error;
 
@@ -262,7 +280,12 @@ export function useDeviceStatus() {
           deviceId: device.id,
           deviceFingerprint: localFingerprint,
           action: replaceDeviceId ? "replaced" : "passkey_registered",
-          metadata: { browser, os, deviceName: nameToUse, replaceDeviceId: replaceDeviceId ?? null },
+          metadata: {
+            browser,
+            os,
+            deviceName: nameToUse,
+            replaceDeviceId: replaceDeviceId ?? null,
+          },
         });
 
         toast.success("Device and Passkey registered successfully!");

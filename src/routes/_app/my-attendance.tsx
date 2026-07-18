@@ -7,9 +7,21 @@ import { GlassCard } from "@/components/GlassCard";
 import { AttendanceLocationLinks } from "@/components/AttendanceLocationLinks";
 import { BSDateInput, BSDateTimeInput } from "@/components/BSDateInput";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { formatWorkHours } from "@/lib/work-hours";
 import { bsInputToAdDateString, formatBsInput, formatNepaliDate } from "@/lib/nepali-calendar";
@@ -93,7 +105,9 @@ function MyAttendance() {
       status: display.status,
       variant: display.variant,
       checkIn: attendance.check_in_time ? format(new Date(attendance.check_in_time), "HH:mm") : "—",
-      checkOut: attendance.check_out_time ? format(new Date(attendance.check_out_time), "HH:mm") : "—",
+      checkOut: attendance.check_out_time
+        ? format(new Date(attendance.check_out_time), "HH:mm")
+        : "—",
       hours: attendance.work_hours ? formatWorkHours(attendance.work_hours) : "—",
     };
   }, [attendance, isWeeklyOff]);
@@ -102,7 +116,12 @@ function MyAttendance() {
     if (!user) return;
     setLoading(true);
     Promise.all([
-      supabase.from("attendance").select("*").eq("user_id", user.id).eq("date", date).order("date", { ascending: false }),
+      supabase
+        .from("attendance")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("date", date)
+        .order("date", { ascending: false }),
       supabase
         .from("attendance_correction_requests")
         .select("*")
@@ -149,10 +168,15 @@ function MyAttendance() {
       attendance_id: attendance.id,
       user_id: user.id,
       employee_name: profile.full_name,
-      requested_check_in_time: shouldSubmitCheckIn(form.correctionType) ? fromDateTimeInput(form.checkIn) : null,
-      requested_check_out_time: shouldSubmitCheckOut(form.correctionType) ? fromDateTimeInput(form.checkOut) : null,
+      requested_check_in_time: shouldSubmitCheckIn(form.correctionType)
+        ? fromDateTimeInput(form.checkIn)
+        : null,
+      requested_check_out_time: shouldSubmitCheckOut(form.correctionType)
+        ? fromDateTimeInput(form.checkOut)
+        : null,
       requested_status: form.correctionType === "status_correction" ? (form.status as any) : null,
-      requested_work_location: form.correctionType === "location_correction" ? form.workLocation : null,
+      requested_work_location:
+        form.correctionType === "location_correction" ? form.workLocation : null,
       reason: `${getCorrectionTypeLabel(form.correctionType)}: ${form.reason.trim()}`,
     });
     setSaving(false);
@@ -302,9 +326,14 @@ function MyAttendance() {
           <div className="mb-3 text-sm font-semibold text-foreground">Correction requests</div>
           <div className="space-y-2">
             {requests.slice(0, 4).map((request) => (
-              <div key={request.id} className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
+              <div
+                key={request.id}
+                className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div>
-                  <div className="text-sm text-foreground">{format(new Date(request.created_at), "MMM d, yyyy HH:mm")}</div>
+                  <div className="text-sm text-foreground">
+                    {format(new Date(request.created_at), "MMM d, yyyy HH:mm")}
+                  </div>
                   <div className="text-xs text-muted-foreground">{request.reason}</div>
                 </div>
                 <RequestBadge status={request.status} />
@@ -328,7 +357,10 @@ function MyAttendance() {
           <div className="space-y-6 px-6 py-6">
             <CorrectionSection>
               <Field label="Reason Type *" error={errors.correctionType}>
-                <Select value={form.correctionType} onValueChange={(value) => selectCorrectionType(value as CorrectionType)}>
+                <Select
+                  value={form.correctionType}
+                  onValueChange={(value) => selectCorrectionType(value as CorrectionType)}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -344,11 +376,22 @@ function MyAttendance() {
             </CorrectionSection>
 
             <CorrectionSection>
-              <div className="mb-3 text-sm font-semibold text-foreground">Current Attendance Record</div>
+              <div className="mb-3 text-sm font-semibold text-foreground">
+                Current Attendance Record
+              </div>
               <div className="grid gap-2 sm:grid-cols-2">
-                <ReadOnlyValue label="Check-in" value={formatTimeDisplay(attendance?.check_in_time)} />
-                <ReadOnlyValue label="Check-out" value={formatTimeDisplay(attendance?.check_out_time)} />
-                <ReadOnlyValue label="Status" value={attendance ? getAttendanceStatusDisplay(attendance).status : "—"} />
+                <ReadOnlyValue
+                  label="Check-in"
+                  value={formatTimeDisplay(attendance?.check_in_time)}
+                />
+                <ReadOnlyValue
+                  label="Check-out"
+                  value={formatTimeDisplay(attendance?.check_out_time)}
+                />
+                <ReadOnlyValue
+                  label="Status"
+                  value={attendance ? getAttendanceStatusDisplay(attendance).status : "—"}
+                />
                 <ReadOnlyValue label="Location" value={attendance?.work_location || "Office"} />
               </div>
             </CorrectionSection>
@@ -357,7 +400,8 @@ function MyAttendance() {
               <div className="mb-4">
                 <div className="text-sm font-semibold text-foreground">Requested Correction</div>
                 <div className="mt-1 text-xs text-muted-foreground">
-                  Only the fields required for {getCorrectionTypeLabel(form.correctionType)} are shown.
+                  Only the fields required for {getCorrectionTypeLabel(form.correctionType)} are
+                  shown.
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -453,7 +497,9 @@ function MyAttendance() {
 
             <div className="flex gap-3 rounded-xl border border-accent/20 bg-accent/10 p-3 text-sm text-muted-foreground">
               <Info size={16} className="mt-0.5 shrink-0 text-accent" />
-              <span>This request will be reviewed by HR/Admin before attendance records are updated.</span>
+              <span>
+                This request will be reviewed by HR/Admin before attendance records are updated.
+              </span>
             </div>
           </div>
 
@@ -483,8 +529,12 @@ function MyAttendance() {
               {history.map((item) => (
                 <div key={item.id} className="rounded-xl border border-border bg-card p-4">
                   <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="font-semibold text-foreground">Edited by {item.edited_by_name}</div>
-                    <div className="text-xs text-muted-foreground">{format(new Date(item.created_at), "MMM d, yyyy HH:mm")}</div>
+                    <div className="font-semibold text-foreground">
+                      Edited by {item.edited_by_name}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {format(new Date(item.created_at), "MMM d, yyyy HH:mm")}
+                    </div>
                   </div>
                   <div className="mt-3 rounded-lg bg-card p-3 text-sm">
                     <span className="text-muted-foreground">Reason: </span>
@@ -517,7 +567,9 @@ function StatusPill({
           : "bg-accent/15 text-accent";
 
   return (
-    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${classes}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${classes}`}
+    >
       {status}
     </span>
   );
@@ -528,10 +580,15 @@ function getAttendanceStatusDisplay(attendance: any): {
   variant: "success" | "warning" | "destructive" | "accent";
 } {
   const correctedStatus = attendance?.status?.replace("_", " ") || "Present";
-  const hasWarningStatus = attendance?.status !== "present" && (attendance?.is_late || attendance?.is_early_checkout);
+  const hasWarningStatus =
+    attendance?.status !== "present" && (attendance?.is_late || attendance?.is_early_checkout);
 
   return {
-    status: hasWarningStatus ? (attendance?.is_early_checkout ? "Early checkout" : "Late") : correctedStatus,
+    status: hasWarningStatus
+      ? attendance?.is_early_checkout
+        ? "Early checkout"
+        : "Late"
+      : correctedStatus,
     variant: hasWarningStatus ? "warning" : attendance?.status ? "success" : "destructive",
   };
 }
@@ -544,16 +601,28 @@ function RequestBadge({ status }: { status: string }) {
         ? "bg-destructive/15 text-destructive"
         : "bg-warning/15 text-warning";
   return (
-    <span className={`w-fit rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${classes}`}>
+    <span
+      className={`w-fit rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${classes}`}
+    >
       {formatRequestStatus(status)}
     </span>
   );
 }
 
-function Field({ label, children, error }: { label: string; children: React.ReactNode; error?: string }) {
+function Field({
+  label,
+  children,
+  error,
+}: {
+  label: string;
+  children: React.ReactNode;
+  error?: string;
+}) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">{label}</span>
+      <span className="mb-1.5 block text-xs uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
       {children}
       {error && <span className="mt-1.5 block text-xs text-destructive">{error}</span>}
     </label>
@@ -611,11 +680,19 @@ function getCorrectionTypeLabel(correctionType: CorrectionType) {
 }
 
 function shouldShowCheckIn(correctionType: CorrectionType) {
-  return correctionType === "wrong_time" || correctionType === "late_checkin" || correctionType === "missed_checkin";
+  return (
+    correctionType === "wrong_time" ||
+    correctionType === "late_checkin" ||
+    correctionType === "missed_checkin"
+  );
 }
 
 function shouldShowCheckOut(correctionType: CorrectionType) {
-  return correctionType === "wrong_time" || correctionType === "early_checkout" || correctionType === "missed_checkout";
+  return (
+    correctionType === "wrong_time" ||
+    correctionType === "early_checkout" ||
+    correctionType === "missed_checkout"
+  );
 }
 
 function shouldSubmitCheckIn(correctionType: CorrectionType) {
@@ -639,9 +716,15 @@ function validateCorrectionForm(form: {
 
   if (form.correctionType === "wrong_time" && !form.checkIn && !form.checkOut) {
     errors.correctionField = "Enter a new check-in time or check-out time.";
-  } else if ((form.correctionType === "late_checkin" || form.correctionType === "missed_checkin") && !form.checkIn) {
+  } else if (
+    (form.correctionType === "late_checkin" || form.correctionType === "missed_checkin") &&
+    !form.checkIn
+  ) {
     errors.correctionField = "New check-in time is required.";
-  } else if ((form.correctionType === "early_checkout" || form.correctionType === "missed_checkout") && !form.checkOut) {
+  } else if (
+    (form.correctionType === "early_checkout" || form.correctionType === "missed_checkout") &&
+    !form.checkOut
+  ) {
     errors.correctionField = "New check-out time is required.";
   } else if (form.correctionType === "status_correction" && !form.status) {
     errors.correctionField = "New status is required.";
@@ -650,6 +733,7 @@ function validateCorrectionForm(form: {
   }
 
   if (!form.reason.trim()) errors.reason = "Reason is required.";
-  if (form.reason.length > MAX_REASON_LENGTH) errors.reason = `Reason must be ${MAX_REASON_LENGTH} characters or less.`;
+  if (form.reason.length > MAX_REASON_LENGTH)
+    errors.reason = `Reason must be ${MAX_REASON_LENGTH} characters or less.`;
   return errors;
 }

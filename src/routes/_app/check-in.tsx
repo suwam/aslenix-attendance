@@ -7,7 +7,10 @@ import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { LiveClock } from "@/components/LiveClock";
 import { Button } from "@/components/ui/button";
-import { getVerifiedAttendanceLocation, preloadAttendanceLocationSettings } from "@/lib/attendance-location";
+import {
+  getVerifiedAttendanceLocation,
+  preloadAttendanceLocationSettings,
+} from "@/lib/attendance-location";
 import { formatWorkHours } from "@/lib/work-hours";
 import {
   CalendarCheck2,
@@ -56,21 +59,22 @@ function CheckInPage() {
     if (!user) return;
     setLoading(true);
     const historyStart = format(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000), "yyyy-MM-dd");
-    const [{ data: todayRow, error: todayError }, { data: historyRows, error: historyError }] = await Promise.all([
-      supabase
-        .from("attendance")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("date", todayDate)
-        .maybeSingle(),
-      supabase
-        .from("attendance")
-        .select("*")
-        .eq("user_id", user.id)
-        .gte("date", historyStart)
-        .lte("date", todayDate)
-        .order("date", { ascending: false }),
-    ]);
+    const [{ data: todayRow, error: todayError }, { data: historyRows, error: historyError }] =
+      await Promise.all([
+        supabase
+          .from("attendance")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("date", todayDate)
+          .maybeSingle(),
+        supabase
+          .from("attendance")
+          .select("*")
+          .eq("user_id", user.id)
+          .gte("date", historyStart)
+          .lte("date", todayDate)
+          .order("date", { ascending: false }),
+      ]);
 
     if (todayError) toast.error(todayError.message);
     if (historyError) toast.error(historyError.message);
@@ -196,9 +200,12 @@ function CheckInPage() {
   const lastSevenDays = buildLastSevenDays(history);
   const checkedInDays = lastSevenDays.filter((day) => day.attendance?.check_in_time).length;
   const completedDays = lastSevenDays.filter((day) => day.attendance?.check_out_time).length;
-  const totalHours = lastSevenDays.reduce((sum, day) => sum + Number(day.attendance?.work_hours ?? 0), 0);
+  const totalHours = lastSevenDays.reduce(
+    (sum, day) => sum + Number(day.attendance?.work_hours ?? 0),
+    0,
+  );
 
-  if (deviceStatus === 'loading' || (loading && !today)) {
+  if (deviceStatus === "loading" || (loading && !today)) {
     return (
       <>
         <PageHeader title="Check-in" subtitle="Daily attendance" />
@@ -209,7 +216,7 @@ function CheckInPage() {
     );
   }
 
-  if (deviceStatus === 'setup_required') {
+  if (deviceStatus === "setup_required") {
     return (
       <>
         <PageHeader title="Check-in" subtitle="Daily attendance" />
@@ -217,8 +224,8 @@ function CheckInPage() {
           <Fingerprint size={48} className="text-primary" />
           <h2 className="text-xl font-semibold">Biometric Registration Required</h2>
           <p className="text-sm text-muted-foreground max-w-md">
-            To use this device for attendance, you must register it with a Passkey (e.g. Windows Hello, Face ID, Touch ID).
-            This is a one-time setup process.
+            To use this device for attendance, you must register it with a Passkey (e.g. Windows
+            Hello, Face ID, Touch ID). This is a one-time setup process.
           </p>
           <Button onClick={setupBiometrics} disabled={biometricsBusy} className="mt-4">
             {biometricsBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -229,7 +236,7 @@ function CheckInPage() {
     );
   }
 
-  if (deviceStatus !== 'registered') {
+  if (deviceStatus !== "registered") {
     return (
       <>
         <PageHeader title="Check-in" subtitle="Daily attendance" />
@@ -237,7 +244,8 @@ function CheckInPage() {
           <ShieldX size={48} className="text-muted-foreground/50" />
           <h2 className="text-xl font-semibold">Attendance Blocked</h2>
           <p className="text-sm text-muted-foreground">
-            This device is pending HR approval or is unregistered. Please contact your administrator to authorize this device.
+            This device is pending HR approval or is unregistered. Please contact your administrator
+            to authorize this device.
           </p>
         </div>
       </>
@@ -262,8 +270,12 @@ function CheckInPage() {
                     <LiveClock />
                   </div>
                   <div className="rounded-2xl border border-border bg-card px-4 py-3 text-right">
-                    <div className="text-xs uppercase tracking-wider text-muted-foreground">Today</div>
-                    <div className="mt-1 font-semibold text-foreground">{formatNepaliDate(new Date(), "ddd DD, MMMM YYYY")} BS</div>
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                      Today
+                    </div>
+                    <div className="mt-1 font-semibold text-foreground">
+                      {formatNepaliDate(new Date(), "ddd DD, MMMM YYYY")} BS
+                    </div>
                   </div>
                 </div>
 
@@ -297,7 +309,11 @@ function CheckInPage() {
                       disabled={busy}
                       className="neon-button h-12 rounded-xl px-8 text-base"
                     >
-                      {busy ? <Loader2 size={18} className="mr-2 animate-spin" /> : <LogIn size={18} className="mr-2" />}
+                      {busy ? (
+                        <Loader2 size={18} className="mr-2 animate-spin" />
+                      ) : (
+                        <LogIn size={18} className="mr-2" />
+                      )}
                       Check in now
                     </Button>
                   </div>
@@ -321,7 +337,11 @@ function CheckInPage() {
                       variant="outline"
                       className="h-12 rounded-xl px-8 text-base"
                     >
-                      {busy ? <Loader2 size={18} className="mr-2 animate-spin" /> : <LogOut size={18} className="mr-2" />}
+                      {busy ? (
+                        <Loader2 size={18} className="mr-2 animate-spin" />
+                      ) : (
+                        <LogOut size={18} className="mr-2" />
+                      )}
                       Check out
                     </Button>
                   </div>
@@ -408,15 +428,21 @@ function AttendanceHistoryRow({ day }: { day: ReturnType<typeof buildLastSevenDa
     <div className="rounded-2xl border border-border bg-card p-4 transition hover:bg-card">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${status.iconClass}`}>
+          <div
+            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${status.iconClass}`}
+          >
             <status.icon size={18} />
           </div>
           <div>
             <div className="font-semibold text-foreground">{day.label}</div>
-            <div className="text-xs text-muted-foreground">{formatNepaliDate(day.date, "DD MMMM YYYY")} BS</div>
+            <div className="text-xs text-muted-foreground">
+              {formatNepaliDate(day.date, "DD MMMM YYYY")} BS
+            </div>
           </div>
         </div>
-        <span className={`w-fit rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-wider ${status.pillClass}`}>
+        <span
+          className={`w-fit rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-wider ${status.pillClass}`}
+        >
           {status.label}
         </span>
       </div>
@@ -424,7 +450,10 @@ function AttendanceHistoryRow({ day }: { day: ReturnType<typeof buildLastSevenDa
       <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
         <HistoryTime label="In" value={formatTime(attendance?.check_in_time)} />
         <HistoryTime label="Out" value={formatTime(attendance?.check_out_time)} />
-        <HistoryTime label="Hours" value={attendance?.work_hours ? formatWorkHours(attendance.work_hours) : "—"} />
+        <HistoryTime
+          label="Hours"
+          value={attendance?.work_hours ? formatWorkHours(attendance.work_hours) : "—"}
+        />
       </div>
     </div>
   );

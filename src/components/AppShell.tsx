@@ -254,7 +254,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               {items.map((item) => {
                 const active =
                   currentPath === item.to ||
-                  (item.to !== "/admin" && item.to !== "/dashboard" && currentPath.startsWith(item.to));
+                  (item.to !== "/admin" &&
+                    item.to !== "/dashboard" &&
+                    currentPath.startsWith(item.to));
                 const Icon = item.icon;
                 return (
                   <Link
@@ -280,10 +282,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}
 
       {/* Main */}
-      <div className={`flex-1 flex flex-col min-w-0 ${isMessagesPage ? "h-full overflow-hidden" : ""}`}>
-        <header
-          className="sticky top-0 z-30 h-16 px-4 sm:px-6 flex items-center gap-3 bg-background print:hidden"
-        >
+      <div
+        className={`flex-1 flex flex-col min-w-0 ${isMessagesPage ? "h-full overflow-hidden" : ""}`}
+      >
+        <header className="sticky top-0 z-30 h-16 px-4 sm:px-6 flex items-center gap-3 bg-background print:hidden">
           <button
             className="lg:hidden p-2 rounded-lg hover:bg-muted"
             onClick={() => setMobileOpen(true)}
@@ -298,7 +300,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="flex-1" />
           <Popover>
             <PopoverTrigger asChild>
-              <button type="button" className="relative p-2 rounded-lg hover:bg-muted" aria-label="Open notifications">
+              <button
+                type="button"
+                className="relative p-2 rounded-lg hover:bg-muted"
+                aria-label="Open notifications"
+              >
                 <Bell size={18} />
                 {unread > 0 && (
                   <span
@@ -319,7 +325,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <div>
                     <div className="text-sm font-bold text-foreground">Notifications</div>
                     <div className="text-xs text-muted-foreground">
-                      {unread ? `${unread} unread update${unread === 1 ? "" : "s"}` : "You're all caught up"}
+                      {unread
+                        ? `${unread} unread update${unread === 1 ? "" : "s"}`
+                        : "You're all caught up"}
                     </div>
                   </div>
                   <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-cyan-100">
@@ -348,12 +356,18 @@ export function AppShell({ children }: { children: ReactNode }) {
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between gap-2">
-                              <div className="truncate text-sm font-bold text-muted-foreground">{item.title}</div>
+                              <div className="truncate text-sm font-bold text-muted-foreground">
+                                {item.title}
+                              </div>
                               <time className="shrink-0 text-[10px] font-semibold text-muted-foreground">
-                                {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
+                                {formatDistanceToNow(new Date(item.created_at), {
+                                  addSuffix: true,
+                                })}
                               </time>
                             </div>
-                            <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">{item.message}</p>
+                            <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
+                              {item.message}
+                            </p>
                             {!item.is_read && (
                               <button
                                 type="button"
@@ -372,7 +386,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <div className="px-4 py-10 text-center">
                     <BellDot className="mx-auto mb-3 text-cyan-200" size={24} />
                     <div className="text-sm font-semibold text-foreground">No notifications</div>
-                    <div className="mt-1 text-xs text-muted-foreground">New updates will appear here.</div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      New updates will appear here.
+                    </div>
                   </div>
                 )}
               </div>
@@ -390,7 +406,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <PopoverTrigger asChild>
               <button className="flex items-center gap-3 pl-4 border-l border-border hover:opacity-80 transition-opacity focus:outline-none">
                 <div className="hidden sm:block text-right leading-tight">
-                  <div className="text-sm font-medium truncate max-w-[160px]">{profile?.full_name}</div>
+                  <div className="text-sm font-medium truncate max-w-[160px]">
+                    {profile?.full_name}
+                  </div>
                   <div className="text-[11px] text-muted-foreground capitalize">
                     {isAdmin ? "Administrator" : profile?.position || "Employee"}
                   </div>
@@ -398,11 +416,18 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Avatar profile={profile} />
               </button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-56 p-2 rounded-xl shadow-lg border-border bg-card">
+            <PopoverContent
+              align="end"
+              className="w-56 p-2 rounded-xl shadow-lg border-border bg-card"
+            >
               <div className="flex flex-col gap-1">
                 <div className="px-2 py-1.5 mb-1 border-b border-border">
-                  <p className="text-sm font-medium text-foreground truncate">{profile?.full_name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{isAdmin ? "Administrator" : profile?.position || "Employee"}</p>
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {profile?.full_name}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {isAdmin ? "Administrator" : profile?.position || "Employee"}
+                  </p>
                 </div>
                 <Link
                   to="/profile"
@@ -435,8 +460,15 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Popover>
         </header>
 
-        <main className={`flex-1 max-w-[1600px] w-full mx-auto ${isMessagesPage ? "p-0 sm:p-0 lg:p-0 h-full min-h-0 overflow-hidden flex flex-col" : "p-4 sm:p-6 lg:p-8"}`}>
-          <div key={currentPath} className={isMessagesPage ? "flex-1 min-h-0 h-full flex flex-col" : ""}>{children}</div>
+        <main
+          className={`flex-1 max-w-[1600px] w-full mx-auto ${isMessagesPage ? "p-0 sm:p-0 lg:p-0 h-full min-h-0 overflow-hidden flex flex-col" : "p-4 sm:p-6 lg:p-8"}`}
+        >
+          <div
+            key={currentPath}
+            className={isMessagesPage ? "flex-1 min-h-0 h-full flex flex-col" : ""}
+          >
+            {children}
+          </div>
         </main>
 
         {!isAdmin && currentPath !== "/messages" && (

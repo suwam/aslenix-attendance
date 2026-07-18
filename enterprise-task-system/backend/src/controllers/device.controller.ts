@@ -33,7 +33,9 @@ export async function registerLoginDevice(req: AuthRequest, res: Response) {
 export async function getMyDeviceStatus(req: AuthRequest, res: Response) {
   const [activeDevice, pendingRequests] = await Promise.all([
     EmployeeDevice.findOne({ employeeId: req.user._id, status: "Active" }),
-    PendingDeviceRequest.find({ employeeId: req.user._id, status: "Pending" }).sort({ requestedAt: -1 }),
+    PendingDeviceRequest.find({ employeeId: req.user._id, status: "Pending" }).sort({
+      requestedAt: -1,
+    }),
   ]);
 
   return res.json({ activeDevice, pendingRequests });
@@ -72,7 +74,11 @@ export async function rejectPendingDevice(req: AuthRequest, res: Response) {
 
 export async function replaceDevice(req: AuthRequest, res: Response) {
   try {
-    const result = await replaceEmployeeDevice(req.params.deviceId, String(req.body.requestId || ""), req.user._id);
+    const result = await replaceEmployeeDevice(
+      req.params.deviceId,
+      String(req.body.requestId || ""),
+      req.user._id,
+    );
     return res.json(result);
   } catch (error) {
     return handleControllerError(error, res);

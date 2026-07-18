@@ -1,6 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CalendarDays, Edit3, Landmark, Plus, Save, ShieldCheck, Sparkles, Trash2 } from "lucide-react";
+import {
+  CalendarDays,
+  Edit3,
+  Landmark,
+  Plus,
+  Save,
+  ShieldCheck,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
 import { BSDateInput } from "@/components/BSDateInput";
 import { NepaliCalendar } from "@/components/NepaliCalendar";
@@ -38,7 +47,9 @@ function CalendarPage() {
 
     if (editingId) {
       setEvents((items) =>
-        items.map((item) => (item.id === editingId ? { ...item, bsDate: form.bsDate, title } : item)),
+        items.map((item) =>
+          item.id === editingId ? { ...item, bsDate: form.bsDate, title } : item,
+        ),
       );
     } else {
       setEvents((items) => [
@@ -135,7 +146,9 @@ function CalendarPage() {
                         </span>
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-semibold text-foreground">{event.title}</div>
+                        <div className="truncate text-sm font-semibold text-foreground">
+                          {event.title}
+                        </div>
                         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                           <span>{event.bsDate} BS</span>
                           {index === 0 && (
@@ -242,11 +255,15 @@ function CalendarMetric({
   return (
     <GlassCard className="min-w-0 p-3">
       <div className="flex min-h-16 items-center gap-3">
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${tones[tone]}`}>
+        <div
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${tones[tone]}`}
+        >
           <Icon size={17} />
         </div>
         <div className="min-w-0">
-          <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
+          <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+            {label}
+          </div>
           <div className="mt-1 truncate text-lg font-black leading-none">{value}</div>
           <div className="mt-1 truncate text-xs text-muted-foreground">{detail}</div>
         </div>

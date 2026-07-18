@@ -5,9 +5,21 @@ import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Loader2, Download, FileBarChart, RefreshCw, Calendar as CalendarIcon, Play } from "lucide-react";
+import {
+  Search,
+  Loader2,
+  Download,
+  FileBarChart,
+  RefreshCw,
+  Calendar as CalendarIcon,
+  Play,
+} from "lucide-react";
 import { toast } from "sonner";
-import { formatNepaliDate, bsInputToAdDateString, getNepaliMonthRange } from "@/lib/nepali-calendar";
+import {
+  formatNepaliDate,
+  bsInputToAdDateString,
+  getNepaliMonthRange,
+} from "@/lib/nepali-calendar";
 import { WeeklyReportPdfTemplate } from "@/components/WeeklyReportPdfTemplate";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -31,16 +43,16 @@ function AdminReportsPage() {
   const [exportingId, setExportingId] = useState<string | null>(null);
   const [selectedReport, setSelectedReport] = useState<any | null>(null);
   const pdfContainerRef = useRef<HTMLDivElement>(null);
-  
+
   // Generation Filters State
   const [generateType, setGenerateType] = useState<ReportType>("daily");
   const [generateDate, setGenerateDate] = useState("");
   const [generateEndDate, setGenerateEndDate] = useState("");
   const [generateStatus, setGenerateStatus] = useState("all");
-  
+
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateProgress, setGenerateProgress] = useState("");
-  
+
   // Display Filter State
   const [displayType, setDisplayType] = useState<ReportType>("daily");
 
@@ -58,7 +70,8 @@ function AdminReportsPage() {
 
     const { data, error } = await supabase
       .from(tableName)
-      .select(`
+      .select(
+        `
         *,
         profiles (
           user_id,
@@ -66,7 +79,8 @@ function AdminReportsPage() {
           department,
           employee_code
         )
-      `)
+      `,
+      )
       .order(orderColumn, { ascending: false })
       .order("created_at", { ascending: false });
 
@@ -83,7 +97,7 @@ function AdminReportsPage() {
   }, [displayType]);
 
   const filtered = useMemo(() => {
-    return reports.filter(r => {
+    return reports.filter((r) => {
       const q = search.toLowerCase();
       let matchesSearch = true;
       if (q) {
@@ -91,12 +105,12 @@ function AdminReportsPage() {
         const dept = (r.profiles?.department || "").toLowerCase();
         matchesSearch = name.includes(q) || dept.includes(q);
       }
-      
+
       let matchesStatus = true;
       if (generateStatus !== "all") {
         matchesStatus = (r.status || "").toLowerCase() === generateStatus.toLowerCase();
       }
-      
+
       let matchesDate = true;
       if (generateDate) {
         const adDateStr = bsInputToAdDateString(generateDate);
@@ -125,9 +139,9 @@ function AdminReportsPage() {
   const handleExport = async (report: any) => {
     try {
       setExportingId(report.id);
-      
+
       // We pass the start date as week_start to keep the template happy
-      let reportForTemplate = { ...report };
+      const reportForTemplate = { ...report };
       if (displayType === "daily") {
         reportForTemplate.week_start = report.report_date;
         reportForTemplate.week_end = report.report_date;
@@ -138,30 +152,30 @@ function AdminReportsPage() {
       }
 
       setSelectedReport(reportForTemplate);
-      
+
       // Wait for React to render the hidden component and for Recharts to animate/draw
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const pages = document.querySelectorAll('.pdf-page');
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      const pages = document.querySelectorAll(".pdf-page");
       if (!pages || pages.length === 0) throw new Error("No pages found to export");
 
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      
+
       for (let i = 0; i < pages.length; i++) {
         const pageEl = pages[i] as HTMLElement;
         const imgData = await captureSanitizedPdfPage(pageEl);
-        
+
         const imgProps = pdf.getImageProperties(imgData);
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-        
+
         let heightLeft = pdfHeight;
         let position = 0;
-        
+
         if (i > 0) pdf.addPage();
         pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, pdfHeight);
         heightLeft -= 297; // 297 is A4 height in mm
-        
+
         while (heightLeft > 0) {
           position = heightLeft - pdfHeight;
           pdf.addPage();
@@ -169,16 +183,18 @@ function AdminReportsPage() {
           heightLeft -= 297;
         }
       }
-      
+
       let dateLabel = report.report_date;
       if (displayType === "weekly") dateLabel = report.week_start;
       if (displayType === "monthly") dateLabel = report.month_start;
 
-      pdf.save(`${displayType}-Report-${report.profiles?.full_name?.replace(/\s+/g, '-')}-${dateLabel}.pdf`);
+      pdf.save(
+        `${displayType}-Report-${report.profiles?.full_name?.replace(/\s+/g, "-")}-${dateLabel}.pdf`,
+      );
       toast.success("PDF generated successfully");
     } catch (err: any) {
       console.error(err);
-      toast.error(`Failed to generate PDF: ${err.message || 'Unknown error'}`);
+      toast.error(`Failed to generate PDF: ${err.message || "Unknown error"}`);
     } finally {
       setExportingId(null);
       setSelectedReport(null);
@@ -194,11 +210,11 @@ function AdminReportsPage() {
       toast.error("Please select an end date");
       return;
     }
-    
+
     try {
       setIsGenerating(true);
       setGenerateProgress("Initializing...");
-      
+
       const adDateStr = bsInputToAdDateString(generateDate);
       if (!adDateStr) throw new Error("Invalid start date");
 
@@ -207,9 +223,14 @@ function AdminReportsPage() {
         adEndDateStr = bsInputToAdDateString(generateEndDate);
         if (!adEndDateStr) throw new Error("Invalid end date");
       }
-      
-      const result = await generateReportsForWeekClient(adDateStr, generateType, (msg) => setGenerateProgress(msg), adEndDateStr);
-      
+
+      const result = await generateReportsForWeekClient(
+        adDateStr,
+        generateType,
+        (msg) => setGenerateProgress(msg),
+        adEndDateStr,
+      );
+
       if (result.success) {
         toast.success(`Successfully generated ${result.count} ${generateType} reports!`);
         setDisplayType(generateType); // Switch view to what we just generated
@@ -235,7 +256,11 @@ function AdminReportsPage() {
         title="Standup & Performance Reports"
         subtitle="Comprehensive AI-powered performance reports generated for all employees."
         actions={
-          <Button onClick={fetchReports} variant="outline" className="gap-2 border-cyan-300/20 hover:bg-cyan-300/10 hover:text-cyan-400">
+          <Button
+            onClick={fetchReports}
+            variant="outline"
+            className="gap-2 border-cyan-300/20 hover:bg-cyan-300/10 hover:text-cyan-400"
+          >
             <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
             Refresh
           </Button>
@@ -243,11 +268,12 @@ function AdminReportsPage() {
       />
 
       <div className="mt-5 space-y-6">
-        
         {/* Inline Filter Generation Bar */}
         <div className="bg-slate-50/50 backdrop-blur-xl border border-slate-200/60 p-4 rounded-2xl shadow-sm flex flex-col md:flex-row items-end gap-4">
           <div className="flex-1 w-full space-y-1.5">
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Report type</label>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Report type
+            </label>
             <Select value={generateType} onValueChange={(val: any) => setGenerateType(val)}>
               <SelectTrigger className="bg-white/80 border-slate-200">
                 <SelectValue placeholder="Select type" />
@@ -263,19 +289,23 @@ function AdminReportsPage() {
           {generateType === "weekly" ? (
             <div className="flex-[2] flex gap-4 w-full">
               <div className="flex-1 space-y-1.5">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Start Date (BS)</label>
-                <BSDateInput 
-                  value={generateDate} 
-                  onChange={setGenerateDate} 
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Start Date (BS)
+                </label>
+                <BSDateInput
+                  value={generateDate}
+                  onChange={setGenerateDate}
                   disabled={isGenerating}
                   className="bg-white/80 border-slate-200 h-10"
                 />
               </div>
               <div className="flex-1 space-y-1.5">
-                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">End Date (BS)</label>
-                <BSDateInput 
-                  value={generateEndDate} 
-                  onChange={setGenerateEndDate} 
+                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  End Date (BS)
+                </label>
+                <BSDateInput
+                  value={generateEndDate}
+                  onChange={setGenerateEndDate}
                   disabled={isGenerating}
                   className="bg-white/80 border-slate-200 h-10"
                 />
@@ -283,10 +313,12 @@ function AdminReportsPage() {
             </div>
           ) : (
             <div className="flex-1 w-full space-y-1.5">
-              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Date (BS)</label>
-              <BSDateInput 
-                value={generateDate} 
-                onChange={setGenerateDate} 
+              <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Date (BS)
+              </label>
+              <BSDateInput
+                value={generateDate}
+                onChange={setGenerateDate}
                 disabled={isGenerating}
                 className="bg-white/80 border-slate-200 h-10"
               />
@@ -294,7 +326,9 @@ function AdminReportsPage() {
           )}
 
           <div className="flex-1 w-full space-y-1.5">
-            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</label>
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Status
+            </label>
             <Select value={generateStatus} onValueChange={setGenerateStatus}>
               <SelectTrigger className="bg-white/80 border-slate-200">
                 <SelectValue placeholder="Select status" />
@@ -306,8 +340,8 @@ function AdminReportsPage() {
             </Select>
           </div>
 
-          <Button 
-            onClick={handleGenerateReports} 
+          <Button
+            onClick={handleGenerateReports}
             disabled={isGenerating || !generateDate}
             className="w-full md:w-auto h-10 px-8 bg-gradient-to-r from-indigo-200 to-purple-200 hover:from-indigo-300 hover:to-purple-300 text-indigo-900 font-semibold border-0 shadow-sm transition-all"
           >
@@ -321,7 +355,7 @@ function AdminReportsPage() {
             )}
           </Button>
         </div>
-        
+
         {isGenerating && (
           <div className="text-xs text-center text-muted-foreground font-mono bg-cyan-500/5 p-2 rounded-lg border border-cyan-500/10">
             {generateProgress || "Processing data..."}
@@ -338,15 +372,35 @@ function AdminReportsPage() {
                     Report Directory
                   </h2>
                   <div className="bg-slate-100 rounded-md p-1 flex">
-                    <button onClick={() => setDisplayType('daily')} className={`px-3 py-1 text-xs font-medium rounded-sm transition-all ${displayType === 'daily' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}>Daily</button>
-                    <button onClick={() => setDisplayType('weekly')} className={`px-3 py-1 text-xs font-medium rounded-sm transition-all ${displayType === 'weekly' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}>Weekly</button>
-                    <button onClick={() => setDisplayType('monthly')} className={`px-3 py-1 text-xs font-medium rounded-sm transition-all ${displayType === 'monthly' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}>Monthly</button>
+                    <button
+                      onClick={() => setDisplayType("daily")}
+                      className={`px-3 py-1 text-xs font-medium rounded-sm transition-all ${displayType === "daily" ? "bg-white shadow-sm text-slate-800" : "text-slate-500 hover:text-slate-700"}`}
+                    >
+                      Daily
+                    </button>
+                    <button
+                      onClick={() => setDisplayType("weekly")}
+                      className={`px-3 py-1 text-xs font-medium rounded-sm transition-all ${displayType === "weekly" ? "bg-white shadow-sm text-slate-800" : "text-slate-500 hover:text-slate-700"}`}
+                    >
+                      Weekly
+                    </button>
+                    <button
+                      onClick={() => setDisplayType("monthly")}
+                      className={`px-3 py-1 text-xs font-medium rounded-sm transition-all ${displayType === "monthly" ? "bg-white shadow-sm text-slate-800" : "text-slate-500 hover:text-slate-700"}`}
+                    >
+                      Monthly
+                    </button>
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground mt-2">Showing {filtered.length} generated {displayType} reports</p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Showing {filtered.length} generated {displayType} reports
+                </p>
               </div>
               <div className="relative w-full sm:w-72">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Search
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                />
                 <Input
                   placeholder="Search employee..."
                   value={search}
@@ -379,20 +433,28 @@ function AdminReportsPage() {
                   ) : filtered.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-4 py-10 text-center text-muted-foreground">
-                        No {displayType} reports found. Select a date and click "Run report" to generate them.
+                        No {displayType} reports found. Select a date and click "Run report" to
+                        generate them.
                       </td>
                     </tr>
                   ) : (
                     filtered.map((report) => (
                       <tr key={report.id} className="hover:bg-muted/20 transition-colors">
                         <td className="px-4 py-3">
-                          <div className="font-semibold text-foreground">{report.profiles?.full_name}</div>
-                          <div className="text-xs text-muted-foreground">{report.profiles?.department || "N/A"}</div>
+                          <div className="font-semibold text-foreground">
+                            {report.profiles?.full_name}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {report.profiles?.department || "N/A"}
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-foreground font-medium">
-                          {displayType === "daily" && formatNepaliDate(report.report_date, "MMM DD, YYYY")}
-                          {displayType === "weekly" && `${formatNepaliDate(report.week_start, "MMM DD")} - ${formatNepaliDate(report.week_end, "MMM DD")}`}
-                          {displayType === "monthly" && formatNepaliDate(report.month_start, "MMMM YYYY")}
+                          {displayType === "daily" &&
+                            formatNepaliDate(report.report_date, "MMM DD, YYYY")}
+                          {displayType === "weekly" &&
+                            `${formatNepaliDate(report.week_start, "MMM DD")} - ${formatNepaliDate(report.week_end, "MMM DD")}`}
+                          {displayType === "monthly" &&
+                            formatNepaliDate(report.month_start, "MMMM YYYY")}
                         </td>
                         <td className="px-4 py-3 text-center">
                           <div className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-cyan-500/10 text-cyan-500 font-bold border border-cyan-500/20">
@@ -413,7 +475,11 @@ function AdminReportsPage() {
                             variant="secondary"
                             size="sm"
                             disabled={exportingId === report.id}
-                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleExport(report); }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleExport(report);
+                            }}
                             className="gap-1.5 bg-fuchsia-500/10 text-fuchsia-500 border border-fuchsia-500/20 hover:bg-fuchsia-500/20 transition-all shadow-[0_0_12px_rgba(217,70,239,0.15)]"
                           >
                             {exportingId === report.id ? (
@@ -435,10 +501,12 @@ function AdminReportsPage() {
           <GlassCard className="border border-fuchsia-300/15 bg-card/80 backdrop-blur-xl sticky top-24">
             <h3 className="text-lg font-bold text-foreground mb-4">About Reports</h3>
             <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-              Performance reports are automatically generated compiling data from standups and attendance.
+              Performance reports are automatically generated compiling data from standups and
+              attendance.
             </p>
             <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-              They include AI-driven insights on productivity, blocker trends, and attendance signals. Reports are locked once generated.
+              They include AI-driven insights on productivity, blocker trends, and attendance
+              signals. Reports are locked once generated.
             </p>
             <div className="space-y-4">
               <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-muted/30">

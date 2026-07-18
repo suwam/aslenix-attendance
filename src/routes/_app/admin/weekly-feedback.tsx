@@ -44,12 +44,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -61,8 +56,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { productivityScore } from "@/lib/tasks-utils";
 import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
-import { calculateWeightedAttendancePct, resolvedReviewScore, reviewScoreFromRating } from "@/lib/employee-scoring";
-import { formatNepaliDate, getCurrentNepaliMonthRange, getWeeklyReviewCyclesForNepaliMonth } from "@/lib/nepali-calendar";
+import {
+  calculateWeightedAttendancePct,
+  resolvedReviewScore,
+  reviewScoreFromRating,
+} from "@/lib/employee-scoring";
+import {
+  formatNepaliDate,
+  getCurrentNepaliMonthRange,
+  getWeeklyReviewCyclesForNepaliMonth,
+} from "@/lib/nepali-calendar";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/admin/weekly-feedback")({
@@ -120,10 +123,30 @@ function RatingSelector({
   disabled?: boolean;
 }) {
   const options: { label: Rating; icon: React.ReactNode; colorClass: string }[] = [
-    { label: "Excellent", icon: <span className="text-xl">🌟</span>, colorClass: "hover:bg-emerald-50 hover:border-emerald-200 data-[state=active]:bg-slate-100 data-[state=active]:border-slate-300 data-[state=active]:text-foreground data-[state=active]:shadow-sm" },
-    { label: "Good", icon: <span className="text-xl">👍</span>, colorClass: "hover:bg-slate-50 hover:border-slate-200 data-[state=active]:bg-slate-100 data-[state=active]:border-slate-300 data-[state=active]:text-foreground data-[state=active]:shadow-sm" },
-    { label: "Average", icon: <span className="text-xl">😐</span>, colorClass: "hover:bg-amber-50 hover:border-amber-200 data-[state=active]:bg-slate-100 data-[state=active]:border-slate-300 data-[state=active]:text-foreground data-[state=active]:shadow-sm" },
-    { label: "Poor", icon: <span className="text-xl">⚠️</span>, colorClass: "hover:bg-rose-50 hover:border-rose-200 data-[state=active]:bg-slate-100 data-[state=active]:border-slate-300 data-[state=active]:text-foreground data-[state=active]:shadow-sm" },
+    {
+      label: "Excellent",
+      icon: <span className="text-xl">🌟</span>,
+      colorClass:
+        "hover:bg-emerald-50 hover:border-emerald-200 data-[state=active]:bg-slate-100 data-[state=active]:border-slate-300 data-[state=active]:text-foreground data-[state=active]:shadow-sm",
+    },
+    {
+      label: "Good",
+      icon: <span className="text-xl">👍</span>,
+      colorClass:
+        "hover:bg-slate-50 hover:border-slate-200 data-[state=active]:bg-slate-100 data-[state=active]:border-slate-300 data-[state=active]:text-foreground data-[state=active]:shadow-sm",
+    },
+    {
+      label: "Average",
+      icon: <span className="text-xl">😐</span>,
+      colorClass:
+        "hover:bg-amber-50 hover:border-amber-200 data-[state=active]:bg-slate-100 data-[state=active]:border-slate-300 data-[state=active]:text-foreground data-[state=active]:shadow-sm",
+    },
+    {
+      label: "Poor",
+      icon: <span className="text-xl">⚠️</span>,
+      colorClass:
+        "hover:bg-rose-50 hover:border-rose-200 data-[state=active]:bg-slate-100 data-[state=active]:border-slate-300 data-[state=active]:text-foreground data-[state=active]:shadow-sm",
+    },
   ];
 
   return (
@@ -173,33 +196,50 @@ function WeeklyFeedbackPage() {
     const weekStartIso = weekStartDate.toISOString();
     const today = new Date().toISOString().slice(0, 10);
     const reviewCycleStart = reviewWeeks[0]?.startDate || weekStart;
-    const [{ data: profiles }, { data: roleRows }, { data: tasks }, assigneeResult, { data: attendance }, feedbackResult] =
-      await Promise.all([
-        supabase
-          .from("profiles")
-          .select("user_id, full_name, department, position, avatar_url")
-          .eq("approval_status", "approved")
-          .eq("is_suspended", false),
-        supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
-        supabase.from("tasks").select("*"),
-        supabase.from("task_assignees").select("task_id,user_id"),
-        supabase
-          .from("attendance")
-          .select("user_id,date,status,work_hours")
-          .gte("date", weekStart)
-          .lte("date", today),
-        (supabase as any)
-          .from("weekly_feedback")
-          .select("*")
-          .gte("week_start", subDays(new Date(`${reviewCycleStart}T00:00:00`), 7).toISOString().slice(0, 10))
-          .order("week_start", { ascending: false }),
-      ]);
+    const [
+      { data: profiles },
+      { data: roleRows },
+      { data: tasks },
+      assigneeResult,
+      { data: attendance },
+      feedbackResult,
+    ] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("user_id, full_name, department, position, avatar_url")
+        .eq("approval_status", "approved")
+        .eq("is_suspended", false),
+      supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", ["admin", "super_admin", "hr_manager"]),
+      supabase.from("tasks").select("*"),
+      supabase.from("task_assignees").select("task_id,user_id"),
+      supabase
+        .from("attendance")
+        .select("user_id,date,status,work_hours")
+        .gte("date", weekStart)
+        .lte("date", today),
+      (supabase as any)
+        .from("weekly_feedback")
+        .select("*")
+        .gte(
+          "week_start",
+          subDays(new Date(`${reviewCycleStart}T00:00:00`), 7)
+            .toISOString()
+            .slice(0, 10),
+        )
+        .order("week_start", { ascending: false }),
+    ]);
     const assignees =
       assigneeResult.error && isMissingSupabaseTableError(assigneeResult.error, "task_assignees")
         ? []
         : assigneeResult.data || [];
     const feedback = feedbackResult.error ? [] : feedbackResult.data || [];
-    const elapsedDays = Math.max(1, Math.min(7, Math.floor((Date.now() - weekStartDate.getTime()) / 86400000) + 1));
+    const elapsedDays = Math.max(
+      1,
+      Math.min(7, Math.floor((Date.now() - weekStartDate.getTime()) / 86400000) + 1),
+    );
     const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
     const employeeProfiles = (profiles || []).filter(
       (profile) => !adminUserIds.has(profile.user_id) && !isHrProfile(profile),
@@ -217,7 +257,8 @@ function WeeklyFeedbackPage() {
         const completedTasks = assignedTasks.filter(
           (task: any) =>
             task.status === "completed" &&
-            (!task.completed_at || new Date(task.completed_at).getTime() >= new Date(weekStartIso).getTime()),
+            (!task.completed_at ||
+              new Date(task.completed_at).getTime() >= new Date(weekStartIso).getTime()),
         ).length;
         const overdueTasks = assignedTasks.filter(
           (task: any) =>
@@ -225,7 +266,9 @@ function WeeklyFeedbackPage() {
             new Date(task.deadline).getTime() < Date.now() &&
             task.status !== "completed",
         ).length;
-        const employeeAttendance = (attendance || []).filter((row) => row.user_id === profile.user_id);
+        const employeeAttendance = (attendance || []).filter(
+          (row) => row.user_id === profile.user_id,
+        );
         const attendedDays = new Set(
           employeeAttendance
             .filter((row) => ["present", "late", "wfh"].includes(row.status || ""))
@@ -236,11 +279,15 @@ function WeeklyFeedbackPage() {
         const score = productivityScore({
           completed: completedTasks,
           total: Math.max(assignedTasks.length, completedTasks),
-          onTimeRate: assignedTasks.length ? Math.max(0, 1 - overdueTasks / assignedTasks.length) : 1,
+          onTimeRate: assignedTasks.length
+            ? Math.max(0, 1 - overdueTasks / assignedTasks.length)
+            : 1,
           hours,
           targetHours: 40,
         });
-        const history = feedback.filter((item: WeeklyFeedbackRow) => item.employee_id === profile.user_id);
+        const history = feedback.filter(
+          (item: WeeklyFeedbackRow) => item.employee_id === profile.user_id,
+        );
         const previous = history.find((item: any) => item.week_start !== weekStart);
         return {
           userId: profile.user_id,
@@ -273,14 +320,17 @@ function WeeklyFeedbackPage() {
 
   const selected = rows.find((row) => row.userId === selectedId) || rows[0];
   const selectedHistory = selected?.history || [];
-  const selectedWeek = reviewWeeks.find((week) => week.weekNumber === selectedWeekNumber) || reviewWeeks[0];
+  const selectedWeek =
+    reviewWeeks.find((week) => week.weekNumber === selectedWeekNumber) || reviewWeeks[0];
   const selectedWeekReview = selectedHistory.find((item) => isReviewForWeek(item, selectedWeek));
   const completedWeeks = reviewWeeks.filter((week) =>
-    selectedHistory.some((item) => isReviewForWeek(item, week))
+    selectedHistory.some((item) => isReviewForWeek(item, week)),
   ).length;
   const selectedWeekStatus = getWeekStatus(selectedWeek, Boolean(selectedWeekReview));
   const selectedWeekLocked = selectedWeekStatus === "locked";
-  const canEditSelectedReview = Boolean(selectedWeekReview && editingReviewId === selectedWeekReview.id);
+  const canEditSelectedReview = Boolean(
+    selectedWeekReview && editingReviewId === selectedWeekReview.id,
+  );
   const formLocked = selectedWeekLocked || (Boolean(selectedWeekReview) && !canEditSelectedReview);
   const departments = useMemo(
     () => ["All departments", ...Array.from(new Set(rows.map((row) => row.department)))],
@@ -303,7 +353,13 @@ function WeeklyFeedbackPage() {
     tasks: row.completedTasks,
   }));
   const selectedTaskCompletion = selected
-    ? Math.min(100, Math.round((selected.completedTasks / Math.max(1, selected.totalTasks || selected.completedTasks)) * 100))
+    ? Math.min(
+        100,
+        Math.round(
+          (selected.completedTasks / Math.max(1, selected.totalTasks || selected.completedTasks)) *
+            100,
+        ),
+      )
     : 0;
   const teamAverageScore = average(rows.map((row) => row.score));
   const currentTrendRow = {
@@ -326,8 +382,17 @@ function WeeklyFeedbackPage() {
         week: `W${getFeedbackWeekNumber(review)}`,
         weekLabel: `${formatNepaliDate(review.week_start, "DD MMM YYYY")} BS`,
         score,
-        attendance: Math.max(0, Math.min(100, Math.round((selected?.attendancePct || 0) - (history.length - 1 - index) * 4))),
-        taskCompletion: Math.max(0, Math.min(100, Math.round(selectedTaskCompletion - (1 - progressFactor) * 12))),
+        attendance: Math.max(
+          0,
+          Math.min(
+            100,
+            Math.round((selected?.attendancePct || 0) - (history.length - 1 - index) * 4),
+          ),
+        ),
+        taskCompletion: Math.max(
+          0,
+          Math.min(100, Math.round(selectedTaskCompletion - (1 - progressFactor) * 12)),
+        ),
         status: performanceStatus(score),
         teamAverage: teamAverageScore,
       };
@@ -337,20 +402,36 @@ function WeeklyFeedbackPage() {
     .slice(-5);
   const previousTrendRow = trendRows.length > 1 ? trendRows[trendRows.length - 2] : null;
   const weeklyGrowth = previousTrendRow?.score
-    ? Math.round(((currentTrendRow.score - previousTrendRow.score) / Math.max(1, previousTrendRow.score)) * 100)
+    ? Math.round(
+        ((currentTrendRow.score - previousTrendRow.score) / Math.max(1, previousTrendRow.score)) *
+          100,
+      )
     : 0;
-  const highPoint = trendRows.reduce((best, row) => (row.score > best.score ? row : best), trendRows[0] || currentTrendRow);
-  const lowPoint = trendRows.reduce((worst, row) => (row.score < worst.score ? row : worst), trendRows[0] || currentTrendRow);
-  const trendDirection = currentTrendRow.score >= (previousTrendRow?.score ?? currentTrendRow.score);
+  const highPoint = trendRows.reduce(
+    (best, row) => (row.score > best.score ? row : best),
+    trendRows[0] || currentTrendRow,
+  );
+  const lowPoint = trendRows.reduce(
+    (worst, row) => (row.score < worst.score ? row : worst),
+    trendRows[0] || currentTrendRow,
+  );
+  const trendDirection =
+    currentTrendRow.score >= (previousTrendRow?.score ?? currentTrendRow.score);
   const aiInsight = selected
-    ? makeWeeklyProgressInsight(selected.name, currentTrendRow.score, weeklyGrowth, selected.attendancePct, selectedTaskCompletion)
+    ? makeWeeklyProgressInsight(
+        selected.name,
+        currentTrendRow.score,
+        weeklyGrowth,
+        selected.attendancePct,
+        selectedTaskCompletion,
+      )
     : "Select an employee to view weekly progress insight.";
   const currentReviewWeek = reviewWeeks.find((week) => week.weekNumber === currentWeekNumber);
-  const reviewedThisWeek = feedbackRows.filter((row) => isReviewForWeek(row, currentReviewWeek)).length;
+  const reviewedThisWeek = feedbackRows.filter((row) =>
+    isReviewForWeek(row, currentReviewWeek),
+  ).length;
   const totalReviews = feedbackRows.length;
-  const avgHrRating = average(
-    feedbackRows.map((row) => resolvedReviewScore(row)),
-  );
+  const avgHrRating = average(feedbackRows.map((row) => resolvedReviewScore(row)));
   const lastReviewed = feedbackRows[0]?.created_at
     ? `${formatNepaliDate(feedbackRows[0].created_at, "DD MMM")} BS`
     : "None";
@@ -430,7 +511,12 @@ function WeeklyFeedbackPage() {
           .update(reviewPayload)
           .eq("id", editingReviewId)
       : await (supabase as any).from("weekly_feedback").insert(reviewPayload);
-    const { review_score: _reviewScore, week_number: _weekNumber, admin_notes: _adminNotes, ...legacyReviewPayload } = reviewPayload;
+    const {
+      review_score: _reviewScore,
+      week_number: _weekNumber,
+      admin_notes: _adminNotes,
+      ...legacyReviewPayload
+    } = reviewPayload;
     const fallbackResult =
       result.error && isMissingWeeklyFeedbackColumnError(result.error)
         ? editingReviewId
@@ -478,7 +564,10 @@ function WeeklyFeedbackPage() {
           <GlassCard className="weekly-feedback-panel">
             <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center">
               <div className="relative flex-1">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Search
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                />
                 <Input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
@@ -498,9 +587,7 @@ function WeeklyFeedbackPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <div className="weekly-feedback-queue-count">
-                {filtered.length} employees
-              </div>
+              <div className="weekly-feedback-queue-count">{filtered.length} employees</div>
             </div>
             <div className="weekly-employee-grid">
               {filtered.map((employee) => (
@@ -529,7 +616,11 @@ function WeeklyFeedbackPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="name" stroke="#64748b" fontSize={12} />
                 <YAxis stroke="#64748b" fontSize={12} />
-                <Tooltip contentStyle={tooltipStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipItemStyle} />
+                <Tooltip
+                  contentStyle={tooltipStyle}
+                  itemStyle={tooltipItemStyle}
+                  labelStyle={tooltipItemStyle}
+                />
                 <Bar dataKey="score" fill="#ff2d6f" radius={[8, 8, 0, 0]} />
                 <Bar dataKey="attendance" fill="#21d4fd" radius={[8, 8, 0, 0]} />
                 <Bar dataKey="tasks" fill="#f6c453" radius={[8, 8, 0, 0]} />
@@ -544,11 +635,16 @@ function WeeklyFeedbackPage() {
                   <TrendingUp size={16} className="text-primary" />
                   Employee weekly progress
                 </h3>
-                <p className="mt-1 text-xs text-muted-foreground">Score, attendance, target, and team comparison</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Score, attendance, target, and team comparison
+                </p>
               </div>
               <div className={`weekly-trend-chip ${trendDirection ? "up" : "down"}`}>
                 {trendDirection ? "↗ Improving" : "↘ Declining"}
-                <span>{weeklyGrowth >= 0 ? "+" : ""}{weeklyGrowth}%</span>
+                <span>
+                  {weeklyGrowth >= 0 ? "+" : ""}
+                  {weeklyGrowth}%
+                </span>
               </div>
             </div>
             <ResponsiveContainer width="100%" height={280}>
@@ -567,15 +663,29 @@ function WeeklyFeedbackPage() {
                 <YAxis domain={[0, 100]} stroke="#64748b" fontSize={12} />
                 <Tooltip content={<WeeklyProgressTooltip />} />
                 <ReferenceLine y={80} stroke="#f6c453" strokeDasharray="6 6" strokeWidth={1.5} />
-                <ReferenceLine y={teamAverageScore} stroke="#8b5cf6" strokeDasharray="4 5" strokeOpacity={0.7} />
-                <Area type="monotone" dataKey="score" fill="url(#weeklyTrend)" stroke="none" isAnimationActive animationDuration={900} />
+                <ReferenceLine
+                  y={teamAverageScore}
+                  stroke="#8b5cf6"
+                  strokeDasharray="4 5"
+                  strokeOpacity={0.7}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="score"
+                  fill="url(#weeklyTrend)"
+                  stroke="none"
+                  isAnimationActive
+                  animationDuration={900}
+                />
                 <Line
                   type="monotone"
                   dataKey="score"
                   name="Performance Score"
                   stroke="#ff2d6f"
                   strokeWidth={3}
-                  dot={(props) => <PerformanceDot {...props} highWeek={highPoint.week} lowWeek={lowPoint.week} />}
+                  dot={(props) => (
+                    <PerformanceDot {...props} highWeek={highPoint.week} lowWeek={lowPoint.week} />
+                  )}
                   activeDot={{ r: 6, strokeWidth: 2, stroke: "#f1f0ee" }}
                   isAnimationActive
                   animationDuration={900}
@@ -605,11 +715,26 @@ function WeeklyFeedbackPage() {
               </ComposedChart>
             </ResponsiveContainer>
             <div className="weekly-zone-legend">
-              <span><i className="target" />Target 80</span>
-              <span><i className="team" />Team avg {teamAverageScore}</span>
-              <span><i className="needs" />0-50 Needs improvement</span>
-              <span><i className="average" />51-75 Average</span>
-              <span><i className="excellent" />76-100 Excellent</span>
+              <span>
+                <i className="target" />
+                Target 80
+              </span>
+              <span>
+                <i className="team" />
+                Team avg {teamAverageScore}
+              </span>
+              <span>
+                <i className="needs" />
+                0-50 Needs improvement
+              </span>
+              <span>
+                <i className="average" />
+                51-75 Average
+              </span>
+              <span>
+                <i className="excellent" />
+                76-100 Excellent
+              </span>
             </div>
             <div className="weekly-ai-insight">
               <Sparkles size={14} />
@@ -652,7 +777,11 @@ function WeeklyFeedbackPage() {
                       </div>
                       <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
                         {review
-                          ? review.strengths || review.improvements || review.admin_notes || review.notes || "No notes added."
+                          ? review.strengths ||
+                            review.improvements ||
+                            review.admin_notes ||
+                            review.notes ||
+                            "No notes added."
                           : `${labelForWeekStatus(status)} review`}
                       </p>
                     </div>
@@ -692,7 +821,6 @@ function WeeklyFeedbackPage() {
             <>
               {/* LEFT COLUMN: Form & Header (70%) */}
               <div className="relative flex min-h-0 flex-1 flex-col bg-slate-50/50 dark:bg-slate-950/50">
-                
                 {/* Scrollable Content */}
                 <div className="flex-1 min-h-0 overflow-y-auto">
                   {/* Premium Header */}
@@ -701,14 +829,19 @@ function WeeklyFeedbackPage() {
                       <div className="flex items-center gap-4">
                         <Avatar employee={selected} size="lg" />
                         <div>
-                          <h2 className="text-2xl font-bold tracking-tight text-foreground">{selected.name}</h2>
-                          <p className="text-sm font-medium text-muted-foreground">{selected.department}</p>
+                          <h2 className="text-2xl font-bold tracking-tight text-foreground">
+                            {selected.name}
+                          </h2>
+                          <p className="text-sm font-medium text-muted-foreground">
+                            {selected.department}
+                          </p>
                         </div>
                       </div>
                       <div className="flex flex-col items-start gap-2 text-left md:items-end md:text-right">
                         <StatusBadge status={selectedWeekStatus} />
                         <div className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                          Week {selectedWeekNumber} Review • {formatNepaliDate(new Date().toISOString(), "DD MMM YYYY")} BS
+                          Week {selectedWeekNumber} Review •{" "}
+                          {formatNepaliDate(new Date().toISOString(), "DD MMM YYYY")} BS
                         </div>
                       </div>
                     </div>
@@ -716,11 +849,16 @@ function WeeklyFeedbackPage() {
                     {/* Animated Progress Bar */}
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center justify-between text-sm font-semibold">
-                        <span className="text-slate-700 dark:text-slate-300">Review Cycle Progress</span>
-                        <span className="text-primary">{Math.round((completedWeeks / reviewWeeks.length) * 100)}% ({completedWeeks} of {reviewWeeks.length} Completed)</span>
+                        <span className="text-slate-700 dark:text-slate-300">
+                          Review Cycle Progress
+                        </span>
+                        <span className="text-primary">
+                          {Math.round((completedWeeks / reviewWeeks.length) * 100)}% (
+                          {completedWeeks} of {reviewWeeks.length} Completed)
+                        </span>
                       </div>
                       <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
-                        <div 
+                        <div
                           className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-1000 ease-out"
                           style={{ width: `${(completedWeeks / reviewWeeks.length) * 100}%` }}
                         />
@@ -733,9 +871,21 @@ function WeeklyFeedbackPage() {
                     {/* Summary Metrics (moved above form) */}
                     <div className="mb-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
                       <MiniMetric label="Score" value={selected.score} icon={Zap} />
-                      <MiniMetric label="Tasks" value={selected.completedTasks} icon={CheckCircle2} />
-                      <MiniMetric label="Overdue" value={selected.overdueTasks} icon={ShieldAlert} />
-                      <MiniMetric label="Attendance" value={`${selected.attendancePct}%`} icon={CalendarDays} />
+                      <MiniMetric
+                        label="Tasks"
+                        value={selected.completedTasks}
+                        icon={CheckCircle2}
+                      />
+                      <MiniMetric
+                        label="Overdue"
+                        value={selected.overdueTasks}
+                        icon={ShieldAlert}
+                      />
+                      <MiniMetric
+                        label="Attendance"
+                        value={`${selected.attendancePct}%`}
+                        icon={CalendarDays}
+                      />
                     </div>
 
                     {/* Horizontal Stepper Navigation */}
@@ -744,22 +894,32 @@ function WeeklyFeedbackPage() {
                         const review = selectedHistory.find((item) => isReviewForWeek(item, week));
                         const status = getWeekStatus(week, Boolean(review));
                         const isSelected = selectedWeekNumber === week.weekNumber;
-                        
-                        let colors = "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400";
+
+                        let colors =
+                          "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400";
                         let customStyle = {};
                         let icon = null;
                         if (status === "completed") {
-                          colors = "border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-900/40 dark:text-emerald-400";
-                          icon = <CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400" />;
+                          colors =
+                            "border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-900/40 dark:text-emerald-400";
+                          icon = (
+                            <CheckCircle2
+                              size={14}
+                              className="text-emerald-600 dark:text-emerald-400"
+                            />
+                          );
                         } else if (status === "pending" || isSelected) {
                           if (isSelected) {
-                            colors = "text-foreground shadow-sm ring-1 ring-border bg-slate-100 dark:bg-slate-800";
+                            colors =
+                              "text-foreground shadow-sm ring-1 ring-border bg-slate-100 dark:bg-slate-800";
                             customStyle = {};
                           } else {
-                            colors = "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800/30 dark:bg-slate-900/30 dark:text-slate-400";
+                            colors =
+                              "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800/30 dark:bg-slate-900/30 dark:text-slate-400";
                           }
                         } else if (status === "locked") {
-                          colors = "cursor-not-allowed bg-slate-100 text-slate-400 opacity-70 dark:bg-slate-900 dark:text-slate-600";
+                          colors =
+                            "cursor-not-allowed bg-slate-100 text-slate-400 opacity-70 dark:bg-slate-900 dark:text-slate-600";
                           icon = <LockKeyhole size={14} />;
                         }
 
@@ -767,7 +927,9 @@ function WeeklyFeedbackPage() {
                           <div key={week.weekNumber} className="flex shrink-0 items-center">
                             <button
                               type="button"
-                              onClick={() => status !== "locked" && setSelectedWeekNumber(week.weekNumber)}
+                              onClick={() =>
+                                status !== "locked" && setSelectedWeekNumber(week.weekNumber)
+                              }
                               disabled={status === "locked"}
                               style={customStyle}
                               className={`flex min-w-[110px] items-center justify-center gap-2 rounded-full border border-transparent px-4 py-2 transition-all ${colors} ${status !== "locked" ? "active:scale-95 hover:scale-105" : ""}`}
@@ -794,9 +956,16 @@ function WeeklyFeedbackPage() {
                           <LockKeyhole size={32} className="text-slate-500 dark:text-slate-400" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Review Locked</h3>
+                          <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">
+                            Review Locked
+                          </h3>
                           <p className="mt-2 max-w-sm text-sm text-slate-500 dark:text-slate-400">
-                            This review is currently locked. It will automatically become available on {selectedWeek?.unlockDate ? `Wednesday, ${formatNepaliDate(new Date(`${selectedWeek.unlockDate}T00:00:00`).toISOString(), "DD MMM YYYY")} BS` : "the coming Wednesday"}.
+                            This review is currently locked. It will automatically become available
+                            on{" "}
+                            {selectedWeek?.unlockDate
+                              ? `Wednesday, ${formatNepaliDate(new Date(`${selectedWeek.unlockDate}T00:00:00`).toISOString(), "DD MMM YYYY")} BS`
+                              : "the coming Wednesday"}
+                            .
                           </p>
                         </div>
                       </div>
@@ -815,8 +984,14 @@ function WeeklyFeedbackPage() {
                         {(!selectedWeekReview || canEditSelectedReview) && (
                           <div className="flex flex-col gap-8">
                             <div>
-                              <Label className="mb-3 block text-sm font-bold text-foreground">Overall Weekly Rating</Label>
-                              <RatingSelector value={rating} onChange={setRating} disabled={formLocked} />
+                              <Label className="mb-3 block text-sm font-bold text-foreground">
+                                Overall Weekly Rating
+                              </Label>
+                              <RatingSelector
+                                value={rating}
+                                onChange={setRating}
+                                disabled={formLocked}
+                              />
                             </div>
 
                             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -871,7 +1046,9 @@ function WeeklyFeedbackPage() {
                                   <LockKeyhole size={14} />
                                   Private Admin Notes
                                 </div>
-                                <span className="text-xs font-normal text-slate-500">Visible only to HR/Admins</span>
+                                <span className="text-xs font-normal text-slate-500">
+                                  Visible only to HR/Admins
+                                </span>
                               </Label>
                               <Textarea
                                 value={notes}
@@ -890,22 +1067,30 @@ function WeeklyFeedbackPage() {
                 </div>
 
                 {/* Fixed Footer */}
-                {(!selectedWeekLocked && (!selectedWeekReview || canEditSelectedReview)) && (
+                {!selectedWeekLocked && (!selectedWeekReview || canEditSelectedReview) && (
                   <div className="flex shrink-0 items-center justify-end gap-3 border-t border-border bg-background/80 p-4 backdrop-blur-md">
-                    <Button 
+                    <Button
                       variant="outline"
                       onClick={() => setFeedbackDialogOpen(false)}
                       className="rounded-xl px-6"
                     >
                       Cancel
                     </Button>
-                    <Button 
-                      onClick={saveFeedback} 
-                      disabled={saving || formLocked} 
+                    <Button
+                      onClick={saveFeedback}
+                      disabled={saving || formLocked}
                       className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-8 text-white shadow-lg transition-all hover:brightness-110 hover:shadow-xl"
                     >
-                      {canEditSelectedReview ? <Edit3 size={16} className="mr-2" /> : <Save size={16} className="mr-2" />}
-                      {saving ? "Saving..." : canEditSelectedReview ? "Update Review" : `Submit Week ${selectedWeekNumber} Review`}
+                      {canEditSelectedReview ? (
+                        <Edit3 size={16} className="mr-2" />
+                      ) : (
+                        <Save size={16} className="mr-2" />
+                      )}
+                      {saving
+                        ? "Saving..."
+                        : canEditSelectedReview
+                          ? "Update Review"
+                          : `Submit Week ${selectedWeekNumber} Review`}
                     </Button>
                   </div>
                 )}
@@ -918,17 +1103,19 @@ function WeeklyFeedbackPage() {
                     <History size={18} className="text-slate-500" />
                     <h3 className="font-bold">Review History</h3>
                   </div>
-                  <div className="text-sm font-medium text-muted-foreground">{completedWeeks} / {reviewWeeks.length}</div>
+                  <div className="text-sm font-medium text-muted-foreground">
+                    {completedWeeks} / {reviewWeeks.length}
+                  </div>
                 </div>
-                
+
                 <div className="flex-1 overflow-y-auto p-4">
                   <div className="flex flex-col gap-3">
                     {reviewWeeks.map((week) => {
                       const review = selectedHistory.find((item) => isReviewForWeek(item, week));
                       const status = getWeekStatus(week, Boolean(review));
-                      
+
                       return (
-                        <div 
+                        <div
                           key={week.weekNumber}
                           onClick={() => setSelectedWeekNumber(week.weekNumber)}
                           className={`group relative cursor-pointer overflow-hidden rounded-xl border p-4 transition-all hover:shadow-md ${selectedWeekNumber === week.weekNumber ? "border-indigo-500 bg-indigo-50/30 dark:border-indigo-500/50 dark:bg-indigo-900/10" : "border-border bg-background hover:border-slate-300 dark:hover:border-slate-700"}`}
@@ -936,32 +1123,57 @@ function WeeklyFeedbackPage() {
                           <div className="flex items-start justify-between">
                             <div>
                               <div className="flex items-center gap-2">
-                                <h4 className="font-bold text-foreground">Week {week.weekNumber}</h4>
-                                {status === "completed" && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400">Completed</span>}
-                                {status === "missed" && <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-rose-700 dark:bg-rose-900/50 dark:text-rose-400">Missed</span>}
-                                {status === "pending" && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:bg-amber-900/50 dark:text-amber-400">Pending</span>}
-                                {status === "locked" && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:bg-slate-800 dark:text-slate-400"><LockKeyhole size={10} className="inline mr-1" />Locked</span>}
+                                <h4 className="font-bold text-foreground">
+                                  Week {week.weekNumber}
+                                </h4>
+                                {status === "completed" && (
+                                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400">
+                                    Completed
+                                  </span>
+                                )}
+                                {status === "missed" && (
+                                  <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-rose-700 dark:bg-rose-900/50 dark:text-rose-400">
+                                    Missed
+                                  </span>
+                                )}
+                                {status === "pending" && (
+                                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:bg-amber-900/50 dark:text-amber-400">
+                                    Pending
+                                  </span>
+                                )}
+                                {status === "locked" && (
+                                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:bg-slate-800 dark:text-slate-400">
+                                    <LockKeyhole size={10} className="inline mr-1" />
+                                    Locked
+                                  </span>
+                                )}
                               </div>
                               <p className="mt-1 text-xs text-muted-foreground">
-                                {review ? formatNepaliDate(review.created_at, "DD MMM YYYY") + " BS" : week.startDate}
+                                {review
+                                  ? formatNepaliDate(review.created_at, "DD MMM YYYY") + " BS"
+                                  : week.startDate}
                               </p>
                             </div>
                           </div>
-                          
+
                           {review && (
                             <div className="mt-3 flex items-center justify-between">
                               <div className="flex items-center gap-3">
                                 <div className="flex flex-col">
-                                  <span className="text-[10px] uppercase text-muted-foreground">Rating</span>
+                                  <span className="text-[10px] uppercase text-muted-foreground">
+                                    Rating
+                                  </span>
                                   <span className="text-sm font-semibold">{review.rating}</span>
                                 </div>
                                 <div className="h-6 w-px bg-border" />
                                 <div className="flex flex-col">
-                                  <span className="text-[10px] uppercase text-muted-foreground">Score</span>
+                                  <span className="text-[10px] uppercase text-muted-foreground">
+                                    Score
+                                  </span>
                                   <span className="text-sm font-semibold">{review.score}/100</span>
                                 </div>
                               </div>
-                              
+
                               <div className="flex items-center text-sm font-medium text-indigo-600 opacity-0 transition-opacity group-hover:opacity-100 dark:text-indigo-400">
                                 View <ChevronRight size={16} />
                               </div>
@@ -1008,14 +1220,30 @@ function EmployeeCard({
       </div>
       <div className="weekly-employee-metrics">
         <ProgressMetric label="Score" value={employee.score} />
-        <ProgressMetric label="Tasks" value={Math.min(100, employee.completedTasks * 12)} detail={`${employee.completedTasks}`} />
-        <ProgressMetric label="Attend" value={employee.attendancePct} detail={`${employee.attendancePct}%`} />
+        <ProgressMetric
+          label="Tasks"
+          value={Math.min(100, employee.completedTasks * 12)}
+          detail={`${employee.completedTasks}`}
+        />
+        <ProgressMetric
+          label="Attend"
+          value={employee.attendancePct}
+          detail={`${employee.attendancePct}%`}
+        />
       </div>
     </button>
   );
 }
 
-function WeeklyStat({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof Award }) {
+function WeeklyStat({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: string | number;
+  icon: typeof Award;
+}) {
   return (
     <GlassCard className="weekly-stat">
       <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700">
@@ -1029,7 +1257,15 @@ function WeeklyStat({ label, value, icon: Icon }: { label: string; value: string
   );
 }
 
-function MiniMetric({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof Award }) {
+function MiniMetric({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: string | number;
+  icon: typeof Award;
+}) {
   return (
     <div className="rounded-2xl border border-border bg-card p-3">
       <Icon size={15} className="mb-2 text-primary" />
@@ -1039,7 +1275,15 @@ function MiniMetric({ label, value, icon: Icon }: { label: string; value: string
   );
 }
 
-function ProgressMetric({ label, value, detail }: { label: string; value: number; detail?: string }) {
+function ProgressMetric({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: number;
+  detail?: string;
+}) {
   return (
     <div className="weekly-progress-metric">
       <div className="weekly-progress-label">
@@ -1066,7 +1310,9 @@ function ReviewDetails({
     <div className="weekly-review-details">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">Existing review details</div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">
+            Existing review details
+          </div>
           <div className="mt-1 text-lg font-bold">Week {weekNumber} review already submitted</div>
         </div>
         <Button type="button" size="sm" variant="secondary" onClick={onEdit} className="rounded-xl">
@@ -1077,10 +1323,19 @@ function ReviewDetails({
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <ReviewDetail label="Rating" value={review.rating} />
         <ReviewDetail label="Score" value={resolvedReviewScore(review)} />
-        <ReviewDetail label="Submission date" value={`${formatNepaliDate(review.created_at, "DD MMM YYYY")} BS`} />
+        <ReviewDetail
+          label="Submission date"
+          value={`${formatNepaliDate(review.created_at, "DD MMM YYYY")} BS`}
+        />
         <ReviewDetail label="Strengths" value={review.strengths || "No strengths added."} />
-        <ReviewDetail label="Improvements" value={review.improvements || "No improvements added."} />
-        <ReviewDetail label="Notes" value={review.admin_notes || review.notes || "No notes added."} />
+        <ReviewDetail
+          label="Improvements"
+          value={review.improvements || "No improvements added."}
+        />
+        <ReviewDetail
+          label="Notes"
+          value={review.admin_notes || review.notes || "No notes added."}
+        />
       </div>
     </div>
   );
@@ -1112,7 +1367,11 @@ function CompactReviewCard({
       <div className="weekly-review-card-marker" />
       <div className="weekly-review-card-main">
         <div className="min-w-0">
-          <div className="weekly-review-card-kicker">Week {weekNumber}{weekStatus === "locked" && ` • Available ${reviewWeeks.find(w => w.weekNumber === weekNumber)?.unlockDate}`}</div>
+          <div className="weekly-review-card-kicker">
+            Week {weekNumber}
+            {weekStatus === "locked" &&
+              ` • Available ${reviewWeeks.find((w) => w.weekNumber === weekNumber)?.unlockDate}`}
+          </div>
           <div className="weekly-review-card-title">{review?.rating || "Pending"}</div>
           <div className="weekly-review-card-date">
             {review ? `${formatNepaliDate(review.created_at, "DD MMM YYYY")} BS` : "No review yet"}
@@ -1130,7 +1389,13 @@ function StatusBadge({ status }: { status: WeekStatus }) {
   return (
     <span className={`weekly-status-badge ${status}`}>
       <WeekStatusIcon status={status} />
-      {status === "completed" ? "Completed" : status === "locked" ? "Locked" : status === "missed" ? "Missed" : "Pending"}
+      {status === "completed"
+        ? "Completed"
+        : status === "locked"
+          ? "Locked"
+          : status === "missed"
+            ? "Missed"
+            : "Pending"}
     </span>
   );
 }
@@ -1150,7 +1415,9 @@ function LeaderboardRow({ employee }: { employee: EmployeeWeek }) {
       <Avatar employee={employee} />
       <div className="min-w-0 flex-1">
         <div className="truncate font-semibold">{employee.name}</div>
-        <div className="text-xs text-muted-foreground">{employee.completedTasks} tasks completed</div>
+        <div className="text-xs text-muted-foreground">
+          {employee.completedTasks} tasks completed
+        </div>
       </div>
       <div className="text-right">
         <div className="font-bold gradient-text">{employee.score}</div>
@@ -1169,9 +1436,15 @@ function Avatar({ employee, size = "md" }: { employee: EmployeeWeek; size?: "md"
     .toUpperCase();
   const className = size === "lg" ? "h-16 w-16 text-lg" : "h-11 w-11 text-sm";
   return employee.avatarUrl ? (
-    <img src={employee.avatarUrl} alt="" className={`${className} shrink-0 rounded-2xl object-cover ring-1 ring-slate-200 dark:ring-slate-800`} />
+    <img
+      src={employee.avatarUrl}
+      alt=""
+      className={`${className} shrink-0 rounded-2xl object-cover ring-1 ring-slate-200 dark:ring-slate-800`}
+    />
   ) : (
-    <div className={`${className} flex shrink-0 items-center justify-center rounded-2xl bg-slate-100 font-bold text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700`}>
+    <div
+      className={`${className} flex shrink-0 items-center justify-center rounded-2xl bg-slate-100 font-bold text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700`}
+    >
       {initials}
     </div>
   );
@@ -1196,9 +1469,7 @@ function WeeklyProgressTooltip({ active, payload }: any) {
         <span>Task Completion</span>
         <b>{Math.round(row.taskCompletion)}%</b>
       </div>
-      <div className="weekly-progress-tooltip-status">
-        {row.status}
-      </div>
+      <div className="weekly-progress-tooltip-status">{row.status}</div>
     </div>
   );
 }
@@ -1234,7 +1505,13 @@ function performanceStatus(score: number) {
   return "Needs Improvement";
 }
 
-function makeWeeklyProgressInsight(name: string, score: number, growth: number, attendance: number, taskCompletion: number) {
+function makeWeeklyProgressInsight(
+  name: string,
+  score: number,
+  growth: number,
+  attendance: number,
+  taskCompletion: number,
+) {
   const firstName = name.split(" ")[0] || "Employee";
   if (score >= 80 && growth >= 0) {
     return `${firstName} is above target with ${growth >= 0 ? "+" : ""}${growth}% weekly growth, strong attendance, and ${taskCompletion}% task completion.`;
@@ -1253,14 +1530,16 @@ function makeWeeklyProgressInsight(name: string, score: number, growth: number, 
 
 function getCurrentReviewWeek(date: Date, cycles: any[]) {
   const today = format(date, "yyyy-MM-dd");
-  const current = [...cycles].reverse().find(c => c.unlockDate <= today);
+  const current = [...cycles].reverse().find((c) => c.unlockDate <= today);
   return current?.weekNumber || 1;
 }
 
 function getReviewWeeks(date: Date) {
   const cycles = getWeeklyReviewCyclesForNepaliMonth(date);
   return cycles.map((cycle, index) => {
-    const endDate = cycles[index + 1] ? new Date(cycles[index + 1].unlockDate) : new Date(cycle.unlockDate);
+    const endDate = cycles[index + 1]
+      ? new Date(cycles[index + 1].unlockDate)
+      : new Date(cycle.unlockDate);
     if (cycles[index + 1]) endDate.setDate(endDate.getDate() - 1);
     else endDate.setDate(endDate.getDate() + 6);
     return {
@@ -1329,7 +1608,11 @@ function isSameReviewCycle(reviewDate: string, weekStart?: string) {
 function isReviewForWeek(item: WeeklyFeedbackRow, week: any) {
   if (!week) return false;
   if (item.nepali_year && item.week_number != null) {
-    return item.nepali_year === week.bsYear && item.nepali_month === week.bsMonth && item.week_number === week.weekNumber;
+    return (
+      item.nepali_year === week.bsYear &&
+      item.nepali_month === week.bsMonth &&
+      item.week_number === week.weekNumber
+    );
   }
   return isSameReviewCycle(item.week_start, week.startDate);
 }
@@ -1353,10 +1636,16 @@ function labelForWeekStatus(status: WeekStatus) {
   return "Pending";
 }
 
-function isMissingWeeklyFeedbackColumnError(error: { message?: string; details?: string; code?: string }) {
+function isMissingWeeklyFeedbackColumnError(error: {
+  message?: string;
+  details?: string;
+  code?: string;
+}) {
   const text = `${error.message || ""} ${error.details || ""}`;
   return (
-    (text.includes("review_score") || text.includes("week_number") || text.includes("admin_notes")) &&
+    (text.includes("review_score") ||
+      text.includes("week_number") ||
+      text.includes("admin_notes")) &&
     (text.includes("schema cache") || error.code === "PGRST204")
   );
 }

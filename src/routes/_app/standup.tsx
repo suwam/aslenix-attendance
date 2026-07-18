@@ -32,7 +32,11 @@ import { bsInputToAdDateString, formatBsInput, formatNepaliDate } from "@/lib/ne
 export const Route = createFileRoute("/_app/standup")({ component: StandupPage });
 
 function getAttendanceHours(
-  attendance?: { check_in_time: string | null; check_out_time: string | null; work_hours: number | null } | null,
+  attendance?: {
+    check_in_time: string | null;
+    check_out_time: string | null;
+    work_hours: number | null;
+  } | null,
 ) {
   if (!attendance?.check_in_time || !attendance.check_out_time) return null;
   if (attendance.work_hours !== null && attendance.work_hours !== undefined) {
@@ -61,12 +65,7 @@ function StandupPage() {
   const load = useCallback(async () => {
     if (!user) return;
     const [{ data }, { data: attendance }] = await Promise.all([
-      supabase
-        .from("standups")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("date", date)
-        .maybeSingle(),
+      supabase.from("standups").select("*").eq("user_id", user.id).eq("date", date).maybeSingle(),
       supabase
         .from("attendance")
         .select("check_in_time, check_out_time, work_hours")
@@ -134,11 +133,16 @@ function StandupPage() {
   };
 
   const isSubmitted = hasStandupContent;
-  const recentStandups = history.filter((item) => item.yesterday?.trim() || item.today?.trim() || item.blockers?.trim());
+  const recentStandups = history.filter(
+    (item) => item.yesterday?.trim() || item.today?.trim() || item.blockers?.trim(),
+  );
   const avgHistoryHours =
     history.reduce((a, h) => a + Number(h.work_hours || 0), 0) / Math.max(1, history.length);
   const blockerHistoryCount = history.filter((h) => h.blockers && h.blockers.trim()).length;
-  const quality = useMemo(() => getStandupQuality(yesterday, today, blockers, hours), [yesterday, today, blockers, hours]);
+  const quality = useMemo(
+    () => getStandupQuality(yesterday, today, blockers, hours),
+    [yesterday, today, blockers, hours],
+  );
   const suggestions = useMemo(
     () => getAiSuggestions(yesterday, today, blockers, hoursSource, isSubmitted),
     [yesterday, today, blockers, hoursSource, isSubmitted],
@@ -172,24 +176,49 @@ function StandupPage() {
                   <Bot size={23} />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-foreground">AI Standup Assistant</p>
-                  <h2 className="text-2xl font-bold text-foreground">Make today's update crisp and useful</h2>
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-foreground">
+                    AI Standup Assistant
+                  </p>
+                  <h2 className="text-2xl font-bold text-foreground">
+                    Make today's update crisp and useful
+                  </h2>
                 </div>
               </div>
               <p className="max-w-3xl text-sm leading-6 text-foreground">
-                Your standup should tell the team what changed, what happens next, and whether anything needs manager help.
+                Your standup should tell the team what changed, what happens next, and whether
+                anything needs manager help.
               </p>
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                <SummaryBadge label="Status" value={isSubmitted ? "Submitted draft" : "Pending"} tone={isSubmitted ? "green" : "amber"} />
-                <SummaryBadge label="Quality" value={`${quality.score}%`} tone={quality.score >= 80 ? "green" : quality.score >= 55 ? "blue" : "amber"} />
-                <SummaryBadge label="Hours source" value={hoursSource === "attendance" ? "Attendance" : hoursSource === "standup" ? "Saved" : "Waiting"} tone="blue" />
+                <SummaryBadge
+                  label="Status"
+                  value={isSubmitted ? "Submitted draft" : "Pending"}
+                  tone={isSubmitted ? "green" : "amber"}
+                />
+                <SummaryBadge
+                  label="Quality"
+                  value={`${quality.score}%`}
+                  tone={quality.score >= 80 ? "green" : quality.score >= 55 ? "blue" : "amber"}
+                />
+                <SummaryBadge
+                  label="Hours source"
+                  value={
+                    hoursSource === "attendance"
+                      ? "Attendance"
+                      : hoursSource === "standup"
+                        ? "Saved"
+                        : "Waiting"
+                  }
+                  tone="blue"
+                />
               </div>
             </div>
 
             <div className="rounded-3xl border border-border bg-card p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-600 ">AI Quality Check</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-fuchsia-600 ">
+                    AI Quality Check
+                  </p>
                   <h3 className="mt-1 text-lg font-bold text-foreground">{quality.label}</h3>
                 </div>
                 <BrainCircuit className="text-fuchsia-600 " />
@@ -248,7 +277,9 @@ function StandupPage() {
                   <h2 className="text-xl font-bold text-foreground">Today's standup report</h2>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <div className={`rounded-full border px-3 py-1.5 text-xs font-bold ${isSubmitted ? "border-success/25 bg-success/10 text-success" : "border-warning/25 bg-warning/10 text-warning"}`}>
+                  <div
+                    className={`rounded-full border px-3 py-1.5 text-xs font-bold ${isSubmitted ? "border-success/25 bg-success/10 text-success" : "border-warning/25 bg-warning/10 text-warning"}`}
+                  >
                     {isSubmitted ? "Submitted" : "Pending"}
                   </div>
                   <div className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground">
@@ -289,12 +320,19 @@ function StandupPage() {
 
               <div className="grid grid-cols-1 gap-4 border-t border-border pt-5 md:grid-cols-[minmax(0,1fr)_220px]">
                 <div>
-                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Work hours</Label>
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Work hours
+                  </Label>
                   <div className="mt-2 flex items-center gap-3 rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.055] p-3 shadow-[0_0_24px_rgba(34,211,238,0.08)]">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/10 text-success">
                       <Clock size={18} />
                     </div>
-                    <Input type="text" value={formatWorkHours(hours)} readOnly className="border-0 bg-transparent px-0 text-lg font-bold shadow-none focus-visible:ring-0" />
+                    <Input
+                      type="text"
+                      value={formatWorkHours(hours)}
+                      readOnly
+                      className="border-0 bg-transparent px-0 text-lg font-bold shadow-none focus-visible:ring-0"
+                    />
                   </div>
                   <div className="mt-2 text-xs text-muted-foreground">
                     {hoursSource === "attendance"
@@ -305,7 +343,11 @@ function StandupPage() {
                   </div>
                 </div>
                 <div className="flex items-end">
-                  <Button onClick={save} disabled={busy || !hasStandupContent} className="neon-button h-12 w-full rounded-xl text-base disabled:cursor-not-allowed disabled:opacity-45">
+                  <Button
+                    onClick={save}
+                    disabled={busy || !hasStandupContent}
+                    className="neon-button h-12 w-full rounded-xl text-base disabled:cursor-not-allowed disabled:opacity-45"
+                  >
                     <Save size={15} className="mr-2" />
                     {busy ? "Saving..." : hasStandupContent ? "Save standup" : "Add update first"}
                   </Button>
@@ -327,12 +369,12 @@ function StandupPage() {
             <div className="mb-4 rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.055] p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-foreground">Readiness</div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-foreground">
+                    Readiness
+                  </div>
                   <div className="mt-1 text-2xl font-black text-foreground">{quality.score}%</div>
                 </div>
-                <div className="text-right text-xs text-muted-foreground">
-                  {quality.label}
-                </div>
+                <div className="text-right text-xs text-muted-foreground">{quality.label}</div>
               </div>
               <div className="mt-3 h-2 rounded-full bg-card">
                 <div
@@ -348,7 +390,10 @@ function StandupPage() {
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               {suggestions.map((suggestion) => (
-                <div key={suggestion.title} className={`flex items-start gap-3 rounded-2xl border p-3 text-sm ${suggestion.tone === "good" ? "border-success/20 bg-success/10 text-success" : suggestion.tone === "warn" ? "border-warning/20 bg-warning/10 text-warning" : "border-border bg-card text-foreground"}`}>
+                <div
+                  key={suggestion.title}
+                  className={`flex items-start gap-3 rounded-2xl border p-3 text-sm ${suggestion.tone === "good" ? "border-success/20 bg-success/10 text-success" : suggestion.tone === "warn" ? "border-warning/20 bg-warning/10 text-warning" : "border-border bg-card text-foreground"}`}
+                >
                   {suggestion.tone === "good" ? (
                     <CheckCircle2 size={15} className="mt-0.5 shrink-0" />
                   ) : (
@@ -389,9 +434,7 @@ function StandupPage() {
                     {formatWorkHours(h.work_hours)}
                   </span>
                 </div>
-                <div className="line-clamp-2 text-muted-foreground">
-                  {standupPreview(h)}
-                </div>
+                <div className="line-clamp-2 text-muted-foreground">{standupPreview(h)}</div>
                 <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
                   <HistorySignal label="Today" active={Boolean(h.yesterday?.trim())} />
                   <HistorySignal label="Plan" active={Boolean(h.today?.trim())} />
@@ -434,10 +477,14 @@ function StandupMetric({
     <GlassCard className="border-border bg-card">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {label}
+          </div>
           <div className="mt-3 text-3xl font-bold tabular-nums text-foreground">{value}</div>
         </div>
-        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${colors[tone]}`}>
+        <div
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${colors[tone]}`}
+        >
           <Icon size={19} />
         </div>
       </div>
@@ -462,13 +509,23 @@ function SummaryBadge({
 
   return (
     <div className={`rounded-2xl border p-3 ${colors[tone]}`}>
-      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-75">{label}</div>
+      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-75">
+        {label}
+      </div>
       <div className="mt-1 text-lg font-black text-foreground">{value}</div>
     </div>
   );
 }
 
-function HistorySignal({ label, active, warning = false }: { label: string; active: boolean; warning?: boolean }) {
+function HistorySignal({
+  label,
+  active,
+  warning = false,
+}: {
+  label: string;
+  active: boolean;
+  warning?: boolean;
+}) {
   return (
     <div
       className={`rounded-full border px-2 py-1 text-center font-semibold ${
@@ -484,7 +541,11 @@ function HistorySignal({ label, active, warning = false }: { label: string; acti
   );
 }
 
-function standupPreview(row: { yesterday?: string | null; today?: string | null; blockers?: string | null }) {
+function standupPreview(row: {
+  yesterday?: string | null;
+  today?: string | null;
+  blockers?: string | null;
+}) {
   return row.today?.trim() || row.yesterday?.trim() || row.blockers?.trim() || "No notes";
 }
 
@@ -498,10 +559,14 @@ function WritingSignal({
   active: boolean;
 }) {
   return (
-    <div className={`rounded-2xl border p-3 ${active ? "border-cyan-300/20 bg-cyan-300/10" : "border-border bg-card"}`}>
+    <div
+      className={`rounded-2xl border p-3 ${active ? "border-cyan-300/20 bg-cyan-300/10" : "border-border bg-card"}`}
+    >
       <div className="flex items-center gap-2">
         <span className={`h-2 w-2 rounded-full ${active ? "bg-success" : "bg-warning"}`} />
-        <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</span>
+        <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          {label}
+        </span>
       </div>
       <div className="mt-1 text-sm font-bold text-foreground">{value}</div>
     </div>
@@ -648,7 +713,12 @@ function getAiSuggestions(
       tone: "warn",
     });
   }
-  if (yesterdayWords >= 8 && todayWords >= 8 && (blockerWords === 0 || blockerWords >= 4) && hoursSource !== "none") {
+  if (
+    yesterdayWords >= 8 &&
+    todayWords >= 8 &&
+    (blockerWords === 0 || blockerWords >= 4) &&
+    hoursSource !== "none"
+  ) {
     suggestions.unshift({
       title: "Ready to save",
       text: "This standup has enough detail for progress, plan, blocker status, and hours.",
@@ -686,7 +756,8 @@ function getWritingSignals(
     },
     {
       label: "Hours",
-      value: hoursSource === "attendance" ? "Auto" : hoursSource === "standup" ? "Saved" : "Waiting",
+      value:
+        hoursSource === "attendance" ? "Auto" : hoursSource === "standup" ? "Saved" : "Waiting",
       active: hoursSource !== "none",
     },
   ];

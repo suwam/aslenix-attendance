@@ -1,18 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, Laptop, RefreshCw, ShieldCheck, Trash2, X } from "lucide-react";
 import { hrmsApi } from "../api/hrmsApi";
-import type { DeviceManagementPayload, EmployeeDevice, EmployeeSummary, PendingDeviceRequest } from "../types/device";
+import type {
+  DeviceManagementPayload,
+  EmployeeDevice,
+  EmployeeSummary,
+  PendingDeviceRequest,
+} from "../types/device";
 
 function employeeName(value: EmployeeSummary | string) {
   return typeof value === "string" ? value : value.name;
 }
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(
+    new Date(value),
+  );
 }
 
 export function DeviceManagementPage() {
-  const [payload, setPayload] = useState<DeviceManagementPayload>({ devices: [], pendingRequests: [] });
+  const [payload, setPayload] = useState<DeviceManagementPayload>({
+    devices: [],
+    pendingRequests: [],
+  });
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,7 +39,8 @@ export function DeviceManagementPage() {
   const requestsByEmployee = useMemo(() => {
     const map = new Map<string, PendingDeviceRequest[]>();
     payload.pendingRequests.forEach((request) => {
-      const key = typeof request.employeeId === "string" ? request.employeeId : request.employeeId._id;
+      const key =
+        typeof request.employeeId === "string" ? request.employeeId : request.employeeId._id;
       map.set(key, [...(map.get(key) || []), request]);
     });
     return map;
@@ -55,7 +66,9 @@ export function DeviceManagementPage() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">HR</p>
             <h1 className="mt-2 text-3xl font-bold">Device Management</h1>
-            <p className="mt-1 text-sm text-slate-400">Approve, replace, or remove employee attendance devices.</p>
+            <p className="mt-1 text-sm text-slate-400">
+              Approve, replace, or remove employee attendance devices.
+            </p>
           </div>
           <button
             type="button"
@@ -67,12 +80,24 @@ export function DeviceManagementPage() {
           </button>
         </div>
 
-        {error && <div className="mt-5 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">{error}</div>}
+        {error && (
+          <div className="mt-5 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
+            {error}
+          </div>
+        )}
 
         <section className="mt-6 grid gap-4 md:grid-cols-3">
           <Metric label="Registered Devices" value={payload.devices.length} icon={Laptop} />
-          <Metric label="Active Devices" value={payload.devices.filter((device) => device.status === "Active").length} icon={ShieldCheck} />
-          <Metric label="Pending Requests" value={payload.pendingRequests.length} icon={RefreshCw} />
+          <Metric
+            label="Active Devices"
+            value={payload.devices.filter((device) => device.status === "Active").length}
+            icon={ShieldCheck}
+          />
+          <Metric
+            label="Pending Requests"
+            value={payload.pendingRequests.length}
+            icon={RefreshCw}
+          />
         </section>
 
         <section className="mt-6 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70">
@@ -87,7 +112,8 @@ export function DeviceManagementPage() {
           </div>
 
           {payload.devices.map((device) => {
-            const employeeId = typeof device.employeeId === "string" ? device.employeeId : device.employeeId._id;
+            const employeeId =
+              typeof device.employeeId === "string" ? device.employeeId : device.employeeId._id;
             const requests = requestsByEmployee.get(employeeId) || [];
             return (
               <DeviceRow
@@ -95,16 +121,26 @@ export function DeviceManagementPage() {
                 device={device}
                 requests={requests}
                 busy={busy}
-                onApprove={(requestId) => run(`approve-${requestId}`, () => hrmsApi.approveDevice(requestId))}
-                onReject={(requestId) => run(`reject-${requestId}`, () => hrmsApi.rejectDevice(requestId))}
-                onReplace={(requestId) => run(`replace-${device._id}-${requestId}`, () => hrmsApi.replaceDevice(device._id, requestId))}
+                onApprove={(requestId) =>
+                  run(`approve-${requestId}`, () => hrmsApi.approveDevice(requestId))
+                }
+                onReject={(requestId) =>
+                  run(`reject-${requestId}`, () => hrmsApi.rejectDevice(requestId))
+                }
+                onReplace={(requestId) =>
+                  run(`replace-${device._id}-${requestId}`, () =>
+                    hrmsApi.replaceDevice(device._id, requestId),
+                  )
+                }
                 onRemove={() => run(`remove-${device._id}`, () => hrmsApi.removeDevice(device._id))}
               />
             );
           })}
 
           {payload.devices.length === 0 && (
-            <div className="px-5 py-12 text-center text-sm text-slate-400">No registered devices found.</div>
+            <div className="px-5 py-12 text-center text-sm text-slate-400">
+              No registered devices found.
+            </div>
           )}
         </section>
       </div>
@@ -137,7 +173,9 @@ function DeviceRow({
       <span className="text-slate-300">{device.operatingSystem}</span>
       <span className="text-slate-300">{formatDate(device.lastLogin)}</span>
       <span>
-        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${device.status === "Active" ? "bg-emerald-500/15 text-emerald-300" : "bg-slate-700 text-slate-300"}`}>
+        <span
+          className={`rounded-full px-3 py-1 text-xs font-semibold ${device.status === "Active" ? "bg-emerald-500/15 text-emerald-300" : "bg-slate-700 text-slate-300"}`}
+        >
           {device.status}
         </span>
       </span>
@@ -149,9 +187,24 @@ function DeviceRow({
               {request.browser} · {request.operatingSystem} · {formatDate(request.requestedAt)}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <ActionButton label="Approve" icon={Check} disabled={Boolean(busy)} onClick={() => onApprove(request._id)} />
-              <ActionButton label="Reject" icon={X} disabled={Boolean(busy)} onClick={() => onReject(request._id)} />
-              <ActionButton label="Replace" icon={RefreshCw} disabled={Boolean(busy)} onClick={() => onReplace(request._id)} />
+              <ActionButton
+                label="Approve"
+                icon={Check}
+                disabled={Boolean(busy)}
+                onClick={() => onApprove(request._id)}
+              />
+              <ActionButton
+                label="Reject"
+                icon={X}
+                disabled={Boolean(busy)}
+                onClick={() => onReject(request._id)}
+              />
+              <ActionButton
+                label="Replace"
+                icon={RefreshCw}
+                disabled={Boolean(busy)}
+                onClick={() => onReplace(request._id)}
+              />
             </div>
           </div>
         ))}
@@ -169,7 +222,15 @@ function DeviceRow({
   );
 }
 
-function Metric({ label, value, icon: Icon }: { label: string; value: number; icon: typeof Laptop }) {
+function Metric({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: number;
+  icon: typeof Laptop;
+}) {
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
       <div className="flex items-center justify-between">

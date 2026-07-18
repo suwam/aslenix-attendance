@@ -1,4 +1,11 @@
-import { CheckCircle2, Clock3, FileText, MessageSquare, NotebookPen, TrendingUp } from "lucide-react";
+import {
+  CheckCircle2,
+  Clock3,
+  FileText,
+  MessageSquare,
+  NotebookPen,
+  TrendingUp,
+} from "lucide-react";
 import type { TaskActivity } from "../types/task";
 
 const iconByType = {
@@ -26,7 +33,12 @@ export function ActivityTimeline({ timeline }: { timeline: TaskActivity[] }) {
               </span>
               <div className="rounded-md border border-[#f1f0ee]/10 bg-black/25 p-3">
                 <div className="mb-1 flex flex-wrap justify-between gap-2 text-xs text-slate-500">
-                  <time>{new Date(item.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time>
+                  <time>
+                    {new Date(item.createdAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </time>
                   <span>{item.actorName}</span>
                 </div>
                 <p className="text-sm text-slate-200">
@@ -37,7 +49,9 @@ export function ActivityTimeline({ timeline }: { timeline: TaskActivity[] }) {
                     : item.message}
                 </p>
                 {typeof item.metadata?.note === "string" && item.metadata.note && (
-                  <p className="mt-2 rounded-md bg-[#f1f0ee]/5 p-2 text-xs text-slate-300">{item.metadata.note}</p>
+                  <p className="mt-2 rounded-md bg-[#f1f0ee]/5 p-2 text-xs text-slate-300">
+                    {item.metadata.note}
+                  </p>
                 )}
               </div>
             </li>

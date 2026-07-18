@@ -1,7 +1,11 @@
 import type { NextFunction, Request, Response } from "express";
 import { ATTENDANCE_ACTIONS, type AttendanceAction } from "../models/AttendanceLog";
 import type { AuthRequest } from "./auth";
-import { DEVICE_BLOCK_MESSAGE, logAttendanceAttempt, validateActiveDevice } from "../services/device.service";
+import {
+  DEVICE_BLOCK_MESSAGE,
+  logAttendanceAttempt,
+  validateActiveDevice,
+} from "../services/device.service";
 import { getRequestIp, readDeviceMetadata } from "../types/device";
 
 const actionByPath: Record<string, AttendanceAction> = {
@@ -16,7 +20,11 @@ export function resolveAttendanceAction(req: Request): AttendanceAction {
   return ATTENDANCE_ACTIONS.includes(action) ? action : "Check In";
 }
 
-export async function requireRegisteredAttendanceDevice(req: Request, res: Response, next: NextFunction) {
+export async function requireRegisteredAttendanceDevice(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   const authReq = req as AuthRequest;
   const metadata = readDeviceMetadata(req);
   const action = resolveAttendanceAction(req);
@@ -49,6 +57,8 @@ export async function requireRegisteredAttendanceDevice(req: Request, res: Respo
       status: "Blocked",
       reason: error instanceof Error ? error.message : "Unable to validate device",
     });
-    return res.status(422).json({ message: error instanceof Error ? error.message : "Unable to validate device" });
+    return res
+      .status(422)
+      .json({ message: error instanceof Error ? error.message : "Unable to validate device" });
   }
 }

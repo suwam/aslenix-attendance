@@ -99,11 +99,16 @@ function AdminStandupsPage() {
           .from("profiles")
           .select("user_id, full_name, email, department, avatar_url")
           .eq("approval_status", "approved"),
-        supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
+        supabase
+          .from("user_roles")
+          .select("user_id, role")
+          .in("role", ["admin", "super_admin", "hr_manager"]),
       ]);
 
       const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
-      const employeeProfiles = (profiles || []).filter((profile) => !adminUserIds.has(profile.user_id));
+      const employeeProfiles = (profiles || []).filter(
+        (profile) => !adminUserIds.has(profile.user_id),
+      );
       const employeeUserIds = new Set(employeeProfiles.map((profile) => profile.user_id));
       const profileByUser = new Map(employeeProfiles.map((profile) => [profile.user_id, profile]));
       setRows(
@@ -140,10 +145,22 @@ function AdminStandupsPage() {
   const totalHours = signals.reduce((sum, row) => sum + row.hours, 0);
   const blockerCount = signals.filter((row) => row.blockers?.trim()).length;
   const avgHours = totalHours / Math.max(1, signals.length);
-  const teamProductivity = Math.round(signals.reduce((sum, row) => sum + row.score, 0) / Math.max(1, signals.length));
-  const moodScore = Math.round(signals.reduce((sum, row) => sum + row.mood, 0) / Math.max(1, signals.length));
-  const executionConfidence = clamp(Math.round(teamProductivity + Math.min(8, avgHours) * 2 - blockerCount * 5), 36, 96);
-  const submissionRate = clamp(Math.round((signals.length / Math.max(12, signals.length)) * 100), 0, 100);
+  const teamProductivity = Math.round(
+    signals.reduce((sum, row) => sum + row.score, 0) / Math.max(1, signals.length),
+  );
+  const moodScore = Math.round(
+    signals.reduce((sum, row) => sum + row.mood, 0) / Math.max(1, signals.length),
+  );
+  const executionConfidence = clamp(
+    Math.round(teamProductivity + Math.min(8, avgHours) * 2 - blockerCount * 5),
+    36,
+    96,
+  );
+  const submissionRate = clamp(
+    Math.round((signals.length / Math.max(12, signals.length)) * 100),
+    0,
+    100,
+  );
   const risks = buildRiskCards(signals, blockerCount);
   const trendData = buildTrendData(teamProductivity, blockerCount, avgHours);
   const heatmap = buildHeatmap(signals.length, avgHours, blockerCount);
@@ -176,19 +193,39 @@ function AdminStandupsPage() {
                     <Bot size={24} />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-foreground">AI Daily Briefing</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-foreground">
+                      AI Daily Briefing
+                    </p>
                     <h2 className="text-2xl font-bold text-foreground">Executive standup pulse</h2>
                   </div>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <BriefingPoint label={`${signals.length} standups submitted`} tone="blue" />
-                  <BriefingPoint label={`${blockerCount} blockers detected`} tone={blockerCount ? "amber" : "green"} />
-                  <BriefingPoint label={`Average work time: ${formatWorkHours(avgHours)}`} tone="purple" />
-                  <BriefingPoint label={`Team execution confidence: ${executionConfidence}%`} tone="blue" />
-                  <BriefingPoint label={blockerCount > 2 ? "Manager attention recommended" : "No critical risks identified"} tone={blockerCount > 2 ? "amber" : "green"} />
+                  <BriefingPoint
+                    label={`${blockerCount} blockers detected`}
+                    tone={blockerCount ? "amber" : "green"}
+                  />
+                  <BriefingPoint
+                    label={`Average work time: ${formatWorkHours(avgHours)}`}
+                    tone="purple"
+                  />
+                  <BriefingPoint
+                    label={`Team execution confidence: ${executionConfidence}%`}
+                    tone="blue"
+                  />
+                  <BriefingPoint
+                    label={
+                      blockerCount > 2
+                        ? "Manager attention recommended"
+                        : "No critical risks identified"
+                    }
+                    tone={blockerCount > 2 ? "amber" : "green"}
+                  />
                 </div>
                 <div className="mt-5 rounded-2xl border border-border bg-card p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-fuchsia-600 ">AI Insights</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-fuchsia-600 ">
+                    AI Insights
+                  </p>
                   <p className="mt-2 text-lg font-semibold leading-relaxed text-foreground">
                     {makeAiInsight(signals.length, blockerCount, executionConfidence)}
                   </p>
@@ -198,8 +235,12 @@ function AdminStandupsPage() {
               <div className="rounded-3xl border border-border bg-card p-5 backdrop-blur-xl">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">Execution Confidence</p>
-                    <div className="mt-2 text-5xl font-black text-foreground tabular-nums">{executionConfidence}%</div>
+                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                      Execution Confidence
+                    </p>
+                    <div className="mt-2 text-5xl font-black text-foreground tabular-nums">
+                      {executionConfidence}%
+                    </div>
                   </div>
                   <Gauge className="text-foreground" size={34} />
                 </div>
@@ -212,7 +253,10 @@ function AdminStandupsPage() {
                 <div className="mt-5 grid grid-cols-3 gap-3 text-center">
                   <MiniMetric label="Submission" value={`${submissionRate}%`} />
                   <MiniMetric label="Mood" value={`${moodScore}%`} />
-                  <MiniMetric label="Focus" value={`${Math.round((teamProductivity + executionConfidence) / 2)}%`} />
+                  <MiniMetric
+                    label="Focus"
+                    value={`${Math.round((teamProductivity + executionConfidence) / 2)}%`}
+                  />
                 </div>
               </div>
             </div>
@@ -222,7 +266,9 @@ function AdminStandupsPage() {
         <GlassCard className="border border-fuchsia-300/15 bg-card shadow-[0_0_38px_rgba(168,85,247,0.12)]">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-foreground">AI Recommendation Center</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-foreground">
+                AI Recommendation Center
+              </p>
               <h2 className="mt-1 text-2xl font-bold text-foreground">Suggested actions</h2>
             </div>
             <Lightbulb className="text-foreground" />
@@ -235,7 +281,10 @@ function AdminStandupsPage() {
               >
                 <div className="mt-0.5 h-2.5 w-2.5 rounded-full bg-gradient-to-r from-cyan-300 to-fuchsia-300 shadow-[0_0_14px_rgba(34,211,238,0.65)]" />
                 <p className="text-sm leading-relaxed text-foreground">{item}</p>
-                <ChevronRight className="ml-auto shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-foreground" size={16} />
+                <ChevronRight
+                  className="ml-auto shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-foreground"
+                  size={16}
+                />
               </div>
             ))}
           </div>
@@ -243,12 +292,60 @@ function AdminStandupsPage() {
       </section>
 
       <section className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-        <AiKpiCard label="Submitted Standups" value={signals.length} icon={CalendarCheck2} trend="+12%" compare="vs yesterday" tone="cyan" sparkline={[7, 8, 8, 9, 10, 11, signals.length || 1]} />
-        <AiKpiCard label="Average Hours Worked" value={formatWorkHours(avgHours)} icon={Clock} trend="+4%" compare="more focus time" tone="blue" sparkline={[6.8, 7.1, 7.6, 7.2, 8.1, 8.3, avgHours || 1]} />
-        <AiKpiCard label="Team Productivity Score" value={`${teamProductivity}%`} icon={TrendingUp} trend="+9%" compare="quality lift" tone="purple" sparkline={[62, 66, 69, 71, 75, 78, teamProductivity]} />
-        <AiKpiCard label="Blockers Detected" value={blockerCount} icon={ShieldAlert} trend={blockerCount ? "+2" : "0"} compare="manager review" tone={blockerCount ? "amber" : "green"} sparkline={[1, 0, 2, 1, 3, 2, blockerCount]} />
-        <AiKpiCard label="Team Mood Score" value={`${moodScore}%`} icon={Users} trend="+6%" compare="healthy signal" tone="green" sparkline={[70, 72, 73, 76, 78, 80, moodScore]} />
-        <AiKpiCard label="AI Execution Confidence" value={`${executionConfidence}%`} icon={BrainCircuit} trend="+8%" compare="forecast strength" tone="cyan" sparkline={[64, 67, 69, 73, 77, 82, executionConfidence]} />
+        <AiKpiCard
+          label="Submitted Standups"
+          value={signals.length}
+          icon={CalendarCheck2}
+          trend="+12%"
+          compare="vs yesterday"
+          tone="cyan"
+          sparkline={[7, 8, 8, 9, 10, 11, signals.length || 1]}
+        />
+        <AiKpiCard
+          label="Average Hours Worked"
+          value={formatWorkHours(avgHours)}
+          icon={Clock}
+          trend="+4%"
+          compare="more focus time"
+          tone="blue"
+          sparkline={[6.8, 7.1, 7.6, 7.2, 8.1, 8.3, avgHours || 1]}
+        />
+        <AiKpiCard
+          label="Team Productivity Score"
+          value={`${teamProductivity}%`}
+          icon={TrendingUp}
+          trend="+9%"
+          compare="quality lift"
+          tone="purple"
+          sparkline={[62, 66, 69, 71, 75, 78, teamProductivity]}
+        />
+        <AiKpiCard
+          label="Blockers Detected"
+          value={blockerCount}
+          icon={ShieldAlert}
+          trend={blockerCount ? "+2" : "0"}
+          compare="manager review"
+          tone={blockerCount ? "amber" : "green"}
+          sparkline={[1, 0, 2, 1, 3, 2, blockerCount]}
+        />
+        <AiKpiCard
+          label="Team Mood Score"
+          value={`${moodScore}%`}
+          icon={Users}
+          trend="+6%"
+          compare="healthy signal"
+          tone="green"
+          sparkline={[70, 72, 73, 76, 78, 80, moodScore]}
+        />
+        <AiKpiCard
+          label="AI Execution Confidence"
+          value={`${executionConfidence}%`}
+          icon={BrainCircuit}
+          trend="+8%"
+          compare="forecast strength"
+          tone="cyan"
+          sparkline={[64, 67, 69, 73, 77, 82, executionConfidence]}
+        />
       </section>
 
       <div className="relative mt-5 max-w-md">
@@ -271,7 +368,9 @@ function AdminStandupsPage() {
             <GlassCard className="flex h-full min-h-0 flex-col overflow-hidden border border-[rgba(0,180,255,0.15)] bg-card shadow-[0_18px_60px_rgba(0,0,0,0.22)]">
               <div className="mb-5 flex shrink-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-foreground">Team Standup Feed</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-foreground">
+                    Team Standup Feed
+                  </p>
                   <div className="mt-1 flex items-center gap-2">
                     <span className="flex h-7 w-7 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10 text-foreground shadow-[0_0_18px_rgba(34,211,238,0.18)]">
                       <BrainCircuit size={15} />
@@ -296,8 +395,12 @@ function AdminStandupsPage() {
                 {signals.length === 0 && (
                   <div className="rounded-3xl border border-dashed border-cyan-300/20 bg-cyan-300/5 p-10 text-center">
                     <MessageSquareText className="mx-auto text-foreground" size={30} />
-                    <h3 className="mt-3 text-lg font-bold text-foreground">No standups found for this date</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">Submitted standups will appear as AI intelligence cards here.</p>
+                    <h3 className="mt-3 text-lg font-bold text-foreground">
+                      No standups found for this date
+                    </h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Submitted standups will appear as AI intelligence cards here.
+                    </p>
                   </div>
                 )}
               </div>
@@ -307,7 +410,9 @@ function AdminStandupsPage() {
               <GlassCard className="border border-amber-300/15 bg-card shadow-[0_0_32px_rgba(251,191,36,0.08)]">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-foreground">AI Risk & Blocker Analysis</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-foreground">
+                      AI Risk & Blocker Analysis
+                    </p>
                     <h2 className="mt-1 text-xl font-bold text-foreground">Operational signals</h2>
                   </div>
                   <AlertTriangle className="text-foreground" />
@@ -334,20 +439,48 @@ function AdminStandupsPage() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid stroke="rgba(148,163,184,0.12)" vertical={false} />
-                  <XAxis dataKey="day" stroke="rgba(226,232,240,0.55)" tickLine={false} axisLine={false} />
+                  <XAxis
+                    dataKey="day"
+                    stroke="rgba(226,232,240,0.55)"
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <YAxis stroke="rgba(226,232,240,0.45)" tickLine={false} axisLine={false} />
                   <Tooltip content={<ChartTooltip />} />
-                  <Area type="monotone" dataKey="score" stroke="#22d3ee" strokeWidth={3} fill="url(#standupProductivity)" />
-                  <Line type="monotone" dataKey="confidence" stroke="#c084fc" strokeWidth={2} dot={false} />
+                  <Area
+                    type="monotone"
+                    dataKey="score"
+                    stroke="#22d3ee"
+                    strokeWidth={3}
+                    fill="url(#standupProductivity)"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="confidence"
+                    stroke="#c084fc"
+                    strokeWidth={2}
+                    dot={false}
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             </AnalyticsCard>
 
             <AnalyticsCard title="Daily Hours Distribution" icon={Timer}>
               <ResponsiveContainer width="100%" height={230}>
-                <BarChart data={signals.slice(0, 8).map((row) => ({ name: getFirstName(row), hours: Number(row.hours.toFixed(1)), focus: row.focus }))}>
+                <BarChart
+                  data={signals.slice(0, 8).map((row) => ({
+                    name: getFirstName(row),
+                    hours: Number(row.hours.toFixed(1)),
+                    focus: row.focus,
+                  }))}
+                >
                   <CartesianGrid stroke="rgba(148,163,184,0.12)" vertical={false} />
-                  <XAxis dataKey="name" stroke="rgba(226,232,240,0.55)" tickLine={false} axisLine={false} />
+                  <XAxis
+                    dataKey="name"
+                    stroke="rgba(226,232,240,0.55)"
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <YAxis stroke="rgba(226,232,240,0.45)" tickLine={false} axisLine={false} />
                   <Tooltip content={<ChartTooltip />} />
                   <Bar dataKey="hours" radius={[10, 10, 3, 3]} fill="#38bdf8" />
@@ -368,7 +501,9 @@ function AdminStandupsPage() {
                   <div className="relative grid h-36 w-36 place-items-center rounded-full bg-card text-center">
                     <div>
                       <div className="text-5xl font-black text-foreground">{submissionRate}%</div>
-                      <div className="mt-1 text-xs uppercase tracking-[0.2em] text-foreground">Submitted</div>
+                      <div className="mt-1 text-xs uppercase tracking-[0.2em] text-foreground">
+                        Submitted
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -379,10 +514,21 @@ function AdminStandupsPage() {
               <ResponsiveContainer width="100%" height={230}>
                 <LineChart data={trendData}>
                   <CartesianGrid stroke="rgba(148,163,184,0.12)" vertical={false} />
-                  <XAxis dataKey="day" stroke="rgba(226,232,240,0.55)" tickLine={false} axisLine={false} />
+                  <XAxis
+                    dataKey="day"
+                    stroke="rgba(226,232,240,0.55)"
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <YAxis stroke="rgba(226,232,240,0.45)" tickLine={false} axisLine={false} />
                   <Tooltip content={<ChartTooltip />} />
-                  <Line type="monotone" dataKey="blockers" stroke="#f59e0b" strokeWidth={3} dot={{ r: 4, fill: "#f59e0b" }} />
+                  <Line
+                    type="monotone"
+                    dataKey="blockers"
+                    stroke="#f59e0b"
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: "#f59e0b" }}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </AnalyticsCard>
@@ -391,10 +537,14 @@ function AdminStandupsPage() {
           <GlassCard className="mt-5 border border-fuchsia-300/10 bg-card/70">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-foreground">Team Workload Heatmap</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-foreground">
+                  Team Workload Heatmap
+                </p>
                 <h2 className="text-2xl font-bold text-foreground">Weekly intensity map</h2>
               </div>
-              <span className="text-sm text-muted-foreground">AI compares submitted standups, blockers, and work hours.</span>
+              <span className="text-sm text-muted-foreground">
+                AI compares submitted standups, blockers, and work hours.
+              </span>
             </div>
             <div className="mt-6 grid gap-3">
               {heatmap.map((item) => (
@@ -413,7 +563,9 @@ function AdminStandupsPage() {
                       />
                     ))}
                   </div>
-                  <span className="text-right text-sm font-bold text-foreground">{item.score}%</span>
+                  <span className="text-right text-sm font-bold text-foreground">
+                    {item.score}%
+                  </span>
                 </div>
               ))}
             </div>
@@ -453,10 +605,17 @@ function AiKpiCard({
     <GlassCard className="group overflow-hidden border border-border bg-card p-4 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/30 hover:shadow-[0_0_34px_rgba(34,211,238,0.14)]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+          <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            {label}
+          </p>
           <div className="mt-2 text-2xl font-black text-foreground tabular-nums">{value}</div>
         </div>
-        <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br shadow-lg", toneClass)}>
+        <div
+          className={cn(
+            "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br shadow-lg",
+            toneClass,
+          )}
+        >
           <Icon size={20} />
         </div>
       </div>
@@ -469,44 +628,73 @@ function AiKpiCard({
   );
 }
 
-function StandupEmployeeCard({ row, selected, onSelect }: { row: EmployeeSignal; selected: boolean; onSelect: () => void }) {
+function StandupEmployeeCard({
+  row,
+  selected,
+  onSelect,
+}: {
+  row: EmployeeSignal;
+  selected: boolean;
+  onSelect: () => void;
+}) {
   return (
     <button
       type="button"
       onClick={onSelect}
       className={cn(
         "group w-full rounded-3xl border bg-card p-5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/35 hover:bg-card hover:shadow-[0_18px_42px_rgba(0,0,0,0.28),0_0_30px_rgba(34,211,238,0.12)]",
-        selected ? "border-cyan-300/50 shadow-[0_0_42px_rgba(34,211,238,0.14)]" : "border-[rgba(0,180,255,0.15)]",
+        selected
+          ? "border-cyan-300/50 shadow-[0_0_42px_rgba(34,211,238,0.14)]"
+          : "border-[rgba(0,180,255,0.15)]",
       )}
     >
       <div className="grid gap-5 xl:grid-cols-[minmax(190px,0.78fr)_minmax(0,1.55fr)_132px] xl:items-start">
         <div className="flex min-w-0 items-start gap-4">
           <EmployeeAvatar profile={row.profile} size="lg" />
           <div className="min-w-0">
-            <h3 className="truncate text-xl font-semibold leading-tight text-foreground">{getEmployeeName(row)}</h3>
-            <p className="mt-1 truncate text-base text-foreground">{row.profile?.department || row.profile?.email || "Team member"}</p>
+            <h3 className="truncate text-xl font-semibold leading-tight text-foreground">
+              {getEmployeeName(row)}
+            </h3>
+            <p className="mt-1 truncate text-base text-foreground">
+              {row.profile?.department || row.profile?.email || "Team member"}
+            </p>
             <div className="mt-3 flex flex-wrap gap-2">
               <StatusPill status={row.status} />
-              <span className="rounded-full border border-violet-300/30 bg-violet-500/15 px-3 py-1 text-xs font-semibold text-foreground shadow-[0_0_16px_rgba(139,92,246,0.2)]">{row.badge}</span>
+              <span className="rounded-full border border-violet-300/30 bg-violet-500/15 px-3 py-1 text-xs font-semibold text-foreground shadow-[0_0_16px_rgba(139,92,246,0.2)]">
+                {row.badge}
+              </span>
             </div>
           </div>
         </div>
 
         <div className="grid min-w-0 gap-3 sm:grid-cols-2">
-          <StandupSnippet label="Today" text={row.yesterday || "No completed work update shared."} />
+          <StandupSnippet
+            label="Today"
+            text={row.yesterday || "No completed work update shared."}
+          />
           <StandupSnippet label="Tomorrow" text={row.today || "No execution plan shared."} />
           <div className="rounded-2xl border border-[rgba(0,180,255,0.15)] bg-card p-4">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-foreground">Hours</p>
-            <p className="mt-2 text-4xl font-black leading-none text-foreground tabular-nums">{formatWorkHours(row.hours)}</p>
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-foreground">
+              Hours
+            </p>
+            <p className="mt-2 text-4xl font-black leading-none text-foreground tabular-nums">
+              {formatWorkHours(row.hours)}
+            </p>
           </div>
           <div className="rounded-2xl border border-[rgba(0,180,255,0.15)] bg-card p-4 sm:col-span-2 xl:col-span-1">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-foreground">AI Insight</p>
-            <p className="mt-2 line-clamp-4 text-[15px] leading-6 text-foreground">{makeEmployeeInsight(row)}</p>
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-foreground">
+              AI Insight
+            </p>
+            <p className="mt-2 line-clamp-4 text-[15px] leading-6 text-foreground">
+              {makeEmployeeInsight(row)}
+            </p>
           </div>
         </div>
 
         <div className="rounded-3xl border border-cyan-300/20 bg-[radial-gradient(circle_at_50%_0%,rgba(34,211,238,0.18),transparent_42%),linear-gradient(180deg,rgba(139,92,246,0.14),rgba(11,34,56,0.86))] p-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_0_24px_rgba(34,211,238,0.1)]">
-          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-foreground">Score</p>
+          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-foreground">
+            Score
+          </p>
           <p className="mt-1 text-5xl font-black leading-none text-foreground">{row.score}</p>
           <p className="mt-2 text-xs font-semibold text-foreground">AI productivity</p>
         </div>
@@ -519,7 +707,9 @@ function EmployeeIntelligencePanel({ row }: { row?: EmployeeSignal }) {
   if (!row) {
     return (
       <GlassCard className="border border-cyan-300/10 bg-card">
-        <p className="text-sm text-muted-foreground">Select an employee to open intelligence details.</p>
+        <p className="text-sm text-muted-foreground">
+          Select an employee to open intelligence details.
+        </p>
       </GlassCard>
     );
   }
@@ -529,9 +719,15 @@ function EmployeeIntelligencePanel({ row }: { row?: EmployeeSignal }) {
       <div className="flex items-start gap-3">
         <EmployeeAvatar profile={row.profile} size="lg" />
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-foreground">Employee Intelligence Drawer</p>
-          <h2 className="mt-1 truncate text-xl font-bold text-foreground">{getEmployeeName(row)}</h2>
-          <p className="text-sm text-muted-foreground">{row.profile?.department || "Team member"}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-foreground">
+            Employee Intelligence Drawer
+          </p>
+          <h2 className="mt-1 truncate text-xl font-bold text-foreground">
+            {getEmployeeName(row)}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {row.profile?.department || "Team member"}
+          </p>
         </div>
       </div>
 
@@ -543,22 +739,57 @@ function EmployeeIntelligencePanel({ row }: { row?: EmployeeSignal }) {
 
       <div className="mt-5 rounded-2xl border border-border bg-card p-4">
         <p className="text-xs uppercase tracking-[0.2em] text-fuchsia-600 ">Recent standup</p>
-        <p className="mt-2 text-sm leading-relaxed text-foreground">{row.yesterday || "No completed work update shared."}</p>
+        <p className="mt-2 text-sm leading-relaxed text-foreground">
+          {row.yesterday || "No completed work update shared."}
+        </p>
         <p className="mt-3 text-xs text-muted-foreground">
-          Updated {formatNepaliDate(row.updated_at, "DD MMM YYYY")} BS · {format(new Date(row.updated_at), "HH:mm")}
+          Updated {formatNepaliDate(row.updated_at, "DD MMM YYYY")} BS ·{" "}
+          {format(new Date(row.updated_at), "HH:mm")}
         </p>
       </div>
 
       <div className="mt-5 space-y-3">
-        <CoachingLine icon={Target} label="AI Coaching" text={row.blockers?.trim() ? "Remove the blocker first, then split tomorrow's plan into one high-impact execution block." : "Keep the same cadence and protect focus time for the highest-value task."} />
-        <CoachingLine icon={Flame} label="Burnout Risk" text={row.hours > 9.5 ? "Moderate signal from extended work hours. Review workload distribution." : "Low risk. Current workload appears balanced."} />
-        <CoachingLine icon={BarChart3} label="Performance Trend" text={row.score > 82 ? "Positive trend with strong execution quality." : "Stable trend with room for sharper daily outcomes."} />
+        <CoachingLine
+          icon={Target}
+          label="AI Coaching"
+          text={
+            row.blockers?.trim()
+              ? "Remove the blocker first, then split tomorrow's plan into one high-impact execution block."
+              : "Keep the same cadence and protect focus time for the highest-value task."
+          }
+        />
+        <CoachingLine
+          icon={Flame}
+          label="Burnout Risk"
+          text={
+            row.hours > 9.5
+              ? "Moderate signal from extended work hours. Review workload distribution."
+              : "Low risk. Current workload appears balanced."
+          }
+        />
+        <CoachingLine
+          icon={BarChart3}
+          label="Performance Trend"
+          text={
+            row.score > 82
+              ? "Positive trend with strong execution quality."
+              : "Stable trend with room for sharper daily outcomes."
+          }
+        />
       </div>
     </GlassCard>
   );
 }
 
-function AnalyticsCard({ title, icon: Icon, children }: { title: string; icon: typeof Activity; children: React.ReactNode }) {
+function AnalyticsCard({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon: typeof Activity;
+  children: React.ReactNode;
+}) {
   return (
     <GlassCard className="border border-cyan-300/10 bg-card/70">
       <div className="mb-4 flex items-center justify-between">
@@ -585,13 +816,26 @@ function MiniSparkline({ values }: { values: number[] }) {
 
   return (
     <svg viewBox="0 0 100 38" className="mt-3 h-10 w-full overflow-visible">
-      <polyline points={points} fill="none" stroke="rgba(34,211,238,0.92)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      <polyline
+        points={points}
+        fill="none"
+        stroke="rgba(34,211,238,0.92)"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
       <polyline points={`0,38 ${points} 100,38`} fill="rgba(34,211,238,0.1)" stroke="none" />
     </svg>
   );
 }
 
-function BriefingPoint({ label, tone }: { label: string; tone: "blue" | "green" | "amber" | "purple" }) {
+function BriefingPoint({
+  label,
+  tone,
+}: {
+  label: string;
+  tone: "blue" | "green" | "amber" | "purple";
+}) {
   const color = {
     blue: "bg-cyan-300",
     green: "bg-emerald-300",
@@ -610,7 +854,9 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-3">
       <div className="text-lg font-black text-foreground">{value}</div>
-      <div className="mt-1 text-[0.65rem] uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+      <div className="mt-1 text-[0.65rem] uppercase tracking-[0.16em] text-muted-foreground">
+        {label}
+      </div>
     </div>
   );
 }
@@ -618,13 +864,25 @@ function MiniMetric({ label, value }: { label: string; value: string }) {
 function StandupSnippet({ label, text }: { label: string; text: string }) {
   return (
     <div className="min-h-[6rem] rounded-2xl border border-[rgba(0,180,255,0.15)] bg-card p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
-      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-foreground">{label}</p>
+      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.22em] text-foreground">
+        {label}
+      </p>
       <p className="mt-2 line-clamp-3 text-[15px] leading-6 text-foreground">{text}</p>
     </div>
   );
 }
 
-function RiskCard({ title, text, recommendation, tone }: { title: string; text: string; recommendation: string; tone: "red" | "amber" | "blue" | "green" }) {
+function RiskCard({
+  title,
+  text,
+  recommendation,
+  tone,
+}: {
+  title: string;
+  text: string;
+  recommendation: string;
+  tone: "red" | "amber" | "blue" | "green";
+}) {
   const color = {
     red: "border-red-300/25 bg-red-500/10 text-foreground",
     amber: "border-amber-300/25 bg-amber-400/10 text-foreground",
@@ -639,7 +897,9 @@ function RiskCard({ title, text, recommendation, tone }: { title: string; text: 
         {title}
       </div>
       <p className="mt-2 text-sm leading-relaxed text-foreground">{text}</p>
-      <p className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] opacity-80">AI Recommendation</p>
+      <p className="mt-3 text-xs font-semibold uppercase tracking-[0.16em] opacity-80">
+        AI Recommendation
+      </p>
       <p className="mt-1 text-sm text-foreground">{recommendation}</p>
     </div>
   );
@@ -647,23 +907,39 @@ function RiskCard({ title, text, recommendation, tone }: { title: string; text: 
 
 function StatusPill({ status }: { status: EmployeeSignal["status"] }) {
   const classes = {
-    "On Track": "border-emerald-300/35 bg-emerald-400/15 text-emerald-50 shadow-[0_0_16px_rgba(34,197,94,0.18)]",
-    "Needs Attention": "border-amber-300/35 bg-amber-300/15 text-amber-50 shadow-[0_0_16px_rgba(245,158,11,0.18)]",
+    "On Track":
+      "border-emerald-300/35 bg-emerald-400/15 text-emerald-50 shadow-[0_0_16px_rgba(34,197,94,0.18)]",
+    "Needs Attention":
+      "border-amber-300/35 bg-amber-300/15 text-amber-50 shadow-[0_0_16px_rgba(245,158,11,0.18)]",
     Blocked: "border-red-300/35 bg-red-400/15 text-red-50 shadow-[0_0_16px_rgba(248,113,113,0.18)]",
   }[status];
-  return <span className={cn("rounded-full border px-3 py-1 text-xs font-bold", classes)}>● {status}</span>;
+  return (
+    <span className={cn("rounded-full border px-3 py-1 text-xs font-bold", classes)}>
+      ● {status}
+    </span>
+  );
 }
 
 function IntelScore({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-3 text-center">
       <div className="text-2xl font-black text-foreground">{value}</div>
-      <div className="mt-1 text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
+      <div className="mt-1 text-[0.65rem] uppercase tracking-[0.14em] text-muted-foreground">
+        {label}
+      </div>
     </div>
   );
 }
 
-function CoachingLine({ icon: Icon, label, text }: { icon: typeof Target; label: string; text: string }) {
+function CoachingLine({
+  icon: Icon,
+  label,
+  text,
+}: {
+  icon: typeof Target;
+  label: string;
+  text: string;
+}) {
   return (
     <div className="flex gap-3 rounded-2xl border border-border bg-card p-3">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-300/10 text-foreground">
@@ -677,7 +953,13 @@ function CoachingLine({ icon: Icon, label, text }: { icon: typeof Target; label:
   );
 }
 
-function EmployeeAvatar({ profile, size = "md" }: { profile?: StandupRow["profile"]; size?: "md" | "lg" }) {
+function EmployeeAvatar({
+  profile,
+  size = "md",
+}: {
+  profile?: StandupRow["profile"];
+  size?: "md" | "lg";
+}) {
   const name = profile?.full_name || "Unknown user";
   const initials = name
     .split(" ")
@@ -688,11 +970,22 @@ function EmployeeAvatar({ profile, size = "md" }: { profile?: StandupRow["profil
   const dimension = size === "lg" ? "h-12 w-12" : "h-10 w-10";
 
   if (profile?.avatar_url) {
-    return <img src={profile.avatar_url} className={cn(dimension, "rounded-full border border-cyan-300/25 object-cover")} alt={name} />;
+    return (
+      <img
+        src={profile.avatar_url}
+        className={cn(dimension, "rounded-full border border-cyan-300/25 object-cover")}
+        alt={name}
+      />
+    );
   }
 
   return (
-    <div className={cn(dimension, "flex items-center justify-center rounded-full bg-gradient-to-br from-cyan-300 via-blue-500 to-fuchsia-500 text-sm font-black text-foreground shadow-[0_0_24px_rgba(34,211,238,0.22)]")}>
+    <div
+      className={cn(
+        dimension,
+        "flex items-center justify-center rounded-full bg-gradient-to-br from-cyan-300 via-blue-500 to-fuchsia-500 text-sm font-black text-foreground shadow-[0_0_24px_rgba(34,211,238,0.22)]",
+      )}
+    >
       {initials}
     </div>
   );
@@ -718,9 +1011,19 @@ function toEmployeeSignal(row: StandupRow): EmployeeSignal {
   const hasBlocker = Boolean(row.blockers?.trim());
   const hasPlan = Boolean(row.today?.trim());
   const hasUpdate = Boolean(row.yesterday?.trim());
-  const score = clamp(Math.round(58 + Math.min(hours, 9) * 4 + (hasPlan ? 8 : 0) + (hasUpdate ? 8 : 0) - (hasBlocker ? 14 : 0)), 35, 98);
+  const score = clamp(
+    Math.round(
+      58 + Math.min(hours, 9) * 4 + (hasPlan ? 8 : 0) + (hasUpdate ? 8 : 0) - (hasBlocker ? 14 : 0),
+    ),
+    35,
+    98,
+  );
   const consistency = clamp(Math.round(score - (hasBlocker ? 7 : 0) + (hasPlan ? 4 : -4)), 30, 98);
-  const focus = clamp(Math.round(52 + Math.min(hours, 8.5) * 5 - (hours > 9.5 ? 8 : 0) - (hasBlocker ? 5 : 0)), 30, 96);
+  const focus = clamp(
+    Math.round(52 + Math.min(hours, 8.5) * 5 - (hours > 9.5 ? 8 : 0) - (hasBlocker ? 5 : 0)),
+    30,
+    96,
+  );
   const mood = clamp(Math.round((score + consistency + focus) / 3 + (hasBlocker ? -8 : 4)), 25, 98);
 
   return {
@@ -731,7 +1034,14 @@ function toEmployeeSignal(row: StandupRow): EmployeeSignal {
     focus,
     mood,
     status: hasBlocker ? "Blocked" : score < 72 ? "Needs Attention" : "On Track",
-    badge: score >= 88 ? "🔥 Most Productive" : consistency >= 84 ? "🎯 Consistent Performer" : hasPlan ? "🤖 AI Optimized" : "⚡ Fast Responder",
+    badge:
+      score >= 88
+        ? "🔥 Most Productive"
+        : consistency >= 84
+          ? "🎯 Consistent Performer"
+          : hasPlan
+            ? "🤖 AI Optimized"
+            : "⚡ Fast Responder",
   };
 }
 
@@ -743,32 +1053,53 @@ function buildRiskCards(signals: EmployeeSignal[], blockerCount: number) {
   return [
     {
       title: blockerCount ? "Blocker Detected" : "No Critical Blockers",
-      text: firstBlocker?.blockers?.trim() || "Team updates do not show blocking risks for the selected date.",
-      recommendation: blockerCount ? `Resolve blocker for ${getEmployeeName(firstBlocker)} before the next execution window.` : "Keep current cadence and monitor tomorrow's plan quality.",
+      text:
+        firstBlocker?.blockers?.trim() ||
+        "Team updates do not show blocking risks for the selected date.",
+      recommendation: blockerCount
+        ? `Resolve blocker for ${getEmployeeName(firstBlocker)} before the next execution window.`
+        : "Keep current cadence and monitor tomorrow's plan quality.",
       tone: blockerCount ? "amber" : "green",
     },
     {
       title: "Team Risks",
-      text: delayed ? `${delayed} employee update has lower execution confidence.` : "Execution quality is stable across submitted standups.",
-      recommendation: delayed ? "Review pending tasks before noon and clarify ownership." : "Maintain current team rhythm.",
+      text: delayed
+        ? `${delayed} employee update has lower execution confidence.`
+        : "Execution quality is stable across submitted standups.",
+      recommendation: delayed
+        ? "Review pending tasks before noon and clarify ownership."
+        : "Maintain current team rhythm.",
       tone: delayed ? "red" : "blue",
     },
     {
       title: "Burnout Signals",
-      text: burnout ? `${burnout} employee reported extended hours.` : "No elevated burnout signal detected from today's hours.",
-      recommendation: burnout ? "Rebalance workload and protect focus blocks tomorrow." : "Continue tracking hours and blocker language.",
+      text: burnout
+        ? `${burnout} employee reported extended hours.`
+        : "No elevated burnout signal detected from today's hours.",
+      recommendation: burnout
+        ? "Rebalance workload and protect focus blocks tomorrow."
+        : "Continue tracking hours and blocker language.",
       tone: burnout ? "amber" : "green",
     },
-  ] as Array<{ title: string; text: string; recommendation: string; tone: "red" | "amber" | "blue" | "green" }>;
+  ] as Array<{
+    title: string;
+    text: string;
+    recommendation: string;
+    tone: "red" | "amber" | "blue" | "green";
+  }>;
 }
 
 function buildRecommendations(signals: EmployeeSignal[], blockerCount: number) {
   const blockerEmployee = signals.find((row) => row.blockers?.trim());
   return [
-    blockerEmployee ? `Resolve blocker for ${getEmployeeName(blockerEmployee)}.` : "Confirm there are no hidden blockers in tomorrow's work plan.",
+    blockerEmployee
+      ? `Resolve blocker for ${getEmployeeName(blockerEmployee)}.`
+      : "Confirm there are no hidden blockers in tomorrow's work plan.",
     "Review pending tasks before noon and align owners with the highest-risk deliverables.",
     "Follow up with employees who haven't submitted standups before end of day.",
-    blockerCount > 1 ? "Create a manager escalation thread for repeated blockers." : "Protect deep-work time for employees with strong execution momentum.",
+    blockerCount > 1
+      ? "Create a manager escalation thread for repeated blockers."
+      : "Protect deep-work time for employees with strong execution momentum.",
   ];
 }
 
@@ -784,21 +1115,30 @@ function buildTrendData(score: number, blockers: number, avgHours: number) {
 
 function buildHeatmap(count: number, avgHours: number, blockers: number) {
   return ["Mon", "Tue", "Wed", "Thu", "Fri"].map((day, index) => {
-    const score = clamp(Math.round(58 + count * 2 + avgHours * 3 - blockers * 3 + index * 4), 35, 96);
+    const score = clamp(
+      Math.round(58 + count * 2 + avgHours * 3 - blockers * 3 + index * 4),
+      35,
+      96,
+    );
     return { day, score, level: Math.max(2, Math.round(score / 10)) };
   });
 }
 
 function makeAiInsight(count: number, blockers: number, confidence: number) {
-  if (!count) return "No standups have been submitted for this date yet. AI analysis will activate once employee updates arrive.";
-  if (blockers) return `Most employees are progressing on schedule. ${blockers} blocker ${blockers === 1 ? "requires" : "require"} manager attention, with execution confidence at ${confidence}%.`;
+  if (!count)
+    return "No standups have been submitted for this date yet. AI analysis will activate once employee updates arrive.";
+  if (blockers)
+    return `Most employees are progressing on schedule. ${blockers} blocker ${blockers === 1 ? "requires" : "require"} manager attention, with execution confidence at ${confidence}%.`;
   return `Most employees are progressing on schedule. Execution confidence is ${confidence}% and no critical risks were identified.`;
 }
 
 function makeEmployeeInsight(row: EmployeeSignal) {
-  if (row.blockers?.trim()) return "Blocker requires manager attention before tomorrow's execution plan can stay on track.";
-  if (row.score >= 86) return "Strong productivity. Workload is balanced and execution quality is high.";
-  if (row.hours > 9.5) return "Output is strong, but extended hours suggest workload should be monitored.";
+  if (row.blockers?.trim())
+    return "Blocker requires manager attention before tomorrow's execution plan can stay on track.";
+  if (row.score >= 86)
+    return "Strong productivity. Workload is balanced and execution quality is high.";
+  if (row.hours > 9.5)
+    return "Output is strong, but extended hours suggest workload should be monitored.";
   return "Progress is steady. Clarify tomorrow's priority to improve execution confidence.";
 }
 

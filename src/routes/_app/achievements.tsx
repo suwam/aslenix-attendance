@@ -145,7 +145,9 @@ function AchievementsPage() {
       const visibleTasks = (tasks || []).filter(
         (task: any) =>
           task.assigned_to === user.id ||
-          assignees.some((assignee) => assignee.task_id === task.id && assignee.user_id === user.id),
+          assignees.some(
+            (assignee) => assignee.task_id === task.id && assignee.user_id === user.id,
+          ),
       );
 
       const now = Date.now();
@@ -234,10 +236,7 @@ function AchievementsPage() {
   );
 
   const approvedOfficialBadges = useMemo(
-    () =>
-      approvedAchievements.filter(
-        (achievement) => !approvedBadgeAliases[achievement.badge],
-      ),
+    () => approvedAchievements.filter((achievement) => !approvedBadgeAliases[achievement.badge]),
     [approvedAchievements],
   );
 
@@ -354,23 +353,23 @@ function AchievementsPage() {
     ];
 
     return definitions.map((badge) =>
-      approvedBadgeIds.has(badge.id)
-        ? { ...badge, value: badge.target, approved: true }
-        : badge,
+      approvedBadgeIds.has(badge.id) ? { ...badge, value: badge.target, approved: true } : badge,
     );
   }, [approvedBadgeIds, stats]);
 
   const unlocked = badges.filter((badge) => badge.value >= badge.target);
   const totalUnlocked = unlocked.length + approvedOfficialBadges.length;
   const featuredBadges = [
-    ...badges.filter((badge) => badge.approved || badge.value >= badge.target).map((badge) => ({
-      key: badge.id,
-      title: badge.title,
-      subtitle: badge.approved ? "Approved by admin" : "Unlocked from progress",
-      status: badge.approved ? "Approved" : "Manual",
-      tier: badge.tier,
-      icon: badge.icon,
-    })),
+    ...badges
+      .filter((badge) => badge.approved || badge.value >= badge.target)
+      .map((badge) => ({
+        key: badge.id,
+        title: badge.title,
+        subtitle: badge.approved ? "Approved by admin" : "Unlocked from progress",
+        status: badge.approved ? "Approved" : "Manual",
+        tier: badge.tier,
+        icon: badge.icon,
+      })),
     ...approvedOfficialBadges.map((achievement) => ({
       key: `official-${achievement.badge}`,
       title: achievement.badge,
@@ -383,23 +382,22 @@ function AchievementsPage() {
   useEffect(() => {
     if (loading || !user || approvedAchievements.length === 0) return;
 
-    const celebrationBadges = approvedAchievements
-      .map<CelebrationBadge>((achievement) => {
-        const mappedId = approvedBadgeAliases[achievement.badge];
-        const mappedBadge = mappedId ? badges.find((badge) => badge.id === mappedId) : null;
+    const celebrationBadges = approvedAchievements.map<CelebrationBadge>((achievement) => {
+      const mappedId = approvedBadgeAliases[achievement.badge];
+      const mappedBadge = mappedId ? badges.find((badge) => badge.id === mappedId) : null;
 
-        return {
-          key: `${user.id}:${achievement.badge}:${achievement.status}`,
-          title: mappedBadge?.title || achievement.badge,
-          subtitle:
-            achievement.status === "Manual"
-              ? "An admin assigned this official badge to you."
-              : "An admin approved this achievement for you.",
-          status: achievement.status,
-          tier: mappedBadge?.tier,
-          icon: mappedBadge?.icon || BadgeCheck,
-        };
-      });
+      return {
+        key: `${user.id}:${achievement.badge}:${achievement.status}`,
+        title: mappedBadge?.title || achievement.badge,
+        subtitle:
+          achievement.status === "Manual"
+            ? "An admin assigned this official badge to you."
+            : "An admin approved this achievement for you.",
+        status: achievement.status,
+        tier: mappedBadge?.tier,
+        icon: mappedBadge?.icon || BadgeCheck,
+      };
+    });
     const storageKey = `aslenix-seen-achievements:${user.id}`;
     const seen = readSeenBadgeKeys(storageKey);
     const nextBadge = celebrationBadges.find((badge) => !seen.has(badge.key));
@@ -438,7 +436,10 @@ function AchievementsPage() {
         subtitle="Productivity badges, streaks, and performance milestones"
       />
 
-      <AchievementCelebration badge={celebrationBadge} onOpenChange={(open) => !open && closeCelebration()} />
+      <AchievementCelebration
+        badge={celebrationBadge}
+        onOpenChange={(open) => !open && closeCelebration()}
+      />
 
       <div className="achievement-shell space-y-6">
         <section className="glass achievement-tier overflow-hidden">
@@ -479,7 +480,10 @@ function AchievementsPage() {
                     const Icon = badge.icon;
                     const meta = badge.tier ? tierMeta[badge.tier] : null;
                     return (
-                      <div key={badge.key} className="flex items-center gap-3 rounded-xl bg-card p-3">
+                      <div
+                        key={badge.key}
+                        className="flex items-center gap-3 rounded-xl bg-card p-3"
+                      >
                         <div
                           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${
                             meta?.gradient || "from-cyan-400 via-violet-500 to-pink-500"
@@ -488,8 +492,12 @@ function AchievementsPage() {
                           <Icon size={17} />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-semibold text-foreground">{badge.title}</div>
-                          <div className="truncate text-xs text-muted-foreground">{badge.subtitle}</div>
+                          <div className="truncate text-sm font-semibold text-foreground">
+                            {badge.title}
+                          </div>
+                          <div className="truncate text-xs text-muted-foreground">
+                            {badge.subtitle}
+                          </div>
                         </div>
                       </div>
                     );
@@ -546,7 +554,10 @@ function AchievementsPage() {
                   <div
                     className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${meta.gradient} ${meta.glow}`}
                   >
-                    <TierIcon size={21} className="text-foreground drop-shadow-[0_0_10px_rgba(255,255,255,.7)]" />
+                    <TierIcon
+                      size={21}
+                      className="text-foreground drop-shadow-[0_0_10px_rgba(255,255,255,.7)]"
+                    />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold">{meta.title}</h2>
@@ -554,7 +565,11 @@ function AchievementsPage() {
                   </div>
                 </div>
                 <div className="rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground">
-                  {badges.filter((badge) => badge.tier === tier && badge.value >= badge.target).length}/3 unlocked
+                  {
+                    badges.filter((badge) => badge.tier === tier && badge.value >= badge.target)
+                      .length
+                  }
+                  /3 unlocked
                 </div>
               </div>
 
@@ -620,7 +635,9 @@ function AchievementCelebration({
                 <div className="mb-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
                   Badge unlocked
                 </div>
-                <DialogTitle className="text-2xl font-bold text-foreground">{badge.title}</DialogTitle>
+                <DialogTitle className="text-2xl font-bold text-foreground">
+                  {badge.title}
+                </DialogTitle>
                 <DialogDescription className="max-w-xs text-muted-foreground">
                   {badge.subtitle}
                 </DialogDescription>
@@ -717,7 +734,10 @@ function AchievementCard({ badge }: { badge: BadgeDefinition }) {
 
       {!unlocked && (
         <div className="absolute inset-0 z-20 flex items-center justify-center rounded-[inherit] bg-card opacity-0 backdrop-blur-[1px] transition-opacity group-hover:opacity-100">
-          <Lock className="text-muted-foreground drop-shadow-[0_0_12px_rgba(255,255,255,.65)]" size={26} />
+          <Lock
+            className="text-muted-foreground drop-shadow-[0_0_12px_rgba(255,255,255,.65)]"
+            size={26}
+          />
         </div>
       )}
     </article>

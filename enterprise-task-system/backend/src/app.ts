@@ -18,10 +18,12 @@ export async function createApp() {
   app.use("/api/devices", deviceRouter);
   app.use("/api/tasks", taskRouter);
 
-  app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    console.error(err);
-    res.status(500).json({ message: "Unexpected server error" });
-  });
+  app.use(
+    (err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+      console.error(err);
+      res.status(500).json({ message: "Unexpected server error" });
+    },
+  );
 
   return app;
 }

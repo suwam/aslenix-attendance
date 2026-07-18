@@ -82,7 +82,11 @@ function SettingsPage() {
   const officeEnd = s.office_end_time?.slice(0, 5) || "";
   const lateAfter = s.late_after_time?.slice(0, 5) || "";
   const autoCheckout = s.auto_checkout_time?.slice(0, 5) || "";
-  const hasLocation = s.office_latitude !== "" && s.office_latitude != null && s.office_longitude !== "" && s.office_longitude != null;
+  const hasLocation =
+    s.office_latitude !== "" &&
+    s.office_latitude != null &&
+    s.office_longitude !== "" &&
+    s.office_longitude != null;
 
   return (
     <>
@@ -100,8 +104,16 @@ function SettingsPage() {
               <RotateCcw size={14} className="mr-1.5" />
               Reset
             </Button>
-            <Button onClick={save} disabled={saving || !isDirty} className="h-11 rounded-xl neon-button">
-              {saving ? <Loader2 size={14} className="mr-2 animate-spin" /> : <Save size={14} className="mr-2" />}
+            <Button
+              onClick={save}
+              disabled={saving || !isDirty}
+              className="h-11 rounded-xl neon-button"
+            >
+              {saving ? (
+                <Loader2 size={14} className="mr-2 animate-spin" />
+              ) : (
+                <Save size={14} className="mr-2" />
+              )}
               {saving ? "Saving..." : "Save changes"}
             </Button>
           </div>
@@ -109,10 +121,30 @@ function SettingsPage() {
       />
 
       <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
-        <SettingMetric icon={Building2} label="Company" value={s.company_name || "Not set"} tone="red" />
-        <SettingMetric icon={Clock3} label="Office hours" value={`${officeStart || "--:--"} - ${officeEnd || "--:--"}`} tone="blue" />
-        <SettingMetric icon={TimerReset} label="Late after" value={lateAfter || "--:--"} tone="amber" />
-        <SettingMetric icon={Radar} label="Radius" value={`${s.attendance_radius_meters ?? 20}m`} tone="green" />
+        <SettingMetric
+          icon={Building2}
+          label="Company"
+          value={s.company_name || "Not set"}
+          tone="red"
+        />
+        <SettingMetric
+          icon={Clock3}
+          label="Office hours"
+          value={`${officeStart || "--:--"} - ${officeEnd || "--:--"}`}
+          tone="blue"
+        />
+        <SettingMetric
+          icon={TimerReset}
+          label="Late after"
+          value={lateAfter || "--:--"}
+          tone="amber"
+        />
+        <SettingMetric
+          icon={Radar}
+          label="Radius"
+          value={`${s.attendance_radius_meters ?? 20}m`}
+          tone="green"
+        />
       </section>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
@@ -139,13 +171,22 @@ function SettingsPage() {
           >
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Field label="Office start">
-                <GlassTimeInput value={officeStart} onChange={(value) => setS({ ...s, office_start_time: value })} />
+                <GlassTimeInput
+                  value={officeStart}
+                  onChange={(value) => setS({ ...s, office_start_time: value })}
+                />
               </Field>
               <Field label="Office end">
-                <GlassTimeInput value={officeEnd} onChange={(value) => setS({ ...s, office_end_time: value })} />
+                <GlassTimeInput
+                  value={officeEnd}
+                  onChange={(value) => setS({ ...s, office_end_time: value })}
+                />
               </Field>
               <Field label="Late after">
-                <GlassTimeInput value={lateAfter} onChange={(value) => setS({ ...s, late_after_time: value })} />
+                <GlassTimeInput
+                  value={lateAfter}
+                  onChange={(value) => setS({ ...s, late_after_time: value })}
+                />
               </Field>
               <Field label="Auto checkout">
                 <GlassTimeInput
@@ -161,8 +202,8 @@ function SettingsPage() {
                 : "Auto checkout needs the pending database migration before it can be saved."}
             </div>
             <div className="mt-4 rounded-xl border border-amber-300/15 bg-amber-300/10 p-3 text-xs leading-5 text-foreground">
-              Keep the radius tight, usually 20-50 meters. Employees outside this fence, or with weak GPS accuracy,
-              will be blocked from checking in or checking out.
+              Keep the radius tight, usually 20-50 meters. Employees outside this fence, or with
+              weak GPS accuracy, will be blocked from checking in or checking out.
             </div>
           </SettingsSection>
 
@@ -219,10 +260,21 @@ function SettingsPage() {
               </div>
             </div>
             <div className="space-y-3">
-              <SummaryRow label="Working window" value={`${officeStart || "--:--"} to ${officeEnd || "--:--"}`} />
+              <SummaryRow
+                label="Working window"
+                value={`${officeStart || "--:--"} to ${officeEnd || "--:--"}`}
+              />
               <SummaryRow label="Late threshold" value={lateAfter || "Not set"} />
-              <SummaryRow label="Auto checkout" value={supportsAutoCheckout ? autoCheckout || "Not set" : "Unavailable"} />
-              <SummaryRow label="Location fence" value={hasLocation ? `${s.attendance_radius_meters ?? 20} meters` : "Not configured"} />
+              <SummaryRow
+                label="Auto checkout"
+                value={supportsAutoCheckout ? autoCheckout || "Not set" : "Unavailable"}
+              />
+              <SummaryRow
+                label="Location fence"
+                value={
+                  hasLocation ? `${s.attendance_radius_meters ?? 20} meters` : "Not configured"
+                }
+              />
             </div>
           </GlassCard>
 
@@ -233,12 +285,16 @@ function SettingsPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-foreground">Location Preview</h3>
-                <p className="text-xs text-muted-foreground">Coordinates used by attendance checks</p>
+                <p className="text-xs text-muted-foreground">
+                  Coordinates used by attendance checks
+                </p>
               </div>
             </div>
             {hasLocation ? (
               <div className="rounded-xl border border-border bg-card p-4">
-                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Pinned office</div>
+                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Pinned office
+                </div>
                 <div className="mt-2 break-all text-sm font-semibold text-foreground">
                   {s.office_latitude}, {s.office_longitude}
                 </div>
@@ -293,7 +349,9 @@ function SettingsSection({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <Label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</Label>
+      <Label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </Label>
       {children}
     </div>
   );
@@ -321,10 +379,14 @@ function SettingMetric({
     <GlassCard className="border-border bg-card">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {label}
+          </div>
           <div className="mt-2 truncate text-lg font-bold text-foreground">{value}</div>
         </div>
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${colors[tone]}`}>
+        <div
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${colors[tone]}`}
+        >
           <Icon size={17} />
         </div>
       </div>

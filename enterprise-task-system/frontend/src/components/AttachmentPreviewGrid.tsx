@@ -6,7 +6,12 @@ export function AttachmentPreviewGrid({
   onAdd,
 }: {
   attachments: TaskAttachment[];
-  onAdd: (payload: { fileName: string; fileUrl: string; mimeType: string; size: number }) => Promise<void>;
+  onAdd: (payload: {
+    fileName: string;
+    fileUrl: string;
+    mimeType: string;
+    size: number;
+  }) => Promise<void>;
 }) {
   async function fakeUpload(file: File) {
     await onAdd({
@@ -45,7 +50,11 @@ export function AttachmentPreviewGrid({
               className="grid gap-3 rounded-md border border-[#f1f0ee]/10 bg-black/25 p-3 text-sm text-slate-200 transition hover:border-cyan-300/40 sm:grid-cols-[auto_1fr]"
             >
               {isImage ? (
-                <img src={file.fileUrl} alt="" className="h-14 w-14 rounded-md object-cover ring-1 ring-[#f1f0ee]/10" />
+                <img
+                  src={file.fileUrl}
+                  alt=""
+                  className="h-14 w-14 rounded-md object-cover ring-1 ring-[#f1f0ee]/10"
+                />
               ) : (
                 <span className="flex h-14 w-14 items-center justify-center rounded-md bg-[#f1f0ee]/5 ring-1 ring-[#f1f0ee]/10">
                   <Icon size={20} className="text-cyan-300" />
@@ -56,12 +65,16 @@ export function AttachmentPreviewGrid({
                 <div className="text-xs text-slate-500">
                   {file.uploadedByName} - {(file.size / 1024).toFixed(1)} KB
                 </div>
-                <div className="mt-1 text-xs text-slate-600">{new Date(file.createdAt).toLocaleString()}</div>
+                <div className="mt-1 text-xs text-slate-600">
+                  {new Date(file.createdAt).toLocaleString()}
+                </div>
               </div>
             </a>
           );
         })}
-        {attachments.length === 0 && <div className="text-sm text-slate-500">No attachments yet.</div>}
+        {attachments.length === 0 && (
+          <div className="text-sm text-slate-500">No attachments yet.</div>
+        )}
       </div>
     </section>
   );

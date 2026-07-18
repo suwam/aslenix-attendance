@@ -19,8 +19,16 @@ export function TaskHeader({ task }: { task: Task }) {
         <div className="grid gap-2 text-xs text-slate-300 sm:grid-cols-2 lg:min-w-96">
           <Meta icon={Fingerprint} label="Task ID" value={task.taskCode} />
           <Meta icon={UserRound} label="Assigned Employee" value={task.assignedTo.name} />
-          <Meta icon={CalendarClock} label="Created" value={new Date(task.createdAt).toLocaleString()} />
-          <Meta icon={CalendarClock} label="Last Updated" value={new Date(task.updatedAt).toLocaleString()} />
+          <Meta
+            icon={CalendarClock}
+            label="Created"
+            value={new Date(task.createdAt).toLocaleString()}
+          />
+          <Meta
+            icon={CalendarClock}
+            label="Last Updated"
+            value={new Date(task.updatedAt).toLocaleString()}
+          />
         </div>
       </div>
     </section>

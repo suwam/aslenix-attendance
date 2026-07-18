@@ -40,7 +40,9 @@ export function ProgressUpdatePanel({
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-[#f1f0ee]">Progress Update</h2>
-          <p className="mt-1 text-xs text-slate-500">Employee-safe workspace for notes, progress, and review handoff.</p>
+          <p className="mt-1 text-xs text-slate-500">
+            Employee-safe workspace for notes, progress, and review handoff.
+          </p>
         </div>
         <span className="rounded-md border border-cyan-300/30 bg-cyan-300/10 px-2 py-1 font-mono text-sm text-cyan-100">
           {progress}%
@@ -61,12 +63,16 @@ export function ProgressUpdatePanel({
         value={note}
         disabled={busy || isLockedForEmployee}
         onChange={(event) => setNote(event.target.value)}
-        placeholder={changed ? "Required: describe what changed..." : "Add a progress update note..."}
+        placeholder={
+          changed ? "Required: describe what changed..." : "Add a progress update note..."
+        }
         className="mt-4 min-h-28 w-full rounded-md border border-[#f1f0ee]/10 bg-black/30 p-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-cyan-300/60 disabled:cursor-not-allowed disabled:opacity-50"
       />
 
       {changed && !note.trim() && (
-        <div className="mt-2 text-xs text-amber-300">Update note is required when progress changes.</div>
+        <div className="mt-2 text-xs text-amber-300">
+          Update note is required when progress changes.
+        </div>
       )}
       {isLockedForEmployee && (
         <div className="mt-2 inline-flex items-center gap-2 text-xs text-emerald-200">

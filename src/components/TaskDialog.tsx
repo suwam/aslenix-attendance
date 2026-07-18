@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TaskAssignees } from "./tasks/TaskAssignees";
 import { TaskDiscussion } from "./tasks/TaskDiscussion";
@@ -36,7 +42,17 @@ import {
   type TaskComplexity,
 } from "@/lib/employee-scoring";
 import { isMissingSupabaseColumnError, isMissingSupabaseTableError } from "@/lib/supabase-errors";
-import { Check, Download, Pencil, Paperclip, Send, Trash2, TrendingUp, X, Info } from "lucide-react";
+import {
+  Check,
+  Download,
+  Pencil,
+  Paperclip,
+  Send,
+  Trash2,
+  TrendingUp,
+  X,
+  Info,
+} from "lucide-react";
 import { format } from "date-fns";
 import { bsInputToAdDateString, formatBsInput, formatNepaliDate } from "@/lib/nepali-calendar";
 
@@ -62,11 +78,14 @@ export function TaskDialog({
   onOpenChange: (v: boolean) => void;
   taskId?: string | null;
   defaultStatus?: TaskStatus;
-  onSaved?: (result?: { taskId?: string | null; transition?: WorkflowTransition }) => void | Promise<void>;
+  onSaved?: (result?: {
+    taskId?: string | null;
+    transition?: WorkflowTransition;
+  }) => void | Promise<void>;
 }) {
   const { user, isAdmin } = useAuth();
   const [teamLeads, setTeamLeads] = useState<string[]>([]);
-  
+
   const isAssignedTeamLead = Boolean(user && teamLeads.includes(user.id));
   const canEditTaskFields = isAdmin || isAssignedTeamLead || !taskId;
   const canDeleteTask = (isAdmin || isAssignedTeamLead) && Boolean(taskId);
@@ -90,8 +109,12 @@ export function TaskDialog({
   const [assignedTo, setAssignedTo] = useState<string>(user?.id || "");
   const [assignedToMany, setAssignedToMany] = useState<string[]>(user?.id ? [user.id] : []);
   const [tags, setTags] = useState("");
-  const [employees, setEmployees] = useState<{ user_id: string; full_name: string; role: string; avatar_url?: string | null }[]>([]);
-  const [availableTeamLeads, setAvailableTeamLeads] = useState<{ user_id: string; full_name: string; role: string; avatar_url?: string | null }[]>([]);
+  const [employees, setEmployees] = useState<
+    { user_id: string; full_name: string; role: string; avatar_url?: string | null }[]
+  >([]);
+  const [availableTeamLeads, setAvailableTeamLeads] = useState<
+    { user_id: string; full_name: string; role: string; avatar_url?: string | null }[]
+  >([]);
   const [activityLogs, setActivityLogs] = useState<TaskActivityLog[]>([]);
   const [activeTab, setActiveTab] = useState("details");
 
@@ -129,7 +152,15 @@ export function TaskDialog({
 
   const loadTask = useCallback(async () => {
     if (!taskId) return;
-    const [{ data: t }, { data: c }, attachmentResult, progressResult, assigneeResult, teamLeadsResult, logsResult] = await Promise.all([
+    const [
+      { data: t },
+      { data: c },
+      attachmentResult,
+      progressResult,
+      assigneeResult,
+      teamLeadsResult,
+      logsResult,
+    ] = await Promise.all([
       supabase.from("tasks").select("*").eq("id", taskId).maybeSingle(),
       supabase.from("task_comments").select("*").eq("task_id", taskId).order("created_at"),
       isAdmin
@@ -142,7 +173,11 @@ export function TaskDialog({
         .order("created_at", { ascending: false }),
       supabase.from("task_assignees").select("user_id").eq("task_id", taskId),
       supabase.from("task_team_leads").select("user_id").eq("task_id", taskId),
-      supabase.from("task_activity_logs").select("*").eq("task_id", taskId).order("created_at", { ascending: false }),
+      supabase
+        .from("task_activity_logs")
+        .select("*")
+        .eq("task_id", taskId)
+        .order("created_at", { ascending: false }),
     ]);
     const assignees =
       assigneeResult.error && isMissingSupabaseTableError(assigneeResult.error, "task_assignees")
@@ -171,11 +206,15 @@ export function TaskDialog({
     }
     // hydrate user names for comments
     const progressTableMissing =
-      progressResult.error && isMissingSupabaseTableError(progressResult.error, "task_progress_updates");
+      progressResult.error &&
+      isMissingSupabaseTableError(progressResult.error, "task_progress_updates");
     setProgressUpdatesUnavailable(Boolean(progressTableMissing));
     const progressRows = progressTableMissing ? [] : progressResult.data || [];
     const ids = Array.from(
-      new Set([...(c || []).map((x: any) => x.user_id), ...progressRows.map((x: any) => x.user_id)]),
+      new Set([
+        ...(c || []).map((x: any) => x.user_id),
+        ...progressRows.map((x: any) => x.user_id),
+      ]),
     );
     let names: Record<string, string> = {};
     if (ids.length) {
@@ -187,7 +226,10 @@ export function TaskDialog({
     }
     setComments((c || []).map((x: any) => ({ ...x, author: names[x.user_id] || "User" })));
     setProgressUpdates(
-      progressRows.map((x: any) => ({ ...x, author: names[x.user_id] || "User" })) as ProgressUpdate[],
+      progressRows.map((x: any) => ({
+        ...x,
+        author: names[x.user_id] || "User",
+      })) as ProgressUpdate[],
     );
     setAttachments(attachmentResult.data || []);
   }, [isAdmin, taskId]);
@@ -196,18 +238,24 @@ export function TaskDialog({
     if (!open) return;
     setStatus(defaultStatus || "todo");
     Promise.all([
-      supabase
-        .from("profiles")
-        .select("user_id, full_name, avatar_url, approval_status"),
+      supabase.from("profiles").select("user_id, full_name, avatar_url, approval_status"),
       supabase.from("user_roles").select("user_id, role"),
     ]).then(([{ data }, { data: roleRows }]) => {
-      const adminUserIds = new Set((roleRows ?? []).filter(r => r.role === 'admin' || r.role === 'super_admin' || r.role === 'hr_manager').map((row) => row.user_id));
+      const adminUserIds = new Set(
+        (roleRows ?? [])
+          .filter((r) => r.role === "admin" || r.role === "super_admin" || r.role === "hr_manager")
+          .map((row) => row.user_id),
+      );
       const empData = (data || []).map((e: any) => {
-        const uRoles = (roleRows || []).filter(r => r.user_id === e.user_id).map(r => r.role);
-        return { ...e, role: uRoles[0] || 'employee', roles: uRoles };
+        const uRoles = (roleRows || []).filter((r) => r.user_id === e.user_id).map((r) => r.role);
+        return { ...e, role: uRoles[0] || "employee", roles: uRoles };
       });
-      setEmployees(empData.filter(e => e.approval_status === 'approved' && !adminUserIds.has(e.user_id)));
-      setAvailableTeamLeads(empData.filter(e => e.approval_status === 'approved' && !adminUserIds.has(e.user_id)));
+      setEmployees(
+        empData.filter((e) => e.approval_status === "approved" && !adminUserIds.has(e.user_id)),
+      );
+      setAvailableTeamLeads(
+        empData.filter((e) => e.approval_status === "approved" && !adminUserIds.has(e.user_id)),
+      );
     });
 
     if (taskId) loadTask();
@@ -228,12 +276,19 @@ export function TaskDialog({
     const progressIncreased = taskId ? nextProgress > initialProgress : false;
     const progressNoteRequired = isEmployeeTaskEdit ? progressChanged : progressIncreased;
     if (progressNoteRequired && !progressNote.trim()) {
-      return toast.error(isEmployeeTaskEdit ? "Update comment is required when progress changes" : "Progress update note is required when progress increases");
+      return toast.error(
+        isEmployeeTaskEdit
+          ? "Update comment is required when progress changes"
+          : "Progress update note is required when progress increases",
+      );
     }
 
     setLoading(true);
     if (taskId && !isAdmin && !isAssignedTeamLead) {
-      let { error } = await supabase.from("tasks").update({ progress: nextProgress }).eq("id", taskId);
+      let { error } = await supabase
+        .from("tasks")
+        .update({ progress: nextProgress })
+        .eq("id", taskId);
       let progressNoteNotSaved = false;
       if (!error && progressChanged) {
         const progressUpdateResult = await saveProgressUpdate(
@@ -315,8 +370,8 @@ export function TaskDialog({
       let result = await supabase
         .from("tasks")
         .insert({ ...payload, created_by: user.id })
-          .select("id")
-          .single();
+        .select("id")
+        .single();
       if (isMissingSupabaseColumnError(result.error, "tasks", "task_complexity")) {
         complexityNotSaved = true;
         setTaskComplexityUnavailable(true);
@@ -381,22 +436,32 @@ export function TaskDialog({
           const tlInsert = await supabase.from("task_team_leads").insert(tlRows);
           if (tlInsert.error) {
             if (isMissingSupabaseTableError(tlInsert.error, "task_team_leads")) {
-              toast.warning("Task saved. Apply the add_team_lead_task_features migration to save team leads.");
+              toast.warning(
+                "Task saved. Apply the add_team_lead_task_features migration to save team leads.",
+              );
             } else {
               error = tlInsert.error;
             }
           }
         }
 
-        await notifyTaskAssignees(selectedAssignees, taskId ? "Task updated" : "New task assigned", {
-          title,
-          deadline: deadlineIso || "",
-        });
+        await notifyTaskAssignees(
+          selectedAssignees,
+          taskId ? "Task updated" : "New task assigned",
+          {
+            title,
+            deadline: deadlineIso || "",
+          },
+        );
       } else if (isAssignedTeamLead) {
-        await notifyTaskAssignees(selectedAssignees, taskId ? "Task updated" : "New task assigned", {
-          title,
-          deadline: deadlineIso || "",
-        });
+        await notifyTaskAssignees(
+          selectedAssignees,
+          taskId ? "Task updated" : "New task assigned",
+          {
+            title,
+            deadline: deadlineIso || "",
+          },
+        );
       }
     }
     let progressNoteNotSaved = false;
@@ -416,9 +481,13 @@ export function TaskDialog({
     setLoading(false);
     if (error) return toast.error(error.message);
     if (complexityNotSaved) {
-      toast.warning("Task saved without complexity. Apply the task_complexity migration to enable effort scoring.");
+      toast.warning(
+        "Task saved without complexity. Apply the task_complexity migration to enable effort scoring.",
+      );
     } else if (progressNoteNotSaved) {
-      toast.warning("Task saved. Apply the task_progress_updates migration to save progress notes.");
+      toast.warning(
+        "Task saved. Apply the task_progress_updates migration to save progress notes.",
+      );
     } else if (usedLegacyAssignment && selectedAssignees.length > 1) {
       toast.warning(
         "Task saved for the first assignee. Apply the task_assignees migration to enable multiple assignees.",
@@ -550,9 +619,7 @@ export function TaskDialog({
   ) => {
     if (!assigneeIds.length) return;
 
-    const deadlineText = task.deadline
-      ? ` Deadline: ${formatTaskDateTime(task.deadline)}.`
-      : "";
+    const deadlineText = task.deadline ? ` Deadline: ${formatTaskDateTime(task.deadline)}.` : "";
     await supabase.from("notifications").insert(
       assigneeIds.map((assigneeId) => ({
         user_id: assigneeId,
@@ -575,7 +642,10 @@ export function TaskDialog({
       throw error;
     }
 
-    console.warn("Task review notification RPC is missing. Apply the latest Supabase migrations.", error);
+    console.warn(
+      "Task review notification RPC is missing. Apply the latest Supabase migrations.",
+      error,
+    );
   };
 
   const requestReview = async () => {
@@ -638,7 +708,8 @@ export function TaskDialog({
         <DialogHeader>
           <DialogTitle>{taskId ? "Edit Task" : "Create Task"}</DialogTitle>
           <DialogDescription>
-            Assign work, set complexity, and track effort-based progress for fair leaderboard scoring.
+            Assign work, set complexity, and track effort-based progress for fair leaderboard
+            scoring.
           </DialogDescription>
         </DialogHeader>
 
@@ -648,326 +719,336 @@ export function TaskDialog({
             <TabsTrigger value="discussion">Discussion</TabsTrigger>
             <TabsTrigger value="timeline">Activity Timeline</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="details" className="space-y-4 mt-0">
-          <div>
-            <Label>Title</Label>
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              disabled={!canEditTaskFields}
-              placeholder="What needs to be done?"
-            />
-          </div>
-
-          <div>
-            <Label>Description</Label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              disabled={!canEditTaskFields}
-              rows={3}
-              placeholder="Add details…"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
-              <Label>Status</Label>
-              <Select
-                value={status}
-                onValueChange={(v) => updateStatus(v as TaskStatus)}
-                disabled={!canEditTaskFields}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TASK_STATUSES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {STATUS_LABELS[s]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Complexity</Label>
-              <Select
-                value={taskComplexity}
-                onValueChange={(v) => setTaskComplexity(v as TaskComplexity)}
-                disabled={!canEditTaskFields}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(TASK_COMPLEXITY_LABELS) as TaskComplexity[]).map((complexity) => (
-                    <SelectItem key={complexity} value={complexity}>
-                      {TASK_COMPLEXITY_LABELS[complexity]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Priority</Label>
-              <Select
-                value={priority}
-                onValueChange={(v) => setPriority(v as TaskPriority)}
-                disabled={!canEditTaskFields}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRIORITIES.map((p) => (
-                    <SelectItem key={p} value={p} className="capitalize">
-                      {p}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {canEditTaskFields && (
-          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 text-sm font-semibold">
-                  <Info size={15} className="text-primary" />
-                  Complexity guide
-                </div>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                  Complexity estimates the size of work so long campaigns, audits, designs, or QA cycles can be evaluated fairly.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {complexityKeys.map((complexity) => (
-                <button
-                  key={complexity}
-                  type="button"
-                  disabled={!canEditTaskFields}
-                  onClick={() => setTaskComplexity(complexity)}
-                  className={`rounded-xl border p-3 text-left transition-colors ${
-                    taskComplexity === complexity
-                      ? "border-primary/60 bg-primary/15"
-                      : "border-border bg-background/40 hover:border-primary/35"
-                  } ${!canEditTaskFields ? "cursor-default opacity-70" : ""}`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-semibold">{TASK_COMPLEXITY_LABELS[complexity]}</span>
-                  </div>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                    {TASK_COMPLEXITY_DESCRIPTIONS[complexity]}
-                  </p>
-                </button>
-              ))}
-            </div>
-
-            {taskComplexityUnavailable && (
-              <div className="mt-3 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
-                Complexity is visible here, but the database migration is not applied yet. Saves will continue without effort complexity until the migration runs.
-              </div>
-            )}
-          </div>
-          )}
-
-          <div>
-            <Label>Progress: {progress}%</Label>
-            <div className="flex items-center gap-3">
-              <input
-                type="range"
-                min={0}
-                max={100}
-                step={1}
-                value={progress}
-                onChange={(e) => updateProgress(Number(e.target.value))}
-                className="w-full accent-primary"
-              />
+              <Label>Title</Label>
               <Input
-                type="number"
-                min={0}
-                max={100}
-                step={1}
-                value={progress}
-                onChange={(e) => updateProgress(Number(e.target.value))}
-                className="w-20 tabular-nums"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                disabled={!canEditTaskFields}
+                placeholder="What needs to be done?"
               />
             </div>
-            {taskId && (isEmployeeTaskEdit || progress > initialProgress) && (
-              <div className="mt-3">
-                <Label>{isEmployeeTaskEdit ? "Update Comment" : "Progress update note"}</Label>
-                <Textarea
-                  value={progressNote}
-                  onChange={(e) => setProgressNote(e.target.value)}
-                  rows={3}
-                  placeholder={
-                    isEmployeeTaskEdit
-                      ? "Add an update comment..."
-                      : `What was completed from ${initialProgress}% to ${progress}%?`
-                  }
-                  className="mt-1"
-                />
-                {progress !== initialProgress && (
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    {isEmployeeTaskEdit ? "Required because progress changed." : "Required because progress increased."}
+
+            <div>
+              <Label>Description</Label>
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                disabled={!canEditTaskFields}
+                rows={3}
+                placeholder="Add details…"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div>
+                <Label>Status</Label>
+                <Select
+                  value={status}
+                  onValueChange={(v) => updateStatus(v as TaskStatus)}
+                  disabled={!canEditTaskFields}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TASK_STATUSES.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {STATUS_LABELS[s]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Complexity</Label>
+                <Select
+                  value={taskComplexity}
+                  onValueChange={(v) => setTaskComplexity(v as TaskComplexity)}
+                  disabled={!canEditTaskFields}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(TASK_COMPLEXITY_LABELS) as TaskComplexity[]).map((complexity) => (
+                      <SelectItem key={complexity} value={complexity}>
+                        {TASK_COMPLEXITY_LABELS[complexity]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Priority</Label>
+                <Select
+                  value={priority}
+                  onValueChange={(v) => setPriority(v as TaskPriority)}
+                  disabled={!canEditTaskFields}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRIORITIES.map((p) => (
+                      <SelectItem key={p} value={p} className="capitalize">
+                        {p}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {canEditTaskFields && (
+              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 text-sm font-semibold">
+                      <Info size={15} className="text-primary" />
+                      Complexity guide
+                    </div>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                      Complexity estimates the size of work so long campaigns, audits, designs, or
+                      QA cycles can be evaluated fairly.
+                    </p>
                   </div>
-                )}
-                {progressUpdatesUnavailable && (
-                  <div className="mt-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
-                    Progress will save, but notes need the task_progress_updates migration.
+                </div>
+
+                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {complexityKeys.map((complexity) => (
+                    <button
+                      key={complexity}
+                      type="button"
+                      disabled={!canEditTaskFields}
+                      onClick={() => setTaskComplexity(complexity)}
+                      className={`rounded-xl border p-3 text-left transition-colors ${
+                        taskComplexity === complexity
+                          ? "border-primary/60 bg-primary/15"
+                          : "border-border bg-background/40 hover:border-primary/35"
+                      } ${!canEditTaskFields ? "cursor-default opacity-70" : ""}`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-semibold">
+                          {TASK_COMPLEXITY_LABELS[complexity]}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                        {TASK_COMPLEXITY_DESCRIPTIONS[complexity]}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+
+                {taskComplexityUnavailable && (
+                  <div className="mt-3 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+                    Complexity is visible here, but the database migration is not applied yet. Saves
+                    will continue without effort complexity until the migration runs.
                   </div>
                 )}
               </div>
             )}
-            {isEmployeeTaskEdit && (
-              <div className="mt-4 rounded-lg border border-border bg-muted/20 p-3">
-                <div className="mb-2 flex items-center gap-2 text-sm font-medium">
-                  <TrendingUp size={14} className="text-primary" />
-                  Progress History
-                </div>
-                <div className="max-h-44 space-y-2 overflow-y-auto">
-                  {employeeProgressHistory.map((update) => (
-                    <div key={update.id} className="rounded-md bg-background/50 p-2 text-sm">
-                      <div className="mb-1 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                        <span className="font-medium text-foreground">
-                          {update.old_progress}% -&gt; {update.new_progress}%
-                        </span>
-                        <span>{formatTaskDateTime(update.created_at)}</span>
-                      </div>
-                      <div className="text-foreground">{update.note}</div>
-                      <div className="mt-1 text-xs text-muted-foreground">{update.author}</div>
+
+            <div>
+              <Label>Progress: {progress}%</Label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={progress}
+                  onChange={(e) => updateProgress(Number(e.target.value))}
+                  className="w-full accent-primary"
+                />
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={progress}
+                  onChange={(e) => updateProgress(Number(e.target.value))}
+                  className="w-20 tabular-nums"
+                />
+              </div>
+              {taskId && (isEmployeeTaskEdit || progress > initialProgress) && (
+                <div className="mt-3">
+                  <Label>{isEmployeeTaskEdit ? "Update Comment" : "Progress update note"}</Label>
+                  <Textarea
+                    value={progressNote}
+                    onChange={(e) => setProgressNote(e.target.value)}
+                    rows={3}
+                    placeholder={
+                      isEmployeeTaskEdit
+                        ? "Add an update comment..."
+                        : `What was completed from ${initialProgress}% to ${progress}%?`
+                    }
+                    className="mt-1"
+                  />
+                  {progress !== initialProgress && (
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {isEmployeeTaskEdit
+                        ? "Required because progress changed."
+                        : "Required because progress increased."}
                     </div>
-                  ))}
-                  {employeeProgressHistory.length === 0 && (
-                    <div className="text-xs text-muted-foreground">No progress updates yet.</div>
+                  )}
+                  {progressUpdatesUnavailable && (
+                    <div className="mt-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
+                      Progress will save, but notes need the task_progress_updates migration.
+                    </div>
                   )}
                 </div>
-              </div>
-            )}
-            {taskId && !isEmployeeTaskEdit && progressUpdates.length > 0 && (
-              <div className="mt-4 rounded-lg border border-border bg-muted/20 p-3">
-                <div className="mb-2 flex items-center gap-2 text-sm font-medium">
-                  <TrendingUp size={14} className="text-primary" />
-                  Progress updates
-                </div>
-                <div className="max-h-44 space-y-2 overflow-y-auto">
-                  {progressUpdates.map((update) => (
-                    <div key={update.id} className="rounded-md bg-background/50 p-2 text-sm">
-                      <div className="mb-1 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                        <span className="font-medium text-foreground">
-                          {update.old_progress}% -&gt; {update.new_progress}%
-                        </span>
-                        <div className="flex items-center gap-1.5">
+              )}
+              {isEmployeeTaskEdit && (
+                <div className="mt-4 rounded-lg border border-border bg-muted/20 p-3">
+                  <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+                    <TrendingUp size={14} className="text-primary" />
+                    Progress History
+                  </div>
+                  <div className="max-h-44 space-y-2 overflow-y-auto">
+                    {employeeProgressHistory.map((update) => (
+                      <div key={update.id} className="rounded-md bg-background/50 p-2 text-sm">
+                        <div className="mb-1 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                          <span className="font-medium text-foreground">
+                            {update.old_progress}% -&gt; {update.new_progress}%
+                          </span>
                           <span>{formatTaskDateTime(update.created_at)}</span>
-                          {(isAdmin || update.user_id === user?.id) && (
-                            <button
-                              type="button"
-                              onClick={() => startEditingProgressUpdate(update)}
-                              className="rounded p-1 text-muted-foreground transition-colors hover:bg-primary/15 hover:text-primary"
-                              title="Edit progress update"
-                            >
-                              <Pencil size={12} />
-                            </button>
-                          )}
                         </div>
-                      </div>
-                      {editingProgressUpdateId === update.id ? (
-                        <div className="space-y-2">
-                          <Textarea
-                            value={editingProgressNote}
-                            onChange={(e) => setEditingProgressNote(e.target.value)}
-                            rows={2}
-                            className="text-sm"
-                          />
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={cancelEditingProgressUpdate}
-                            >
-                              <X size={13} className="mr-1.5" />
-                              Cancel
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              onClick={() => saveProgressUpdateNote(update.id)}
-                              disabled={savingProgressUpdateId === update.id}
-                              className="neon-button"
-                            >
-                              <Check size={13} className="mr-1.5" />
-                              {savingProgressUpdateId === update.id ? "Saving..." : "Save"}
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
                         <div className="text-foreground">{update.note}</div>
-                      )}
-                      <div className="mt-1 text-xs text-muted-foreground">{update.author}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <div>
-              <Label>Deadline date (BS)</Label>
-              <BSDateInput
-                value={deadlineDateBs}
-                onChange={setDeadlineDateBs}
-                disabled={!canEditTaskFields}
-                inputClassName={!canEditTaskFields ? "opacity-70" : undefined}
-              />
-            </div>
-            <div>
-              <Label>Deadline time</Label>
-              <GlassTimeInput value={deadlineTime} onChange={setDeadlineTime} className={!canEditTaskFields ? "pointer-events-none opacity-70" : undefined} />
-            </div>
-            <div>
-              <Label>Tags (comma-separated)</Label>
-              <Input
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
-                disabled={!canEditTaskFields}
-                placeholder="frontend, urgent"
-              />
-            </div>
-          </div>
-          {(isAdmin || isAssignedTeamLead) && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              {isAdmin && (
-                <div className="border border-border bg-muted/10 p-3 rounded-lg">
-                  <TaskAssignees 
-                    label="Team Leads" 
-                    options={availableTeamLeads}
-                    selectedIds={teamLeads}
-                    onChange={setTeamLeads}
-                    disabled={!isAdmin}
-                  />
+                        <div className="mt-1 text-xs text-muted-foreground">{update.author}</div>
+                      </div>
+                    ))}
+                    {employeeProgressHistory.length === 0 && (
+                      <div className="text-xs text-muted-foreground">No progress updates yet.</div>
+                    )}
+                  </div>
                 </div>
               )}
-              <div className="border border-border bg-muted/10 p-3 rounded-lg">
-                <TaskAssignees 
-                  label="Assign To" 
-                  options={employees}
-                  selectedIds={assignedToMany}
-                  onChange={setAssignedToMany}
-                  disabled={!isAdmin && !isAssignedTeamLead}
+              {taskId && !isEmployeeTaskEdit && progressUpdates.length > 0 && (
+                <div className="mt-4 rounded-lg border border-border bg-muted/20 p-3">
+                  <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+                    <TrendingUp size={14} className="text-primary" />
+                    Progress updates
+                  </div>
+                  <div className="max-h-44 space-y-2 overflow-y-auto">
+                    {progressUpdates.map((update) => (
+                      <div key={update.id} className="rounded-md bg-background/50 p-2 text-sm">
+                        <div className="mb-1 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                          <span className="font-medium text-foreground">
+                            {update.old_progress}% -&gt; {update.new_progress}%
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span>{formatTaskDateTime(update.created_at)}</span>
+                            {(isAdmin || update.user_id === user?.id) && (
+                              <button
+                                type="button"
+                                onClick={() => startEditingProgressUpdate(update)}
+                                className="rounded p-1 text-muted-foreground transition-colors hover:bg-primary/15 hover:text-primary"
+                                title="Edit progress update"
+                              >
+                                <Pencil size={12} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        {editingProgressUpdateId === update.id ? (
+                          <div className="space-y-2">
+                            <Textarea
+                              value={editingProgressNote}
+                              onChange={(e) => setEditingProgressNote(e.target.value)}
+                              rows={2}
+                              className="text-sm"
+                            />
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={cancelEditingProgressUpdate}
+                              >
+                                <X size={13} className="mr-1.5" />
+                                Cancel
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => saveProgressUpdateNote(update.id)}
+                                disabled={savingProgressUpdateId === update.id}
+                                className="neon-button"
+                              >
+                                <Check size={13} className="mr-1.5" />
+                                {savingProgressUpdateId === update.id ? "Saving..." : "Save"}
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-foreground">{update.note}</div>
+                        )}
+                        <div className="mt-1 text-xs text-muted-foreground">{update.author}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <div>
+                <Label>Deadline date (BS)</Label>
+                <BSDateInput
+                  value={deadlineDateBs}
+                  onChange={setDeadlineDateBs}
+                  disabled={!canEditTaskFields}
+                  inputClassName={!canEditTaskFields ? "opacity-70" : undefined}
+                />
+              </div>
+              <div>
+                <Label>Deadline time</Label>
+                <GlassTimeInput
+                  value={deadlineTime}
+                  onChange={setDeadlineTime}
+                  className={!canEditTaskFields ? "pointer-events-none opacity-70" : undefined}
+                />
+              </div>
+              <div>
+                <Label>Tags (comma-separated)</Label>
+                <Input
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                  disabled={!canEditTaskFields}
+                  placeholder="frontend, urgent"
                 />
               </div>
             </div>
-          )}
+            {(isAdmin || isAssignedTeamLead) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                {isAdmin && (
+                  <div className="border border-border bg-muted/10 p-3 rounded-lg">
+                    <TaskAssignees
+                      label="Team Leads"
+                      options={availableTeamLeads}
+                      selectedIds={teamLeads}
+                      onChange={setTeamLeads}
+                      disabled={!isAdmin}
+                    />
+                  </div>
+                )}
+                <div className="border border-border bg-muted/10 p-3 rounded-lg">
+                  <TaskAssignees
+                    label="Assign To"
+                    options={employees}
+                    selectedIds={assignedToMany}
+                    onChange={setAssignedToMany}
+                    disabled={!isAdmin && !isAssignedTeamLead}
+                  />
+                </div>
+              </div>
+            )}
           </TabsContent>
           <TabsContent value="discussion" className="h-[500px] mt-0">
-            <TaskDiscussion 
+            <TaskDiscussion
               taskId={taskId || ""}
               comments={comments}
               mentionableUsers={[...availableTeamLeads, ...employees]}
@@ -975,47 +1056,50 @@ export function TaskDialog({
               canComment={Boolean(taskId)}
             />
           </TabsContent>
-          <TabsContent value="timeline" className="h-[500px] overflow-y-auto mt-0 bg-muted/10 border border-border rounded-lg">
+          <TabsContent
+            value="timeline"
+            className="h-[500px] overflow-y-auto mt-0 bg-muted/10 border border-border rounded-lg"
+          >
             <TaskTimeline logs={activityLogs} />
           </TabsContent>
         </Tabs>
 
         <div className="flex justify-between pt-4 border-t border-border">
-            <div>
-              {canDeleteTask && (
-                <Button
-                  variant="outline"
-                  onClick={remove}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 size={14} className="mr-1.5" />
-                  Delete
-                </Button>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
-                <X size={14} className="mr-1.5" />
-                Cancel
+          <div>
+            {canDeleteTask && (
+              <Button
+                variant="outline"
+                onClick={remove}
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2 size={14} className="mr-1.5" />
+                Delete
               </Button>
-              {!(isEmployeeTaskEdit && progress >= 100) && (
-                <Button onClick={save} disabled={loading} className="neon-button">
-                  {loading
-                    ? "Saving..."
-                    : taskId && !isAdmin
-                      ? "Save progress"
-                      : taskId
-                        ? "Save changes"
-                        : "Create task"}
-                </Button>
-              )}
-              {isEmployeeTaskEdit && progress >= 100 && (
-                <Button onClick={requestReview} disabled={loading} className="neon-button">
-                  Request Review
-                </Button>
-              )}
-            </div>
+            )}
           </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              <X size={14} className="mr-1.5" />
+              Cancel
+            </Button>
+            {!(isEmployeeTaskEdit && progress >= 100) && (
+              <Button onClick={save} disabled={loading} className="neon-button">
+                {loading
+                  ? "Saving..."
+                  : taskId && !isAdmin
+                    ? "Save progress"
+                    : taskId
+                      ? "Save changes"
+                      : "Create task"}
+              </Button>
+            )}
+            {isEmployeeTaskEdit && progress >= 100 && (
+              <Button onClick={requestReview} disabled={loading} className="neon-button">
+                Request Review
+              </Button>
+            )}
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

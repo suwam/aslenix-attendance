@@ -55,7 +55,9 @@ function MeetingsPage() {
     .filter((meeting) => isPast(new Date(meeting.meeting_time)))
     .sort((a, b) => new Date(b.meeting_time).getTime() - new Date(a.meeting_time).getTime());
   const nextMeeting = upcomingMeetings[0];
-  const todayMeetings = meetings.filter((meeting) => isToday(new Date(meeting.meeting_time))).length;
+  const todayMeetings = meetings.filter((meeting) =>
+    isToday(new Date(meeting.meeting_time)),
+  ).length;
 
   return (
     <>
@@ -71,39 +73,43 @@ function MeetingsPage() {
             <MeetingMetric label="Today" value={todayMeetings} icon={Clock} />
             <MeetingMetric
               label="Next"
-              value={nextMeeting ? `${formatNepaliDate(nextMeeting.meeting_time, "DD MMMM")} BS` : "None"}
+              value={
+                nextMeeting ? `${formatNepaliDate(nextMeeting.meeting_time, "DD MMMM")} BS` : "None"
+              }
               icon={Video}
             />
           </div>
 
           {upcomingMeetings.length === 0 ? (
             <MeetingEmptyState />
-          ) : nextMeeting && (
-            <GlassCard className="overflow-hidden border-primary/20 bg-card">
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0">
-                  <div className="mb-3 flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
-                    <CalendarClock size={12} />
-                    Next meeting
+          ) : (
+            nextMeeting && (
+              <GlassCard className="overflow-hidden border-primary/20 bg-card">
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="min-w-0">
+                    <div className="mb-3 flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                      <CalendarClock size={12} />
+                      Next meeting
+                    </div>
+                    <h2 className="text-2xl font-bold text-foreground">{nextMeeting.title}</h2>
+                    <MeetingMeta meeting={nextMeeting} />
+                    {nextMeeting.agenda && (
+                      <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground">
+                        {nextMeeting.agenda}
+                      </p>
+                    )}
                   </div>
-                  <h2 className="text-2xl font-bold text-foreground">{nextMeeting.title}</h2>
-                  <MeetingMeta meeting={nextMeeting} />
-                  {nextMeeting.agenda && (
-                    <p className="mt-4 max-w-3xl text-sm leading-6 text-muted-foreground">
-                      {nextMeeting.agenda}
-                    </p>
+                  {nextMeeting.meeting_link && (
+                    <Button asChild className="neon-button h-11 shrink-0 rounded-xl">
+                      <a href={nextMeeting.meeting_link} target="_blank" rel="noreferrer">
+                        <ExternalLink size={15} className="mr-2" />
+                        Join meeting
+                      </a>
+                    </Button>
                   )}
                 </div>
-                {nextMeeting.meeting_link && (
-                  <Button asChild className="neon-button h-11 shrink-0 rounded-xl">
-                    <a href={nextMeeting.meeting_link} target="_blank" rel="noreferrer">
-                      <ExternalLink size={15} className="mr-2" />
-                      Join meeting
-                    </a>
-                  </Button>
-                )}
-              </div>
-            </GlassCard>
+              </GlassCard>
+            )
           )}
 
           {upcomingMeetings.length > 0 && (
@@ -149,7 +155,8 @@ function MeetingEmptyState() {
           </div>
           <h2 className="text-3xl font-bold text-foreground">No upcoming meetings right now</h2>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-            When admin schedules or postpones a meeting, it will appear here with the updated date, link, location, and agenda.
+            When admin schedules or postpones a meeting, it will appear here with the updated date,
+            link, location, and agenda.
           </p>
           <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <EmptyHint icon={CalendarClock} label="Next sync" value="Waiting" />
@@ -161,7 +168,9 @@ function MeetingEmptyState() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <div className="text-xs uppercase tracking-wider text-muted-foreground">Today</div>
-              <div className="mt-1 text-xl font-bold text-foreground">{formatNepaliDate(new Date(), "DD MMMM")} BS</div>
+              <div className="mt-1 text-xl font-bold text-foreground">
+                {formatNepaliDate(new Date(), "DD MMMM")} BS
+              </div>
             </div>
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
               <CalendarDays size={20} />
@@ -169,7 +178,10 @@ function MeetingEmptyState() {
           </div>
           <div className="space-y-3">
             {["Focus work", "Task updates", "Standup notes"].map((item) => (
-              <div key={item} className="rounded-2xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+              <div
+                key={item}
+                className="rounded-2xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground"
+              >
                 {item}
               </div>
             ))}
@@ -202,7 +214,9 @@ function EmployeeMeetingCard({ meeting }: { meeting: any }) {
   const past = isPast(new Date(meeting.meeting_time));
 
   return (
-    <GlassCard className={`group flex flex-col gap-4 border-border bg-card transition hover:border-primary/25 hover:bg-card sm:flex-row sm:items-start ${past ? "opacity-75" : ""}`}>
+    <GlassCard
+      className={`group flex flex-col gap-4 border-border bg-card transition hover:border-primary/25 hover:bg-card sm:flex-row sm:items-start ${past ? "opacity-75" : ""}`}
+    >
       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
         <CalendarClock size={19} />
       </div>
@@ -236,12 +250,22 @@ function EmployeeMeetingCard({ meeting }: { meeting: any }) {
   );
 }
 
-function MeetingMetric({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof CalendarClock }) {
+function MeetingMetric({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: string | number;
+  icon: typeof CalendarClock;
+}) {
   return (
     <GlassCard className="border-border bg-card">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {label}
+          </div>
           <div className="mt-3 text-3xl font-bold tabular-nums text-foreground">{value}</div>
         </div>
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
@@ -257,7 +281,8 @@ function MeetingMeta({ meeting }: { meeting: any }) {
     <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
       <span className="flex items-center gap-1.5">
         <Clock size={14} />
-        {formatNepaliDate(meeting.meeting_time, "ddd DD, MMMM YYYY")} BS · {format(new Date(meeting.meeting_time), "HH:mm")}
+        {formatNepaliDate(meeting.meeting_time, "ddd DD, MMMM YYYY")} BS ·{" "}
+        {format(new Date(meeting.meeting_time), "HH:mm")}
       </span>
       {meeting.location && (
         <span className="flex items-center gap-1.5">
@@ -276,11 +301,11 @@ function MeetingCountdown({ time }: { time: string }) {
       ? "Past"
       : minutes === 0
         ? "Starting now"
-      : minutes < 60
-        ? `${minutes}m left`
-        : minutes < 1440
-          ? `${Math.floor(minutes / 60)}h ${minutes % 60}m left`
-          : `${Math.floor(minutes / 1440)}d left`;
+        : minutes < 60
+          ? `${minutes}m left`
+          : minutes < 1440
+            ? `${Math.floor(minutes / 60)}h ${minutes % 60}m left`
+            : `${Math.floor(minutes / 1440)}d left`;
 
   return (
     <span className="w-fit shrink-0 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">

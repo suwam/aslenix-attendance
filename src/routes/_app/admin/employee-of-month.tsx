@@ -238,7 +238,11 @@ function EmployeeOfMonthPage() {
   const [notes, setNotes] = useState("");
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
   const [recognitionType, setRecognitionType] = useState<RecognitionType>("employee_of_month");
-  const [successAward, setSuccessAward] = useState<{ employee: string; badge: string; type: RecognitionType } | null>(null);
+  const [successAward, setSuccessAward] = useState<{
+    employee: string;
+    badge: string;
+    type: RecognitionType;
+  } | null>(null);
   const [recognitionDialogOpen, setRecognitionDialogOpen] = useState(false);
   const [departmentFilter, setDepartmentFilter] = useState<DepartmentFilter>("All Departments");
   const [officialAwards, setOfficialAwards] = useState<OfficialAward[]>([]);
@@ -249,7 +253,8 @@ function EmployeeOfMonthPage() {
   const monthStart = nepaliMonth.startAd;
   const monthEnd = nepaliMonth.endAd;
 
-  const loadEomData = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
+  const loadEomData = useCallback(
+    async ({ silent = false }: { silent?: boolean } = {}) => {
       if (!silent) setLoading(true);
       const monthStartIso = `${monthStart}T00:00:00.000Z`;
       const monthEndIso = `${monthEnd}T23:59:59.999Z`;
@@ -266,42 +271,51 @@ function EmployeeOfMonthPage() {
         { data: standups },
         feedbackResult,
         progressResult,
-      ] =
-        await Promise.all([
-          supabase
-            .from("profiles")
-            .select("user_id, full_name, department, position, avatar_url, is_eom_eligible")
-            .eq("approval_status", "approved")
-            .eq("is_suspended", false),
-          supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
-          supabase.from("tasks").select("*"),
-          supabase.from("task_assignees").select("task_id,user_id"),
-          supabase
-            .from("attendance")
-            .select("user_id,date,status,work_hours")
-            .gte("date", monthStart)
-            .lte("date", effectiveEnd),
-          supabase
-            .from("standups")
-            .select("user_id,date,yesterday,today,blockers,work_hours")
-            .gte("date", monthStart)
-            .lte("date", effectiveEnd),
-          fetchWeeklyReviews(),
-          (supabase as any)
-            .from("task_progress_updates")
-            .select("task_id,old_progress,new_progress,created_at")
-            .gte("created_at", monthStartIso)
-            .lte("created_at", monthEndIso),
-        ]);
+      ] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("user_id, full_name, department, position, avatar_url, is_eom_eligible")
+          .eq("approval_status", "approved")
+          .eq("is_suspended", false),
+        supabase
+          .from("user_roles")
+          .select("user_id, role")
+          .in("role", ["admin", "super_admin", "hr_manager"]),
+        supabase.from("tasks").select("*"),
+        supabase.from("task_assignees").select("task_id,user_id"),
+        supabase
+          .from("attendance")
+          .select("user_id,date,status,work_hours")
+          .gte("date", monthStart)
+          .lte("date", effectiveEnd),
+        supabase
+          .from("standups")
+          .select("user_id,date,yesterday,today,blockers,work_hours")
+          .gte("date", monthStart)
+          .lte("date", effectiveEnd),
+        fetchWeeklyReviews(),
+        (supabase as any)
+          .from("task_progress_updates")
+          .select("task_id,old_progress,new_progress,created_at")
+          .gte("created_at", monthStartIso)
+          .lte("created_at", monthEndIso),
+      ]);
       const assignees =
         assigneeResult.error && isMissingSupabaseTableError(assigneeResult.error, "task_assignees")
           ? []
           : assigneeResult.data || [];
-      const elapsedDays = Math.max(1, differenceInCalendarDays(effectiveEndDate, monthStartDate) + 1);
-      const feedbackRows = (feedbackResult.error ? [] : feedbackResult.data || []) as WeeklyReview[];
+      const elapsedDays = Math.max(
+        1,
+        differenceInCalendarDays(effectiveEndDate, monthStartDate) + 1,
+      );
+      const feedbackRows = (
+        feedbackResult.error ? [] : feedbackResult.data || []
+      ) as WeeklyReview[];
       const progressRows = progressResult.error ? [] : progressResult.data || [];
       const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
-      const profileRows = ((profiles || []) as EomProfile[]).filter((profile) => !adminUserIds.has(profile.user_id));
+      const profileRows = ((profiles || []) as EomProfile[]).filter(
+        (profile) => !adminUserIds.has(profile.user_id),
+      );
       const eligibleProfiles = profileRows.filter(isEomEligible);
       const excludedProfiles = profileRows.filter((profile) => !isEomEligible(profile));
 
@@ -325,7 +339,8 @@ function EmployeeOfMonthPage() {
           );
           const completedTasks = completedMonthTasks.length;
           const completedMonthEffortPoints = completedMonthTasks.reduce(
-            (sum: number, task: any) => sum + TASK_COMPLEXITY_POINTS[normalizedTaskComplexity(task.task_complexity)],
+            (sum: number, task: any) =>
+              sum + TASK_COMPLEXITY_POINTS[normalizedTaskComplexity(task.task_complexity)],
             0,
           );
           const completedTaskContribution = taskMetrics.totalEffortPoints
@@ -341,7 +356,9 @@ function EmployeeOfMonthPage() {
             (row) => row.user_id === profile.user_id,
           );
           const attendancePct = calculateWeightedAttendancePct(employeeAttendance, elapsedDays);
-          const employeeStandups = (standups || []).filter((row) => row.user_id === profile.user_id);
+          const employeeStandups = (standups || []).filter(
+            (row) => row.user_id === profile.user_id,
+          );
           const standupMetrics = calculateStandupScore(employeeStandups, elapsedDays);
           const assignedTaskIds = new Set(monthRelevantTasks.map((task: any) => task.id));
           const progressGain = progressRows
@@ -352,7 +369,10 @@ function EmployeeOfMonthPage() {
               0,
             );
           const dailyImprovement = taskMetrics.totalTasks
-            ? Math.min(100, Number((progressGain / taskMetrics.totalTasks / elapsedDays).toFixed(1)))
+            ? Math.min(
+                100,
+                Number((progressGain / taskMetrics.totalTasks / elapsedDays).toFixed(1)),
+              )
             : 0;
           const streak = countRecentStreak(new Set(employeeAttendance.map((row) => row.date)), 30);
           const badges = [
@@ -403,7 +423,8 @@ function EmployeeOfMonthPage() {
             achievementBonus,
             overduePenalty,
           });
-          const level = score >= 95 ? "Legendary" : score >= 80 ? "Elite" : score >= 60 ? "Rising" : "Building";
+          const level =
+            score >= 95 ? "Legendary" : score >= 80 ? "Elite" : score >= 60 ? "Rising" : "Building";
 
           return {
             userId: profile.user_id,
@@ -473,25 +494,45 @@ function EmployeeOfMonthPage() {
 
       const winner = ranked[0];
       const visibleWeekCount = Math.max(1, Math.min(5, Math.ceil(elapsedDays / 7)));
-      const winnerAttendanceRows = (attendance || []).filter((row) => row.user_id === winner?.userId);
+      const winnerAttendanceRows = (attendance || []).filter(
+        (row) => row.user_id === winner?.userId,
+      );
       const weeklyRows = Array.from({ length: visibleWeekCount }).map((_, index) => {
         const weekStartDate = new Date(monthStartDate);
         weekStartDate.setDate(monthStartDate.getDate() + index * 7);
         const weekEndDate = new Date(weekStartDate);
         weekEndDate.setDate(weekStartDate.getDate() + 6);
-        const effectiveWeekEndDate = weekEndDate > effectiveEndDate ? effectiveEndDate : weekEndDate;
+        const effectiveWeekEndDate =
+          weekEndDate > effectiveEndDate ? effectiveEndDate : weekEndDate;
         const weekStart = formatDateKey(weekStartDate);
         const weekEnd = formatDateKey(effectiveWeekEndDate);
-        const weekElapsedDays = Math.max(1, differenceInCalendarDays(effectiveWeekEndDate, weekStartDate) + 1);
-        const weekAttendanceRows = winnerAttendanceRows.filter((row) => row.date >= weekStart && row.date <= weekEnd);
+        const weekElapsedDays = Math.max(
+          1,
+          differenceInCalendarDays(effectiveWeekEndDate, weekStartDate) + 1,
+        );
+        const weekAttendanceRows = winnerAttendanceRows.filter(
+          (row) => row.date >= weekStart && row.date <= weekEnd,
+        );
         const base = ranked[0]?.score || 0;
         return {
           week: `W${index + 1}`,
-          productivity: Math.max(8, Math.min(100, base - (visibleWeekCount - 1 - index) * 7 + index * 3)),
+          productivity: Math.max(
+            8,
+            Math.min(100, base - (visibleWeekCount - 1 - index) * 7 + index * 3),
+          ),
           attendance: calculateWeightedAttendancePct(weekAttendanceRows, weekElapsedDays),
-          standup: Math.max(8, Math.min(100, (ranked[0]?.standupScore || 0) - (visibleWeekCount - 1 - index) * 3)),
-          taskProgress: Math.max(0, Math.round((ranked[0]?.effortProgress || 0) * ((index + 1) / visibleWeekCount))),
-          tasksCompleted: Math.max(0, Math.round((ranked[0]?.completedEffortPoints || 0) * ((index + 1) / visibleWeekCount))),
+          standup: Math.max(
+            8,
+            Math.min(100, (ranked[0]?.standupScore || 0) - (visibleWeekCount - 1 - index) * 3),
+          ),
+          taskProgress: Math.max(
+            0,
+            Math.round((ranked[0]?.effortProgress || 0) * ((index + 1) / visibleWeekCount)),
+          ),
+          tasksCompleted: Math.max(
+            0,
+            Math.round((ranked[0]?.completedEffortPoints || 0) * ((index + 1) / visibleWeekCount)),
+          ),
         };
       });
 
@@ -537,7 +578,9 @@ function EmployeeOfMonthPage() {
             }),
       );
       setLoading(false);
-  }, [monthEnd, monthStart]);
+    },
+    [monthEnd, monthStart],
+  );
 
   const refreshEomData = useCallback(() => {
     void loadEomData({ silent: true });
@@ -556,11 +599,23 @@ function EmployeeOfMonthPage() {
       .channel("eom-live-rankings")
       .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, refreshEomData)
       .on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, refreshEomData)
-      .on("postgres_changes", { event: "*", schema: "public", table: "task_assignees" }, refreshEomData)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "task_assignees" },
+        refreshEomData,
+      )
       .on("postgres_changes", { event: "*", schema: "public", table: "attendance" }, refreshEomData)
       .on("postgres_changes", { event: "*", schema: "public", table: "standups" }, refreshEomData)
-      .on("postgres_changes", { event: "*", schema: "public", table: "weekly_feedback" }, refreshEomData)
-      .on("postgres_changes", { event: "*", schema: "public", table: "task_progress_updates" }, refreshEomData)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "weekly_feedback" },
+        refreshEomData,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "task_progress_updates" },
+        refreshEomData,
+      )
       .subscribe();
 
     return () => {
@@ -584,15 +639,28 @@ function EmployeeOfMonthPage() {
   const previousGeneratedFeedback = useRef("");
   const totals = useMemo(
     () => ({
-      taskProgress: Math.round(visibleRows.reduce((sum, row) => sum + row.taskProgress, 0) / Math.max(1, visibleRows.length)),
-      effortPoints: Number(visibleRows.reduce((sum, row) => sum + row.earnedEffortPoints, 0).toFixed(1)),
+      taskProgress: Math.round(
+        visibleRows.reduce((sum, row) => sum + row.taskProgress, 0) /
+          Math.max(1, visibleRows.length),
+      ),
+      effortPoints: Number(
+        visibleRows.reduce((sum, row) => sum + row.earnedEffortPoints, 0).toFixed(1),
+      ),
       completedTasks: visibleRows.reduce((sum, row) => sum + row.completedTasks, 0),
       activeTasks: visibleRows.reduce((sum, row) => sum + row.activeTasks, 0),
-      attendance: Math.round(visibleRows.reduce((sum, row) => sum + row.attendancePct, 0) / Math.max(1, visibleRows.length)),
-      standup: Math.round(visibleRows.reduce((sum, row) => sum + row.standupScore, 0) / Math.max(1, visibleRows.length)),
+      attendance: Math.round(
+        visibleRows.reduce((sum, row) => sum + row.attendancePct, 0) /
+          Math.max(1, visibleRows.length),
+      ),
+      standup: Math.round(
+        visibleRows.reduce((sum, row) => sum + row.standupScore, 0) /
+          Math.max(1, visibleRows.length),
+      ),
       streak: Math.max(0, ...visibleRows.map((row) => row.streak)),
       overdue: visibleRows.reduce((sum, row) => sum + row.overdueTasks, 0),
-      score: Math.round(visibleRows.reduce((sum, row) => sum + row.score, 0) / Math.max(1, visibleRows.length)),
+      score: Math.round(
+        visibleRows.reduce((sum, row) => sum + row.score, 0) / Math.max(1, visibleRows.length),
+      ),
     }),
     [visibleRows],
   );
@@ -600,10 +668,14 @@ function EmployeeOfMonthPage() {
   const submitFeedback = async (awardType: RecognitionType = recognitionType) => {
     if (!user || !selectedEmployee) return;
     const badgeLabel = getRecognitionConfig(awardType).title;
-    const employeeAlreadyAwarded = officialAwards.some((award) => award.employee_id === selectedEmployee.userId);
+    const employeeAlreadyAwarded = officialAwards.some(
+      (award) => award.employee_id === selectedEmployee.userId,
+    );
     const badgeAlreadyAwarded = officialAwards.some((award) => award.rating === badgeLabel);
     if (employeeAlreadyAwarded) {
-      return toast.error(`${selectedEmployee.name} already has an official award for ${nepaliMonth.label} BS`);
+      return toast.error(
+        `${selectedEmployee.name} already has an official award for ${nepaliMonth.label} BS`,
+      );
     }
     if (badgeAlreadyAwarded) {
       return toast.error(`${badgeLabel} has already been assigned for ${nepaliMonth.label} BS`);
@@ -715,12 +787,20 @@ function EmployeeOfMonthPage() {
       ) : (
         <div className="eom-page space-y-6">
           <section className="grid grid-cols-1 gap-4 md:grid-cols-6">
-            <StatTile label="Effort progress" value={`${totals.taskProgress}%`} icon={CheckCircle2} />
+            <StatTile
+              label="Effort progress"
+              value={`${totals.taskProgress}%`}
+              icon={CheckCircle2}
+            />
             <StatTile label="Effort points" value={totals.effortPoints} icon={BadgeCheck} />
             <StatTile label="Active tasks" value={totals.activeTasks} icon={Target} />
             <StatTile label="Attendance" value={`${totals.attendance}%`} icon={BadgeCheck} />
             <StatTile label="Standup" value={`${totals.standup}%`} icon={ClipboardList} />
-            <StatTile label="HR reviews" value={rows.reduce((sum, row) => sum + row.reviewCount, 0)} icon={MessageSquare} />
+            <StatTile
+              label="HR reviews"
+              value={rows.reduce((sum, row) => sum + row.reviewCount, 0)}
+              icon={MessageSquare}
+            />
             <StatTile label="Normalized score" value={totals.score} icon={Zap} />
           </section>
 
@@ -778,7 +858,8 @@ function EmployeeOfMonthPage() {
 function TopContenders({ rows }: { rows: EmployeeRank[] }) {
   const contenders = rows.slice(0, 5);
   const leader = contenders[0];
-  const leaderGap = contenders[0] && contenders[1] ? contenders[0].score - contenders[1].score : null;
+  const leaderGap =
+    contenders[0] && contenders[1] ? contenders[0].score - contenders[1].score : null;
   const isTightRace = leaderGap !== null && leaderGap <= 5;
   const contenderLabels = [
     "Top Performer",
@@ -799,7 +880,8 @@ function TopContenders({ rows }: { rows: EmployeeRank[] }) {
           </div>
           <h2 className="text-3xl font-bold md:text-4xl">Employee of the Month race</h2>
           <p className="mt-1 text-sm text-foreground/65">
-            Live ranking from effort-weighted task progress, attendance, standups, HR reviews, bonuses, and overdue penalties.
+            Live ranking from effort-weighted task progress, attendance, standups, HR reviews,
+            bonuses, and overdue penalties.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -879,7 +961,9 @@ function ContenderCard({
             <h3 className={featured ? "text-2xl font-bold md:text-3xl" : "text-lg font-bold"}>
               {employee.name}
             </h3>
-            <p className="mt-1 text-sm text-muted-foreground">{employee.department} · {employee.position}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {employee.department} · {employee.position}
+            </p>
             <div className="mt-3">
               <EligibilityBadge eligible={employee.isEomEligible} />
             </div>
@@ -893,22 +977,49 @@ function ContenderCard({
           )}
           <div className="text-left sm:text-right">
             <div className="text-4xl font-black tabular-nums gradient-text">{employee.score}</div>
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Final score</div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              Final score
+            </div>
           </div>
         </div>
       </div>
 
       <div className="eom-contender-metrics-grid mt-5 grid gap-3">
-        <ContenderMetric label="Effort progress" value={`${employee.effortProgress}%`} icon={CheckCircle2} />
-        <ContenderMetric label="Attendance" value={`${employee.attendancePct}%`} icon={BadgeCheck} />
-        <ContenderMetric label="Effort points" value={`${employee.earnedEffortPoints}/${employee.effortPoints}`} icon={BadgeCheck} />
+        <ContenderMetric
+          label="Effort progress"
+          value={`${employee.effortProgress}%`}
+          icon={CheckCircle2}
+        />
+        <ContenderMetric
+          label="Attendance"
+          value={`${employee.attendancePct}%`}
+          icon={BadgeCheck}
+        />
+        <ContenderMetric
+          label="Effort points"
+          value={`${employee.earnedEffortPoints}/${employee.effortPoints}`}
+          icon={BadgeCheck}
+        />
         <ContenderMetric label="Active tasks" value={employee.activeTasks} icon={Target} />
         <ContenderMetric label="Standup" value={`${employee.standupScore}%`} icon={ClipboardList} />
-        <ContenderMetric label="HR review" value={`${employee.reviewAverage}/10`} icon={MessageSquare} />
-        <ContenderMetric label="Normalized score" value={employee.normalizedPerformanceScore} icon={TrendingUp} />
+        <ContenderMetric
+          label="HR review"
+          value={`${employee.reviewAverage}/10`}
+          icon={MessageSquare}
+        />
+        <ContenderMetric
+          label="Normalized score"
+          value={employee.normalizedPerformanceScore}
+          icon={TrendingUp}
+        />
         <ContenderMetric
           label="Weekly trend"
-          value={<span className="inline-flex items-center gap-1"><TrendIcon trend={employee.reviewTrend} />{contenderTrendLabel(employee.reviewTrend)}</span>}
+          value={
+            <span className="inline-flex items-center gap-1">
+              <TrendIcon trend={employee.reviewTrend} />
+              {contenderTrendLabel(employee.reviewTrend)}
+            </span>
+          }
           icon={BarChart3}
         />
       </div>
@@ -991,7 +1102,11 @@ function DepartmentFilterBar({
             <ReviewSummaryTile
               key={department}
               label={department}
-              value={leader ? `#1 ${leader.name.split(" ")[0]} · ${leader.normalizedPerformanceScore}` : "No ranking"}
+              value={
+                leader
+                  ? `#1 ${leader.name.split(" ")[0]} · ${leader.normalizedPerformanceScore}`
+                  : "No ranking"
+              }
             />
           );
         })}
@@ -1012,13 +1127,21 @@ function DepartmentFilterBar({
   );
 }
 
-function Leaderboard({ rows, departmentFilter }: { rows: EmployeeRank[]; departmentFilter: DepartmentFilter }) {
+function Leaderboard({
+  rows,
+  departmentFilter,
+}: {
+  rows: EmployeeRank[];
+  departmentFilter: DepartmentFilter;
+}) {
   return (
     <GlassCard className="eom-leaderboard overflow-hidden p-0">
       <div className="border-b border-border px-5 py-4">
         <h3 className="flex items-center gap-2 font-semibold">
           <Trophy size={17} className="text-primary" />
-          {departmentFilter === "All Departments" ? "Overall leaderboard" : `${departmentFilter} leaderboard`}
+          {departmentFilter === "All Departments"
+            ? "Overall leaderboard"
+            : `${departmentFilter} leaderboard`}
         </h3>
       </div>
       <div className="eom-leaderboard-list divide-y divide-border/50">
@@ -1044,16 +1167,50 @@ function Leaderboard({ rows, departmentFilter }: { rows: EmployeeRank[]; departm
                 </span>
                 <EligibilityBadge eligible={row.isEomEligible} />
               </div>
-              <div className="mt-1 text-xs text-muted-foreground">{row.department} · {row.position}</div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                {row.department} · {row.position}
+              </div>
               <div className="eom-leader-metrics mt-3 grid gap-3">
-                <MiniBar label="Effort progress" value={row.effortProgress} detail={`${row.effortProgress}%`} />
-                <MiniBar label="Effort points" value={Math.min(100, row.earnedEffortPoints)} detail={`${row.earnedEffortPoints}/${row.effortPoints}`} />
-                <MiniBar label="Completed effort" value={row.completedTaskContribution} detail={`${row.completedEffortPoints} pts`} />
-                <MiniBar label="Normalized" value={row.normalizedPerformanceScore} detail={`${row.normalizedPerformanceScore}/100`} />
-                <MiniBar label="Active tasks" value={Math.min(100, row.activeTasks * 10)} detail={`${row.activeTasks}`} />
-                <MiniBar label="Attendance" value={row.attendancePct} detail={`${row.attendancePct}%`} />
-                <MiniBar label="Standup" value={row.standupScore} detail={`${row.standupSubmittedDays} days · ${row.standupSubmissionRate}%`} />
-                <MiniBar label="HR avg" value={row.reviewAverage * 10} detail={row.reviewAverage ? `${row.reviewAverage}/10` : "0"} />
+                <MiniBar
+                  label="Effort progress"
+                  value={row.effortProgress}
+                  detail={`${row.effortProgress}%`}
+                />
+                <MiniBar
+                  label="Effort points"
+                  value={Math.min(100, row.earnedEffortPoints)}
+                  detail={`${row.earnedEffortPoints}/${row.effortPoints}`}
+                />
+                <MiniBar
+                  label="Completed effort"
+                  value={row.completedTaskContribution}
+                  detail={`${row.completedEffortPoints} pts`}
+                />
+                <MiniBar
+                  label="Normalized"
+                  value={row.normalizedPerformanceScore}
+                  detail={`${row.normalizedPerformanceScore}/100`}
+                />
+                <MiniBar
+                  label="Active tasks"
+                  value={Math.min(100, row.activeTasks * 10)}
+                  detail={`${row.activeTasks}`}
+                />
+                <MiniBar
+                  label="Attendance"
+                  value={row.attendancePct}
+                  detail={`${row.attendancePct}%`}
+                />
+                <MiniBar
+                  label="Standup"
+                  value={row.standupScore}
+                  detail={`${row.standupSubmittedDays} days · ${row.standupSubmissionRate}%`}
+                />
+                <MiniBar
+                  label="HR avg"
+                  value={row.reviewAverage * 10}
+                  detail={row.reviewAverage ? `${row.reviewAverage}/10` : "0"}
+                />
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
                 <span className="eom-review-pill">
@@ -1066,12 +1223,13 @@ function Leaderboard({ rows, departmentFilter }: { rows: EmployeeRank[]; departm
                   Standup {row.standupScore}% · {row.standupSubmittedDays} days
                 </span>
                 {row.overduePenalty > 0 && (
-                  <span className="eom-review-pill">
-                    -{row.overduePenalty} overdue penalty
-                  </span>
+                  <span className="eom-review-pill">-{row.overduePenalty} overdue penalty</span>
                 )}
                 <span className="eom-review-pill">
-                  Latest {row.latestReview ? `${formatNepaliDate(row.latestReview.week_start, "DD MMM")} BS` : "None"}
+                  Latest{" "}
+                  {row.latestReview
+                    ? `${formatNepaliDate(row.latestReview.week_start, "DD MMM")} BS`
+                    : "None"}
                 </span>
                 <span className="eom-review-pill">
                   <TrendIcon trend={row.reviewTrend} />
@@ -1081,7 +1239,9 @@ function Leaderboard({ rows, departmentFilter }: { rows: EmployeeRank[]; departm
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold tabular-nums gradient-text">{row.score}</div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Score</div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                Score
+              </div>
             </div>
           </div>
         ))}
@@ -1133,14 +1293,25 @@ function AnalyticsPanel({ weekly, rows }: { weekly: any[]; rows: EmployeeRank[] 
   const productivityTarget = 85;
   const attendanceTarget = 90;
   const monthlyAverage = Math.round(
-    weekly.reduce((sum, row) => sum + Number(row.productivity || 0), 0) / Math.max(1, weekly.length),
+    weekly.reduce((sum, row) => sum + Number(row.productivity || 0), 0) /
+      Math.max(1, weekly.length),
   );
   const firstWeek = weekly[0]?.productivity || 0;
   const lastWeek = weekly[weekly.length - 1]?.productivity || 0;
-  const growthPct = firstWeek ? Math.round(((lastWeek - firstWeek) / Math.max(1, firstWeek)) * 100) : 0;
-  const highWeek = weekly.reduce((best, row) => (Number(row.productivity || 0) > Number(best.productivity || 0) ? row : best), weekly[0] || {});
-  const lowWeek = weekly.reduce((worst, row) => (Number(row.productivity || 0) < Number(worst.productivity || 0) ? row : worst), weekly[0] || {});
-  const targetWeeks = weekly.filter((row) => Number(row.productivity || 0) >= productivityTarget).length;
+  const growthPct = firstWeek
+    ? Math.round(((lastWeek - firstWeek) / Math.max(1, firstWeek)) * 100)
+    : 0;
+  const highWeek = weekly.reduce(
+    (best, row) => (Number(row.productivity || 0) > Number(best.productivity || 0) ? row : best),
+    weekly[0] || {},
+  );
+  const lowWeek = weekly.reduce(
+    (worst, row) => (Number(row.productivity || 0) < Number(worst.productivity || 0) ? row : worst),
+    weekly[0] || {},
+  );
+  const targetWeeks = weekly.filter(
+    (row) => Number(row.productivity || 0) >= productivityTarget,
+  ).length;
   const excellentWeeks = weekly.filter((row) => Number(row.productivity || 0) >= 90).length;
   const trendSummary = `Productivity ${growthPct >= 0 ? "increased" : "decreased"} by ${Math.abs(growthPct)}% during the previous month.`;
   const productivityInsight = makeEomProductivityInsight({
@@ -1148,18 +1319,32 @@ function AnalyticsPanel({ weekly, rows }: { weekly: any[]; rows: EmployeeRank[] 
     monthlyAverage,
     growthPct,
     targetWeeks,
-    attendance: Math.round(weekly.reduce((sum, row) => sum + Number(row.attendance || 0), 0) / Math.max(1, weekly.length)),
+    attendance: Math.round(
+      weekly.reduce((sum, row) => sum + Number(row.attendance || 0), 0) /
+        Math.max(1, weekly.length),
+    ),
     taskProgress: winner?.taskProgress || 0,
   });
   const overallAttendance = Math.round(
     weekly.reduce((sum, row) => sum + Number(row.attendance || 0), 0) / Math.max(1, weekly.length),
   );
-  const bestAttendanceWeek = weekly.reduce((best, row) => (Number(row.attendance || 0) > Number(best.attendance || 0) ? row : best), weekly[0] || {});
+  const bestAttendanceWeek = weekly.reduce(
+    (best, row) => (Number(row.attendance || 0) > Number(best.attendance || 0) ? row : best),
+    weekly[0] || {},
+  );
   const attendanceGrowth = weekly[0]?.attendance
-    ? Math.round(((Number(weekly[weekly.length - 1]?.attendance || 0) - Number(weekly[0]?.attendance || 0)) / Math.max(1, Number(weekly[0]?.attendance || 0))) * 100)
+    ? Math.round(
+        ((Number(weekly[weekly.length - 1]?.attendance || 0) - Number(weekly[0]?.attendance || 0)) /
+          Math.max(1, Number(weekly[0]?.attendance || 0))) *
+          100,
+      )
     : 0;
-  const attendanceTargetWeeks = weekly.filter((row) => Number(row.attendance || 0) >= attendanceTarget).length;
-  const attendanceTargetAchievement = Math.round((attendanceTargetWeeks / Math.max(1, weekly.length)) * 100);
+  const attendanceTargetWeeks = weekly.filter(
+    (row) => Number(row.attendance || 0) >= attendanceTarget,
+  ).length;
+  const attendanceTargetAchievement = Math.round(
+    (attendanceTargetWeeks / Math.max(1, weekly.length)) * 100,
+  );
   const attendanceInsight = makeEomAttendanceInsight({
     overallAttendance,
     bestWeek: bestAttendanceWeek.week || "W1",
@@ -1196,14 +1381,26 @@ function AnalyticsPanel({ weekly, rows }: { weekly: any[]; rows: EmployeeRank[] 
             <XAxis dataKey="week" stroke="oklch(0.7 0.03 250)" fontSize={12} />
             <YAxis domain={[0, 100]} stroke="oklch(0.7 0.03 250)" fontSize={12} />
             <Tooltip content={<EomProductivityTooltip />} />
-            <ReferenceLine y={productivityTarget} stroke="#f6c453" strokeDasharray="6 6" strokeWidth={1.4} />
+            <ReferenceLine
+              y={productivityTarget}
+              stroke="#f6c453"
+              strokeDasharray="6 6"
+              strokeWidth={1.4}
+            />
             <Area
               type="monotone"
               dataKey="productivity"
               stroke="#ff2d6f"
               fill="url(#eomProductivity)"
               strokeWidth={3}
-              dot={(props) => <EomProductivityDot {...props} highWeek={highWeek.week} lowWeek={lowWeek.week} target={productivityTarget} />}
+              dot={(props) => (
+                <EomProductivityDot
+                  {...props}
+                  highWeek={highWeek.week}
+                  lowWeek={lowWeek.week}
+                  target={productivityTarget}
+                />
+              )}
               activeDot={{ r: 6, stroke: "#f1f0ee", strokeWidth: 2 }}
               isAnimationActive
               animationDuration={900}
@@ -1216,14 +1413,36 @@ function AnalyticsPanel({ weekly, rows }: { weekly: any[]; rows: EmployeeRank[] 
             {trendSummary}
           </div>
           <div className="eom-productivity-legend">
-            <span><i className="target" />Target {productivityTarget}</span>
-            <span><i className="high" />High {highWeek.week || "--"}</span>
-            <span><i className="low" />Low {lowWeek.week || "--"}</span>
+            <span>
+              <i className="target" />
+              Target {productivityTarget}
+            </span>
+            <span>
+              <i className="high" />
+              High {highWeek.week || "--"}
+            </span>
+            <span>
+              <i className="low" />
+              Low {lowWeek.week || "--"}
+            </span>
           </div>
           <div className="eom-productivity-badges">
-            {targetWeeks > 0 && <span><BadgeCheck size={13} /> Target met {targetWeeks}x</span>}
-            {excellentWeeks > 0 && <span><Trophy size={13} /> {excellentWeeks} excellent week{excellentWeeks === 1 ? "" : "s"}</span>}
-            {monthlyAverage >= productivityTarget && <span><Award size={13} /> Monthly target achieved</span>}
+            {targetWeeks > 0 && (
+              <span>
+                <BadgeCheck size={13} /> Target met {targetWeeks}x
+              </span>
+            )}
+            {excellentWeeks > 0 && (
+              <span>
+                <Trophy size={13} /> {excellentWeeks} excellent week
+                {excellentWeeks === 1 ? "" : "s"}
+              </span>
+            )}
+            {monthlyAverage >= productivityTarget && (
+              <span>
+                <Award size={13} /> Monthly target achieved
+              </span>
+            )}
           </div>
           <div className="eom-productivity-ai">
             <Sparkles size={14} />
@@ -1242,14 +1461,27 @@ function AnalyticsPanel({ weekly, rows }: { weekly: any[]; rows: EmployeeRank[] 
             <p>Monthly Attendance Performance</p>
           </div>
           <div className="eom-attendance-legend">
-            <span><i className="actual" />Actual attendance</span>
-            <span><i className="target" />Target 90%</span>
+            <span>
+              <i className="actual" />
+              Actual attendance
+            </span>
+            <span>
+              <i className="target" />
+              Target 90%
+            </span>
           </div>
         </div>
         <div className="eom-attendance-kpis">
           <EomAttendanceKpi label="Overall Attendance" value={`${overallAttendance}%`} />
-          <EomAttendanceKpi label="Best Week" value={`${bestAttendanceWeek.week || "--"} · ${Math.round(bestAttendanceWeek.attendance || 0)}%`} />
-          <EomAttendanceKpi label="Attendance Growth" value={`${attendanceGrowth >= 0 ? "+" : ""}${attendanceGrowth}%`} tone={attendanceGrowth >= 0 ? "up" : "down"} />
+          <EomAttendanceKpi
+            label="Best Week"
+            value={`${bestAttendanceWeek.week || "--"} · ${Math.round(bestAttendanceWeek.attendance || 0)}%`}
+          />
+          <EomAttendanceKpi
+            label="Attendance Growth"
+            value={`${attendanceGrowth >= 0 ? "+" : ""}${attendanceGrowth}%`}
+            tone={attendanceGrowth >= 0 ? "up" : "down"}
+          />
           <EomAttendanceKpi label="Target Achievement" value={`${attendanceTargetAchievement}%`} />
         </div>
         <ResponsiveContainer width="100%" height={250}>
@@ -1263,9 +1495,19 @@ function AnalyticsPanel({ weekly, rows }: { weekly: any[]; rows: EmployeeRank[] 
             </defs>
             <CartesianGrid strokeDasharray="4 6" stroke="oklch(1 0 0 / 0.075)" vertical={false} />
             <XAxis dataKey="week" stroke="oklch(0.7 0.03 250)" fontSize={12} />
-            <YAxis domain={[0, 100]} stroke="oklch(0.7 0.03 250)" fontSize={12} tickFormatter={(value) => `${value}%`} />
+            <YAxis
+              domain={[0, 100]}
+              stroke="oklch(0.7 0.03 250)"
+              fontSize={12}
+              tickFormatter={(value) => `${value}%`}
+            />
             <Tooltip content={<EomAttendanceTooltip target={attendanceTarget} />} />
-            <ReferenceLine y={attendanceTarget} stroke="#f6c453" strokeDasharray="7 6" strokeWidth={1.5} />
+            <ReferenceLine
+              y={attendanceTarget}
+              stroke="#f6c453"
+              strokeDasharray="7 6"
+              strokeWidth={1.5}
+            />
             <Bar
               dataKey="attendance"
               fill="url(#eomAttendanceActual)"
@@ -1291,12 +1533,22 @@ function AnalyticsPanel({ weekly, rows }: { weekly: any[]; rows: EmployeeRank[] 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[260px_1fr]">
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
-              <Pie data={pieData} dataKey="value" innerRadius={54} outerRadius={88} paddingAngle={4}>
+              <Pie
+                data={pieData}
+                dataKey="value"
+                innerRadius={54}
+                outerRadius={88}
+                paddingAngle={4}
+              >
                 {pieData.map((_, index) => (
                   <Cell key={index} fill={chartColors[index % chartColors.length]} />
                 ))}
               </Pie>
-              <Tooltip contentStyle={tooltipStyle} itemStyle={tooltipItemStyle} labelStyle={tooltipItemStyle} />
+              <Tooltip
+                contentStyle={tooltipStyle}
+                itemStyle={tooltipItemStyle}
+                labelStyle={tooltipItemStyle}
+              />
             </PieChart>
           </ResponsiveContainer>
           <div className="grid gap-3 sm:grid-cols-3">
@@ -1337,7 +1589,9 @@ function EomProductivityTooltip({ active, payload }: any) {
         <span>Standup</span>
         <b>{Math.round(row.standup || 0)}%</b>
       </div>
-      <div className="eom-productivity-tooltip-status">{productivityStatus(row.productivity || 0)}</div>
+      <div className="eom-productivity-tooltip-status">
+        {productivityStatus(row.productivity || 0)}
+      </div>
     </div>
   );
 }
@@ -1400,7 +1654,15 @@ function makeEomProductivityInsight({
   return `${firstName} has stable productivity with a ${monthlyAverage}/100 monthly average. Focus on one more target-level week to strengthen EOM readiness.`;
 }
 
-function EomAttendanceKpi({ label, value, tone }: { label: string; value: string; tone?: "up" | "down" }) {
+function EomAttendanceKpi({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: "up" | "down";
+}) {
   return (
     <div className={`eom-attendance-kpi ${tone || ""}`}>
       <span>{label}</span>
@@ -1584,13 +1846,18 @@ function FeedbackPanel({
       String(row.score).includes(query)
     );
   });
-  const selectedRank = selectedEmployee ? rows.findIndex((row) => row.userId === selectedEmployee.userId) + 1 : 0;
+  const selectedRank = selectedEmployee
+    ? rows.findIndex((row) => row.userId === selectedEmployee.userId) + 1
+    : 0;
   const completionSteps = [
     { label: "Badge Selected", done: Boolean(recognitionType) },
     { label: "Employee Selected", done: Boolean(selectedEmployee) },
     { label: "Message Added", done: feedback.trim().length > 0 },
     { label: "Award Available", done: !awardLockReason },
-    { label: "Ready to Assign", done: Boolean(recognitionType && selectedEmployee && feedback.trim() && !awardLockReason) },
+    {
+      label: "Ready to Assign",
+      done: Boolean(recognitionType && selectedEmployee && feedback.trim() && !awardLockReason),
+    },
   ];
   const noteTags = ["Leadership", "High impact", "Growth", "Ownership", "Consistency"];
 
@@ -1608,7 +1875,10 @@ function FeedbackPanel({
               Celebrate achievements and recognize outstanding talent.
             </p>
           </div>
-          <Button className="neon-button rounded-2xl px-5" onClick={() => setRecognitionDialogOpen(true)}>
+          <Button
+            className="neon-button rounded-2xl px-5"
+            onClick={() => setRecognitionDialogOpen(true)}
+          >
             <Sparkles size={15} className="mr-2" />
             Assign official badge
           </Button>
@@ -1635,7 +1905,9 @@ function FeedbackPanel({
                       <Icon size={15} />
                       {config.title}
                     </span>
-                    <span className="eom-recognition-winner-name">{name || "Unknown employee"}</span>
+                    <span className="eom-recognition-winner-name">
+                      {name || "Unknown employee"}
+                    </span>
                   </div>
                 );
               })}
@@ -1653,7 +1925,9 @@ function FeedbackPanel({
                 <Trophy size={24} />
               </div>
               <div>
-                <DialogTitle className="text-2xl font-bold md:text-3xl">Employee Recognition</DialogTitle>
+                <DialogTitle className="text-2xl font-bold md:text-3xl">
+                  Employee Recognition
+                </DialogTitle>
                 <DialogDescription>
                   Celebrate achievements and recognize outstanding talent
                 </DialogDescription>
@@ -1694,8 +1968,12 @@ function FeedbackPanel({
                     <div className="recognition-selected-employee">
                       <Avatar employee={selectedEmployee} />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-semibold text-foreground">{selectedEmployee.name}</span>
-                        <span className="block truncate text-xs text-muted-foreground">{selectedEmployee.department} Department</span>
+                        <span className="block truncate text-sm font-semibold text-foreground">
+                          {selectedEmployee.name}
+                        </span>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {selectedEmployee.department} Department
+                        </span>
                       </span>
                       <span className="recognition-score">
                         <b>{selectedEmployee.score}</b>
@@ -1716,7 +1994,9 @@ function FeedbackPanel({
                     {filteredEmployees.slice(0, 6).map((row) => {
                       const rank = rows.findIndex((item) => item.userId === row.userId) + 1;
                       const selected = selectedEmployeeId === row.userId;
-                      const employeeAward = officialAwards.find((award) => award.employee_id === row.userId);
+                      const employeeAward = officialAwards.find(
+                        (award) => award.employee_id === row.userId,
+                      );
                       return (
                         <button
                           key={row.userId}
@@ -1726,14 +2006,20 @@ function FeedbackPanel({
                         >
                           <Avatar employee={row} />
                           <span className="min-w-0 flex-1 text-left">
-                            <span className="block truncate font-semibold text-foreground">{row.name}</span>
-                            <span className="block truncate text-xs text-muted-foreground">{row.department} Department</span>
+                            <span className="block truncate font-semibold text-foreground">
+                              {row.name}
+                            </span>
+                            <span className="block truncate text-xs text-muted-foreground">
+                              {row.department} Department
+                            </span>
                           </span>
                           <span className="recognition-score">
                             <b>{row.score}</b>
                             Score
                           </span>
-                          {employeeAward && <span className="recognition-awarded-pill">Awarded</span>}
+                          {employeeAward && (
+                            <span className="recognition-awarded-pill">Awarded</span>
+                          )}
                           <span className="recognition-rank">#{rank}</span>
                         </button>
                       );
@@ -1807,7 +2093,9 @@ function FeedbackPanel({
                   <div className="recognition-preview-icon">
                     <SelectedIcon size={34} />
                   </div>
-                  <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">Award Certificate</div>
+                  <div className="text-xs font-bold uppercase tracking-[0.24em] text-muted-foreground">
+                    Award Certificate
+                  </div>
                   <h3>{selectedEmployee?.name || "Select Employee"}</h3>
                   <p>{selectedConfig.title}</p>
                   <span>{monthLabel} BS</span>
@@ -1831,7 +2119,9 @@ function FeedbackPanel({
 
                 <Button
                   onClick={() => onSubmit(recognitionType)}
-                  disabled={saving || !selectedEmployee || !feedback.trim() || Boolean(awardLockReason)}
+                  disabled={
+                    saving || !selectedEmployee || !feedback.trim() || Boolean(awardLockReason)
+                  }
                   className={`recognition-cta ${selectedConfig.theme}`}
                 >
                   {awardLockReason
@@ -1851,17 +2141,25 @@ function FeedbackPanel({
           {successAward && (
             <div className="recognition-success-shell">
               <div className="eom-confetti" />
-              <div className={`recognition-preview ${getRecognitionConfig(successAward.type).theme}`}>
+              <div
+                className={`recognition-preview ${getRecognitionConfig(successAward.type).theme}`}
+              >
                 <div className="recognition-preview-particles" />
                 <div className="recognition-preview-icon">
-                  {successAward.type === "employee_of_month" ? <Trophy size={34} /> : <Rocket size={34} />}
+                  {successAward.type === "employee_of_month" ? (
+                    <Trophy size={34} />
+                  ) : (
+                    <Rocket size={34} />
+                  )}
                 </div>
                 <h3>{successAward.employee}</h3>
                 <p>{successAward.badge}</p>
                 <span>{monthLabel} BS</span>
               </div>
               <div className="px-6 pb-6 text-center">
-                <h3 className="text-2xl font-bold text-foreground">Recognition Successfully Assigned</h3>
+                <h3 className="text-2xl font-bold text-foreground">
+                  Recognition Successfully Assigned
+                </h3>
                 <p className="mt-2 text-sm text-muted-foreground">
                   {successAward.employee} has been awarded {successAward.badge}.
                 </p>
@@ -1884,7 +2182,9 @@ function HrReviewsSection({
   rows: EmployeeRank[];
   selectedEmployee?: EmployeeRank;
 }) {
-  const [reviewEmployeeId, setReviewEmployeeId] = useState(selectedEmployee?.userId || rows[0]?.userId || "");
+  const [reviewEmployeeId, setReviewEmployeeId] = useState(
+    selectedEmployee?.userId || rows[0]?.userId || "",
+  );
   const [reviewDialogEmployeeId, setReviewDialogEmployeeId] = useState<string | null>(null);
   const reviewEmployee =
     rows.find((row) => row.userId === reviewEmployeeId) || selectedEmployee || rows[0];
@@ -1904,136 +2204,155 @@ function HrReviewsSection({
 
   return (
     <>
-    <section className="grid grid-cols-1 gap-6 xl:grid-cols-[.9fr_1.1fr]">
-      <GlassCard className="eom-hr-panel">
-        <h3 className="mb-4 flex items-center gap-2 font-semibold">
-          <MessageSquare size={16} className="text-primary" />
-          HR Weekly Reviews
-        </h3>
-        <div className="grid grid-cols-2 gap-3">
-          <ReviewSummaryTile label="Employee" value={reviewEmployee?.name || "None"} />
-          <ReviewSummaryTile label="Average HR Rating" value={reviewEmployee ? ratingLabelFromAverage(reviewEmployee.reviewAverage) : "No reviews"} />
-          <ReviewSummaryTile label="Total Reviews" value={reviewEmployee?.reviewCount || 0} />
-          <ReviewSummaryTile
-            label="Latest Review"
-            value={reviewEmployee?.latestReview ? reviewEmployee.latestReview.rating : "None"}
-          />
-          <ReviewSummaryTile
-            label="Review Trend"
-            value={<span className="inline-flex items-center gap-1"><TrendIcon trend={reviewEmployee?.reviewTrend || "steady"} />{trendLabel(reviewEmployee?.reviewTrend || "steady")}</span>}
-          />
-        </div>
-        <div className="eom-review-timeline-list mt-5 space-y-3">
-          {selectedReviews.length ? (
-            selectedReviews.map((review, index) => {
-              const score = resolvedReviewScore(review);
-              return (
-                <div key={review.id} className="eom-review-timeline-item">
-                  <div className="eom-review-node">{index + 1}</div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold">Week {selectedReviews.length - index}</span>
-                      <span className="text-sm text-muted-foreground">{review.rating}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {formatNepaliDate(review.week_start, "DD MMMM YYYY")} BS
-                      </span>
-                    </div>
-                    <MiniBar label="Review score" value={score * 10} detail={`${score}/10`} />
-                  </div>
-                </div>
-              );
-            })
-          ) : (
-            <div className="rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground">
-              No HR weekly reviews have been submitted for this employee yet.
-            </div>
-          )}
-        </div>
-      </GlassCard>
-
-      <GlassCard className="eom-hr-panel">
-        <h3 className="mb-4 flex items-center gap-2 font-semibold">
-          <History size={16} className="text-primary" />
-          Review history
-        </h3>
-        <div className="eom-review-name-list">
-          {employeesWithReviews.length ? (
-            employeesWithReviews.map((employee) => (
-              <button
-                key={employee.userId}
-                type="button"
-                className={`eom-review-name-row ${employee.userId === reviewEmployeeId ? "active" : ""}`}
-                onClick={() => openEmployeeReviews(employee.userId)}
-              >
-                <span className="min-w-0">
-                  <span className="block truncate font-semibold">{employee.name}</span>
-                  <span className="mt-1 block truncate text-xs text-muted-foreground">
-                    {employee.department} · {employee.position}
-                  </span>
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[.9fr_1.1fr]">
+        <GlassCard className="eom-hr-panel">
+          <h3 className="mb-4 flex items-center gap-2 font-semibold">
+            <MessageSquare size={16} className="text-primary" />
+            HR Weekly Reviews
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            <ReviewSummaryTile label="Employee" value={reviewEmployee?.name || "None"} />
+            <ReviewSummaryTile
+              label="Average HR Rating"
+              value={
+                reviewEmployee ? ratingLabelFromAverage(reviewEmployee.reviewAverage) : "No reviews"
+              }
+            />
+            <ReviewSummaryTile label="Total Reviews" value={reviewEmployee?.reviewCount || 0} />
+            <ReviewSummaryTile
+              label="Latest Review"
+              value={reviewEmployee?.latestReview ? reviewEmployee.latestReview.rating : "None"}
+            />
+            <ReviewSummaryTile
+              label="Review Trend"
+              value={
+                <span className="inline-flex items-center gap-1">
+                  <TrendIcon trend={reviewEmployee?.reviewTrend || "steady"} />
+                  {trendLabel(reviewEmployee?.reviewTrend || "steady")}
                 </span>
-                <span className="text-right">
-                  <span className="block text-lg font-black tabular-nums gradient-text">{employee.reviewAverage || 0}/10</span>
-                  <span className="mt-1 block text-[10px] uppercase tracking-wider text-muted-foreground">
-                    {employee.reviewCount} reviews
-                  </span>
-                </span>
-              </button>
-            ))
-          ) : (
-            <div className="rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground">
-              HR weekly review history will appear here after submissions.
-            </div>
-          )}
-        </div>
-      </GlassCard>
-    </section>
-    <Dialog open={Boolean(dialogEmployee)} onOpenChange={(open) => !open && setReviewDialogEmployeeId(null)}>
-      <DialogContent className="eom-review-dialog max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-hidden border-border bg-background/95 sm:max-w-4xl">
-        <DialogHeader>
-          <DialogTitle>{dialogEmployee?.name || "Employee"} review history</DialogTitle>
-          <DialogDescription>
-            Weekly HR reviews for {dialogEmployee?.department || "this employee"}.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="eom-review-dialog-list space-y-3">
-          {dialogEmployee?.reviews.length ? (
-            dialogEmployee.reviews.map((review, index) => {
-              const score = resolvedReviewScore(review);
-
-              return (
-                <article key={review.id} className="eom-review-card">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
+              }
+            />
+          </div>
+          <div className="eom-review-timeline-list mt-5 space-y-3">
+            {selectedReviews.length ? (
+              selectedReviews.map((review, index) => {
+                const score = resolvedReviewScore(review);
+                return (
+                  <div key={review.id} className="eom-review-timeline-item">
+                    <div className="eom-review-node">{index + 1}</div>
+                    <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-semibold">Week {dialogEmployee.reviews.length - index}</span>
-                        <span className="eom-review-rating">{review.rating}</span>
+                        <span className="font-semibold">Week {selectedReviews.length - index}</span>
+                        <span className="text-sm text-muted-foreground">{review.rating}</span>
                         <span className="text-xs text-muted-foreground">
                           {formatNepaliDate(review.week_start, "DD MMMM YYYY")} BS
                         </span>
                       </div>
-                      <div className="mt-1 text-xs text-muted-foreground">{dialogEmployee.position}</div>
-                    </div>
-                    <div className="text-left sm:text-right">
-                      <div className="text-xl font-bold gradient-text">{score}/10</div>
-                      <div className="text-[10px] uppercase text-muted-foreground">HR score</div>
+                      <MiniBar label="Review score" value={score * 10} detail={`${score}/10`} />
                     </div>
                   </div>
-                  <div className="mt-4 grid grid-cols-1 gap-3">
-                    <ReviewText label="Strengths" value={review.strengths} />
-                    <ReviewText label="Improvements" value={review.improvements} />
-                    <ReviewText label="Admin notes" value={review.notes} />
-                  </div>
-                </article>
-              );
-            })
-          ) : (
-            <div className="rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground">
-              No HR weekly reviews have been submitted for this employee yet.
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+                );
+              })
+            ) : (
+              <div className="rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground">
+                No HR weekly reviews have been submitted for this employee yet.
+              </div>
+            )}
+          </div>
+        </GlassCard>
+
+        <GlassCard className="eom-hr-panel">
+          <h3 className="mb-4 flex items-center gap-2 font-semibold">
+            <History size={16} className="text-primary" />
+            Review history
+          </h3>
+          <div className="eom-review-name-list">
+            {employeesWithReviews.length ? (
+              employeesWithReviews.map((employee) => (
+                <button
+                  key={employee.userId}
+                  type="button"
+                  className={`eom-review-name-row ${employee.userId === reviewEmployeeId ? "active" : ""}`}
+                  onClick={() => openEmployeeReviews(employee.userId)}
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate font-semibold">{employee.name}</span>
+                    <span className="mt-1 block truncate text-xs text-muted-foreground">
+                      {employee.department} · {employee.position}
+                    </span>
+                  </span>
+                  <span className="text-right">
+                    <span className="block text-lg font-black tabular-nums gradient-text">
+                      {employee.reviewAverage || 0}/10
+                    </span>
+                    <span className="mt-1 block text-[10px] uppercase tracking-wider text-muted-foreground">
+                      {employee.reviewCount} reviews
+                    </span>
+                  </span>
+                </button>
+              ))
+            ) : (
+              <div className="rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground">
+                HR weekly review history will appear here after submissions.
+              </div>
+            )}
+          </div>
+        </GlassCard>
+      </section>
+      <Dialog
+        open={Boolean(dialogEmployee)}
+        onOpenChange={(open) => !open && setReviewDialogEmployeeId(null)}
+      >
+        <DialogContent className="eom-review-dialog max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-hidden border-border bg-background/95 sm:max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>{dialogEmployee?.name || "Employee"} review history</DialogTitle>
+            <DialogDescription>
+              Weekly HR reviews for {dialogEmployee?.department || "this employee"}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="eom-review-dialog-list space-y-3">
+            {dialogEmployee?.reviews.length ? (
+              dialogEmployee.reviews.map((review, index) => {
+                const score = resolvedReviewScore(review);
+
+                return (
+                  <article key={review.id} className="eom-review-card">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold">
+                            Week {dialogEmployee.reviews.length - index}
+                          </span>
+                          <span className="eom-review-rating">{review.rating}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {formatNepaliDate(review.week_start, "DD MMMM YYYY")} BS
+                          </span>
+                        </div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          {dialogEmployee.position}
+                        </div>
+                      </div>
+                      <div className="text-left sm:text-right">
+                        <div className="text-xl font-bold gradient-text">{score}/10</div>
+                        <div className="text-[10px] uppercase text-muted-foreground">HR score</div>
+                      </div>
+                    </div>
+                    <div className="mt-4 grid grid-cols-1 gap-3">
+                      <ReviewText label="Strengths" value={review.strengths} />
+                      <ReviewText label="Improvements" value={review.improvements} />
+                      <ReviewText label="Admin notes" value={review.notes} />
+                    </div>
+                  </article>
+                );
+              })
+            ) : (
+              <div className="rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground">
+                No HR weekly reviews have been submitted for this employee yet.
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
@@ -2064,12 +2383,37 @@ function ReviewText({ label, value }: { label: string; value?: string | null }) 
 
 function BadgeSection({ winner }: { winner: EmployeeRank }) {
   const badgeRows = [
-    { title: "Productivity Hero", icon: Trophy, progress: winner.score, unlocked: winner.score >= 80 },
+    {
+      title: "Productivity Hero",
+      icon: Trophy,
+      progress: winner.score,
+      unlocked: winner.score >= 80,
+    },
     { title: "Elite Performer", icon: Crown, progress: winner.score, unlocked: winner.score >= 95 },
-    { title: "Effort Champion", icon: Award, progress: winner.effortProgress, unlocked: winner.effortProgress >= 80 },
-    { title: "Attendance Pro", icon: ShieldCheck, progress: winner.attendancePct, unlocked: winner.attendancePct >= 90 },
-    { title: "Streak Master", icon: Flame, progress: Math.min(100, (winner.streak / 30) * 100), unlocked: winner.streak >= 30 },
-    { title: "Diamond Legend", icon: Gem, progress: Math.min(100, winner.score), unlocked: winner.score >= 98 },
+    {
+      title: "Effort Champion",
+      icon: Award,
+      progress: winner.effortProgress,
+      unlocked: winner.effortProgress >= 80,
+    },
+    {
+      title: "Attendance Pro",
+      icon: ShieldCheck,
+      progress: winner.attendancePct,
+      unlocked: winner.attendancePct >= 90,
+    },
+    {
+      title: "Streak Master",
+      icon: Flame,
+      progress: Math.min(100, (winner.streak / 30) * 100),
+      unlocked: winner.streak >= 30,
+    },
+    {
+      title: "Diamond Legend",
+      icon: Gem,
+      progress: Math.min(100, winner.score),
+      unlocked: winner.score >= 98,
+    },
   ];
 
   return (
@@ -2082,14 +2426,20 @@ function BadgeSection({ winner }: { winner: EmployeeRank }) {
         {badgeRows.map((badge) => {
           const Icon = badge.icon;
           return (
-            <div key={badge.title} className={`eom-achievement ${badge.unlocked ? "" : "eom-achievement-locked"}`}>
+            <div
+              key={badge.title}
+              className={`eom-achievement ${badge.unlocked ? "" : "eom-achievement-locked"}`}
+            >
               <div className="flex items-center gap-3">
                 <div className="eom-achievement-icon">
                   {badge.unlocked ? <Icon size={18} /> : <Lock size={18} />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold">{badge.title}</div>
-                  <MiniBar label={badge.unlocked ? "Unlocked" : "Progress"} value={badge.progress} />
+                  <MiniBar
+                    label={badge.unlocked ? "Unlocked" : "Progress"}
+                    value={badge.progress}
+                  />
                 </div>
               </div>
             </div>
@@ -2133,7 +2483,15 @@ function PreviousWinners({ rows }: { rows: EmployeeRank[] }) {
   );
 }
 
-function StatTile({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof Trophy }) {
+function StatTile({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: string | number;
+  icon: typeof Trophy;
+}) {
   return (
     <GlassCard className="eom-stat-tile">
       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-cyan-400 via-violet-500 to-pink-500 text-foreground shadow-[0_0_24px_rgba(125,92,255,.35)]">
@@ -2155,7 +2513,10 @@ function AnalyticsBar({ label, value }: { label: string; value: number }) {
         <span className="font-semibold text-foreground">{Math.round(value)}%</span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-card">
-        <div className="eom-progress h-full rounded-full" style={{ width: `${Math.min(100, value)}%` }} />
+        <div
+          className="eom-progress h-full rounded-full"
+          style={{ width: `${Math.min(100, value)}%` }}
+        />
       </div>
     </div>
   );
@@ -2169,7 +2530,10 @@ function MiniBar({ label, value, detail }: { label: string; value: number; detai
         <span>{detail ?? `${Math.round(value)}%`}</span>
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-card">
-        <div className="eom-progress h-full rounded-full" style={{ width: `${Math.min(100, value)}%` }} />
+        <div
+          className="eom-progress h-full rounded-full"
+          style={{ width: `${Math.min(100, value)}%` }}
+        />
       </div>
     </div>
   );
@@ -2200,7 +2564,9 @@ function Avatar({ employee, size = "md" }: { employee: EmployeeRank; size?: "md"
       className={`${className} shrink-0 rounded-3xl object-cover ring-2 ring-amber-200/50`}
     />
   ) : (
-    <div className={`${className} flex shrink-0 items-center justify-center rounded-3xl bg-linear-to-br from-pink-500 via-violet-500 to-cyan-400 font-bold text-foreground shadow-[0_0_30px_rgba(125,92,255,.4)]`}>
+    <div
+      className={`${className} flex shrink-0 items-center justify-center rounded-3xl bg-linear-to-br from-pink-500 via-violet-500 to-cyan-400 font-bold text-foreground shadow-[0_0_30px_rgba(125,92,255,.4)]`}
+    >
       {initials}
     </div>
   );
@@ -2228,7 +2594,9 @@ function complexitySummary(breakdown: Record<TaskComplexity, number>) {
 
 function isMissingReviewScoreError(error: { message?: string; details?: string; code?: string }) {
   const text = `${error.message || ""} ${error.details || ""}`;
-  return text.includes("review_score") && (text.includes("schema cache") || error.code === "PGRST204");
+  return (
+    text.includes("review_score") && (text.includes("schema cache") || error.code === "PGRST204")
+  );
 }
 
 function countRecentStreak(activityDates: Set<string>, maxDays: number) {

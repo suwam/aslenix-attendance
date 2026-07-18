@@ -65,22 +65,30 @@ export function EmployeeOfMonthSection() {
       const monthEnd = nepaliMonth.endAd;
       const monthStartIso = `${monthStart}T00:00:00.000Z`;
       const today = new Date().toISOString().slice(0, 10);
-      const [{ data: profiles }, { data: roleRows }, { data: tasks }, assigneeResult, { data: attendance }] =
-        await Promise.all([
-          supabase
-            .from("profiles")
-            .select("user_id, full_name, department, position, avatar_url, is_eom_eligible")
-            .eq("approval_status", "approved")
-            .eq("is_suspended", false),
-          supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
-          supabase.from("tasks").select("*"),
-          supabase.from("task_assignees").select("task_id,user_id"),
-          supabase
-            .from("attendance")
-            .select("user_id,date,status,work_hours")
-            .gte("date", monthStart)
-            .lte("date", monthEnd),
-        ]);
+      const [
+        { data: profiles },
+        { data: roleRows },
+        { data: tasks },
+        assigneeResult,
+        { data: attendance },
+      ] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("user_id, full_name, department, position, avatar_url, is_eom_eligible")
+          .eq("approval_status", "approved")
+          .eq("is_suspended", false),
+        supabase
+          .from("user_roles")
+          .select("user_id, role")
+          .in("role", ["admin", "super_admin", "hr_manager"]),
+        supabase.from("tasks").select("*"),
+        supabase.from("task_assignees").select("task_id,user_id"),
+        supabase
+          .from("attendance")
+          .select("user_id,date,status,work_hours")
+          .gte("date", monthStart)
+          .lte("date", monthEnd),
+      ]);
       const assignees =
         assigneeResult.error && isMissingSupabaseTableError(assigneeResult.error, "task_assignees")
           ? []
@@ -103,7 +111,8 @@ export function EmployeeOfMonthSection() {
           const completedThisMonth = assignedTasks.filter(
             (task: any) =>
               (task.status === "completed" || Number(task.progress || 0) >= 100) &&
-              (!task.completed_at || new Date(task.completed_at).getTime() >= new Date(monthStartIso).getTime()),
+              (!task.completed_at ||
+                new Date(task.completed_at).getTime() >= new Date(monthStartIso).getTime()),
           ).length;
           const attendedDays = new Set(
             (attendance || [])
@@ -231,7 +240,9 @@ function WinnerCard({ winner }: { winner: EmployeeRank }) {
               Top employee
             </div>
             <h3 className="text-2xl font-bold">{winner.name}</h3>
-            <p className="text-sm text-foreground/65">{winner.department} · {winner.position}</p>
+            <p className="text-sm text-foreground/65">
+              {winner.department} · {winner.position}
+            </p>
             <div className="mt-2">
               <EligibilityBadge eligible={winner.isEomEligible} />
             </div>
@@ -287,23 +298,46 @@ function Leaderboard({ rows }: { rows: EmployeeRank[] }) {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold">{row.name}</span>
                 {row.badges.slice(0, 2).map((badge) => (
-                  <span key={badge} className="rounded-full bg-card px-2 py-0.5 text-[10px] text-muted-foreground">
+                  <span
+                    key={badge}
+                    className="rounded-full bg-card px-2 py-0.5 text-[10px] text-muted-foreground"
+                  >
                     {badge}
                   </span>
                 ))}
                 <EligibilityBadge eligible={row.isEomEligible} />
               </div>
-              <div className="mt-1 text-xs text-muted-foreground">{row.department} · {row.position}</div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                {row.department} · {row.position}
+              </div>
               <div className="eom-leader-metrics mt-3 grid gap-3">
-                <MiniBar label="Task progress" value={row.taskProgress} detail={`${row.taskProgress}%`} />
-                <MiniBar label="Productivity" value={row.productivityContribution} detail={`${row.productivityContribution}%`} />
-                <MiniBar label="Active tasks" value={Math.min(100, row.activeTasks * 10)} detail={`${row.activeTasks}`} />
-                <MiniBar label="Attendance" value={row.attendancePct} detail={`${row.attendancePct}%`} />
+                <MiniBar
+                  label="Task progress"
+                  value={row.taskProgress}
+                  detail={`${row.taskProgress}%`}
+                />
+                <MiniBar
+                  label="Productivity"
+                  value={row.productivityContribution}
+                  detail={`${row.productivityContribution}%`}
+                />
+                <MiniBar
+                  label="Active tasks"
+                  value={Math.min(100, row.activeTasks * 10)}
+                  detail={`${row.activeTasks}`}
+                />
+                <MiniBar
+                  label="Attendance"
+                  value={row.attendancePct}
+                  detail={`${row.attendancePct}%`}
+                />
               </div>
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold tabular-nums gradient-text">{row.score}</div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Score</div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                Score
+              </div>
             </div>
           </div>
         ))}
@@ -338,7 +372,10 @@ function AnalyticsBar({ label, value }: { label: string; value: number }) {
         <span className="font-semibold text-foreground">{value}%</span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-card">
-        <div className="eom-progress h-full rounded-full" style={{ width: `${Math.min(100, value)}%` }} />
+        <div
+          className="eom-progress h-full rounded-full"
+          style={{ width: `${Math.min(100, value)}%` }}
+        />
       </div>
     </div>
   );
@@ -352,7 +389,10 @@ function MiniBar({ label, value, detail }: { label: string; value: number; detai
         <span>{detail ?? `${value}%`}</span>
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-card">
-        <div className="eom-progress h-full rounded-full" style={{ width: `${Math.min(100, value)}%` }} />
+        <div
+          className="eom-progress h-full rounded-full"
+          style={{ width: `${Math.min(100, value)}%` }}
+        />
       </div>
     </div>
   );
@@ -383,7 +423,9 @@ function Avatar({ employee, size = "md" }: { employee: EmployeeRank; size?: "md"
       className={`${className} rounded-2xl object-cover ring-2 ring-amber-200/50`}
     />
   ) : (
-    <div className={`${className} flex shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-pink-500 via-violet-500 to-cyan-400 font-bold text-foreground shadow-[0_0_26px_rgba(125,92,255,.35)]`}>
+    <div
+      className={`${className} flex shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-pink-500 via-violet-500 to-cyan-400 font-bold text-foreground shadow-[0_0_26px_rgba(125,92,255,.35)]`}
+    >
       {initials}
     </div>
   );

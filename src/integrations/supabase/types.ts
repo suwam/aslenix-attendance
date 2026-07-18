@@ -278,7 +278,7 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["user_id"];
-          }
+          },
         ];
       };
       leave_requests: {
@@ -380,7 +380,7 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["user_id"];
-          }
+          },
         ];
       };
       meetings: {
@@ -747,7 +747,7 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "task_comments";
             referencedColumns: ["id"];
-          }
+          },
         ];
       };
       comment_mentions: {
@@ -1030,7 +1030,7 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["user_id"];
-          }
+          },
         ];
       };
     };
@@ -1149,12 +1149,7 @@ export type Database = {
         | "holiday"
         | "weekend"
         | "half_day_present";
-      leave_status:
-        | "pending"
-        | "approved"
-        | "rejected"
-        | "cancelled"
-        | "half_day_approved";
+      leave_status: "pending" | "approved" | "rejected" | "cancelled" | "half_day_approved";
       leave_type: "sick" | "casual" | "vacation" | "emergency" | "wfh" | "holiday" | "weekend";
       qr_status: "active" | "inactive" | "revoked";
       task_complexity: "small" | "medium" | "large" | "epic";
@@ -1287,7 +1282,16 @@ export const Constants = {
     Enums: {
       app_role: ["super_admin", "admin", "hr_manager", "employee", "viewer", "team_lead"],
       approval_status: ["pending", "approved", "rejected", "suspended"],
-      attendance_status: ["present", "late", "absent", "leave", "half_day", "wfh", "holiday", "weekend"],
+      attendance_status: [
+        "present",
+        "late",
+        "absent",
+        "leave",
+        "half_day",
+        "wfh",
+        "holiday",
+        "weekend",
+      ],
       leave_status: ["pending", "approved", "rejected", "cancelled"],
       leave_type: ["sick", "casual", "vacation", "emergency", "wfh", "holiday", "weekend"],
       qr_status: ["active", "inactive", "revoked"],
@@ -1297,4 +1301,3 @@ export const Constants = {
     },
   },
 } as const;
-

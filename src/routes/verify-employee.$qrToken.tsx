@@ -59,9 +59,7 @@ function VerifyEmployeePage() {
   }, [qrToken]);
 
   return (
-    <div
-      className="verify-employee-screen min-h-screen flex items-center justify-center p-4 sm:p-6 relative overflow-hidden"
-    >
+    <div className="verify-employee-screen min-h-screen flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
       <div className="verification-particles" aria-hidden="true">
         {Array.from({ length: 18 }).map((_, index) => (
           <span key={index} />
@@ -155,9 +153,14 @@ function ValidCard({ data }: { data: VerifyData }) {
 
           <h1 className="mt-5 flex max-w-full items-center justify-center gap-2 text-balance text-3xl font-black leading-tight text-foreground drop-shadow-[0_0_26px_rgba(34,211,238,.2)] sm:text-4xl">
             {data.full_name}
-            <BadgeCheck className="shrink-0 text-foreground drop-shadow-[0_0_16px_rgba(34,211,238,.65)]" size={25} />
+            <BadgeCheck
+              className="shrink-0 text-foreground drop-shadow-[0_0_16px_rgba(34,211,238,.65)]"
+              size={25}
+            />
           </h1>
-          <div className="mt-2 text-sm font-medium text-foreground">{data.job_position || "Employee"}</div>
+          <div className="mt-2 text-sm font-medium text-foreground">
+            {data.job_position || "Employee"}
+          </div>
           <div className="department-pill mt-4">
             <Building2 size={14} />
             {data.department || "Unassigned"}
@@ -165,14 +168,23 @@ function ValidCard({ data }: { data: VerifyData }) {
         </div>
 
         <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Detail icon={<Hash size={18} />} label="Employee ID" value={data.employee_code || "—"} mono />
+          <Detail
+            icon={<Hash size={18} />}
+            label="Employee ID"
+            value={data.employee_code || "—"}
+            mono
+          />
           <Detail
             icon={<Briefcase size={18} />}
             label="Role"
             value={(data.role || "employee").replace("_", " ")}
             className="capitalize"
           />
-          <Detail icon={<Building2 size={18} />} label="Department" value={data.department || "—"} />
+          <Detail
+            icon={<Building2 size={18} />}
+            label="Department"
+            value={data.department || "—"}
+          />
           <Detail icon={<Calendar size={18} />} label="Join Date" value={joinedDate} />
         </div>
 
@@ -267,12 +279,19 @@ function Detail({
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground">{label}</div>
-        <div className={`mt-1 truncate text-sm font-bold text-foreground ${mono ? "font-mono" : ""} ${className || ""}`}>
+        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground">
+          {label}
+        </div>
+        <div
+          className={`mt-1 truncate text-sm font-bold text-foreground ${mono ? "font-mono" : ""} ${className || ""}`}
+        >
           {value}
         </div>
       </div>
-      <ChevronRight size={18} className="shrink-0 text-foreground transition-all group-hover:translate-x-0.5 group-hover:text-foreground" />
+      <ChevronRight
+        size={18}
+        className="shrink-0 text-foreground transition-all group-hover:translate-x-0.5 group-hover:text-foreground"
+      />
     </div>
   );
 }
@@ -280,7 +299,9 @@ function Detail({
 function StatusMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-3 shadow-[inset_0_1px_0_rgba(255,255,255,.06)]">
-      <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-foreground">{label}</div>
+      <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-foreground">
+        {label}
+      </div>
       <div className="mt-1 truncate text-sm font-extrabold text-foreground">{value}</div>
     </div>
   );

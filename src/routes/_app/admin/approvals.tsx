@@ -171,9 +171,7 @@ function ApprovalsPage() {
                 </div>
                 <div className="mt-3 text-xs text-muted-foreground">
                   Joining date{" "}
-                  {u.joining_date
-                    ? format(new Date(u.joining_date), "MMM d, yyyy")
-                    : "not set"}
+                  {u.joining_date ? format(new Date(u.joining_date), "MMM d, yyyy") : "not set"}
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {u.approval_status !== "approved" && (

@@ -80,7 +80,8 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
       scope === "mine"
         ? (data || []).filter(
             (t: any) =>
-              t.assigned_to === user.id || (assignees || []).some((a) => a.task_id === t.id && a.user_id === user.id),
+              t.assigned_to === user.id ||
+              (assignees || []).some((a) => a.task_id === t.id && a.user_id === user.id),
           )
         : data || [];
 
@@ -107,9 +108,7 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
     const nextProgress = progressForStatus(status, t.progress);
     const completedAt = status === "completed" ? new Date().toISOString() : null;
     setTasks((prev) =>
-      prev.map((x) =>
-        x.id === id ? { ...x, status, progress: nextProgress } : x,
-      ),
+      prev.map((x) => (x.id === id ? { ...x, status, progress: nextProgress } : x)),
     );
     const { error } = await supabase
       .from("tasks")
@@ -125,7 +124,10 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
     }
   };
 
-  const handleSaved = async (result?: { taskId?: string | null; transition?: WorkflowTransition }) => {
+  const handleSaved = async (result?: {
+    taskId?: string | null;
+    transition?: WorkflowTransition;
+  }) => {
     await load();
     if (!result?.taskId || !result.transition) return;
 

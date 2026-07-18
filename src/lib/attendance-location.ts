@@ -41,7 +41,12 @@ export async function getVerifiedAttendanceLocation(): Promise<AttendanceLocatio
   const latitude = position.coords.latitude;
   const longitude = position.coords.longitude;
   const accuracy = Number.isFinite(position.coords.accuracy) ? position.coords.accuracy : null;
-  const distanceMeters = distanceBetweenMeters(officeLatitude, officeLongitude, latitude, longitude);
+  const distanceMeters = distanceBetweenMeters(
+    officeLatitude,
+    officeLongitude,
+    latitude,
+    longitude,
+  );
   const maxAccuracyMeters = Math.max(50, radiusMeters * 2);
 
   if (accuracy == null || accuracy > maxAccuracyMeters) {

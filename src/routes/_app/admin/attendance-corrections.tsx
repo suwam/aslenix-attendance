@@ -70,7 +70,9 @@ function AttendanceCorrectionsPage() {
           });
     setBusy(null);
     if (result.error) return toast.error(result.error.message);
-    toast.success(action === "approved" ? "Correction approved and applied" : "Correction rejected");
+    toast.success(
+      action === "approved" ? "Correction approved and applied" : "Correction rejected",
+    );
     setComments((current) => ({ ...current, [id]: "" }));
     load();
   };
@@ -233,8 +235,14 @@ function CorrectionCard({
       </div>
 
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
-        <CorrectionValue label="Check-in" value={formatMaybeTime(request.requested_check_in_time)} />
-        <CorrectionValue label="Check-out" value={formatMaybeTime(request.requested_check_out_time)} />
+        <CorrectionValue
+          label="Check-in"
+          value={formatMaybeTime(request.requested_check_in_time)}
+        />
+        <CorrectionValue
+          label="Check-out"
+          value={formatMaybeTime(request.requested_check_out_time)}
+        />
         <CorrectionValue
           label="Status"
           value={request.requested_status?.replace("_", " ") || "No change"}
@@ -292,7 +300,9 @@ function RequestBadge({ status }: { status: string }) {
         ? "bg-destructive/15 text-destructive"
         : "bg-warning/15 text-warning";
   return (
-    <span className={`w-fit rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${classes}`}>
+    <span
+      className={`w-fit rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${classes}`}
+    >
       {formatCorrectionStatus(status)}
     </span>
   );

@@ -44,7 +44,9 @@ const DEFAULT_PREFS: EmployeePreferences = {
 
 function EmployeeSettingsPage() {
   const { profile, roles } = useAuth();
-  const storageKey = profile?.user_id ? `employee-settings:${profile.user_id}` : "employee-settings";
+  const storageKey = profile?.user_id
+    ? `employee-settings:${profile.user_id}`
+    : "employee-settings";
   const [preferences, setPreferences] = useState<EmployeePreferences>(DEFAULT_PREFS);
   const [initial, setInitial] = useState<EmployeePreferences>(DEFAULT_PREFS);
   const [saving, setSaving] = useState(false);
@@ -91,18 +93,31 @@ function EmployeeSettingsPage() {
         title="Settings"
         subtitle="Personal preferences, notifications, and account shortcuts"
         actions={
-          <Button onClick={save} disabled={saving || !isDirty} className="h-11 rounded-xl neon-button">
-            {saving ? <Loader2 size={14} className="mr-2 animate-spin" /> : <Save size={14} className="mr-2" />}
+          <Button
+            onClick={save}
+            disabled={saving || !isDirty}
+            className="h-11 rounded-xl neon-button"
+          >
+            {saving ? (
+              <Loader2 size={14} className="mr-2 animate-spin" />
+            ) : (
+              <Save size={14} className="mr-2" />
+            )}
             {saving ? "Saving..." : "Save changes"}
           </Button>
         }
       />
 
       <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
-        <EmployeeMetric icon={UserRound} label="Profile" value={profile.full_name || "Employee"} tone="red" />
+        <EmployeeMetric
+          icon={UserRound}
+          label="Profile"
+          value={profile.full_name || "Employee"}
+          tone="red"
+        />
         <EmployeeMetric icon={ShieldCheck} label="Status" value={statusLabel} tone="green" />
         <EmployeeMetric icon={IdCard} label="Role" value={roleLabel} tone="blue" />
-        <EmployeeMetric icon={Mail} label="Email" value={profile.email || "Not set" } tone="amber" />
+        <EmployeeMetric icon={Mail} label="Email" value={profile.email || "Not set"} tone="amber" />
       </section>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -118,14 +133,18 @@ function EmployeeSettingsPage() {
                 label="Attendance reminders"
                 description="Keep check-in and checkout reminders visible."
                 checked={preferences.attendanceReminders}
-                onChange={(checked) => setPreferences({ ...preferences, attendanceReminders: checked })}
+                onChange={(checked) =>
+                  setPreferences({ ...preferences, attendanceReminders: checked })
+                }
               />
               <PreferenceToggle
                 icon={ClipboardList}
                 label="Task review alerts"
                 description="Highlight task completion and review request notifications."
                 checked={preferences.taskReviewAlerts}
-                onChange={(checked) => setPreferences({ ...preferences, taskReviewAlerts: checked })}
+                onChange={(checked) =>
+                  setPreferences({ ...preferences, taskReviewAlerts: checked })
+                }
               />
               <PreferenceToggle
                 icon={CalendarDays}
@@ -250,11 +269,15 @@ function PreferenceToggle({
       </div>
       <span
         className={`flex h-6 w-11 shrink-0 items-center rounded-full border p-0.5 transition ${
-          checked ? "justify-end border-cyan-300/30 bg-cyan-300/20" : "justify-start border-border bg-card"
+          checked
+            ? "justify-end border-cyan-300/30 bg-cyan-300/20"
+            : "justify-start border-border bg-card"
         }`}
         aria-hidden="true"
       >
-        <span className={`flex h-4 w-4 items-center justify-center rounded-full ${checked ? "bg-cyan-200 text-background" : "bg-card"}`}>
+        <span
+          className={`flex h-4 w-4 items-center justify-center rounded-full ${checked ? "bg-cyan-200 text-background" : "bg-card"}`}
+        >
           {checked && <Check size={11} />}
         </span>
       </span>
@@ -284,10 +307,14 @@ function EmployeeMetric({
     <GlassCard className="border-border bg-card">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {label}
+          </div>
           <div className="mt-2 truncate text-lg font-bold capitalize text-foreground">{value}</div>
         </div>
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${colors[tone]}`}>
+        <div
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${colors[tone]}`}
+        >
           <Icon size={17} />
         </div>
       </div>
@@ -299,7 +326,9 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card px-3 py-2">
       <span className="text-xs font-semibold text-muted-foreground">{label}</span>
-      <span className="truncate text-right text-sm font-semibold text-muted-foreground">{value}</span>
+      <span className="truncate text-right text-sm font-semibold text-muted-foreground">
+        {value}
+      </span>
     </div>
   );
 }
