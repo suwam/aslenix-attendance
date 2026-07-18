@@ -1444,7 +1444,7 @@ function EomAttendanceValueLabel(props: any) {
       x={x + width / 2}
       y={y - 8}
       textAnchor="middle"
-      fill="#e5edf8"
+      fill="#0F172A"
       fontSize={11}
       fontWeight={800}
     >
