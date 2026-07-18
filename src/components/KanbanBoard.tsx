@@ -19,6 +19,7 @@ import { toast } from "sonner";
 export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
   const { user, isAdmin } = useAuth();
   const [tasks, setTasks] = useState<TaskCardData[]>([]);
+  const [teamLeadTaskIds, setTeamLeadTaskIds] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [defaultStatus, setDefaultStatus] = useState<TaskStatus>("todo");
@@ -42,6 +43,21 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
       isMissingSupabaseTableError(assigneeResult.error, "task_assignees")
         ? []
         : assigneeResult.data;
+    const teamLeadResult = taskIds.length
+      ? await supabase.from("task_team_leads").select("task_id,user_id").in("task_id", taskIds)
+      : { data: [] };
+    const teamLeads =
+      "error" in teamLeadResult &&
+      teamLeadResult.error &&
+      isMissingSupabaseTableError(teamLeadResult.error, "task_team_leads")
+        ? []
+        : teamLeadResult.data;
+    const nextTeamLeadTaskIds = new Set(
+      (teamLeads || [])
+        .filter((lead) => lead.user_id === user.id)
+        .map((lead) => lead.task_id),
+    );
+    setTeamLeadTaskIds(nextTeamLeadTaskIds);
     const ids = Array.from(
       new Set([
         ...(data || []).map((t) => t.assigned_to),
@@ -81,6 +97,7 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
         ? (data || []).filter(
             (t: any) =>
               t.assigned_to === user.id ||
+              nextTeamLeadTaskIds.has(t.id) ||
               (assignees || []).some((a) => a.task_id === t.id && a.user_id === user.id),
           )
         : data || [];
@@ -105,6 +122,10 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
   const moveTo = async (id: string, status: TaskStatus) => {
     const t = tasks.find((x) => x.id === id);
     if (!t || t.status === status) return;
+    if (!canManageTask(id)) {
+      toast.error("Open the task to update progress and add a comment.");
+      return;
+    }
     const nextProgress = progressForStatus(status, t.progress);
     const completedAt = status === "completed" ? new Date().toISOString() : null;
     setTasks((prev) =>
@@ -123,6 +144,8 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
       load();
     }
   };
+
+  const canManageTask = (taskId: string) => isAdmin || teamLeadTaskIds.has(taskId);
 
   const handleSaved = async (result?: {
     taskId?: string | null;
@@ -202,6 +225,7 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
                         setEditId(t.id);
                         setOpen(true);
                       }}
+                      draggable={canManageTask(t.id)}
                       onDragStart={() => setDragId(t.id)}
                       autoMoved={autoMovedId === t.id}
                     />

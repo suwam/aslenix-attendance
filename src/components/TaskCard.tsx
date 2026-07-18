@@ -37,11 +37,13 @@ export function TaskCard({
   onClick,
   onDragStart,
   autoMoved = false,
+  draggable = true,
 }: {
   task: TaskCardData;
   onClick?: () => void;
   onDragStart?: (e: React.DragEvent) => void;
   autoMoved?: boolean;
+  draggable?: boolean;
 }) {
   const overdue = task.deadline && isPast(new Date(task.deadline)) && task.status !== "completed";
   const complexity = normalizedTaskComplexity(task.task_complexity);
@@ -61,10 +63,12 @@ export function TaskCard({
       exit={{ opacity: 0, scale: 0.95 }}
     >
       <div
-        draggable
-        onDragStart={onDragStart}
+        draggable={draggable}
+        onDragStart={draggable ? onDragStart : undefined}
         onClick={onClick}
-        className={`glass kanban-task-card rounded-xl p-3.5 cursor-grab active:cursor-grabbing select-none border border-border hover:border-primary/40 hover:-translate-y-0.5 transition-all ${
+        className={`glass kanban-task-card rounded-xl p-3.5 select-none border border-border hover:border-primary/40 hover:-translate-y-0.5 transition-all ${
+          draggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
+        } ${
           autoMoved ? "kanban-task-card-auto-moved" : ""
         }`}
       >

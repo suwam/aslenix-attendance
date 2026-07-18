@@ -88,7 +88,7 @@ export function TaskDialog({
 
   const isAssignedTeamLead = Boolean(user && teamLeads.includes(user.id));
   const canEditTaskFields = isAdmin || isAssignedTeamLead || !taskId;
-  const canDeleteTask = (isAdmin || isAssignedTeamLead) && Boolean(taskId);
+  const canDeleteTask = isAdmin && Boolean(taskId);
   const isEmployeeTaskEdit = Boolean(taskId && !isAdmin && !isAssignedTeamLead);
 
   const [loading, setLoading] = useState(false);
@@ -287,7 +287,11 @@ export function TaskDialog({
     if (taskId && !isAdmin && !isAssignedTeamLead) {
       let { error } = await supabase
         .from("tasks")
-        .update({ progress: nextProgress })
+        .update({
+          progress: nextProgress,
+          status: nextStatus,
+          completed_at: workflow.completedAt,
+        })
         .eq("id", taskId);
       let progressNoteNotSaved = false;
       if (!error && progressChanged) {
@@ -554,7 +558,7 @@ export function TaskDialog({
 
   const remove = async () => {
     if (!taskId) return;
-    if (!isAdmin) return toast.error("Only admins can delete tasks");
+    if (!canDeleteTask) return toast.error("Only admins can delete tasks");
     if (!confirm("Delete this task?")) return;
     const { error } = await supabase.from("tasks").delete().eq("id", taskId);
     if (error) return toast.error(error.message);
@@ -706,10 +710,13 @@ export function TaskDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto glass border-border">
         <DialogHeader>
-          <DialogTitle>{taskId ? "Edit Task" : "Create Task"}</DialogTitle>
+          <DialogTitle>
+            {taskId ? (isEmployeeTaskEdit ? "Update Progress" : "Edit Task") : "Create Task"}
+          </DialogTitle>
           <DialogDescription>
-            Assign work, set complexity, and track effort-based progress for fair leaderboard
-            scoring.
+            {isEmployeeTaskEdit
+              ? "Update task progress and leave a progress comment for review."
+              : "Assign work, set complexity, and track effort-based progress for fair leaderboard scoring."}
           </DialogDescription>
         </DialogHeader>
 
@@ -1086,7 +1093,7 @@ export function TaskDialog({
               <Button onClick={save} disabled={loading} className="neon-button">
                 {loading
                   ? "Saving..."
-                  : taskId && !isAdmin
+                  : taskId && !isAdmin && !isAssignedTeamLead
                     ? "Save progress"
                     : taskId
                       ? "Save changes"
