@@ -120,7 +120,17 @@ function CalendarStat({ label, value, tone }) {
 }
 
 export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
-  const todayBs = useMemo(() => adToBs(todayAd), [todayAd]);
+  const todayAd = useMemo(() => new Date(), []);
+  const todayBs = useMemo(() => {
+    const d = new NepaliDate(todayAd);
+    return {
+      year: d.getYear(),
+      month: d.getMonth(),
+      date: d.getDate(),
+      formatted: d.format("YYYY MMMM DD"),
+    };
+  }, [todayAd]);
+
   const initialYear = todayBs?.year ?? 2083;
   const initialMonth = todayBs?.month ?? 0;
 
