@@ -1,5 +1,6 @@
 -- Add team_lead to app_role enum
 ALTER TYPE app_role ADD VALUE IF NOT EXISTS 'team_lead';
+COMMIT;
 
 -- Create task_team_leads pivot table
 CREATE TABLE IF NOT EXISTS public.task_team_leads (
@@ -15,7 +16,7 @@ ALTER TABLE public.task_team_leads ENABLE ROW LEVEL SECURITY;
 -- RLS policies for task_team_leads
 CREATE POLICY "Admins can manage task team leads" ON public.task_team_leads
     FOR ALL
-    USING (public.has_role('admin', auth.uid()) OR public.has_role('super_admin', auth.uid()) OR public.has_role('hr_manager', auth.uid()));
+    USING (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'super_admin') OR public.has_role(auth.uid(), 'hr_manager'));
 
 CREATE POLICY "Users can view task team leads" ON public.task_team_leads
     FOR SELECT
@@ -63,7 +64,7 @@ CREATE POLICY "Users can insert comment mentions if they own the comment" ON pub
 
 CREATE POLICY "Admins can insert any comment mentions" ON public.comment_mentions
     FOR INSERT
-    WITH CHECK (public.has_role('admin', auth.uid()) OR public.has_role('super_admin', auth.uid()) OR public.has_role('hr_manager', auth.uid()));
+    WITH CHECK (public.has_role(auth.uid(), 'admin') OR public.has_role(auth.uid(), 'super_admin') OR public.has_role(auth.uid(), 'hr_manager'));
 
 -- Create task_activity_logs table
 CREATE TABLE IF NOT EXISTS public.task_activity_logs (
@@ -86,10 +87,10 @@ CREATE POLICY "Users can view task activity logs" ON public.task_activity_logs
 CREATE POLICY "Admins and Team Leads can insert task activity logs" ON public.task_activity_logs
     FOR INSERT
     WITH CHECK (
-        public.has_role('admin', auth.uid()) OR 
-        public.has_role('super_admin', auth.uid()) OR 
-        public.has_role('hr_manager', auth.uid()) OR
-        public.has_role('team_lead', auth.uid()) OR
+        public.has_role(auth.uid(), 'admin') OR 
+        public.has_role(auth.uid(), 'super_admin') OR 
+        public.has_role(auth.uid(), 'hr_manager') OR
+        public.has_role(auth.uid(), 'team_lead') OR
         -- Allow employees to log progress updates
         (action = 'progress_updated' OR action = 'status_changed')
     );

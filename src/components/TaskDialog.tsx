@@ -373,8 +373,20 @@ export function TaskDialog({
           task_id: savedTaskId,
           user_id: uid,
         }));
-        await supabase.from("task_team_leads").delete().eq("task_id", savedTaskId);
-        if (tlRows.length) await supabase.from("task_team_leads").insert(tlRows);
+        const tlDelete = await supabase.from("task_team_leads").delete().eq("task_id", savedTaskId);
+        if (tlDelete.error && !isMissingSupabaseTableError(tlDelete.error, "task_team_leads")) {
+          console.error("Failed to delete team leads", tlDelete.error);
+        }
+        if (tlRows.length) {
+          const tlInsert = await supabase.from("task_team_leads").insert(tlRows);
+          if (tlInsert.error) {
+            if (isMissingSupabaseTableError(tlInsert.error, "task_team_leads")) {
+              toast.warning("Task saved. Apply the add_team_lead_task_features migration to save team leads.");
+            } else {
+              error = tlInsert.error;
+            }
+          }
+        }
 
         await notifyTaskAssignees(selectedAssignees, taskId ? "Task updated" : "New task assigned", {
           title,
