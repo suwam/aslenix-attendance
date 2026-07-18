@@ -82,7 +82,7 @@ function buildMonth(year, month) {
       bsDate: `${date.getYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
       date: date.getDate(),
       weekday: date.getDay(),
-      adDate: date.getAD(),
+      adDate: date.toJsDate(),
     });
     d++;
   }
