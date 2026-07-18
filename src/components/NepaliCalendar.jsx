@@ -12,7 +12,7 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import { format, startOfDay } from "date-fns";
+import { format } from "date-fns";
 import { BSDateInput } from "@/components/BSDateInput";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -116,6 +116,15 @@ function CalendarStat({ label, value, tone }) {
       <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
         {label}
       </span>
+    </div>
+  );
+}
+
+function LegendItem({ icon: Icon, label, className }) {
+  return (
+    <div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card/50 px-3 py-2 text-xs font-semibold text-muted-foreground">
+      <Icon size={13} className={cn("shrink-0", className)} />
+      <span className="truncate">{label}</span>
     </div>
   );
 }
