@@ -30,6 +30,22 @@ export const Route = createFileRoute("/_app/admin/reports")({ component: Reports
 
 type ReportPeriod = "daily" | "weekly" | "monthly";
 
+type WorkingDaySummary = {
+  calendarDays: number;
+  weeklyHolidays: number;
+  publicHolidays: number;
+  companyHolidays: number;
+  workingDays: number;
+};
+
+const EMPTY_WORKING_DAY_SUMMARY: WorkingDaySummary = {
+  calendarDays: 0,
+  weeklyHolidays: 0,
+  publicHolidays: 0,
+  companyHolidays: 0,
+  workingDays: 0,
+};
+
 function ReportsPage() {
   const [period, setPeriod] = useState<ReportPeriod>("daily");
   const [bsDate, setBsDate] = useState(formatBsInput());
@@ -38,6 +54,8 @@ function ReportsPage() {
   const monthRange = bsMonthInputToAdRange(bsMonth);
   const [statusFilter, setStatusFilter] = useState("all");
   const [rows, setRows] = useState<any[]>([]);
+  const [workingDaySummary, setWorkingDaySummary] =
+    useState<WorkingDaySummary>(EMPTY_WORKING_DAY_SUMMARY);
   const [loading, setLoading] = useState(false);
   const todayDate = format(new Date(), "yyyy-MM-dd");
   const isFutureDate = date > todayDate;
@@ -65,6 +83,7 @@ function ReportsPage() {
       setLoading(false);
       return;
     }
+    setWorkingDaySummary(EMPTY_WORKING_DAY_SUMMARY);
     const [{ data: attendance }, { data: profiles }, { data: roleRows }] = await Promise.all([
       supabase.from("attendance").select("*").eq("date", date).order("date", { ascending: false }),
       supabase
@@ -102,23 +121,30 @@ function ReportsPage() {
   };
 
   const runAggregateReport = async (startDate: string, endDate: string) => {
-    const [{ data: attendance }, { data: profiles }, { data: roleRows }] = await Promise.all([
-      supabase
-        .from("attendance")
-        .select("*")
-        .gte("date", startDate)
-        .lte("date", endDate)
-        .order("date", { ascending: true }),
-      supabase
-        .from("profiles")
-        .select("user_id, full_name, email, department")
-        .eq("approval_status", "approved")
-        .order("full_name"),
-      supabase
-        .from("user_roles")
-        .select("user_id, role")
-        .in("role", ["admin", "super_admin", "hr_manager"]),
-    ]);
+    const [{ data: attendance }, { data: profiles }, { data: roleRows }, { data: holidays }] =
+      await Promise.all([
+        supabase
+          .from("attendance")
+          .select("*")
+          .gte("date", startDate)
+          .lte("date", endDate)
+          .order("date", { ascending: true }),
+        supabase
+          .from("profiles")
+          .select("user_id, full_name, email, department")
+          .eq("approval_status", "approved")
+          .order("full_name"),
+        supabase
+          .from("user_roles")
+          .select("user_id, role")
+          .in("role", ["admin", "super_admin", "hr_manager"]),
+        supabase
+          .from("holidays")
+          .select("*")
+          .eq("is_active", true)
+          .gte("date", startDate)
+          .lte("date", endDate),
+      ]);
 
     const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
     const employeeProfiles = sortByEmployeeName(
@@ -129,32 +155,108 @@ function ReportsPage() {
       attendanceByUser.set(row.user_id, [...(attendanceByUser.get(row.user_id) ?? []), row]);
     });
 
+    const allDates = dateRange(startDate, endDate);
+    const weeklyHolidayDates = new Set(allDates.filter((day) => isWeeklyOffDate(day)));
+    const publicHolidayDates = new Set<string>();
+    const companyHolidayDates = new Set<string>();
+
+    (holidays ?? []).forEach((holiday: any) => {
+      if (!holiday?.date || weeklyHolidayDates.has(holiday.date)) return;
+      if (isCompanyHoliday(holiday)) {
+        companyHolidayDates.add(holiday.date);
+        return;
+      }
+      publicHolidayDates.add(holiday.date);
+    });
+
+    companyHolidayDates.forEach((day) => {
+      if (publicHolidayDates.has(day)) companyHolidayDates.delete(day);
+    });
+
+    const workingDates = allDates.filter(
+      (day) =>
+        !weeklyHolidayDates.has(day) &&
+        !publicHolidayDates.has(day) &&
+        !companyHolidayDates.has(day),
+    );
+    const workingDateSet = new Set(workingDates);
+    const summary: WorkingDaySummary = {
+      calendarDays: allDates.length,
+      weeklyHolidays: weeklyHolidayDates.size,
+      publicHolidays: publicHolidayDates.size,
+      companyHolidays: companyHolidayDates.size,
+      workingDays: workingDates.length,
+    };
+    setWorkingDaySummary(summary);
+
     const merged = employeeProfiles.map((profile) => {
       const records = attendanceByUser.get(profile.user_id) ?? [];
-      const elapsedEndDate = endDate > todayDate ? todayDate : endDate;
-      const elapsedWorkDates =
-        startDate <= todayDate
-          ? dateRange(startDate, elapsedEndDate).filter((day) => !isWeeklyOffDate(day))
-          : [];
-      const elapsedRecords = records.filter((record) => record.date <= todayDate);
-      const recordedWorkDates = new Set(
-        elapsedRecords
-          .filter((record) => !isWeeklyOffDate(record.date))
-          .map((record) => record.date),
-      );
+      const workingRecords = records.filter((record) => workingDateSet.has(record.date));
+      const presentDates = new Set<string>();
+      const absentDates = new Set<string>();
+      const leaveDates = new Set<string>();
+      const wfhDates = new Set<string>();
+
+      workingRecords.forEach((record) => {
+        if (record.status === "wfh") {
+          wfhDates.add(record.date);
+          return;
+        }
+        if (record.status === "leave" || record.status === "half_day") {
+          leaveDates.add(record.date);
+          return;
+        }
+        if (record.status === "absent") {
+          absentDates.add(record.date);
+          return;
+        }
+        if (["present", "late", "half_day_present"].includes(record.status)) {
+          presentDates.add(record.date);
+        }
+      });
+
+      wfhDates.forEach((day) => {
+        presentDates.delete(day);
+        leaveDates.delete(day);
+        absentDates.delete(day);
+      });
+      leaveDates.forEach((day) => {
+        presentDates.delete(day);
+        absentDates.delete(day);
+      });
+      absentDates.forEach((day) => {
+        presentDates.delete(day);
+      });
+
+      const coveredDates = new Set([
+        ...presentDates,
+        ...absentDates,
+        ...leaveDates,
+        ...wfhDates,
+      ]);
+      const missingAbsentDays = Math.max(summary.workingDays - coveredDates.size, 0);
+      const presentDays = Math.min(presentDates.size, summary.workingDays);
+      const leaveDays = Math.min(leaveDates.size, summary.workingDays);
+      const wfhDays = Math.min(wfhDates.size, summary.workingDays);
+      const absentDays = Math.min(absentDates.size + missingAbsentDays, summary.workingDays);
+      const attendancePercentage =
+        summary.workingDays > 0
+          ? Math.round(((presentDays + wfhDays) / summary.workingDays) * 1000) / 10
+          : 0;
+
       return {
         ...profile,
         records,
-        presentDays: elapsedRecords.filter((record) =>
-          ["present", "late", "wfh"].includes(record.status),
-        ).length,
-        lateDays: elapsedRecords.filter((record) => record.is_late).length,
-        earlyCheckoutDays: elapsedRecords.filter((record) => record.is_early_checkout).length,
-        leaveDays: elapsedRecords.filter((record) => record.status === "leave").length,
-        wfhDays: elapsedRecords.filter((record) => record.status === "wfh").length,
-        editedDays: elapsedRecords.filter((record) => record.is_edited).length,
-        absentDays: Math.max(elapsedWorkDates.length - recordedWorkDates.size, 0),
-        totalHours: elapsedRecords.reduce(
+        presentDays,
+        absentDays,
+        leaveDays,
+        wfhDays,
+        attendancePercentage,
+        totalWorkingDays: summary.workingDays,
+        lateDays: workingRecords.filter((record) => record.is_late).length,
+        earlyCheckoutDays: workingRecords.filter((record) => record.is_early_checkout).length,
+        editedDays: workingRecords.filter((record) => record.is_edited).length,
+        totalHours: workingRecords.reduce(
           (total, record) => total + Number(record.work_hours || 0),
           0,
         ),
@@ -235,12 +337,18 @@ function ReportsPage() {
       "Employee",
       "Email",
       "Department",
+      "Calendar days",
+      "Weekly holidays",
+      "Public holidays",
+      "Company holidays",
+      "Working days",
       "Present days",
       "Absent days",
       "Late days",
       "Early checkout days",
       "Leave days",
       "WFH days",
+      "Attendance %",
       "Edited days",
       "Total hours",
     ];
@@ -251,12 +359,18 @@ function ReportsPage() {
         row.full_name || "",
         row.email || "",
         row.department || "",
+        workingDaySummary.calendarDays,
+        workingDaySummary.weeklyHolidays,
+        workingDaySummary.publicHolidays,
+        workingDaySummary.companyHolidays,
+        workingDaySummary.workingDays,
         row.presentDays,
         row.absentDays,
         row.lateDays,
         row.earlyCheckoutDays,
         row.leaveDays,
         row.wfhDays,
+        `${row.attendancePercentage}%`,
         row.editedDays,
         formatWorkHours(row.totalHours),
       ]
@@ -406,6 +520,8 @@ function ReportsPage() {
         </div>
       </GlassCard>
 
+      {period === "monthly" && <WorkingDaySummaryCard summary={workingDaySummary} />}
+
       <GlassCard className="p-0 overflow-hidden print:p-0 print:border-none print:bg-transparent print:shadow-none print:backdrop-blur-none">
         {loading ? (
           <div className="flex justify-center py-16">
@@ -423,6 +539,7 @@ function ReportsPage() {
             endDate={aggregateEnd}
             label={aggregateLabel}
             period={period}
+            summary={workingDaySummary}
           />
         ) : (
           <div className="overflow-x-auto">
@@ -505,18 +622,45 @@ function sortByEmployeeName<T extends { full_name?: string | null }>(rows: T[]) 
   );
 }
 
+function WorkingDaySummaryCard({ summary }: { summary: WorkingDaySummary }) {
+  const items = [
+    ["Calendar Days", summary.calendarDays],
+    ["Weekly Holidays", summary.weeklyHolidays],
+    ["Public Holidays", summary.publicHolidays],
+    ["Company Holidays", summary.companyHolidays],
+    ["Working Days", summary.workingDays],
+  ];
+
+  return (
+    <GlassCard className="mb-5 print:mb-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        {items.map(([label, value]) => (
+          <div key={label} className="rounded-lg border border-border/60 p-3">
+            <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              {label}
+            </div>
+            <div className="mt-1 text-2xl font-semibold tabular-nums">{value}</div>
+          </div>
+        ))}
+      </div>
+    </GlassCard>
+  );
+}
+
 function AggregateReportTable({
   rows,
   startDate,
   endDate,
   label,
   period,
+  summary,
 }: {
   rows: any[];
   startDate: string;
   endDate: string;
   label: string;
   period: ReportPeriod;
+  summary: WorkingDaySummary;
 }) {
   return (
     <div className="overflow-x-auto">
@@ -532,6 +676,8 @@ function AggregateReportTable({
             <th className="p-3">Early checkout</th>
             <th className="p-3">Leave</th>
             <th className="p-3">WFH</th>
+            <th className="p-3">Working days</th>
+            <th className="p-3">Attendance %</th>
             <th className="p-3">Hours</th>
           </tr>
         </thead>
@@ -551,6 +697,8 @@ function AggregateReportTable({
               <td className="p-3 tabular-nums">{row.earlyCheckoutDays}</td>
               <td className="p-3 tabular-nums">{row.leaveDays}</td>
               <td className="p-3 tabular-nums">{row.wfhDays}</td>
+              <td className="p-3 tabular-nums">{row.totalWorkingDays ?? summary.workingDays}</td>
+              <td className="p-3 tabular-nums">{row.attendancePercentage}%</td>
               <td className="p-3 tabular-nums">{formatWorkHours(row.totalHours)}</td>
             </tr>
           ))}
@@ -565,4 +713,11 @@ function dateRange(startDate: string, endDate: string) {
   const end = new Date(`${endDate}T00:00:00`);
   const days = Math.max(0, Math.floor((end.getTime() - start.getTime()) / 86400000) + 1);
   return Array.from({ length: days }, (_, index) => format(addDays(start, index), "yyyy-MM-dd"));
+}
+
+function isCompanyHoliday(holiday: any) {
+  const scope = String(
+    holiday?.scope ?? holiday?.type ?? holiday?.category ?? holiday?.holiday_type ?? "",
+  ).toLowerCase();
+  return scope === "company" || scope === "organization" || scope === "organisation";
 }
