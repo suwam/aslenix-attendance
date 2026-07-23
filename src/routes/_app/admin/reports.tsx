@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
@@ -13,9 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, Printer, Loader2 } from "lucide-react";
+import { Download, FileDown, Printer, Loader2 } from "lucide-react";
 import { addDays, format, startOfWeek } from "date-fns";
+import jsPDF from "jspdf";
+import { toast } from "sonner";
 import { formatWorkHours } from "@/lib/work-hours";
+import { captureSanitizedPdfPage } from "@/lib/pdf-utils";
 import {
   bsInputToAdDateString,
   bsMonthInputToAdRange,
@@ -57,6 +60,8 @@ function ReportsPage() {
   const [workingDaySummary, setWorkingDaySummary] =
     useState<WorkingDaySummary>(EMPTY_WORKING_DAY_SUMMARY);
   const [loading, setLoading] = useState(false);
+  const [savingPdf, setSavingPdf] = useState(false);
+  const pdfExportRef = useRef<HTMLDivElement>(null);
   const todayDate = format(new Date(), "yyyy-MM-dd");
   const isFutureDate = date > todayDate;
   const isWeeklyOff = isWeeklyOffDate(date);
@@ -386,6 +391,50 @@ function ReportsPage() {
     URL.revokeObjectURL(url);
   };
 
+  const savePDF = async () => {
+    if (loading) return;
+    if (!rows.length) {
+      toast.error("Run a report before saving PDF");
+      return;
+    }
+
+    try {
+      setSavingPdf(true);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const reportElement = pdfExportRef.current;
+      if (!reportElement) throw new Error("Report layout is not ready");
+
+      const imgData = await captureSanitizedPdfPage(reportElement);
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      let heightLeft = pdfHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, pdfHeight);
+      heightLeft -= 297;
+
+      while (heightLeft > 0) {
+        position = heightLeft - pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, pdfHeight);
+        heightLeft -= 297;
+      }
+
+      const dateLabel =
+        period === "monthly" ? monthRange?.label || bsMonth : period === "weekly" ? weekStart : date;
+      pdf.save(`aslenix-attendance-${period}-${String(dateLabel).replace(/\s+/g, "-")}.pdf`);
+      toast.success("PDF saved");
+    } catch (error: any) {
+      console.error(error);
+      toast.error(`Failed to save PDF: ${error.message || "Unknown error"}`);
+    } finally {
+      setSavingPdf(false);
+    }
+  };
+
   return (
     <>
       <div className="print:hidden">
@@ -397,6 +446,14 @@ function ReportsPage() {
               <Button variant="outline" onClick={() => window.print()}>
                 <Printer size={14} className="mr-1" />
                 Print
+              </Button>
+              <Button variant="outline" onClick={savePDF} disabled={savingPdf || loading}>
+                {savingPdf ? (
+                  <Loader2 size={14} className="mr-1 animate-spin" />
+                ) : (
+                  <FileDown size={14} className="mr-1" />
+                )}
+                Save PDF
               </Button>
               <Button onClick={exportCSV} className="neon-button rounded-lg">
                 <Download size={14} className="mr-1" />
@@ -451,6 +508,23 @@ function ReportsPage() {
                 : bsDate}
           </h2>
         </div>
+      </div>
+
+      <div className="fixed -left-[10000px] top-0 pointer-events-none opacity-0">
+        <PrintableReport
+          ref={pdfExportRef}
+          rows={rows}
+          period={period}
+          bsDate={bsDate}
+          date={date}
+          startDate={aggregateStart}
+          endDate={aggregateEnd}
+          label={aggregateLabel}
+          monthLabel={monthRange?.label || bsMonth}
+          workingDaySummary={workingDaySummary}
+          isWeeklyOff={isWeeklyOff}
+          isFutureDate={isFutureDate}
+        />
       </div>
 
       <GlassCard className="mb-5 print:hidden">
@@ -619,6 +693,337 @@ function sortByEmployeeName<T extends { full_name?: string | null }>(rows: T[]) 
     String(a.full_name || "").localeCompare(String(b.full_name || ""), undefined, {
       sensitivity: "base",
     }),
+  );
+}
+
+type PrintableReportProps = {
+  rows: any[];
+  period: ReportPeriod;
+  bsDate: string;
+  date: string;
+  startDate: string;
+  endDate: string;
+  label: string;
+  monthLabel: string;
+  workingDaySummary: WorkingDaySummary;
+  isWeeklyOff: boolean;
+  isFutureDate: boolean;
+};
+
+const PrintableReport = forwardRef<HTMLDivElement, PrintableReportProps>(function PrintableReport(
+  {
+    rows,
+    period,
+    bsDate,
+    date,
+    startDate,
+    endDate,
+    label,
+    monthLabel,
+    workingDaySummary,
+    isWeeklyOff,
+    isFutureDate,
+  },
+  ref,
+) {
+  const title =
+    period === "monthly"
+      ? monthLabel
+      : period === "weekly"
+        ? `${formatNepaliDate(startDate, "DD MMMM")} - ${formatNepaliDate(endDate, "DD MMMM YYYY")} BS`
+        : bsDate;
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        width: 794,
+        minHeight: 1123,
+        boxSizing: "border-box",
+        padding: "44px 58px",
+        background: "#ffffff",
+        color: "#111827",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div style={{ flex: 1, textAlign: "center", marginTop: 24, marginRight: 40 }}>
+          <div
+            style={{
+              fontFamily: "serif",
+              fontSize: 44,
+              lineHeight: 1,
+              fontWeight: 900,
+              letterSpacing: 24,
+              color: "#000000",
+              whiteSpace: "nowrap",
+            }}
+          >
+            A S L E N I X
+          </div>
+          <div
+            style={{
+              marginTop: 18,
+              fontSize: 17,
+              fontWeight: 800,
+              letterSpacing: 12,
+              color: "#000000",
+              whiteSpace: "nowrap",
+            }}
+          >
+            T E C H & S O L U T I O N
+          </div>
+        </div>
+
+        <div style={{ width: 120, textAlign: "center" }}>
+          <div style={{ marginBottom: 10, fontFamily: "serif", fontSize: 14, fontWeight: 700 }}>
+            PAN No: 623611557
+          </div>
+          <img
+            src={logoMarkUrl}
+            alt="Logo"
+            style={{ width: 88, height: 88, objectFit: "contain", margin: "0 auto" }}
+          />
+          <div
+            style={{
+              color: "#1065F5",
+              fontSize: 18,
+              fontWeight: 900,
+              letterSpacing: 2,
+            }}
+          >
+            ASLENIX
+          </div>
+        </div>
+      </div>
+
+      <div
+        style={{
+          borderBottom: "1.5px solid #000000",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginTop: 24,
+          padding: "0 8px 8px",
+          fontFamily: "serif",
+          fontSize: 14,
+          fontWeight: 700,
+          color: "#000000",
+        }}
+      >
+        <div>Reg No: 391840/82/83</div>
+        <div>DATE: {formatBsInput()}</div>
+      </div>
+
+      <div style={{ marginTop: 28, marginBottom: 18, textAlign: "center" }}>
+        <h2
+          style={{
+            display: "inline-block",
+            margin: 0,
+            borderBottom: "2px solid #111827",
+            fontSize: 19,
+            fontWeight: 800,
+            textTransform: "uppercase",
+          }}
+        >
+          ATTENDANCE OF {title}
+        </h2>
+      </div>
+
+      {period === "monthly" && (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(5, 1fr)",
+            gap: 8,
+            marginBottom: 18,
+          }}
+        >
+          {[
+            ["Calendar Days", workingDaySummary.calendarDays],
+            ["Weekly Holidays", workingDaySummary.weeklyHolidays],
+            ["Public Holidays", workingDaySummary.publicHolidays],
+            ["Company Holidays", workingDaySummary.companyHolidays],
+            ["Working Days", workingDaySummary.workingDays],
+          ].map(([summaryLabel, value]) => (
+            <div
+              key={summaryLabel}
+              style={{
+                border: "1px solid #d1d5db",
+                padding: "8px 7px",
+                minHeight: 52,
+              }}
+            >
+              <div
+                style={{
+                  color: "#4b5563",
+                  fontSize: 8,
+                  fontWeight: 800,
+                  letterSpacing: 0.3,
+                  textTransform: "uppercase",
+                }}
+              >
+                {summaryLabel}
+              </div>
+              <div style={{ marginTop: 5, fontSize: 20, fontWeight: 800 }}>{value}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {period === "weekly" || period === "monthly" ? (
+        <PrintableAggregateTable
+          rows={rows}
+          period={period}
+          startDate={startDate}
+          endDate={endDate}
+          label={label}
+          summary={workingDaySummary}
+        />
+      ) : (
+        <PrintableDailyTable
+          rows={rows}
+          date={date}
+          isWeeklyOff={isWeeklyOff}
+          isFutureDate={isFutureDate}
+        />
+      )}
+    </div>
+  );
+});
+
+const pdfThStyle = {
+  padding: "10px 8px",
+  borderBottom: "1px solid #d1d5db",
+  color: "#374151",
+  fontSize: 9,
+  fontWeight: 800,
+  letterSpacing: 0.3,
+  textAlign: "left" as const,
+  textTransform: "uppercase" as const,
+};
+
+const pdfTdStyle = {
+  padding: "10px 8px",
+  borderBottom: "1px solid #e5e7eb",
+  color: "#111827",
+  fontSize: 10,
+  lineHeight: 1.35,
+  verticalAlign: "middle" as const,
+};
+
+function PrintableDailyTable({
+  rows,
+  date,
+  isWeeklyOff,
+  isFutureDate,
+}: {
+  rows: any[];
+  date: string;
+  isWeeklyOff: boolean;
+  isFutureDate: boolean;
+}) {
+  return (
+    <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+      <thead>
+        <tr>
+          <th style={{ ...pdfThStyle, width: "16%" }}>Date</th>
+          <th style={{ ...pdfThStyle, width: "17%" }}>Employee</th>
+          <th style={{ ...pdfThStyle, width: "15%" }}>Department</th>
+          <th style={{ ...pdfThStyle, width: "8%" }}>In</th>
+          <th style={{ ...pdfThStyle, width: "8%" }}>Out</th>
+          <th style={{ ...pdfThStyle, width: "13%" }}>Location</th>
+          <th style={{ ...pdfThStyle, width: "9%" }}>Hours</th>
+          <th style={{ ...pdfThStyle, width: "14%" }}>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => {
+          const attendance = row.attendance;
+          return (
+            <tr key={row.user_id}>
+              <td style={pdfTdStyle}>{formatNepaliDate(date, "ddd DD, MMMM YYYY")} BS</td>
+              <td style={{ ...pdfTdStyle, fontWeight: 700 }}>{row.full_name || "-"}</td>
+              <td style={pdfTdStyle}>{row.department || "-"}</td>
+              <td style={pdfTdStyle}>
+                {attendance?.check_in_time ? format(new Date(attendance.check_in_time), "HH:mm") : "-"}
+              </td>
+              <td style={pdfTdStyle}>
+                {attendance?.check_out_time
+                  ? format(new Date(attendance.check_out_time), "HH:mm")
+                  : "-"}
+              </td>
+              <td style={pdfTdStyle}>{attendance?.work_location || "-"}</td>
+              <td style={pdfTdStyle}>
+                {attendance?.work_hours ? formatWorkHours(attendance.work_hours) : "-"}
+              </td>
+              <td style={pdfTdStyle}>
+                {dailyStatusLabel(attendance, isWeeklyOff, isFutureDate)}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+function PrintableAggregateTable({
+  rows,
+  period,
+  startDate,
+  endDate,
+  label,
+  summary,
+}: {
+  rows: any[];
+  period: ReportPeriod;
+  startDate: string;
+  endDate: string;
+  label: string;
+  summary: WorkingDaySummary;
+}) {
+  return (
+    <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+      <thead>
+        <tr>
+          <th style={{ ...pdfThStyle, width: "15%" }}>{period === "monthly" ? "Month" : "Week"}</th>
+          <th style={{ ...pdfThStyle, width: "14%" }}>Employee</th>
+          <th style={{ ...pdfThStyle, width: "10%" }}>Department</th>
+          <th style={{ ...pdfThStyle, width: "7%" }}>Present</th>
+          <th style={{ ...pdfThStyle, width: "7%" }}>Absent</th>
+          <th style={{ ...pdfThStyle, width: "6%" }}>Late</th>
+          <th style={{ ...pdfThStyle, width: "8%" }}>Early</th>
+          <th style={{ ...pdfThStyle, width: "7%" }}>Leave</th>
+          <th style={{ ...pdfThStyle, width: "6%" }}>WFH</th>
+          <th style={{ ...pdfThStyle, width: "8%" }}>Working</th>
+          <th style={{ ...pdfThStyle, width: "7%" }}>Att %</th>
+          <th style={{ ...pdfThStyle, width: "5%" }}>Hours</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.user_id}>
+            <td style={pdfTdStyle}>
+              {period === "monthly"
+                ? `${label} BS`
+                : `${formatNepaliDate(startDate, "DD MMMM")} - ${formatNepaliDate(endDate, "DD MMMM YYYY")} BS`}
+            </td>
+            <td style={{ ...pdfTdStyle, fontWeight: 700 }}>{row.full_name || "-"}</td>
+            <td style={pdfTdStyle}>{row.department || "-"}</td>
+            <td style={pdfTdStyle}>{row.presentDays}</td>
+            <td style={pdfTdStyle}>{row.absentDays}</td>
+            <td style={pdfTdStyle}>{row.lateDays}</td>
+            <td style={pdfTdStyle}>{row.earlyCheckoutDays}</td>
+            <td style={pdfTdStyle}>{row.leaveDays}</td>
+            <td style={pdfTdStyle}>{row.wfhDays}</td>
+            <td style={pdfTdStyle}>{row.totalWorkingDays ?? summary.workingDays}</td>
+            <td style={pdfTdStyle}>{row.attendancePercentage}%</td>
+            <td style={pdfTdStyle}>{formatWorkHours(row.totalHours)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
