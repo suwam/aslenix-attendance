@@ -33,6 +33,7 @@ import { Route as AppCheckInRouteImport } from './routes/_app/check-in'
 import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
 import { Route as AppAchievementsRouteImport } from './routes/_app/achievements'
 import { Route as AppAdminIndexRouteImport } from './routes/_app/admin/index'
+import { Route as AppAdminWeeklyReviewManagementRouteImport } from './routes/_app/admin/weekly-review-management'
 import { Route as AppAdminWeeklyReportsRouteImport } from './routes/_app/admin/weekly-reports'
 import { Route as AppAdminWeeklyFeedbackRouteImport } from './routes/_app/admin/weekly-feedback'
 import { Route as AppAdminTasksRouteImport } from './routes/_app/admin/tasks'
@@ -171,6 +172,12 @@ const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminWeeklyReviewManagementRoute =
+  AppAdminWeeklyReviewManagementRouteImport.update({
+    id: '/admin/weekly-review-management',
+    path: '/admin/weekly-review-management',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppAdminWeeklyReportsRoute = AppAdminWeeklyReportsRouteImport.update({
   id: '/admin/weekly-reports',
   path: '/admin/weekly-reports',
@@ -304,6 +311,7 @@ export interface FileRoutesByFullPath {
   '/admin/tasks': typeof AppAdminTasksRoute
   '/admin/weekly-feedback': typeof AppAdminWeeklyFeedbackRoute
   '/admin/weekly-reports': typeof AppAdminWeeklyReportsRoute
+  '/admin/weekly-review-management': typeof AppAdminWeeklyReviewManagementRoute
   '/admin/': typeof AppAdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -347,6 +355,7 @@ export interface FileRoutesByTo {
   '/admin/tasks': typeof AppAdminTasksRoute
   '/admin/weekly-feedback': typeof AppAdminWeeklyFeedbackRoute
   '/admin/weekly-reports': typeof AppAdminWeeklyReportsRoute
+  '/admin/weekly-review-management': typeof AppAdminWeeklyReviewManagementRoute
   '/admin': typeof AppAdminIndexRoute
 }
 export interface FileRoutesById {
@@ -392,6 +401,7 @@ export interface FileRoutesById {
   '/_app/admin/tasks': typeof AppAdminTasksRoute
   '/_app/admin/weekly-feedback': typeof AppAdminWeeklyFeedbackRoute
   '/_app/admin/weekly-reports': typeof AppAdminWeeklyReportsRoute
+  '/_app/admin/weekly-review-management': typeof AppAdminWeeklyReviewManagementRoute
   '/_app/admin/': typeof AppAdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -437,6 +447,7 @@ export interface FileRouteTypes {
     | '/admin/tasks'
     | '/admin/weekly-feedback'
     | '/admin/weekly-reports'
+    | '/admin/weekly-review-management'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -480,6 +491,7 @@ export interface FileRouteTypes {
     | '/admin/tasks'
     | '/admin/weekly-feedback'
     | '/admin/weekly-reports'
+    | '/admin/weekly-review-management'
     | '/admin'
   id:
     | '__root__'
@@ -524,6 +536,7 @@ export interface FileRouteTypes {
     | '/_app/admin/tasks'
     | '/_app/admin/weekly-feedback'
     | '/_app/admin/weekly-reports'
+    | '/_app/admin/weekly-review-management'
     | '/_app/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -709,6 +722,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin/weekly-review-management': {
+      id: '/_app/admin/weekly-review-management'
+      path: '/admin/weekly-review-management'
+      fullPath: '/admin/weekly-review-management'
+      preLoaderRoute: typeof AppAdminWeeklyReviewManagementRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/admin/weekly-reports': {
       id: '/_app/admin/weekly-reports'
       path: '/admin/weekly-reports'
@@ -871,6 +891,7 @@ interface AppRouteChildren {
   AppAdminTasksRoute: typeof AppAdminTasksRoute
   AppAdminWeeklyFeedbackRoute: typeof AppAdminWeeklyFeedbackRoute
   AppAdminWeeklyReportsRoute: typeof AppAdminWeeklyReportsRoute
+  AppAdminWeeklyReviewManagementRoute: typeof AppAdminWeeklyReviewManagementRoute
   AppAdminIndexRoute: typeof AppAdminIndexRoute
 }
 
@@ -907,6 +928,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminTasksRoute: AppAdminTasksRoute,
   AppAdminWeeklyFeedbackRoute: AppAdminWeeklyFeedbackRoute,
   AppAdminWeeklyReportsRoute: AppAdminWeeklyReportsRoute,
+  AppAdminWeeklyReviewManagementRoute: AppAdminWeeklyReviewManagementRoute,
   AppAdminIndexRoute: AppAdminIndexRoute,
 }
 
