@@ -1967,3 +1967,33 @@ function downloadTextFile(filename: string, content: string, type: string) {
   link.click();
   URL.revokeObjectURL(url);
 }
+
+function formatPerformanceMeasure(rating: string | null) {
+  if (!rating || rating === "-") return "Pending";
+  return rating;
+}
+
+function PerformanceMeasureBadge({ rating, status }: { rating: string | null; status: string }) {
+  if (status !== "completed") {
+    return <span className="text-muted-foreground">-</span>;
+  }
+
+  const measure = formatPerformanceMeasure(rating);
+  let colorClass = "bg-muted text-muted-foreground";
+  
+  if (measure.toLowerCase().includes("excellent") || measure.toLowerCase().includes("outstanding")) {
+    colorClass = "bg-success/10 text-success border-success/20";
+  } else if (measure.toLowerCase().includes("good") || measure.toLowerCase().includes("satisfactory")) {
+    colorClass = "bg-primary/10 text-primary border-primary/20";
+  } else if (measure.toLowerCase().includes("average") || measure.toLowerCase().includes("fair")) {
+    colorClass = "bg-warning/10 text-warning border-warning/20";
+  } else if (measure.toLowerCase().includes("poor") || measure.toLowerCase().includes("improvement")) {
+    colorClass = "bg-destructive/10 text-destructive border-destructive/20";
+  }
+
+  return (
+    <span className={cn("rounded-full border px-2 py-1 text-xs font-semibold whitespace-nowrap", colorClass)}>
+      {measure}
+    </span>
+  );
+}
