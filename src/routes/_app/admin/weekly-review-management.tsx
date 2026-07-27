@@ -181,6 +181,7 @@ function WeeklyReviewManagementPage() {
   const [dialogEmployeeId, setDialogEmployeeId] = useState<string | null>(null);
   const employeeTableRef = useRef<HTMLDivElement | null>(null);
   const employeeHistoryRef = useRef<HTMLDivElement | null>(null);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
 
   const weeks = useMemo(
     () => buildBsReviewWeeks(Number(bsYear), Number(bsMonth)),
@@ -621,7 +622,11 @@ function WeeklyReviewManagementPage() {
                 <div className="rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold text-muted-foreground">
                   {weeks.length} review periods
                 </div>
-                <Button variant="outline" className="rounded-xl" onClick={() => showMonthEmployees()}>
+                <Button variant="outline" className="rounded-xl bg-background" onClick={() => setShowCalendarModal(true)}>
+                  <CalendarDays size={16} />
+                  Calendar
+                </Button>
+                <Button variant="outline" className="rounded-xl bg-background" onClick={() => showMonthEmployees()}>
                   <Eye size={16} />
                   View Month
                 </Button>
@@ -703,57 +708,6 @@ function WeeklyReviewManagementPage() {
             </div>
           </GlassCard>
 
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-            <GlassCard className="p-4">
-              <div className="mb-4 flex items-center gap-2">
-                <CalendarDays size={17} className="text-primary" />
-                <h2 className="text-lg font-bold">BS Calendar View</h2>
-              </div>
-              <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold text-muted-foreground">
-                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                  <div key={day}>{day}</div>
-                ))}
-              </div>
-              <div className="mt-2 grid grid-cols-7 gap-2">
-                {buildCalendarCells(Number(bsYear), Number(bsMonth)).map((cell, index) =>
-                  cell ? (
-                    <button
-                      key={cell.bsDate}
-                      type="button"
-                      onClick={() => setSelectedWeek(cell.weekNumber)}
-                      className={cn(
-                        "min-h-16 rounded-xl border border-border bg-card/50 p-2 text-left transition hover:border-primary/40",
-                        selectedWeek === cell.weekNumber && "border-primary bg-primary/10",
-                      )}
-                    >
-                      <div className="font-bold">{cell.day}</div>
-                      <div className="mt-2 text-[10px] text-muted-foreground">
-                        W{cell.weekNumber}
-                      </div>
-                    </button>
-                  ) : (
-                    <div key={`empty-${index}`} />
-                  ),
-                )}
-              </div>
-            </GlassCard>
-
-            <GlassCard className="p-4" glow="red">
-              <div className="mb-4 flex items-center gap-2">
-                <BarChart3 size={17} className="text-accent" />
-                <h2 className="text-lg font-bold">Review Summary</h2>
-              </div>
-              <div className="space-y-4">
-                <SummaryRow label="Selected week" value={`Week ${selectedWeek}`} />
-                <SummaryRow label="Employees" value={selectedSummary.total} />
-                <SummaryRow label="Completed" value={selectedSummary.completed} />
-                <SummaryRow label="Pending" value={selectedSummary.pending} />
-                <SummaryRow label="Completion" value={`${selectedSummary.completion}%`} />
-                <SummaryRow label="Performance" value={`${selectedSummary.average}%`} />
-                <Progress value={selectedSummary.completion} className="h-2" />
-              </div>
-            </GlassCard>
-          </div>
 
           <div ref={employeeTableRef}>
           <GlassCard className="p-4">
@@ -1130,6 +1084,67 @@ function WeeklyReviewManagementPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={showCalendarModal} onOpenChange={setShowCalendarModal}>
+        <DialogContent className="w-[96vw] max-w-5xl rounded-3xl border-border bg-background/95 p-6 shadow-2xl backdrop-blur-xl">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-2xl font-bold">
+              {selectedMonthName} {bsYear} Calendar & Summary
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <GlassCard className="p-4">
+              <div className="mb-4 flex items-center gap-2">
+                <CalendarDays size={17} className="text-primary" />
+                <h2 className="text-lg font-bold">BS Calendar View</h2>
+              </div>
+              <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold text-muted-foreground">
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                  <div key={day}>{day}</div>
+                ))}
+              </div>
+              <div className="mt-2 grid grid-cols-7 gap-2">
+                {buildCalendarCells(Number(bsYear), Number(bsMonth)).map((cell, index) =>
+                  cell ? (
+                    <button
+                      key={cell.bsDate}
+                      type="button"
+                      onClick={() => setSelectedWeek(cell.weekNumber)}
+                      className={cn(
+                        "min-h-16 rounded-xl border border-border bg-card/50 p-2 text-left transition hover:border-primary/40",
+                        selectedWeek === cell.weekNumber && "border-primary bg-primary/10",
+                      )}
+                    >
+                      <div className="font-bold">{cell.day}</div>
+                      <div className="mt-2 text-[10px] text-muted-foreground">
+                        W{cell.weekNumber}
+                      </div>
+                    </button>
+                  ) : (
+                    <div key={`empty-${index}`} />
+                  ),
+                )}
+              </div>
+            </GlassCard>
+
+            <GlassCard className="p-4" glow="red">
+              <div className="mb-4 flex items-center gap-2">
+                <BarChart3 size={17} className="text-accent" />
+                <h2 className="text-lg font-bold">Review Summary</h2>
+              </div>
+              <div className="space-y-4">
+                <SummaryRow label="Selected week" value={`Week ${selectedWeek}`} />
+                <SummaryRow label="Employees" value={selectedSummary.total} />
+                <SummaryRow label="Completed" value={selectedSummary.completed} />
+                <SummaryRow label="Pending" value={selectedSummary.pending} />
+                <SummaryRow label="Completion" value={`${selectedSummary.completion}%`} />
+                <SummaryRow label="Performance" value={`${selectedSummary.average}%`} />
+                <Progress value={selectedSummary.completion} className="h-2" />
+              </div>
+            </GlassCard>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
     </>
   );
@@ -1417,11 +1432,11 @@ function ReviewCardMetric({
   const pct = max === 100 ? value : Math.round((value / max) * 100);
   return (
     <div className="min-w-0">
-      <div className="mb-2 flex items-center justify-between gap-2 text-[11px] font-black uppercase tracking-wide text-foreground">
-        <span>{label}</span>
-        <span className="tabular-nums">{max === 100 ? `${value}%` : value}</span>
+      <div className="mb-1 flex flex-col gap-0 text-foreground">
+        <span className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{label}</span>
+        <span className="text-[11px] font-black tabular-nums">{max === 100 ? `${value}%` : `${value}/${max}`}</span>
       </div>
-      <div className="h-2 rounded-full border border-border bg-background shadow-inner">
+      <div className="h-1.5 rounded-full border border-border bg-background shadow-inner mt-1">
         <div className="h-full rounded-full bg-slate-600" style={{ width: `${Math.max(0, Math.min(100, pct))}%` }} />
       </div>
     </div>
