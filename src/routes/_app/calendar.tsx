@@ -5,6 +5,7 @@ import {
   Edit3,
   Landmark,
   Plus,
+  RefreshCw,
   Save,
   ShieldCheck,
   Sparkles,
@@ -19,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { bsInputToAdDateString } from "@/lib/nepali-calendar";
+import { bsInputToAdDateString, formatBsInput } from "@/lib/nepali-calendar";
 
 export const Route = createFileRoute("/_app/calendar")({ component: CalendarPage });
 
@@ -38,7 +39,10 @@ function CalendarPage() {
   const [form, setForm] = useState({ bsDate: "2083-02-14", title: "" });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+  const [isSavingEvent, setIsSavingEvent] = useState(false);
   const [eventError, setEventError] = useState<string | null>(null);
+  const [eventNotice, setEventNotice] = useState<string | null>(null);
+  const [eventReloadKey, setEventReloadKey] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -60,7 +64,7 @@ function CalendarPage() {
         setEvents(DEFAULT_EVENTS);
         setEventError("Showing starter events because shared events could not be loaded.");
       } else {
-        setEvents((data ?? []).map(mapCalendarEventRow));
+        setEvents((data ?? []).map(mapCalendarEventRow).sort(sortByBsDate));
       }
 
       setIsLoadingEvents(false);
@@ -71,10 +75,12 @@ function CalendarPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [eventReloadKey]);
 
   const sortedEvents = [...events].sort((a, b) => a.bsDate.localeCompare(b.bsDate));
-  const nextEvent = sortedEvents[0];
+  const todayBs = formatBsInput(new Date());
+  const nextEvent = sortedEvents.find((event) => event.bsDate >= todayBs) ?? sortedEvents[0];
+  const selectedEvent = sortedEvents.find((event) => event.bsDate === form.bsDate);
 
   const saveEvent = async () => {
     const title = form.title.trim();
@@ -84,6 +90,8 @@ function CalendarPage() {
     if (!adDate) return;
 
     setEventError(null);
+    setEventNotice(null);
+    setIsSavingEvent(true);
 
     if (editingId) {
       const { data, error } = await supabase
@@ -96,11 +104,12 @@ function CalendarPage() {
       if (error) {
         console.error("Failed to update calendar event", error);
         setEventError("Could not update the shared event. Please try again.");
+        setIsSavingEvent(false);
         return;
       }
 
       setEvents((items) =>
-        items.map((item) => (item.id === editingId ? mapCalendarEventRow(data) : item)),
+        items.map((item) => (item.id === editingId ? mapCalendarEventRow(data) : item)).sort(sortByBsDate),
       );
     } else {
       const { data, error } = await supabase
@@ -115,17 +124,21 @@ function CalendarPage() {
       if (error) {
         console.error("Failed to save calendar event", error);
         setEventError("Could not save the shared event. Please try again.");
+        setIsSavingEvent(false);
         return;
       }
 
       setEvents((items) => [
         ...items.filter((item) => item.bsDate !== form.bsDate),
         mapCalendarEventRow(data),
-      ]);
+      ].sort(sortByBsDate));
     }
 
+    setEventNotice(`${form.bsDate} BS event saved.`);
     setForm({ bsDate: form.bsDate, title: "" });
     setEditingId(null);
+    setIsSavingEvent(false);
+    setEventReloadKey((value) => value + 1);
   };
 
   const editEvent = (event: CalendarEvent) => {
@@ -135,11 +148,14 @@ function CalendarPage() {
 
   const deleteEvent = async (id: string) => {
     setEventError(null);
+    setEventNotice(null);
+    setIsSavingEvent(true);
     const { error } = await supabase.from("calendar_events").delete().eq("id", id);
 
     if (error) {
       console.error("Failed to delete calendar event", error);
       setEventError("Could not delete the shared event. Please try again.");
+      setIsSavingEvent(false);
       return;
     }
 
@@ -148,6 +164,9 @@ function CalendarPage() {
       setEditingId(null);
       setForm((current) => ({ ...current, title: "" }));
     }
+    setEventNotice("Event removed.");
+    setIsSavingEvent(false);
+    setEventReloadKey((value) => value + 1);
   };
 
   return (
@@ -202,9 +221,31 @@ function CalendarPage() {
               </div>
             </div>
 
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="text-xs text-muted-foreground">
+                {sortedEvents.length} shared {sortedEvents.length === 1 ? "event" : "events"}
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 rounded-lg px-2 text-[11px]"
+                onClick={() => setEventReloadKey((value) => value + 1)}
+                disabled={isLoadingEvents || isSavingEvent}
+              >
+                <RefreshCw size={12} className="mr-1" />
+                Refresh
+              </Button>
+            </div>
+
             {eventError && (
               <div className="mb-3 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs text-destructive">
                 {eventError}
+              </div>
+            )}
+            {eventNotice && (
+              <div className="mb-3 rounded-xl border border-success/20 bg-success/10 px-3 py-2 text-xs text-success">
+                {eventNotice}
               </div>
             )}
 
@@ -232,7 +273,7 @@ function CalendarPage() {
                         </div>
                         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                           <span>{event.bsDate} BS</span>
-                          {index === 0 && (
+                          {event.id === nextEvent?.id && (
                             <span className="rounded-full border border-accent/20 bg-accent/10 px-2 py-0.5 text-[10px] font-semibold text-accent">
                               Next
                             </span>
@@ -247,6 +288,7 @@ function CalendarPage() {
                             size="icon"
                             className="h-7 w-7 rounded-lg"
                             onClick={() => editEvent(event)}
+                            disabled={isSavingEvent}
                             aria-label={`Edit ${event.title}`}
                           >
                             <Edit3 size={12} />
@@ -257,6 +299,7 @@ function CalendarPage() {
                             size="icon"
                             className="h-7 w-7 rounded-lg text-destructive"
                             onClick={() => deleteEvent(event.id)}
+                            disabled={isSavingEvent}
                             aria-label={`Delete ${event.title}`}
                           >
                             <Trash2 size={12} />
@@ -288,6 +331,11 @@ function CalendarPage() {
                       placeholder="2083-02-14"
                       inputClassName="h-9 rounded-xl"
                     />
+                    {selectedEvent && !editingId && (
+                      <div className="mt-1 text-[11px] text-warning">
+                        Already added as {selectedEvent.title}. Saving will update this date.
+                      </div>
+                    )}
                   </div>
                   <div>
                     <Label className="text-[11px]">Event name</Label>
@@ -300,10 +348,29 @@ function CalendarPage() {
                       className="h-9 rounded-xl"
                     />
                   </div>
-                  <Button type="button" className="neon-button h-9 rounded-xl" onClick={saveEvent}>
+                  <Button
+                    type="button"
+                    className="neon-button h-9 rounded-xl"
+                    onClick={saveEvent}
+                    disabled={isSavingEvent || !form.title.trim() || !isValidBsDate(form.bsDate)}
+                  >
                     <Save size={13} className="mr-2" />
-                    {editingId ? "Update event" : "Add event"}
+                    {isSavingEvent ? "Saving..." : editingId || selectedEvent ? "Update event" : "Add event"}
                   </Button>
+                  {editingId && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-9 rounded-xl"
+                      onClick={() => {
+                        setEditingId(null);
+                        setForm((current) => ({ ...current, title: "" }));
+                      }}
+                      disabled={isSavingEvent}
+                    >
+                      Cancel edit
+                    </Button>
+                  )}
                 </div>
               </div>
             )}
@@ -359,6 +426,10 @@ function isValidBsDate(value: string) {
 
 function mapCalendarEventRow(row: { id: string; bs_date: string; title: string }): CalendarEvent {
   return { id: row.id, bsDate: row.bs_date, title: row.title };
+}
+
+function sortByBsDate(a: CalendarEvent, b: CalendarEvent) {
+  return a.bsDate.localeCompare(b.bsDate);
 }
 
 type CalendarEvent = {

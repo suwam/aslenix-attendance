@@ -8,6 +8,7 @@ import {
   Edit3,
   Flame,
   Plus,
+  RefreshCw,
   Save,
   Sparkles,
   Trash2,
@@ -128,7 +129,10 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
   const [form, setForm] = useState({ bsDate: formatBsDate(initialYear, initialMonth, 1), title: "" });
   const [editingId, setEditingId] = useState(null);
   const [isLoadingHolidays, setIsLoadingHolidays] = useState(true);
+  const [isSavingHoliday, setIsSavingHoliday] = useState(false);
   const [holidayError, setHolidayError] = useState(null);
+  const [holidayNotice, setHolidayNotice] = useState(null);
+  const [holidayReloadKey, setHolidayReloadKey] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -149,7 +153,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
         console.error("Failed to load holidays", error);
         setHolidayError("Shared holidays could not be loaded.");
       } else {
-        setHolidays((data ?? []).map(mapHolidayRow));
+        setHolidays((data ?? []).map(mapHolidayRow).sort(sortByBsDate));
       }
 
       setIsLoadingHolidays(false);
@@ -160,7 +164,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [holidayReloadKey]);
 
   useEffect(() => {
     onHolidaysChange?.(holidays);
@@ -181,10 +185,11 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
   const monthHolidays = days
     .filter((day) => day && holidaysByDate[day.bsDate])
     .map((day) => holidaysByDate[day.bsDate])
-    .slice(0, 3);
+    .sort(sortByBsDate);
   const visibleDays = days.filter(Boolean);
   const holidayCount = visibleDays.filter((day) => holidaysByDate[day.bsDate]).length;
   const weeklyOffCount = visibleDays.filter((day) => day.weekday === WEEKLY_OFF_DAY).length;
+  const selectedHoliday = holidaysByDate[form.bsDate];
   const monthRange = visibleDays.length
     ? `${format(visibleDays[0].adDate, "MMM d")} - ${format(visibleDays[visibleDays.length - 1].adDate, "MMM d, yyyy")}`
     : "";
@@ -208,6 +213,8 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
     if (!adDate) return;
 
     setHolidayError(null);
+    setHolidayNotice(null);
+    setIsSavingHoliday(true);
 
     if (editingId) {
       const { data, error } = await supabase
@@ -220,11 +227,12 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
       if (error) {
         console.error("Failed to update holiday", error);
         setHolidayError("Could not update the shared holiday. Please try again.");
+        setIsSavingHoliday(false);
         return;
       }
 
       setHolidays((items) =>
-        items.map((item) => (item.id === editingId ? mapHolidayRow(data) : item)),
+        items.map((item) => (item.id === editingId ? mapHolidayRow(data) : item)).sort(sortByBsDate),
       );
     } else {
       const { data, error } = await supabase
@@ -239,16 +247,20 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
       if (error) {
         console.error("Failed to save holiday", error);
         setHolidayError("Could not save the shared holiday. Please try again.");
+        setIsSavingHoliday(false);
         return;
       }
 
       setHolidays((items) => [
         ...items.filter((item) => item.bsDate !== form.bsDate),
         mapHolidayRow(data),
-      ]);
+      ].sort(sortByBsDate));
     }
+    setHolidayNotice(`${form.bsDate} BS holiday saved.`);
     setForm({ bsDate: form.bsDate, title: "" });
     setEditingId(null);
+    setIsSavingHoliday(false);
+    setHolidayReloadKey((value) => value + 1);
   };
 
   const editHoliday = (holiday) => {
@@ -258,11 +270,14 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
 
   const deleteHoliday = async (id) => {
     setHolidayError(null);
+    setHolidayNotice(null);
+    setIsSavingHoliday(true);
     const { error } = await supabase.from("holidays").delete().eq("id", id);
 
     if (error) {
       console.error("Failed to delete holiday", error);
       setHolidayError("Could not delete the shared holiday. Please try again.");
+      setIsSavingHoliday(false);
       return;
     }
 
@@ -271,6 +286,9 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
       setEditingId(null);
       setForm((current) => ({ ...current, title: "" }));
     }
+    setHolidayNotice("Holiday removed.");
+    setIsSavingHoliday(false);
+    setHolidayReloadKey((value) => value + 1);
   };
 
   return (
@@ -429,13 +447,31 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
         </div>
 
         <div className="mt-3 space-y-2">
-          <div className="flex items-center gap-2 text-xs font-semibold">
-            <Sparkles size={13} className="text-amber-300" />
-            Holiday indicators
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2 text-xs font-semibold">
+              <Sparkles size={13} className="shrink-0 text-amber-300" />
+              <span className="truncate">Holiday indicators</span>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 shrink-0 rounded-lg px-2 text-[11px]"
+              onClick={() => setHolidayReloadKey((value) => value + 1)}
+              disabled={isLoadingHolidays || isSavingHoliday}
+            >
+              <RefreshCw size={12} className="mr-1" />
+              Refresh
+            </Button>
           </div>
           {holidayError && (
             <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs text-destructive">
               {holidayError}
+            </div>
+          )}
+          {holidayNotice && (
+            <div className="rounded-xl border border-success/20 bg-success/10 px-3 py-2 text-xs text-success">
+              {holidayNotice}
             </div>
           )}
           {isLoadingHolidays ? (
@@ -443,41 +479,45 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
               Loading holidays...
             </div>
           ) : monthHolidays.length > 0 ? (
-            monthHolidays.map((holiday) => (
-              <div
-                key={holiday.id}
-                className="flex items-center justify-between gap-2 rounded-xl border border-border bg-card/45 px-3 py-2 text-xs shadow-[0_0_22px_-18px_var(--primary)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:border-warning/25 hover:bg-warning/10 hover:shadow-[0_0_28px_-14px_var(--primary)]"
-              >
-                <div className="min-w-0">
-                  <div className="truncate font-medium">{holiday.title}</div>
-                  <div className="text-muted-foreground">{holiday.bsDate} BS</div>
-                </div>
-                {isAdmin && (
-                  <div className="flex shrink-0 gap-1">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 rounded-lg"
-                      onClick={() => editHoliday(holiday)}
-                      aria-label={`Edit ${holiday.title}`}
-                    >
-                      <Edit3 size={12} />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 rounded-lg text-destructive"
-                      onClick={() => deleteHoliday(holiday.id)}
-                      aria-label={`Delete ${holiday.title}`}
-                    >
-                      <Trash2 size={12} />
-                    </Button>
+            <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+              {monthHolidays.map((holiday) => (
+                <div
+                  key={holiday.id}
+                  className="flex items-center justify-between gap-2 rounded-xl border border-border bg-card/45 px-3 py-2 text-xs shadow-[0_0_22px_-18px_var(--primary)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:border-warning/25 hover:bg-warning/10 hover:shadow-[0_0_28px_-14px_var(--primary)]"
+                >
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{holiday.title}</div>
+                    <div className="text-muted-foreground">{holiday.bsDate} BS</div>
                   </div>
-                )}
-              </div>
-            ))
+                  {isAdmin && (
+                    <div className="flex shrink-0 gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 rounded-lg"
+                        onClick={() => editHoliday(holiday)}
+                        disabled={isSavingHoliday}
+                        aria-label={`Edit ${holiday.title}`}
+                      >
+                        <Edit3 size={12} />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 rounded-lg text-destructive"
+                        onClick={() => deleteHoliday(holiday.id)}
+                        disabled={isSavingHoliday}
+                        aria-label={`Delete ${holiday.title}`}
+                      >
+                        <Trash2 size={12} />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="rounded-xl border border-dashed border-border bg-card/45 px-3 py-4 text-center text-xs text-muted-foreground shadow-[0_0_22px_-18px_var(--primary)] backdrop-blur-xl">
               No holidays marked this month.
@@ -489,7 +529,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
           <div className="mt-4 space-y-4 rounded-xl border border-accent/20 bg-card/45 p-3 shadow-[0_0_30px_-20px_var(--accent)] backdrop-blur-xl">
             <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
               <Plus size={13} className="text-accent" />
-              Admin calendar controls
+              Holiday controls
             </div>
 
             <div className="grid gap-2">
@@ -510,11 +550,35 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
                   placeholder="Festival or company holiday"
                   className="h-9 rounded-xl"
                 />
+                {selectedHoliday && !editingId && (
+                  <div className="mt-1 text-[11px] text-warning">
+                    Already marked as {selectedHoliday.title}. Saving will update this date.
+                  </div>
+                )}
               </div>
-              <Button type="button" className="neon-button h-9 rounded-xl" onClick={saveHoliday}>
+              <Button
+                type="button"
+                className="neon-button h-9 rounded-xl"
+                onClick={saveHoliday}
+                disabled={isSavingHoliday || !form.title.trim() || !isValidBsDate(form.bsDate)}
+              >
                 <Save size={13} className="mr-2" />
-                {editingId ? "Update holiday" : "Add holiday"}
+                {isSavingHoliday ? "Saving..." : editingId || selectedHoliday ? "Update holiday" : "Add holiday"}
               </Button>
+              {editingId && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-9 rounded-xl"
+                  onClick={() => {
+                    setEditingId(null);
+                    setForm((current) => ({ ...current, title: "" }));
+                  }}
+                  disabled={isSavingHoliday}
+                >
+                  Cancel edit
+                </Button>
+              )}
             </div>
 
             <div>
@@ -537,4 +601,8 @@ function mapHolidayRow(row) {
     bsDate: formatBsInput(row.date),
     title: row.name,
   };
+}
+
+function sortByBsDate(a, b) {
+  return a.bsDate.localeCompare(b.bsDate);
 }
