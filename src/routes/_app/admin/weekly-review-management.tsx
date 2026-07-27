@@ -794,6 +794,7 @@ function WeeklyReviewManagementPage() {
                         <TableHead>BS Date Range</TableHead>
                         <TableHead>Submission Date</TableHead>
                         <TableHead>Performance Score</TableHead>
+                        <TableHead>Performance Measure</TableHead>
                         <TableHead>Reviewer</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
@@ -821,6 +822,9 @@ function WeeklyReviewManagementPage() {
                               <span className="w-10 font-semibold tabular-nums">{row.score}%</span>
                               <Progress value={row.score} className="h-2 w-24" />
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            <PerformanceMeasureBadge rating={row.rating} status={row.status} />
                           </TableCell>
                           <TableCell>{row.reviewer}</TableCell>
                           <TableCell>
@@ -886,65 +890,7 @@ function WeeklyReviewManagementPage() {
           </GlassCard>
           </div>
 
-          <div ref={employeeHistoryRef}>
-          <GlassCard className="p-4" glow="blue">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-bold">Employee Review History</h2>
-                <p className="text-sm text-muted-foreground">
-                  {selectedEmployee
-                    ? `${selectedEmployee.full_name} / ${selectedEmployee.department || "Unassigned"}`
-                    : "Click an employee name to view all past weekly reviews."}
-                </p>
-              </div>
-              <div className="rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold text-muted-foreground">
-                {selectedEmployeeHistory.length} reviews
-              </div>
-            </div>
 
-            {selectedEmployeeHistory.length ? (
-              <div className="grid gap-3 lg:grid-cols-2">
-                {selectedEmployeeHistory.map((review) => (
-                  <div
-                    key={review.id}
-                    className="rounded-2xl border border-border bg-card/55 p-4 shadow-sm"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="text-sm font-bold">{review.bsLabel}</div>
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          Week {review.weekNumber} / Submitted {review.submissionDate}
-                        </div>
-                      </div>
-                      <div className="rounded-xl border border-primary/20 bg-primary/10 px-3 py-2 text-lg font-black text-primary">
-                        {review.score}%
-                      </div>
-                    </div>
-                    <div className="mt-3">
-                      <Progress value={review.score} className="h-2" />
-                    </div>
-                    <div className="mt-3 grid gap-2 text-xs text-muted-foreground">
-                      <div>
-                        <span className="font-semibold text-foreground">Rating:</span>{" "}
-                        {review.rating}
-                      </div>
-                      {review.summary && (
-                        <div>
-                          <span className="font-semibold text-foreground">Notes:</span>{" "}
-                          {review.summary}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-                No past weekly reviews found for this employee.
-              </div>
-            )}
-          </GlassCard>
-          </div>
 
           <div className="grid gap-5 xl:grid-cols-2">
             <ChartCard title="Weekly Performance Trend" icon={TrendingUp}>
@@ -1110,7 +1056,7 @@ function WeeklyReviewManagementPage() {
                               : dialogEmployee.status
                           }
                         />
-                        <MiniMetric label="Submitted" value={dialogEmployee.submissionDate} />
+                        <MiniMetric label="Performance" value={formatPerformanceMeasure(dialogEmployee.rating)} />
                       </div>
                     </div>
 
@@ -1126,26 +1072,38 @@ function WeeklyReviewManagementPage() {
                         </span>
                       </div>
                       {dialogEmployeeHistory.length ? (
-                        dialogEmployeeHistory.map((review) => (
-                          <div key={review.id} className="rounded-2xl border border-border bg-background/70 p-4">
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <div className="font-bold">
-                                  Week {review.weekNumber} / {review.bsLabel}
+                        <div className="grid gap-3 lg:grid-cols-2">
+                          {dialogEmployeeHistory.map((review) => (
+                            <div key={review.id} className="rounded-2xl border border-border bg-background/70 p-4 shadow-sm">
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <div className="text-sm font-bold">{review.bsLabel}</div>
+                                  <div className="mt-1 text-xs text-muted-foreground">
+                                    Week {review.weekNumber} / Submitted {review.submissionDate}
+                                  </div>
                                 </div>
-                                <div className="mt-1 text-xs text-muted-foreground">
-                                  Submitted {review.submissionDate} by {review.reviewer}
+                                <div className="rounded-xl border border-primary/20 bg-primary/10 px-3 py-2 text-lg font-black text-primary">
+                                  {review.score}%
                                 </div>
                               </div>
-                              <div className="rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
-                                {review.score}%
+                              <div className="mt-3">
+                                <Progress value={review.score} className="h-2" />
+                              </div>
+                              <div className="mt-3 grid gap-2 text-xs text-muted-foreground">
+                                <div>
+                                  <span className="font-semibold text-foreground">Rating:</span>{" "}
+                                  {review.rating}
+                                </div>
+                                {review.summary && (
+                                  <div>
+                                    <span className="font-semibold text-foreground">Notes:</span>{" "}
+                                    {review.summary}
+                                  </div>
+                                )}
                               </div>
                             </div>
-                            <p className="mt-3 text-sm text-muted-foreground">
-                              {review.summary || "No written review notes available."}
-                            </p>
-                          </div>
-                        ))
+                          ))}
+                        </div>
                       ) : (
                         <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
                           No weekly review found for this employee in{" "}
