@@ -298,7 +298,7 @@ function WeeklyReviewManagementPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Weekly Review Management"
+        title="WR Report"
         subtitle="Manage and review weekly employee performance across all Nepali months."
         actions={
           <>
@@ -317,7 +317,7 @@ function WeeklyReviewManagementPage() {
       <div className="-mt-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
         <span>Dashboard</span>
         <span>/</span>
-        <span className="font-medium text-foreground">Weekly Reviews</span>
+        <span className="font-medium text-foreground">WR Report</span>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">

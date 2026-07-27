@@ -50,6 +50,7 @@ const adminNav: NavItem[] = [
   { to: "/admin/attendance-corrections", label: "Attendance Corrections", icon: CalendarClock },
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/admin/standups", label: "Daily Standups", icon: ClipboardList },
+  { to: "/admin/weekly-review-management", label: "WR Report", icon: FileBarChart2 },
   { to: "/admin/weekly-reports", label: "Weekly Reports", icon: FileBarChart2 },
   { to: "/admin/devices", label: "Registered Devices", icon: Laptop },
   { to: "/admin/qr-ids", label: "Digital QR IDs", icon: QrCode },
