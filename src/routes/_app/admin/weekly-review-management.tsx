@@ -43,9 +43,17 @@ import { format } from "date-fns";
 import { PageHeader, StatCard } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Select,
   SelectContent,
@@ -163,6 +171,9 @@ function WeeklyReviewManagementPage() {
   const [page, setPage] = useState(1);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [lockedWeeks, setLockedWeeks] = useState<number[]>([]);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [dialogWeekNumber, setDialogWeekNumber] = useState(1);
+  const [dialogEmployeeId, setDialogEmployeeId] = useState<string | null>(null);
   const employeeTableRef = useRef<HTMLDivElement | null>(null);
   const employeeHistoryRef = useRef<HTMLDivElement | null>(null);
 
@@ -296,6 +307,16 @@ function WeeklyReviewManagementPage() {
     () => buildEmployeeHistory(selectedEmployeeId, profiles, reviews),
     [profiles, reviews, selectedEmployeeId],
   );
+  const dialogRows = useMemo(
+    () => reviewRows.filter((row) => row.weekNumber === dialogWeekNumber),
+    [dialogWeekNumber, reviewRows],
+  );
+  const dialogEmployee = dialogRows.find((row) => row.employeeId === dialogEmployeeId) ?? null;
+  const dialogEmployeeProfile = profiles.find((profile) => profile.user_id === dialogEmployeeId) ?? null;
+  const dialogEmployeeHistory = useMemo(
+    () => buildEmployeeHistory(dialogEmployeeId, profiles, reviews),
+    [dialogEmployeeId, profiles, reviews],
+  );
   const monthReviewCounts = useMemo(
     () => getMonthReviewCounts(reviews, Number(bsYear)),
     [reviews, bsYear],
@@ -323,9 +344,9 @@ function WeeklyReviewManagementPage() {
       current.includes(weekNumber) ? current : [...current, weekNumber],
     );
     setPage(1);
-    requestAnimationFrame(() => {
-      employeeTableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
+    setDialogWeekNumber(weekNumber);
+    setDialogEmployeeId(null);
+    setReviewDialogOpen(true);
   };
 
   const showEmployeeReviews = (row: EmployeeReview) => {
@@ -334,9 +355,9 @@ function WeeklyReviewManagementPage() {
     setExpandedWeeks((current) =>
       current.includes(row.weekNumber) ? current : [...current, row.weekNumber],
     );
-    requestAnimationFrame(() => {
-      employeeHistoryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
+    setDialogWeekNumber(row.weekNumber);
+    setDialogEmployeeId(row.employeeId);
+    setReviewDialogOpen(true);
   };
 
   const editWeekReviews = (weekNumber: number) => {
@@ -972,6 +993,110 @@ function WeeklyReviewManagementPage() {
           </div>
         </div>
       </div>
+
+      <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+        <DialogContent className="max-h-[92vh] w-[96vw] max-w-7xl overflow-hidden rounded-3xl border-border bg-background/95 p-0 shadow-2xl backdrop-blur-xl">
+          <div className="flex max-h-[92vh] flex-col">
+            <DialogHeader className="border-b border-border px-6 py-5 text-left">
+              <DialogTitle className="text-2xl font-bold">
+                Week {dialogWeekNumber} Review Employees
+              </DialogTitle>
+              <DialogDescription>
+                {selectedMonthName} {bsYear} / click an employee card to view all weekly reviews.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid min-h-0 flex-1 gap-0 overflow-hidden xl:grid-cols-[minmax(0,1.35fr)_420px]">
+              <div className="min-h-0 overflow-y-auto p-5">
+                <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                  {dialogRows.map((row, index) => {
+                    const profile = profiles.find((item) => item.user_id === row.employeeId);
+                    return (
+                      <EmployeeReviewCard
+                        key={row.id}
+                        row={row}
+                        rank={index + 1}
+                        avatarUrl={profile?.avatar_url}
+                        active={dialogEmployeeId === row.employeeId}
+                        onClick={() => setDialogEmployeeId(row.employeeId)}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="min-h-0 overflow-y-auto border-t border-border bg-card/45 p-5 xl:border-l xl:border-t-0">
+                {dialogEmployee ? (
+                  <div className="space-y-4">
+                    <div className="rounded-2xl border border-border bg-background/70 p-4">
+                      <div className="flex items-center gap-3">
+                        <EmployeeAvatar name={dialogEmployee.employee} avatarUrl={dialogEmployeeProfile?.avatar_url} size="lg" />
+                        <div className="min-w-0">
+                          <h3 className="truncate text-xl font-bold">{dialogEmployee.employee}</h3>
+                          <p className="text-sm font-semibold text-muted-foreground">
+                            {dialogEmployee.department} / {dialogEmployee.position}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-4 grid grid-cols-2 gap-3">
+                        <MiniMetric label="Week" value={dialogEmployee.weekNumber} />
+                        <MiniMetric label="Score" value={`${dialogEmployee.score}%`} />
+                        <MiniMetric label="Status" value={dialogEmployee.status} />
+                        <MiniMetric label="Submitted" value={dialogEmployee.submissionDate} />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-bold">All Weekly Reviews</h4>
+                        <span className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-muted-foreground">
+                          {dialogEmployeeHistory.length} reviews
+                        </span>
+                      </div>
+                      {dialogEmployeeHistory.length ? (
+                        dialogEmployeeHistory.map((review) => (
+                          <div key={review.id} className="rounded-2xl border border-border bg-background/70 p-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <div className="font-bold">
+                                  Week {review.weekNumber} / {review.bsLabel}
+                                </div>
+                                <div className="mt-1 text-xs text-muted-foreground">
+                                  Submitted {review.submissionDate} by {review.reviewer}
+                                </div>
+                              </div>
+                              <div className="rounded-full bg-primary/10 px-3 py-1 text-sm font-bold text-primary">
+                                {review.score}%
+                              </div>
+                            </div>
+                            <p className="mt-3 text-sm text-muted-foreground">
+                              {review.summary || "No written review notes available."}
+                            </p>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                          No past weekly reviews found for this employee.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex h-full min-h-[360px] items-center justify-center rounded-2xl border border-dashed border-border p-8 text-center">
+                    <div>
+                      <Users className="mx-auto mb-3 h-10 w-10 text-primary" />
+                      <h3 className="text-lg font-bold">Select an employee</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Click a card to view that employee's weekly review history here.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -982,6 +1107,98 @@ function MiniMetric({ label, value }: { label: string; value: string | number })
       <div className="text-xs text-muted-foreground">{label}</div>
       <div className="mt-1 text-xl font-bold tabular-nums">{value}</div>
     </div>
+  );
+}
+
+function EmployeeReviewCard({
+  row,
+  rank,
+  avatarUrl,
+  active,
+  onClick,
+}: {
+  row: EmployeeReview;
+  rank: number;
+  avatarUrl?: string | null;
+  active: boolean;
+  onClick: () => void;
+}) {
+  const attendance = row.status === "completed" ? Math.max(25, Math.min(100, row.score + 20)) : 0;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "group rounded-3xl border bg-card/80 p-5 text-left shadow-xl shadow-foreground/5 transition hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-2xl",
+        active
+          ? "border-primary/35 bg-gradient-to-br from-sky-50/80 via-card to-rose-50/80 ring-2 ring-primary/15 dark:from-sky-950/25 dark:to-rose-950/25"
+          : "border-border",
+      )}
+    >
+      <div className="flex items-start gap-4">
+        <EmployeeAvatar name={row.employee} avatarUrl={avatarUrl} />
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-lg font-bold text-foreground">{row.employee}</div>
+          <div className="truncate text-sm font-semibold text-muted-foreground">{row.department}</div>
+        </div>
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-700 text-base font-black text-white shadow-lg">
+          #{rank}
+        </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-3 gap-3">
+        <ReviewCardMetric label="Score" value={row.score} />
+        <ReviewCardMetric label="Tasks" value={row.status === "completed" ? 1 : 0} max={5} />
+        <ReviewCardMetric label="Attend" value={attendance} />
+      </div>
+    </button>
+  );
+}
+
+function ReviewCardMetric({
+  label,
+  value,
+  max = 100,
+}: {
+  label: string;
+  value: number;
+  max?: number;
+}) {
+  const pct = max === 100 ? value : Math.round((value / max) * 100);
+  return (
+    <div className="min-w-0">
+      <div className="mb-2 flex items-center justify-between gap-2 text-[11px] font-black uppercase tracking-wide text-foreground">
+        <span>{label}</span>
+        <span className="tabular-nums">{max === 100 ? `${value}%` : value}</span>
+      </div>
+      <div className="h-2 rounded-full border border-border bg-background shadow-inner">
+        <div className="h-full rounded-full bg-slate-600" style={{ width: `${Math.max(0, Math.min(100, pct))}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function EmployeeAvatar({
+  name,
+  avatarUrl,
+  size = "md",
+}: {
+  name: string;
+  avatarUrl?: string | null;
+  size?: "md" | "lg";
+}) {
+  const initials = name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+  return (
+    <Avatar className={cn("border border-border bg-background", size === "lg" ? "h-14 w-14" : "h-12 w-12")}>
+      <AvatarImage src={avatarUrl || ""} alt={name} />
+      <AvatarFallback className="font-bold text-primary">{initials || "WR"}</AvatarFallback>
+    </Avatar>
   );
 }
 
