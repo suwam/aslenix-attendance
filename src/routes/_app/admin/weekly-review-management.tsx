@@ -142,6 +142,8 @@ type EmployeeReview = {
   reviewer: string;
   status: StatusFilter;
   rating: string;
+  submittedCount?: number;
+  periodCount?: number;
 };
 
 type ReviewWeek = {
@@ -175,6 +177,7 @@ function WeeklyReviewManagementPage() {
   const [lockedWeeks, setLockedWeeks] = useState<number[]>([]);
   const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
   const [dialogWeekNumber, setDialogWeekNumber] = useState(1);
+  const [dialogScope, setDialogScope] = useState<"week" | "month">("month");
   const [dialogEmployeeId, setDialogEmployeeId] = useState<string | null>(null);
   const employeeTableRef = useRef<HTMLDivElement | null>(null);
   const employeeHistoryRef = useRef<HTMLDivElement | null>(null);
@@ -310,8 +313,14 @@ function WeeklyReviewManagementPage() {
     [profiles, reviews, selectedEmployeeId],
   );
   const dialogRows = useMemo(
-    () => reviewRows.filter((row) => row.weekNumber === dialogWeekNumber),
-    [dialogWeekNumber, reviewRows],
+    () =>
+      buildDialogEmployeeRows(
+        dialogScope === "month"
+          ? reviewRows
+          : reviewRows.filter((row) => row.weekNumber === dialogWeekNumber),
+        profiles,
+      ),
+    [dialogScope, dialogWeekNumber, profiles, reviewRows],
   );
   const dialogEmployee = dialogRows.find((row) => row.employeeId === dialogEmployeeId) ?? null;
   const dialogEmployeeProfile = profiles.find((profile) => profile.user_id === dialogEmployeeId) ?? null;
@@ -324,9 +333,9 @@ function WeeklyReviewManagementPage() {
         weeks,
         Number(bsYear),
         Number(bsMonth),
-        dialogWeekNumber,
+        dialogScope === "week" ? dialogWeekNumber : undefined,
       ),
-    [dialogEmployeeId, profiles, reviews, weeks, bsYear, bsMonth, dialogWeekNumber],
+    [dialogEmployeeId, profiles, reviews, weeks, bsYear, bsMonth, dialogScope, dialogWeekNumber],
   );
   const monthReviewCounts = useMemo(
     () => getMonthReviewCounts(reviews, Number(bsYear)),
@@ -356,7 +365,16 @@ function WeeklyReviewManagementPage() {
     );
     setPage(1);
     setDialogWeekNumber(weekNumber);
+    setDialogScope("week");
     setDialogEmployeeId(null);
+    setReviewDialogOpen(true);
+  };
+
+  const showMonthEmployees = (employeeId?: string | null) => {
+    setWeekFilter("all");
+    setPage(1);
+    setDialogScope("month");
+    setDialogEmployeeId(employeeId || null);
     setReviewDialogOpen(true);
   };
 
@@ -367,6 +385,7 @@ function WeeklyReviewManagementPage() {
       current.includes(row.weekNumber) ? current : [...current, row.weekNumber],
     );
     setDialogWeekNumber(row.weekNumber);
+    setDialogScope("month");
     setDialogEmployeeId(row.employeeId);
     setReviewDialogOpen(true);
   };
@@ -598,8 +617,14 @@ function WeeklyReviewManagementPage() {
                   Auto-generated BS review weeks: 1-7, 8-14, 15-21, 22-28, and 29-last day.
                 </p>
               </div>
-              <div className="rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold text-muted-foreground">
-                {weeks.length} review periods
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold text-muted-foreground">
+                  {weeks.length} review periods
+                </div>
+                <Button variant="outline" className="rounded-xl" onClick={() => showMonthEmployees()}>
+                  <Eye size={16} />
+                  View Month
+                </Button>
               </div>
             </div>
 
@@ -1018,10 +1043,13 @@ function WeeklyReviewManagementPage() {
           <div className="flex max-h-[92vh] flex-col">
             <DialogHeader className="border-b border-border px-6 py-5 text-left">
               <DialogTitle className="text-2xl font-bold">
-                Week {dialogWeekNumber} Review Employees
+                {dialogScope === "month"
+                  ? `${selectedMonthName} ${bsYear} Monthly Review Employees`
+                  : `Week ${dialogWeekNumber} Review Employees`}
               </DialogTitle>
               <DialogDescription>
-                {selectedMonthName} {bsYear} / select an employee to view this period's review.
+                {selectedMonthName} {bsYear} / select an employee to view{" "}
+                {dialogScope === "month" ? "all weekly reviews for this month." : "this period's review."}
               </DialogDescription>
             </DialogHeader>
 
@@ -1030,10 +1058,12 @@ function WeeklyReviewManagementPage() {
                 <div className="mb-3 flex items-center justify-between px-1">
                   <div>
                     <h3 className="font-bold">Employees</h3>
-                    <p className="text-xs text-muted-foreground">{dialogRows.length} in this week</p>
+                    <p className="text-xs text-muted-foreground">
+                      {dialogRows.length} in this {dialogScope}
+                    </p>
                   </div>
                   <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-                    Week {dialogWeekNumber}
+                    {dialogScope === "month" ? "Full Month" : `Week ${dialogWeekNumber}`}
                   </span>
                 </div>
                 <div className="grid gap-2">
@@ -1067,9 +1097,19 @@ function WeeklyReviewManagementPage() {
                         </div>
                       </div>
                       <div className="mt-4 grid grid-cols-2 gap-3">
-                        <MiniMetric label="Week" value={dialogEmployee.weekNumber} />
+                        <MiniMetric
+                          label={dialogScope === "month" ? "Month" : "Week"}
+                          value={dialogScope === "month" ? selectedMonthName : dialogEmployee.weekNumber}
+                        />
                         <MiniMetric label="Score" value={`${dialogEmployee.score}%`} />
-                        <MiniMetric label="Status" value={dialogEmployee.status} />
+                        <MiniMetric
+                          label="Reviews"
+                          value={
+                            dialogEmployee.periodCount
+                              ? `${dialogEmployee.submittedCount || 0}/${dialogEmployee.periodCount}`
+                              : dialogEmployee.status
+                          }
+                        />
                         <MiniMetric label="Submitted" value={dialogEmployee.submissionDate} />
                       </div>
                     </div>
@@ -1077,7 +1117,9 @@ function WeeklyReviewManagementPage() {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <h4 className="font-bold">
-                          Week {dialogWeekNumber} Review / {selectedMonthName} {bsYear}
+                          {dialogScope === "month"
+                            ? `All Weekly Reviews / ${selectedMonthName} ${bsYear}`
+                            : `Week ${dialogWeekNumber} Review / ${selectedMonthName} ${bsYear}`}
                         </h4>
                         <span className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-muted-foreground">
                           {dialogEmployeeHistory.length} reviews
@@ -1106,7 +1148,10 @@ function WeeklyReviewManagementPage() {
                         ))
                       ) : (
                         <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-                          No weekly review found for this employee in Week {dialogWeekNumber} of {selectedMonthName} {bsYear}.
+                          No weekly review found for this employee in{" "}
+                          {dialogScope === "month"
+                            ? `${selectedMonthName} ${bsYear}`
+                            : `Week ${dialogWeekNumber} of ${selectedMonthName} ${bsYear}`}.
                         </div>
                       )}
                     </div>
@@ -1384,7 +1429,11 @@ function EmployeeReviewStackItem({
         <div className="truncate text-sm font-semibold text-muted-foreground">{row.department}</div>
         <div className="mt-2 grid grid-cols-3 gap-2">
           <ReviewCardMetric label="Score" value={row.score} />
-          <ReviewCardMetric label="Tasks" value={row.status === "completed" ? 1 : 0} max={5} />
+          <ReviewCardMetric
+            label="Reviews"
+            value={row.submittedCount ?? (row.status === "completed" ? 1 : 0)}
+            max={row.periodCount ?? 5}
+          />
           <ReviewCardMetric
             label="Attend"
             value={row.status === "completed" ? Math.max(25, Math.min(100, row.score + 20)) : 0}
@@ -1802,6 +1851,48 @@ function buildEmployeePeriodHistory(
       matchingWeeks.some((week) => isReviewInBsWeek(review, week, bsYear, bsMonth)),
     ),
   );
+}
+
+function buildDialogEmployeeRows(rows: EmployeeReview[], profiles: ProfileRow[]) {
+  const rowsByEmployee = new Map<string, EmployeeReview[]>();
+  rows.forEach((row) => {
+    rowsByEmployee.set(row.employeeId, [...(rowsByEmployee.get(row.employeeId) || []), row]);
+  });
+
+  return profiles
+    .map((profile) => {
+      const employeeRows = rowsByEmployee.get(profile.user_id) || [];
+      if (!employeeRows.length) return null;
+      const completedRows = employeeRows.filter((row) => row.status === "completed");
+      const lockedRows = employeeRows.filter((row) => row.status === "locked");
+      const first = employeeRows[0];
+      const score = average(completedRows.map((row) => row.score));
+      const status: StatusFilter =
+        completedRows.length === employeeRows.length
+          ? "completed"
+          : lockedRows.length
+            ? "locked"
+            : "pending";
+
+      return {
+        ...first,
+        id: `${profile.user_id}-${employeeRows.map((row) => row.id).join("-")}`,
+        employee: profile.full_name || first.employee,
+        department: profile.department || first.department,
+        position: profile.position || first.position,
+        weekNumber: employeeRows.length === 1 ? first.weekNumber : 0,
+        bsRange: employeeRows.length === 1 ? first.bsRange : "Full month",
+        submissionDate:
+          employeeRows.length === 1
+            ? first.submissionDate
+            : `${completedRows.length}/${employeeRows.length} submitted`,
+        score,
+        status,
+        submittedCount: completedRows.length,
+        periodCount: employeeRows.length,
+      };
+    })
+    .filter(Boolean) as EmployeeReview[];
 }
 
 function getMonthReviewCounts(reviews: ReviewRow[], bsYear: number) {
