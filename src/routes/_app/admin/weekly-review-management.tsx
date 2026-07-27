@@ -185,12 +185,7 @@ function WeeklyReviewManagementPage() {
           .eq("approval_status", "approved")
           .eq("is_suspended", false)
           .order("full_name", { ascending: true }),
-        (supabase as any)
-          .from("weekly_feedback")
-          .select(
-            "id, employee_id, admin_id, week_number, week_start, nepali_year, nepali_month, unlock_date, rating, strengths, improvements, admin_notes, notes, score, review_score, created_at, updated_at",
-          )
-          .order("week_start", { ascending: false }),
+        loadWeeklyFeedbackRows(),
       ]);
 
       if (!mounted) return;
@@ -200,6 +195,7 @@ function WeeklyReviewManagementPage() {
       }
 
       if (feedbackResult.error) {
+        console.error("Unable to load weekly reviews", feedbackResult.error);
         toast.error("Unable to load weekly reviews");
       }
 
@@ -1116,6 +1112,58 @@ function buildEmployeeReviewRows(
       };
     }),
   );
+}
+
+async function loadWeeklyFeedbackRows() {
+  const selectAttempts = [
+    "id, employee_id, admin_id, week_number, week_start, nepali_year, nepali_month, unlock_date, rating, strengths, improvements, admin_notes, notes, score, review_score, created_at, updated_at",
+    "id, employee_id, week_number, week_start, nepali_year, nepali_month, unlock_date, rating, strengths, improvements, admin_notes, notes, score, created_at, updated_at",
+    "id, employee_id, admin_id, week_number, week_start, rating, strengths, improvements, admin_notes, notes, score, review_score, created_at, updated_at",
+    "id, employee_id, admin_id, week_start, rating, strengths, improvements, notes, score, created_at, updated_at",
+    "id, employee_id, week_start, rating, score, created_at",
+  ];
+
+  let lastError: unknown = null;
+
+  for (const selectColumns of selectAttempts) {
+    const result = await (supabase as any)
+      .from("weekly_feedback")
+      .select(selectColumns)
+      .order("week_start", { ascending: false });
+
+    if (!result.error) {
+      return {
+        data: (result.data ?? []).map(normalizeReviewRow),
+        error: null,
+      };
+    }
+
+    lastError = result.error;
+  }
+
+  return { data: [], error: lastError };
+}
+
+function normalizeReviewRow(row: Partial<ReviewRow>): ReviewRow {
+  return {
+    id: String(row.id ?? crypto.randomUUID()),
+    employee_id: String(row.employee_id ?? ""),
+    admin_id: row.admin_id ?? null,
+    week_number: row.week_number ?? null,
+    week_start: row.week_start ?? null,
+    nepali_year: row.nepali_year ?? null,
+    nepali_month: row.nepali_month ?? null,
+    unlock_date: row.unlock_date ?? null,
+    rating: row.rating ?? null,
+    strengths: row.strengths ?? null,
+    improvements: row.improvements ?? null,
+    admin_notes: row.admin_notes ?? null,
+    notes: row.notes ?? null,
+    score: row.score ?? null,
+    review_score: row.review_score ?? null,
+    created_at: row.created_at ?? null,
+    updated_at: row.updated_at ?? null,
+  };
 }
 
 function isReviewInBsWeek(review: ReviewRow, week: ReviewWeek, bsYear: number, bsMonth: number) {
