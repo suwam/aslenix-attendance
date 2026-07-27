@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -147,6 +147,7 @@ type ReviewWeek = {
 
 function WeeklyReviewManagementPage() {
   const { isAdmin } = useAuth();
+  const navigate = useNavigate();
   const currentBs = useMemo(() => new NepaliDate(), []);
   const [bsYear, setBsYear] = useState(String(currentBs.getYear()));
   const [bsMonth, setBsMonth] = useState(String(currentBs.getMonth() + 1));
@@ -161,6 +162,9 @@ function WeeklyReviewManagementPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
+  const [lockedWeeks, setLockedWeeks] = useState<number[]>([]);
+  const employeeTableRef = useRef<HTMLDivElement | null>(null);
+  const employeeHistoryRef = useRef<HTMLDivElement | null>(null);
 
   const weeks = useMemo(
     () => buildBsReviewWeeks(Number(bsYear), Number(bsMonth)),
@@ -211,9 +215,20 @@ function WeeklyReviewManagementPage() {
     };
   }, [bsMonth, bsYear]);
 
-  const reviewRows = useMemo(
+  const baseReviewRows = useMemo(
     () => buildEmployeeReviewRows(profiles, reviews, weeks, Number(bsYear), Number(bsMonth)),
     [profiles, reviews, weeks, bsYear, bsMonth],
+  );
+  const reviewRows = useMemo(
+    () =>
+      baseReviewRows.map((row) => ({
+        ...row,
+        status:
+          lockedWeeks.includes(row.weekNumber) && row.status === "pending"
+            ? "locked"
+            : row.status,
+      })),
+    [baseReviewRows, lockedWeeks],
   );
 
   useEffect(() => {
@@ -299,6 +314,63 @@ function WeeklyReviewManagementPage() {
   const exportPdf = () => {
     window.print();
     toast.success("Print dialog opened for PDF export");
+  };
+
+  const showWeekEmployees = (weekNumber: number) => {
+    setSelectedWeek(weekNumber);
+    setWeekFilter(String(weekNumber) as WeekFilter);
+    setExpandedWeeks((current) =>
+      current.includes(weekNumber) ? current : [...current, weekNumber],
+    );
+    setPage(1);
+    requestAnimationFrame(() => {
+      employeeTableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
+  const showEmployeeReviews = (row: EmployeeReview) => {
+    setSelectedEmployeeId(row.employeeId);
+    setSelectedWeek(row.weekNumber);
+    setExpandedWeeks((current) =>
+      current.includes(row.weekNumber) ? current : [...current, row.weekNumber],
+    );
+    requestAnimationFrame(() => {
+      employeeHistoryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
+  const editWeekReviews = (weekNumber: number) => {
+    showWeekEmployees(weekNumber);
+    toast.message(`Opening Weekly Feedback for Week ${weekNumber}`);
+    navigate({ to: "/admin/weekly-feedback" });
+  };
+
+  const editEmployeeReview = (row: EmployeeReview) => {
+    showEmployeeReviews(row);
+    toast.message(`Opening Weekly Feedback to edit ${row.employee}'s Week ${row.weekNumber} review`);
+    navigate({ to: "/admin/weekly-feedback" });
+  };
+
+  const lockWeekReviews = (weekNumber: number) => {
+    setLockedWeeks((current) =>
+      current.includes(weekNumber) ? current : [...current, weekNumber],
+    );
+    setStatusFilter("locked");
+    setWeekFilter(String(weekNumber) as WeekFilter);
+    setPage(1);
+    toast.success(`Week ${weekNumber} reviews locked in WR Report`);
+    requestAnimationFrame(() => {
+      employeeTableRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
+  const lockEmployeeReview = (row: EmployeeReview) => {
+    if (row.status === "completed") {
+      toast.message(`${row.employee}'s Week ${row.weekNumber} review is already submitted`);
+      showEmployeeReviews(row);
+      return;
+    }
+    lockWeekReviews(row.weekNumber);
   };
 
   const toggleWeek = (weekNumber: number) => {
@@ -539,9 +611,23 @@ function WeeklyReviewManagementPage() {
                               <Progress value={completion} className="h-2" />
                             </div>
                             <div className="grid grid-cols-2 gap-2">
-                              <ActionButton icon={Eye} label="View" />
-                              <ActionButton icon={Edit3} label="Edit" disabled={!isAdmin} />
-                              <ActionButton icon={LockKeyhole} label="Lock" disabled={!isAdmin} />
+                              <ActionButton
+                                icon={Eye}
+                                label="View"
+                                onClick={() => showWeekEmployees(week.weekNumber)}
+                              />
+                              <ActionButton
+                                icon={Edit3}
+                                label="Edit"
+                                disabled={!isAdmin}
+                                onClick={() => editWeekReviews(week.weekNumber)}
+                              />
+                              <ActionButton
+                                icon={LockKeyhole}
+                                label="Lock"
+                                disabled={!isAdmin || lockedWeeks.includes(week.weekNumber)}
+                                onClick={() => lockWeekReviews(week.weekNumber)}
+                              />
                               <ActionButton icon={Download} label="Export PDF" onClick={exportPdf} />
                             </div>
                           </div>
@@ -604,6 +690,7 @@ function WeeklyReviewManagementPage() {
             </GlassCard>
           </div>
 
+          <div ref={employeeTableRef}>
           <GlassCard className="p-4">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -654,7 +741,7 @@ function WeeklyReviewManagementPage() {
                             <button
                               type="button"
                               className="text-left font-semibold text-foreground transition hover:text-primary"
-                              onClick={() => setSelectedEmployeeId(row.employeeId)}
+                              onClick={() => showEmployeeReviews(row)}
                             >
                               {row.employee}
                             </button>
@@ -676,9 +763,23 @@ function WeeklyReviewManagementPage() {
                           </TableCell>
                           <TableCell>
                             <div className="flex justify-end gap-1">
-                              <IconAction icon={Eye} label="View" />
-                              <IconAction icon={Edit3} label="Edit" disabled={!isAdmin} />
-                              <IconAction icon={LockKeyhole} label="Lock" disabled={!isAdmin} />
+                              <IconAction
+                                icon={Eye}
+                                label={`View ${row.employee}`}
+                                onClick={() => showEmployeeReviews(row)}
+                              />
+                              <IconAction
+                                icon={Edit3}
+                                label={`Edit ${row.employee}`}
+                                disabled={!isAdmin}
+                                onClick={() => editEmployeeReview(row)}
+                              />
+                              <IconAction
+                                icon={LockKeyhole}
+                                label={`Lock ${row.employee}`}
+                                disabled={!isAdmin || row.status === "locked"}
+                                onClick={() => lockEmployeeReview(row)}
+                              />
                               <IconAction icon={Download} label="PDF" onClick={exportPdf} />
                               <IconAction icon={Printer} label="Print" onClick={exportPdf} />
                             </div>
@@ -718,7 +819,9 @@ function WeeklyReviewManagementPage() {
               <EmptyState />
             )}
           </GlassCard>
+          </div>
 
+          <div ref={employeeHistoryRef}>
           <GlassCard className="p-4" glow="blue">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -776,6 +879,7 @@ function WeeklyReviewManagementPage() {
               </div>
             )}
           </GlassCard>
+          </div>
 
           <div className="grid gap-5 xl:grid-cols-2">
             <ChartCard title="Weekly Performance Trend" icon={TrendingUp}>
