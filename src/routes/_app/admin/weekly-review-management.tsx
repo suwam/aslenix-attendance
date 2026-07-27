@@ -71,7 +71,9 @@ import {
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { formatBsInput } from "@/lib/nepali-calendar";
 import { cn } from "@/lib/utils";
+import logoMarkUrl from "@/assets/aslenix-mark.png";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/admin/weekly-review-management")({
@@ -314,8 +316,17 @@ function WeeklyReviewManagementPage() {
   const dialogEmployee = dialogRows.find((row) => row.employeeId === dialogEmployeeId) ?? null;
   const dialogEmployeeProfile = profiles.find((profile) => profile.user_id === dialogEmployeeId) ?? null;
   const dialogEmployeeHistory = useMemo(
-    () => buildEmployeeHistory(dialogEmployeeId, profiles, reviews),
-    [dialogEmployeeId, profiles, reviews],
+    () =>
+      buildEmployeePeriodHistory(
+        dialogEmployeeId,
+        profiles,
+        reviews,
+        weeks,
+        Number(bsYear),
+        Number(bsMonth),
+        dialogWeekNumber,
+      ),
+    [dialogEmployeeId, profiles, reviews, weeks, bsYear, bsMonth, dialogWeekNumber],
   );
   const monthReviewCounts = useMemo(
     () => getMonthReviewCounts(reviews, Number(bsYear)),
@@ -404,7 +415,15 @@ function WeeklyReviewManagementPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <>
+    <PrintableWeeklyReviewReport
+      rows={reviewRows}
+      weeks={weeks}
+      bsYear={bsYear}
+      monthName={selectedMonthName}
+      stats={stats}
+    />
+    <div className="space-y-6 print:hidden">
       <PageHeader
         title="WR Report"
         subtitle="Manage and review weekly employee performance across all Nepali months."
@@ -1002,17 +1021,26 @@ function WeeklyReviewManagementPage() {
                 Week {dialogWeekNumber} Review Employees
               </DialogTitle>
               <DialogDescription>
-                {selectedMonthName} {bsYear} / click an employee card to view all weekly reviews.
+                {selectedMonthName} {bsYear} / select an employee to view this period's review.
               </DialogDescription>
             </DialogHeader>
 
-            <div className="grid min-h-0 flex-1 gap-0 overflow-hidden xl:grid-cols-[minmax(0,1.35fr)_420px]">
-              <div className="min-h-0 overflow-y-auto p-5">
-                <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+            <div className="grid min-h-0 flex-1 gap-0 overflow-hidden xl:grid-cols-[380px_minmax(0,1fr)]">
+              <div className="min-h-0 overflow-y-auto border-r border-border bg-card/30 p-4">
+                <div className="mb-3 flex items-center justify-between px-1">
+                  <div>
+                    <h3 className="font-bold">Employees</h3>
+                    <p className="text-xs text-muted-foreground">{dialogRows.length} in this week</p>
+                  </div>
+                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+                    Week {dialogWeekNumber}
+                  </span>
+                </div>
+                <div className="grid gap-2">
                   {dialogRows.map((row, index) => {
                     const profile = profiles.find((item) => item.user_id === row.employeeId);
                     return (
-                      <EmployeeReviewCard
+                      <EmployeeReviewStackItem
                         key={row.id}
                         row={row}
                         rank={index + 1}
@@ -1025,7 +1053,7 @@ function WeeklyReviewManagementPage() {
                 </div>
               </div>
 
-              <div className="min-h-0 overflow-y-auto border-t border-border bg-card/45 p-5 xl:border-l xl:border-t-0">
+              <div className="min-h-0 overflow-y-auto bg-background p-5">
                 {dialogEmployee ? (
                   <div className="space-y-4">
                     <div className="rounded-2xl border border-border bg-background/70 p-4">
@@ -1048,7 +1076,9 @@ function WeeklyReviewManagementPage() {
 
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-bold">All Weekly Reviews</h4>
+                        <h4 className="font-bold">
+                          Week {dialogWeekNumber} Review / {selectedMonthName} {bsYear}
+                        </h4>
                         <span className="rounded-full border border-border px-3 py-1 text-xs font-semibold text-muted-foreground">
                           {dialogEmployeeHistory.length} reviews
                         </span>
@@ -1076,7 +1106,7 @@ function WeeklyReviewManagementPage() {
                         ))
                       ) : (
                         <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-                          No past weekly reviews found for this employee.
+                          No weekly review found for this employee in Week {dialogWeekNumber} of {selectedMonthName} {bsYear}.
                         </div>
                       )}
                     </div>
@@ -1098,6 +1128,7 @@ function WeeklyReviewManagementPage() {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 }
 
@@ -1107,6 +1138,176 @@ function MiniMetric({ label, value }: { label: string; value: string | number })
       <div className="text-xs text-muted-foreground">{label}</div>
       <div className="mt-1 text-xl font-bold tabular-nums">{value}</div>
     </div>
+  );
+}
+
+function PrintableWeeklyReviewReport({
+  rows,
+  weeks,
+  bsYear,
+  monthName,
+  stats,
+}: {
+  rows: EmployeeReview[];
+  weeks: ReviewWeek[];
+  bsYear: string;
+  monthName: string;
+  stats: {
+    total: number;
+    completed: number;
+    pending: number;
+    locked: number;
+    average: number;
+    employeesReviewed: number;
+    totalEmployees: number;
+  };
+}) {
+  const completedRows = rows.filter((row) => row.status === "completed");
+  const weekSummaries = weeks.map((week) => ({
+    week,
+    ...getWeekSummary(week.weekNumber, rows),
+  }));
+
+  return (
+    <div className="hidden print:block bg-white text-black">
+      <div className="mb-8">
+        <div className="mb-6 flex items-start justify-between">
+          <div className="mr-10 mt-6 flex flex-1 flex-col items-center justify-center">
+            <h1 className="whitespace-nowrap font-serif text-[3.25rem] font-black leading-none tracking-[0.3em] text-black">
+              A S L E N I X
+            </h1>
+            <p className="mt-4 whitespace-nowrap text-[1.1rem] font-bold tracking-[0.4em] text-black">
+              T E C H & S O L U T I O N
+            </p>
+          </div>
+
+          <div className="flex shrink-0 flex-col items-center">
+            <div className="mb-2 font-serif text-[15px] font-bold text-black">
+              PAN No: 623611557
+            </div>
+            <img src={logoMarkUrl} alt="Logo" className="h-[88px] w-[88px] object-contain" />
+            <span className="text-xl font-black uppercase tracking-widest text-[#1065F5]">
+              ASLENIX
+            </span>
+          </div>
+        </div>
+
+        <div className="mb-2 flex items-center justify-between border-b-[1.5px] border-black px-2 pb-2 font-serif text-[15px] font-bold text-black">
+          <div>Reg No: 391840/82/83</div>
+          <div>DATE: {formatBsInput()}</div>
+        </div>
+
+        <div className="mb-4 mt-8 text-center">
+          <h2 className="text-xl font-bold uppercase underline decoration-2 underline-offset-4">
+            WEEKLY REVIEW REPORT OF {monthName} {bsYear} BS
+          </h2>
+        </div>
+      </div>
+
+      <div className="mb-5 grid grid-cols-6 gap-2 text-center text-[11px]">
+        <PrintStat label="Total Reviews" value={stats.total} />
+        <PrintStat label="Completed" value={stats.completed} />
+        <PrintStat label="Pending" value={stats.pending} />
+        <PrintStat label="Locked" value={stats.locked} />
+        <PrintStat label="Avg Score" value={`${stats.average}%`} />
+        <PrintStat label="Employees Reviewed" value={stats.employeesReviewed} />
+      </div>
+
+      <table className="mb-5 w-full border-collapse text-[11px]">
+        <thead>
+          <tr className="bg-slate-100">
+            <PrintTh>Week</PrintTh>
+            <PrintTh>BS Date Range</PrintTh>
+            <PrintTh>Submitted</PrintTh>
+            <PrintTh>Pending</PrintTh>
+            <PrintTh>Locked</PrintTh>
+            <PrintTh>Average Score</PrintTh>
+          </tr>
+        </thead>
+        <tbody>
+          {weekSummaries.map(({ week, completed, pending, locked, average }) => (
+            <tr key={week.weekNumber}>
+              <PrintTd>Week {week.weekNumber}</PrintTd>
+              <PrintTd>{week.startBs} - {week.endBs} BS</PrintTd>
+              <PrintTd>{completed}</PrintTd>
+              <PrintTd>{pending}</PrintTd>
+              <PrintTd>{locked}</PrintTd>
+              <PrintTd>{average}%</PrintTd>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <h3 className="mb-2 text-sm font-bold uppercase">Submitted Weekly Reviews</h3>
+      <table className="w-full border-collapse text-[10px]">
+        <thead>
+          <tr className="bg-slate-100">
+            <PrintTh>Employee</PrintTh>
+            <PrintTh>Department</PrintTh>
+            <PrintTh>Week</PrintTh>
+            <PrintTh>BS Date Range</PrintTh>
+            <PrintTh>Submitted Date</PrintTh>
+            <PrintTh>Score</PrintTh>
+            <PrintTh>Reviewer</PrintTh>
+            <PrintTh>Status</PrintTh>
+            <PrintTh>Rating</PrintTh>
+          </tr>
+        </thead>
+        <tbody>
+          {completedRows.length ? (
+            completedRows.map((row) => (
+              <tr key={row.id}>
+                <PrintTd>{row.employee}</PrintTd>
+                <PrintTd>{row.department}</PrintTd>
+                <PrintTd>Week {row.weekNumber}</PrintTd>
+                <PrintTd>{row.bsRange}</PrintTd>
+                <PrintTd>{row.submissionDate}</PrintTd>
+                <PrintTd>{row.score}%</PrintTd>
+                <PrintTd>{row.reviewer}</PrintTd>
+                <PrintTd>{row.status}</PrintTd>
+                <PrintTd>{row.rating}</PrintTd>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <PrintTd colSpan={9}>No submitted weekly reviews found for this month.</PrintTd>
+            </tr>
+          )}
+        </tbody>
+      </table>
+
+      <div className="mt-8 grid grid-cols-2 gap-12 text-[11px]">
+        <div className="border-t border-black pt-2">Prepared By</div>
+        <div className="border-t border-black pt-2 text-right">Approved By</div>
+      </div>
+    </div>
+  );
+}
+
+function PrintStat({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="border border-black p-2">
+      <div className="font-bold uppercase">{label}</div>
+      <div className="mt-1 text-base font-black">{value}</div>
+    </div>
+  );
+}
+
+function PrintTh({ children }: { children: React.ReactNode }) {
+  return <th className="border border-black px-2 py-1 text-left font-bold">{children}</th>;
+}
+
+function PrintTd({
+  children,
+  colSpan,
+}: {
+  children: React.ReactNode;
+  colSpan?: number;
+}) {
+  return (
+    <td colSpan={colSpan} className="border border-black px-2 py-1 align-top">
+      {children}
+    </td>
   );
 }
 
@@ -1150,6 +1351,48 @@ function EmployeeReviewCard({
         <ReviewCardMetric label="Score" value={row.score} />
         <ReviewCardMetric label="Tasks" value={row.status === "completed" ? 1 : 0} max={5} />
         <ReviewCardMetric label="Attend" value={attendance} />
+      </div>
+    </button>
+  );
+}
+
+function EmployeeReviewStackItem({
+  row,
+  rank,
+  avatarUrl,
+  active,
+  onClick,
+}: {
+  row: EmployeeReview;
+  rank: number;
+  avatarUrl?: string | null;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "flex w-full items-center gap-3 rounded-2xl border bg-background/75 p-3 text-left shadow-sm transition hover:border-primary/40 hover:bg-primary/5",
+        active && "border-primary/45 bg-primary/10 ring-2 ring-primary/10",
+      )}
+    >
+      <EmployeeAvatar name={row.employee} avatarUrl={avatarUrl} />
+      <div className="min-w-0 flex-1">
+        <div className="truncate font-bold text-foreground">{row.employee}</div>
+        <div className="truncate text-sm font-semibold text-muted-foreground">{row.department}</div>
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          <ReviewCardMetric label="Score" value={row.score} />
+          <ReviewCardMetric label="Tasks" value={row.status === "completed" ? 1 : 0} max={5} />
+          <ReviewCardMetric
+            label="Attend"
+            value={row.status === "completed" ? Math.max(25, Math.min(100, row.score + 20)) : 0}
+          />
+        </div>
+      </div>
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-700 text-sm font-black text-white">
+        #{rank}
       </div>
     </button>
   );
@@ -1538,6 +1781,27 @@ function buildEmployeeHistory(
         summary: review.admin_notes || review.notes || review.strengths || review.improvements || "",
       };
     });
+}
+
+function buildEmployeePeriodHistory(
+  employeeId: string | null,
+  profiles: ProfileRow[],
+  reviews: ReviewRow[],
+  weeks: ReviewWeek[],
+  bsYear: number,
+  bsMonth: number,
+  weekNumber?: number,
+) {
+  const matchingWeeks = weekNumber
+    ? weeks.filter((week) => week.weekNumber === weekNumber)
+    : weeks;
+  return buildEmployeeHistory(
+    employeeId,
+    profiles,
+    reviews.filter((review) =>
+      matchingWeeks.some((week) => isReviewInBsWeek(review, week, bsYear, bsMonth)),
+    ),
+  );
 }
 
 function getMonthReviewCounts(reviews: ReviewRow[], bsYear: number) {
