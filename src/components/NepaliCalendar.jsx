@@ -20,6 +20,8 @@ import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
 import { WEEKLY_OFF_DAY } from "@/lib/weekly-off";
+import { supabase } from "@/integrations/supabase/client";
+import { bsInputToAdDateString, formatBsInput } from "@/lib/nepali-calendar";
 import NepaliDate from "nepali-date-converter";
 
 const MONTHS = [
@@ -38,29 +40,6 @@ const MONTHS = [
 ];
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-const DEFAULT_HOLIDAYS = [];
-
-const HOLIDAY_KEY = "aslenix-nepali-calendar-admin-holidays";
-
-function useLocalStorage(key, initialValue) {
-  const [value, setValue] = useState(() => {
-    if (typeof window === "undefined") return initialValue;
-    try {
-      const stored = window.localStorage.getItem(key);
-      return stored ? JSON.parse(stored) : initialValue;
-    } catch {
-      return initialValue;
-    }
-  });
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(key, JSON.stringify(value));
-  }, [key, value]);
-
-  return [value, setValue];
-}
 
 function getMonthMeta(year, month) {
   if (month < 0) return getMonthMeta(year - 1, 11);
@@ -145,9 +124,43 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
   const initialMonth = todayBs?.month ?? 0;
 
   const [visible, setVisible] = useState({ year: initialYear, month: initialMonth });
-  const [holidays, setHolidays] = useLocalStorage(HOLIDAY_KEY, DEFAULT_HOLIDAYS);
+  const [holidays, setHolidays] = useState([]);
   const [form, setForm] = useState({ bsDate: formatBsDate(initialYear, initialMonth, 1), title: "" });
   const [editingId, setEditingId] = useState(null);
+  const [isLoadingHolidays, setIsLoadingHolidays] = useState(true);
+  const [holidayError, setHolidayError] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadHolidays() {
+      setIsLoadingHolidays(true);
+      setHolidayError(null);
+
+      const { data, error } = await supabase
+        .from("holidays")
+        .select("id, date, name")
+        .eq("is_active", true)
+        .order("date", { ascending: true });
+
+      if (!isMounted) return;
+
+      if (error) {
+        console.error("Failed to load holidays", error);
+        setHolidayError("Shared holidays could not be loaded.");
+      } else {
+        setHolidays((data ?? []).map(mapHolidayRow));
+      }
+
+      setIsLoadingHolidays(false);
+    }
+
+    loadHolidays();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     onHolidaysChange?.(holidays);
@@ -187,18 +200,51 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
     setEditingId(holidaysByDate[day.bsDate]?.id ?? null);
   };
 
-  const saveHoliday = () => {
+  const saveHoliday = async () => {
     const title = form.title.trim();
     if (!title || !isValidBsDate(form.bsDate)) return;
 
+    const adDate = bsInputToAdDateString(form.bsDate);
+    if (!adDate) return;
+
+    setHolidayError(null);
+
     if (editingId) {
+      const { data, error } = await supabase
+        .from("holidays")
+        .update({ date: adDate, name: title, is_active: true })
+        .eq("id", editingId)
+        .select("id, date, name")
+        .single();
+
+      if (error) {
+        console.error("Failed to update holiday", error);
+        setHolidayError("Could not update the shared holiday. Please try again.");
+        return;
+      }
+
       setHolidays((items) =>
-        items.map((item) => (item.id === editingId ? { ...item, bsDate: form.bsDate, title } : item)),
+        items.map((item) => (item.id === editingId ? mapHolidayRow(data) : item)),
       );
     } else {
+      const { data, error } = await supabase
+        .from("holidays")
+        .upsert(
+          { date: adDate, name: title, is_active: true },
+          { onConflict: "date" },
+        )
+        .select("id, date, name")
+        .single();
+
+      if (error) {
+        console.error("Failed to save holiday", error);
+        setHolidayError("Could not save the shared holiday. Please try again.");
+        return;
+      }
+
       setHolidays((items) => [
         ...items.filter((item) => item.bsDate !== form.bsDate),
-        { id: crypto.randomUUID(), bsDate: form.bsDate, title },
+        mapHolidayRow(data),
       ]);
     }
     setForm({ bsDate: form.bsDate, title: "" });
@@ -210,7 +256,16 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
     setEditingId(holiday.id);
   };
 
-  const deleteHoliday = (id) => {
+  const deleteHoliday = async (id) => {
+    setHolidayError(null);
+    const { error } = await supabase.from("holidays").delete().eq("id", id);
+
+    if (error) {
+      console.error("Failed to delete holiday", error);
+      setHolidayError("Could not delete the shared holiday. Please try again.");
+      return;
+    }
+
     setHolidays((items) => items.filter((item) => item.id !== id));
     if (editingId === id) {
       setEditingId(null);
@@ -378,7 +433,16 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
             <Sparkles size={13} className="text-amber-300" />
             Holiday indicators
           </div>
-          {monthHolidays.length > 0 ? (
+          {holidayError && (
+            <div className="rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              {holidayError}
+            </div>
+          )}
+          {isLoadingHolidays ? (
+            <div className="rounded-xl border border-dashed border-border bg-card/45 px-3 py-4 text-center text-xs text-muted-foreground shadow-[0_0_22px_-18px_var(--primary)] backdrop-blur-xl">
+              Loading holidays...
+            </div>
+          ) : monthHolidays.length > 0 ? (
             monthHolidays.map((holiday) => (
               <div
                 key={holiday.id}
@@ -465,4 +529,12 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
     </GlassCard>
   );
 
+}
+
+function mapHolidayRow(row) {
+  return {
+    id: row.id,
+    bsDate: formatBsInput(row.date),
+    title: row.name,
+  };
 }

@@ -216,6 +216,36 @@ export type Database = {
           },
         ];
       };
+      calendar_events: {
+        Row: {
+          ad_date: string;
+          bs_date: string;
+          created_at: string;
+          id: string;
+          is_active: boolean;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          ad_date: string;
+          bs_date: string;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          ad_date?: string;
+          bs_date?: string;
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       holidays: {
         Row: {
           created_at: string;

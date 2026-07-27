@@ -18,10 +18,10 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { bsInputToAdDateString } from "@/lib/nepali-calendar";
 
 export const Route = createFileRoute("/_app/calendar")({ component: CalendarPage });
-
-const EVENT_KEY = "aslenix-nepali-calendar-events";
 
 const DEFAULT_EVENTS: CalendarEvent[] = [
   { id: "event-bakra-eid-2083", bsDate: "2083-02-14", title: "Bakra Eid / Eid al-Adha" },
@@ -34,31 +34,93 @@ const DEFAULT_EVENTS: CalendarEvent[] = [
 
 function CalendarPage() {
   const { isAdmin } = useAuth();
-  const [events, setEvents] = useLocalStorage<CalendarEvent[]>(EVENT_KEY, DEFAULT_EVENTS);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [form, setForm] = useState({ bsDate: "2083-02-14", title: "" });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(true);
+  const [eventError, setEventError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadEvents() {
+      setIsLoadingEvents(true);
+      setEventError(null);
+
+      const { data, error } = await supabase
+        .from("calendar_events")
+        .select("id, bs_date, title")
+        .eq("is_active", true)
+        .order("bs_date", { ascending: true });
+
+      if (!isMounted) return;
+
+      if (error) {
+        console.error("Failed to load calendar events", error);
+        setEvents(DEFAULT_EVENTS);
+        setEventError("Showing starter events because shared events could not be loaded.");
+      } else {
+        setEvents((data ?? []).map(mapCalendarEventRow));
+      }
+
+      setIsLoadingEvents(false);
+    }
+
+    loadEvents();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const sortedEvents = [...events].sort((a, b) => a.bsDate.localeCompare(b.bsDate));
   const nextEvent = sortedEvents[0];
 
-  const saveEvent = () => {
+  const saveEvent = async () => {
     const title = form.title.trim();
     if (!title || !isValidBsDate(form.bsDate)) return;
 
+    const adDate = bsInputToAdDateString(form.bsDate);
+    if (!adDate) return;
+
+    setEventError(null);
+
     if (editingId) {
+      const { data, error } = await supabase
+        .from("calendar_events")
+        .update({ ad_date: adDate, bs_date: form.bsDate, title, is_active: true })
+        .eq("id", editingId)
+        .select("id, bs_date, title")
+        .single();
+
+      if (error) {
+        console.error("Failed to update calendar event", error);
+        setEventError("Could not update the shared event. Please try again.");
+        return;
+      }
+
       setEvents((items) =>
-        items.map((item) =>
-          item.id === editingId ? { ...item, bsDate: form.bsDate, title } : item,
-        ),
+        items.map((item) => (item.id === editingId ? mapCalendarEventRow(data) : item)),
       );
     } else {
+      const { data, error } = await supabase
+        .from("calendar_events")
+        .upsert(
+          { ad_date: adDate, bs_date: form.bsDate, title, is_active: true },
+          { onConflict: "bs_date" },
+        )
+        .select("id, bs_date, title")
+        .single();
+
+      if (error) {
+        console.error("Failed to save calendar event", error);
+        setEventError("Could not save the shared event. Please try again.");
+        return;
+      }
+
       setEvents((items) => [
-        ...items,
-        {
-          id: crypto.randomUUID(),
-          bsDate: form.bsDate,
-          title,
-        },
+        ...items.filter((item) => item.bsDate !== form.bsDate),
+        mapCalendarEventRow(data),
       ]);
     }
 
@@ -71,7 +133,16 @@ function CalendarPage() {
     setEditingId(event.id);
   };
 
-  const deleteEvent = (id: string) => {
+  const deleteEvent = async (id: string) => {
+    setEventError(null);
+    const { error } = await supabase.from("calendar_events").delete().eq("id", id);
+
+    if (error) {
+      console.error("Failed to delete calendar event", error);
+      setEventError("Could not delete the shared event. Please try again.");
+      return;
+    }
+
     setEvents((items) => items.filter((item) => item.id !== id));
     if (editingId === id) {
       setEditingId(null);
@@ -131,7 +202,17 @@ function CalendarPage() {
               </div>
             </div>
 
-            {sortedEvents.length > 0 ? (
+            {eventError && (
+              <div className="mb-3 rounded-xl border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                {eventError}
+              </div>
+            )}
+
+            {isLoadingEvents ? (
+              <div className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
+                Loading events...
+              </div>
+            ) : sortedEvents.length > 0 ? (
               <div className="grid max-h-none min-w-0 gap-3 overflow-y-visible pr-0 sm:grid-cols-2 xl:max-h-[58vh] xl:grid-cols-1 xl:overflow-y-auto xl:pr-1">
                 {sortedEvents.map((event, index) => (
                   <div
@@ -272,27 +353,12 @@ function CalendarMetric({
   );
 }
 
-function useLocalStorage<T>(key: string, initialValue: T) {
-  const [value, setValue] = useState<T>(() => {
-    if (typeof window === "undefined") return initialValue;
-    try {
-      const stored = window.localStorage.getItem(key);
-      return stored ? JSON.parse(stored) : initialValue;
-    } catch {
-      return initialValue;
-    }
-  });
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem(key, JSON.stringify(value));
-  }, [key, value]);
-
-  return [value, setValue] as const;
-}
-
 function isValidBsDate(value: string) {
   return /^2083-(0[1-9]|1[0-2])-([0-2][0-9]|3[0-2])$/.test(value);
+}
+
+function mapCalendarEventRow(row: { id: string; bs_date: string; title: string }): CalendarEvent {
+  return { id: row.id, bsDate: row.bs_date, title: row.title };
 }
 
 type CalendarEvent = {
