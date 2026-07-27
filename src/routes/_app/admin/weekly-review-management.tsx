@@ -102,12 +102,17 @@ type ProfileRow = {
 type ReviewRow = {
   id: string;
   employee_id: string;
+  admin_id: string | null;
   week_number: number | null;
   week_start: string | null;
   nepali_year: number | null;
   nepali_month: number | null;
   unlock_date: string | null;
   rating: string | null;
+  strengths: string | null;
+  improvements: string | null;
+  admin_notes: string | null;
+  notes: string | null;
   score: number | null;
   review_score: number | null;
   created_at: string | null;
@@ -155,6 +160,7 @@ function WeeklyReviewManagementPage() {
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
 
   const weeks = useMemo(
     () => buildBsReviewWeeks(Number(bsYear), Number(bsMonth)),
@@ -182,11 +188,9 @@ function WeeklyReviewManagementPage() {
         (supabase as any)
           .from("weekly_feedback")
           .select(
-            "id, employee_id, week_number, week_start, nepali_year, nepali_month, unlock_date, rating, score, review_score, created_at, updated_at",
+            "id, employee_id, admin_id, week_number, week_start, nepali_year, nepali_month, unlock_date, rating, strengths, improvements, admin_notes, notes, score, review_score, created_at, updated_at",
           )
-          .eq("nepali_year", Number(bsYear))
-          .eq("nepali_month", Number(bsMonth) - 1)
-          .order("week_number", { ascending: true }),
+          .order("week_start", { ascending: false }),
       ]);
 
       if (!mounted) return;
@@ -212,9 +216,15 @@ function WeeklyReviewManagementPage() {
   }, [bsMonth, bsYear]);
 
   const reviewRows = useMemo(
-    () => buildEmployeeReviewRows(profiles, reviews, weeks),
-    [profiles, reviews, weeks],
+    () => buildEmployeeReviewRows(profiles, reviews, weeks, Number(bsYear), Number(bsMonth)),
+    [profiles, reviews, weeks, bsYear, bsMonth],
   );
+
+  useEffect(() => {
+    if (!selectedEmployeeId && reviewRows.length) {
+      setSelectedEmployeeId(reviewRows[0].employeeId);
+    }
+  }, [reviewRows, selectedEmployeeId]);
 
   const departments = useMemo(
     () => ["all", ...Array.from(new Set(reviewRows.map((row) => row.department))).sort()],
@@ -270,6 +280,15 @@ function WeeklyReviewManagementPage() {
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
   const pageRows = filteredRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const selectedMonthName = BS_MONTHS[Number(bsMonth) - 1] ?? "Nepali Month";
+  const selectedEmployee = profiles.find((profile) => profile.user_id === selectedEmployeeId);
+  const selectedEmployeeHistory = useMemo(
+    () => buildEmployeeHistory(selectedEmployeeId, profiles, reviews),
+    [profiles, reviews, selectedEmployeeId],
+  );
+  const monthReviewCounts = useMemo(
+    () => getMonthReviewCounts(reviews, Number(bsYear)),
+    [reviews, bsYear],
+  );
 
   const exportCsv = () => {
     const csv = toCsv(filteredRows);
@@ -452,8 +471,7 @@ function WeeklyReviewManagementPage() {
                 >
                   <span>{month}</span>
                   <span className="text-xs text-muted-foreground">
-                    {reviewRows.filter((row) => row.weekNumber && Number(bsMonth) === index + 1)
-                      .length || ""}
+                    {monthReviewCounts[index + 1] || ""}
                   </span>
                 </button>
               ))}
@@ -637,7 +655,13 @@ function WeeklyReviewManagementPage() {
                       {pageRows.map((row) => (
                         <TableRow key={row.id}>
                           <TableCell>
-                            <div className="font-semibold">{row.employee}</div>
+                            <button
+                              type="button"
+                              className="text-left font-semibold text-foreground transition hover:text-primary"
+                              onClick={() => setSelectedEmployeeId(row.employeeId)}
+                            >
+                              {row.employee}
+                            </button>
                             <div className="text-xs text-muted-foreground">{row.position}</div>
                           </TableCell>
                           <TableCell>{row.department}</TableCell>
@@ -696,6 +720,64 @@ function WeeklyReviewManagementPage() {
               </>
             ) : (
               <EmptyState />
+            )}
+          </GlassCard>
+
+          <GlassCard className="p-4" glow="blue">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold">Employee Review History</h2>
+                <p className="text-sm text-muted-foreground">
+                  {selectedEmployee
+                    ? `${selectedEmployee.full_name} / ${selectedEmployee.department || "Unassigned"}`
+                    : "Click an employee name to view all past weekly reviews."}
+                </p>
+              </div>
+              <div className="rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold text-muted-foreground">
+                {selectedEmployeeHistory.length} reviews
+              </div>
+            </div>
+
+            {selectedEmployeeHistory.length ? (
+              <div className="grid gap-3 lg:grid-cols-2">
+                {selectedEmployeeHistory.map((review) => (
+                  <div
+                    key={review.id}
+                    className="rounded-2xl border border-border bg-card/55 p-4 shadow-sm"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-bold">{review.bsLabel}</div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          Week {review.weekNumber} / Submitted {review.submissionDate}
+                        </div>
+                      </div>
+                      <div className="rounded-xl border border-primary/20 bg-primary/10 px-3 py-2 text-lg font-black text-primary">
+                        {review.score}%
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <Progress value={review.score} className="h-2" />
+                    </div>
+                    <div className="mt-3 grid gap-2 text-xs text-muted-foreground">
+                      <div>
+                        <span className="font-semibold text-foreground">Rating:</span>{" "}
+                        {review.rating}
+                      </div>
+                      {review.summary && (
+                        <div>
+                          <span className="font-semibold text-foreground">Notes:</span>{" "}
+                          {review.summary}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                No past weekly reviews found for this employee.
+              </div>
             )}
           </GlassCard>
 
@@ -1002,20 +1084,21 @@ function buildEmployeeReviewRows(
   profiles: ProfileRow[],
   reviews: ReviewRow[],
   weeks: ReviewWeek[],
+  bsYear: number,
+  bsMonth: number,
 ): EmployeeReview[] {
   const profileMap = new Map(profiles.map((profile) => [profile.user_id, profile]));
-  const reviewMap = new Map<string, ReviewRow>();
-  reviews.forEach((review) => {
-    reviewMap.set(`${review.employee_id}:${review.week_number || 0}`, review);
-  });
 
   return profiles.flatMap((profile) =>
     weeks.map((week) => {
-      const review = reviewMap.get(`${profile.user_id}:${week.weekNumber}`);
+      const review = reviews.find(
+        (item) =>
+          item.employee_id === profile.user_id && isReviewInBsWeek(item, week, bsYear, bsMonth),
+      );
       const score = Math.round(Number(review?.review_score ?? review?.score ?? 0));
       const locked = review?.unlock_date ? new Date(`${review.unlock_date}T23:59:59`) > new Date() : false;
       const status: StatusFilter = review ? "completed" : locked ? "locked" : "pending";
-      const reviewerProfile = review?.employee_id ? profileMap.get(review.employee_id) : null;
+      const reviewerProfile = review?.admin_id ? profileMap.get(review.admin_id) : null;
 
       return {
         id: review?.id ?? `${profile.user_id}-${week.weekNumber}`,
@@ -1033,6 +1116,75 @@ function buildEmployeeReviewRows(
       };
     }),
   );
+}
+
+function isReviewInBsWeek(review: ReviewRow, week: ReviewWeek, bsYear: number, bsMonth: number) {
+  if (review.nepali_year && review.nepali_month != null && review.week_number != null) {
+    const reviewMonth = Number(review.nepali_month);
+    const monthMatches = reviewMonth === bsMonth - 1 || reviewMonth === bsMonth;
+    return review.nepali_year === bsYear && monthMatches && review.week_number === week.weekNumber;
+  }
+
+  if (!review.week_start) return false;
+  const reviewDate = review.week_start.slice(0, 10);
+  if (reviewDate >= week.startAd && reviewDate <= week.endAd) return true;
+
+  const bsDate = new NepaliDate(new Date(`${reviewDate}T00:00:00`));
+  return (
+    bsDate.getYear() === bsYear &&
+    bsDate.getMonth() + 1 === bsMonth &&
+    Math.min(5, Math.ceil(bsDate.getDate() / 7)) === week.weekNumber
+  );
+}
+
+function buildEmployeeHistory(
+  employeeId: string | null,
+  profiles: ProfileRow[],
+  reviews: ReviewRow[],
+) {
+  if (!employeeId) return [];
+  const profileMap = new Map(profiles.map((profile) => [profile.user_id, profile]));
+  return reviews
+    .filter((review) => review.employee_id === employeeId)
+    .slice()
+    .sort((a, b) => {
+      const aTime = new Date(a.week_start || a.created_at || 0).getTime();
+      const bTime = new Date(b.week_start || b.created_at || 0).getTime();
+      return bTime - aTime;
+    })
+    .map((review) => {
+      const weekStart = review.week_start || review.created_at || "";
+      const bsDate = weekStart ? new NepaliDate(new Date(`${weekStart.slice(0, 10)}T00:00:00`)) : null;
+      const month = bsDate ? BS_MONTHS[bsDate.getMonth()] : "BS";
+      const score = Math.round(Number(review.review_score ?? review.score ?? 0));
+      const reviewer = review.admin_id ? profileMap.get(review.admin_id)?.full_name : null;
+      return {
+        id: review.id,
+        weekNumber: review.week_number || (bsDate ? Math.min(5, Math.ceil(bsDate.getDate() / 7)) : 0),
+        bsLabel: bsDate ? `${month} ${bsDate.getYear()} BS` : "Review period",
+        submissionDate: review.created_at ? format(new Date(review.created_at), "MMM d, yyyy") : "-",
+        score,
+        rating: review.rating || "-",
+        reviewer: reviewer || "Admin",
+        summary: review.admin_notes || review.notes || review.strengths || review.improvements || "",
+      };
+    });
+}
+
+function getMonthReviewCounts(reviews: ReviewRow[], bsYear: number) {
+  return reviews.reduce<Record<number, number>>((counts, review) => {
+    let month: number | null = null;
+    if (review.nepali_year === bsYear && review.nepali_month != null) {
+      const storedMonth = Number(review.nepali_month);
+      month = storedMonth >= 0 && storedMonth <= 11 ? storedMonth + 1 : storedMonth;
+    } else if (review.week_start) {
+      const bsDate = new NepaliDate(new Date(`${review.week_start.slice(0, 10)}T00:00:00`));
+      if (bsDate.getYear() === bsYear) month = bsDate.getMonth() + 1;
+    }
+
+    if (month) counts[month] = (counts[month] || 0) + 1;
+    return counts;
+  }, {});
 }
 
 function getStats(rows: EmployeeReview[], totalEmployees: number) {
