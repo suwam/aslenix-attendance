@@ -239,14 +239,24 @@ function ReportsPage() {
         ...leaveDates,
         ...wfhDates,
       ]);
-      const missingAbsentDays = Math.max(summary.workingDays - coveredDates.size, 0);
+
+      const elapsedWorkingDates = workingDates.filter((day) => day <= todayDate);
+      const coveredElapsedDates = new Set(
+        Array.from(coveredDates).filter((day) => day <= todayDate),
+      );
+
+      const missingAbsentDays = Math.max(elapsedWorkingDates.length - coveredElapsedDates.size, 0);
       const presentDays = Math.min(presentDates.size, summary.workingDays);
       const leaveDays = Math.min(leaveDates.size, summary.workingDays);
       const wfhDays = Math.min(wfhDates.size, summary.workingDays);
-      const absentDays = Math.min(absentDates.size + missingAbsentDays, summary.workingDays);
+      
+      const elapsedAbsentDates = Array.from(absentDates).filter((day) => day <= todayDate);
+      const absentDays = elapsedAbsentDates.length + missingAbsentDays;
+
+      const elapsedWorkingDaysCount = elapsedWorkingDates.length;
       const attendancePercentage =
-        summary.workingDays > 0
-          ? Math.round(((presentDays + wfhDays) / summary.workingDays) * 1000) / 10
+        elapsedWorkingDaysCount > 0
+          ? Math.min(Math.round(((presentDays + wfhDays) / elapsedWorkingDaysCount) * 1000) / 10, 100)
           : 0;
 
       return {
