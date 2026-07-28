@@ -36,6 +36,7 @@ interface WorkAssignmentModalProps {
   initialData?: WorkAssignmentData | null;
   employees: UserOption[];
   existingResponsibilities: string[];
+  canEditCoreFields?: boolean;
 }
 
 export function WorkAssignmentModal({
@@ -45,6 +46,7 @@ export function WorkAssignmentModal({
   initialData,
   employees,
   existingResponsibilities,
+  canEditCoreFields = true,
 }: WorkAssignmentModalProps) {
   const [userId, setUserId] = useState<string>("");
   const [responsibility, setResponsibility] = useState("");
@@ -110,7 +112,7 @@ export function WorkAssignmentModal({
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label>Employee</Label>
-            <Select value={userId} onValueChange={setUserId}>
+            <Select value={userId} onValueChange={setUserId} disabled={!canEditCoreFields}>
               <SelectTrigger>
                 <SelectValue placeholder="Select employee" />
               </SelectTrigger>
@@ -129,6 +131,7 @@ export function WorkAssignmentModal({
               value={responsibility}
               onChange={(e) => setResponsibility(e.target.value)}
               placeholder="e.g. Frontend Dashboard Development"
+              disabled={!canEditCoreFields}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -153,6 +156,7 @@ export function WorkAssignmentModal({
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
+                disabled={!canEditCoreFields}
               />
             </div>
           </div>

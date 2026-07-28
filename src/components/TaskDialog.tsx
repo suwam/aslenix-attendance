@@ -933,71 +933,67 @@ export function TaskDialog({
                 />
               </div>
             </div>
-            {(isAdmin || isAssignedTeamLead) && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                {isAdmin && (
-                  <div className="border border-border bg-muted/10 p-3 rounded-lg">
-                    <TaskAssignees
-                      label="Team Leads"
-                      options={availableTeamLeads}
-                      selectedIds={teamLeads}
-                      onChange={setTeamLeads}
-                      disabled={!isAdmin}
-                    />
-                  </div>
-                )}
-                <div className="border border-border bg-muted/10 p-3 rounded-lg md:col-span-2">
-                  <TaskAssignments
-                    assignments={workAssignments}
-                    employees={employees}
-                    currentUserId={user?.id || ""}
-                    canEditAny={isAdmin || isAssignedTeamLead}
-                    onAdd={async (data) => {
-                      if (taskId) {
-                        const { data: newAssignment, error } = await supabase
-                          .from("task_assignees")
-                          .insert({ ...data, task_id: taskId })
-                          .select()
-                          .single();
-                        if (newAssignment) {
-                          setWorkAssignments([...workAssignments, newAssignment as any]);
-                        } else {
-                          console.error(error);
-                        }
-                      } else {
-                        // Optimistic add for unsaved task
-                        setWorkAssignments([...workAssignments, data]);
-                      }
-                    }}
-                    onUpdate={async (data) => {
-                      if (taskId && data.id) {
-                        const { error } = await supabase
-                          .from("task_assignees")
-                          .update({
-                            user_id: data.user_id,
-                            responsibility: data.responsibility,
-                            status: data.status,
-                            due_date: data.due_date,
-                            notes: data.notes,
-                          })
-                          .eq("id", data.id);
-                        if (!error) {
-                          setWorkAssignments(workAssignments.map((a) => (a.id === data.id ? data : a)));
-                        }
-                      } else {
-                        setWorkAssignments(workAssignments.map((a) => (a.responsibility === data.responsibility ? data : a)));
-                      }
-                    }}
-                    onRemove={async (id) => {
-                      if (taskId) {
-                        await supabase.from("task_assignees").delete().eq("id", id);
-                      }
-                      setWorkAssignments(workAssignments.filter((a) => a.id !== id));
-                    }}
-                  />
-                </div>
+            {isAdmin && (
+              <div className="mt-4 border border-border bg-muted/10 p-3 rounded-lg">
+                <TaskAssignees
+                  label="Team Leads"
+                  options={availableTeamLeads}
+                  selectedIds={teamLeads}
+                  onChange={setTeamLeads}
+                  disabled={!isAdmin}
+                />
               </div>
             )}
+            <div className="mt-4 border border-border bg-muted/10 p-3 rounded-lg">
+              <TaskAssignments
+                assignments={workAssignments}
+                employees={employees}
+                currentUserId={user?.id || ""}
+                canEditAny={isAdmin || isAssignedTeamLead}
+                onAdd={async (data) => {
+                  if (taskId) {
+                    const { data: newAssignment, error } = await supabase
+                      .from("task_assignees")
+                      .insert({ ...data, task_id: taskId })
+                      .select()
+                      .single();
+                    if (newAssignment) {
+                      setWorkAssignments([...workAssignments, newAssignment as any]);
+                    } else {
+                      console.error(error);
+                    }
+                  } else {
+                    // Optimistic add for unsaved task
+                    setWorkAssignments([...workAssignments, data]);
+                  }
+                }}
+                onUpdate={async (data) => {
+                  if (taskId && data.id) {
+                    const { error } = await supabase
+                      .from("task_assignees")
+                      .update({
+                        user_id: data.user_id,
+                        responsibility: data.responsibility,
+                        status: data.status,
+                        due_date: data.due_date,
+                        notes: data.notes,
+                      })
+                      .eq("id", data.id);
+                    if (!error) {
+                      setWorkAssignments(workAssignments.map((a) => (a.id === data.id ? data : a)));
+                    }
+                  } else {
+                    setWorkAssignments(workAssignments.map((a) => (a.responsibility === data.responsibility ? data : a)));
+                  }
+                }}
+                onRemove={async (id) => {
+                  if (taskId) {
+                    await supabase.from("task_assignees").delete().eq("id", id);
+                  }
+                  setWorkAssignments(workAssignments.filter((a) => a.id !== id));
+                }}
+              />
+            </div>
           </TabsContent>
           <TabsContent value="discussion" className="h-[500px] mt-0">
             <TaskDiscussion

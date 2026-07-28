@@ -236,6 +236,7 @@ export function TaskAssignments({
         initialData={editingData}
         employees={employees}
         existingResponsibilities={existingResponsibilities.filter(r => r !== editingData?.responsibility)}
+        canEditCoreFields={canEditAny}
       />
     </div>
   );
