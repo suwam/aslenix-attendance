@@ -1029,34 +1029,47 @@ export function TaskDialog({
           </TabsContent>
         </Tabs>
 
-        <div className="flex justify-between pt-4 border-t border-border">
-          <div>
-            {canDeleteTask && (
-              <Button
-                variant="outline"
-                onClick={remove}
-                className="text-destructive hover:text-destructive"
-              >
-                <Trash2 size={14} className="mr-1.5" />
-                Delete
+        <div className="flex flex-col gap-4 pt-4 border-t border-border">
+          {isEmployeeTaskEdit && progress !== initialProgress && (
+            <div className="w-full space-y-3 rounded-lg border border-border bg-muted/20 p-4">
+              <div className="flex flex-col gap-2">
+                <Label>Progress update note</Label>
+                <Textarea
+                  value={progressNote}
+                  onChange={(e) => setProgressNote(e.target.value)}
+                  placeholder="What did you work on? (Required)"
+                  rows={2}
+                />
+              </div>
+            </div>
+          )}
+          <div className="flex justify-between">
+            <div>
+              {canDeleteTask && (
+                <Button
+                  variant="outline"
+                  onClick={remove}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 size={14} className="mr-1.5" />
+                  Delete
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                <X size={14} className="mr-1.5" />
+                Cancel
               </Button>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              <X size={14} className="mr-1.5" />
-              Cancel
-            </Button>
-            {!isEmployeeTaskEdit && (
               <Button onClick={save} disabled={loading} className="neon-button">
                 {loading ? "Saving..." : taskId ? "Save changes" : "Create task"}
               </Button>
-            )}
-            {isEmployeeTaskEdit && progress >= 100 && (
-              <Button onClick={requestReview} disabled={loading} className="neon-button">
-                Request Review
-              </Button>
-            )}
+              {isEmployeeTaskEdit && progress >= 100 && (
+                <Button onClick={requestReview} disabled={loading} className="neon-button">
+                  Request Review
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </DialogContent>
