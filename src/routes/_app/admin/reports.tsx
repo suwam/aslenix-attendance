@@ -251,7 +251,7 @@ function ReportsPage() {
       const wfhDays = Math.min(wfhDates.size, summary.workingDays);
       
       const elapsedAbsentDates = Array.from(absentDates).filter((day) => day <= todayDate);
-      const absentDays = elapsedAbsentDates.length + missingAbsentDays;
+      const absentDays = elapsedAbsentDates.length + missingAbsentDays + leaveDays;
 
       const elapsedWorkingDaysCount = elapsedWorkingDates.length;
       const attendancePercentage =
