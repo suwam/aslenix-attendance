@@ -9,7 +9,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TaskAssignees } from "./tasks/TaskAssignees";
+import { TaskAssignments } from "./tasks/TaskAssignments";
+import { WorkAssignmentData } from "./tasks/WorkAssignmentModal";
 import { TaskDiscussion } from "./tasks/TaskDiscussion";
 import { TaskTimeline } from "./tasks/TaskTimeline";
 import { TaskActivityLog } from "@/lib/tasks-utils";
@@ -107,7 +108,7 @@ export function TaskDialog({
   const [deadlineDateBs, setDeadlineDateBs] = useState("");
   const [deadlineTime, setDeadlineTime] = useState("");
   const [assignedTo, setAssignedTo] = useState<string>(user?.id || "");
-  const [assignedToMany, setAssignedToMany] = useState<string[]>(user?.id ? [user.id] : []);
+  const [workAssignments, setWorkAssignments] = useState<WorkAssignmentData[]>([]);
   const [tags, setTags] = useState("");
   const [employees, setEmployees] = useState<
     { user_id: string; full_name: string; role: string; avatar_url?: string | null }[]
@@ -141,7 +142,7 @@ export function TaskDialog({
     setDeadlineDateBs("");
     setDeadlineTime("");
     setAssignedTo(isAdmin ? "" : user?.id || "");
-    setAssignedToMany(isAdmin ? [] : user?.id ? [user.id] : []);
+    setWorkAssignments([]);
     setTeamLeads([]);
     setActivityLogs([]);
     setActiveTab("details");
@@ -171,7 +172,7 @@ export function TaskDialog({
         .select("*")
         .eq("task_id", taskId)
         .order("created_at", { ascending: false }),
-      supabase.from("task_assignees").select("user_id").eq("task_id", taskId),
+      supabase.from("task_assignees").select("*").eq("task_id", taskId),
       supabase.from("task_team_leads").select("user_id").eq("task_id", taskId),
       supabase
         .from("task_activity_logs")
@@ -197,8 +198,8 @@ export function TaskDialog({
       setInitialProgress(t.progress);
       setProgressNote("");
       setAssignedTo(t.assigned_to);
-      setAssignedToMany(
-        assignees?.length ? assignees.map((a) => a.user_id) : t.assigned_to ? [t.assigned_to] : [],
+      setWorkAssignments(
+        assignees?.length ? assignees as any[] : []
       );
       setDeadlineDateBs(t.deadline ? formatBsInput(t.deadline) : "");
       setDeadlineTime(t.deadline ? format(new Date(t.deadline), "HH:mm") : "");
@@ -327,24 +328,7 @@ export function TaskDialog({
       .split(",")
       .map((t) => t.trim())
       .filter(Boolean);
-    const selectedAssignees = Array.from(
-      new Set(
-        (isAdmin || isAssignedTeamLead
-          ? assignedToMany.length
-            ? assignedToMany
-            : assignedTo
-              ? [assignedTo]
-              : []
-          : taskId
-            ? [assignedTo || user.id]
-            : [user.id]
-        ).filter(Boolean),
-      ),
-    );
-    if (!selectedAssignees.length) {
-      setLoading(false);
-      return toast.error("Select at least one assignee");
-    }
+
     const deadlineIso = getDeadlineIso(deadlineDateBs, deadlineTime);
     const payload: Record<string, unknown> = {
       title,
@@ -354,7 +338,7 @@ export function TaskDialog({
       task_complexity: taskComplexity,
       progress: nextProgress,
       deadline: deadlineIso,
-      assigned_to: selectedAssignees[0],
+      assigned_to: workAssignments.length > 0 ? workAssignments[0].user_id : user.id,
       tags: tagsArr,
       completed_at: workflow.completedAt,
     };
@@ -389,34 +373,21 @@ export function TaskDialog({
       }
       error = result.error;
       savedTaskId = result.data?.id ?? null;
-    }
-    let usedLegacyAssignment = false;
-    if (!error && savedTaskId && (isAdmin || isAssignedTeamLead)) {
-      const rows = selectedAssignees.map((assigneeId) => ({
-        task_id: savedTaskId,
-        user_id: assigneeId,
-      }));
-      const deleteResult = await supabase
-        .from("task_assignees")
-        .delete()
-        .eq("task_id", savedTaskId);
-      if (deleteResult.error) {
-        if (isMissingSupabaseTableError(deleteResult.error, "task_assignees")) {
-          usedLegacyAssignment = true;
-        } else {
-          error = deleteResult.error;
-        }
-      } else if (rows.length) {
-        const insertResult = await supabase.from("task_assignees").insert(rows);
-        if (insertResult.error) {
-          if (isMissingSupabaseTableError(insertResult.error, "task_assignees")) {
-            usedLegacyAssignment = true;
-          } else {
-            error = insertResult.error;
-          }
-        }
+      
+      // For new tasks, insert the work assignments
+      if (!error && savedTaskId && workAssignments.length > 0) {
+        const assignmentsToInsert = workAssignments.map((a) => ({
+          task_id: savedTaskId,
+          user_id: a.user_id,
+          responsibility: a.responsibility,
+          status: a.status,
+          due_date: a.due_date,
+          notes: a.notes,
+        }));
+        await supabase.from("task_assignees").insert(assignmentsToInsert);
       }
     }
+    
     if (!error && savedTaskId) {
       // Log activity
       await supabase.from("task_activity_logs").insert({
@@ -450,7 +421,7 @@ export function TaskDialog({
         }
 
         await notifyTaskAssignees(
-          selectedAssignees,
+          workAssignments.map((a) => a.user_id),
           taskId ? "Task updated" : "New task assigned",
           {
             title,
@@ -459,7 +430,7 @@ export function TaskDialog({
         );
       } else if (isAssignedTeamLead) {
         await notifyTaskAssignees(
-          selectedAssignees,
+          workAssignments.map((a) => a.user_id),
           taskId ? "Task updated" : "New task assigned",
           {
             title,
@@ -491,10 +462,6 @@ export function TaskDialog({
     } else if (progressNoteNotSaved) {
       toast.warning(
         "Task saved. Apply the task_progress_updates migration to save progress notes.",
-      );
-    } else if (usedLegacyAssignment && selectedAssignees.length > 1) {
-      toast.warning(
-        "Task saved for the first assignee. Apply the task_assignees migration to enable multiple assignees.",
       );
     } else if (workflow.transition === "review") {
       toast.success("Task moved to Review", { description: "Task is ready for review." });
@@ -859,80 +826,17 @@ export function TaskDialog({
             )}
 
             <div>
-              <Label>Progress: {progress}%</Label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={progress}
-                  onChange={(e) => updateProgress(Number(e.target.value))}
-                  className="w-full accent-primary"
-                />
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  step={1}
-                  value={progress}
-                  onChange={(e) => updateProgress(Number(e.target.value))}
-                  className="w-20 tabular-nums"
+              <Label>Total Progress: {progress}%</Label>
+              <div className="w-full h-3 bg-muted rounded-full overflow-hidden mt-2">
+                <div 
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{ width: `${progress}%` }}
                 />
               </div>
-              {taskId && (isEmployeeTaskEdit || progress > initialProgress) && (
-                <div className="mt-3">
-                  <Label>{isEmployeeTaskEdit ? "Update Comment" : "Progress update note"}</Label>
-                  <Textarea
-                    value={progressNote}
-                    onChange={(e) => setProgressNote(e.target.value)}
-                    rows={3}
-                    placeholder={
-                      isEmployeeTaskEdit
-                        ? "Add an update comment..."
-                        : `What was completed from ${initialProgress}% to ${progress}%?`
-                    }
-                    className="mt-1"
-                  />
-                  {progress !== initialProgress && (
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      {isEmployeeTaskEdit
-                        ? "Required because progress changed."
-                        : "Required because progress increased."}
-                    </div>
-                  )}
-                  {progressUpdatesUnavailable && (
-                    <div className="mt-2 rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-foreground">
-                      Progress will save, but notes need the task_progress_updates migration.
-                    </div>
-                  )}
-                </div>
-              )}
-              {isEmployeeTaskEdit && (
-                <div className="mt-4 rounded-lg border border-border bg-muted/20 p-3">
-                  <div className="mb-2 flex items-center gap-2 text-sm font-medium">
-                    <TrendingUp size={14} className="text-primary" />
-                    Progress History
-                  </div>
-                  <div className="max-h-44 space-y-2 overflow-y-auto">
-                    {employeeProgressHistory.map((update) => (
-                      <div key={update.id} className="rounded-md bg-background/50 p-2 text-sm">
-                        <div className="mb-1 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                          <span className="font-medium text-foreground">
-                            {update.old_progress}% -&gt; {update.new_progress}%
-                          </span>
-                          <span>{formatTaskDateTime(update.created_at)}</span>
-                        </div>
-                        <div className="text-foreground">{update.note}</div>
-                        <div className="mt-1 text-xs text-muted-foreground">{update.author}</div>
-                      </div>
-                    ))}
-                    {employeeProgressHistory.length === 0 && (
-                      <div className="text-xs text-muted-foreground">No progress updates yet.</div>
-                    )}
-                  </div>
-                </div>
-              )}
+              <p className="text-xs text-muted-foreground mt-2">
+                Task progress is calculated automatically based on completed work assignments.
+              </p>
+            </div>
               {taskId && !isEmployeeTaskEdit && progressUpdates.length > 0 && (
                 <div className="mt-4 rounded-lg border border-border bg-muted/20 p-3">
                   <div className="mb-2 flex items-center gap-2 text-sm font-medium">
@@ -1042,13 +946,54 @@ export function TaskDialog({
                     />
                   </div>
                 )}
-                <div className="border border-border bg-muted/10 p-3 rounded-lg">
-                  <TaskAssignees
-                    label="Assign To"
-                    options={employees}
-                    selectedIds={assignedToMany}
-                    onChange={setAssignedToMany}
-                    disabled={!isAdmin && !isAssignedTeamLead}
+                <div className="border border-border bg-muted/10 p-3 rounded-lg md:col-span-2">
+                  <TaskAssignments
+                    assignments={workAssignments}
+                    employees={employees}
+                    currentUserId={user?.id || ""}
+                    canEditAny={isAdmin || isAssignedTeamLead}
+                    onAdd={async (data) => {
+                      if (taskId) {
+                        const { data: newAssignment, error } = await supabase
+                          .from("task_assignees")
+                          .insert({ ...data, task_id: taskId })
+                          .select()
+                          .single();
+                        if (newAssignment) {
+                          setWorkAssignments([...workAssignments, newAssignment as any]);
+                        } else {
+                          console.error(error);
+                        }
+                      } else {
+                        // Optimistic add for unsaved task
+                        setWorkAssignments([...workAssignments, data]);
+                      }
+                    }}
+                    onUpdate={async (data) => {
+                      if (taskId && data.id) {
+                        const { error } = await supabase
+                          .from("task_assignees")
+                          .update({
+                            user_id: data.user_id,
+                            responsibility: data.responsibility,
+                            status: data.status,
+                            due_date: data.due_date,
+                            notes: data.notes,
+                          })
+                          .eq("id", data.id);
+                        if (!error) {
+                          setWorkAssignments(workAssignments.map((a) => (a.id === data.id ? data : a)));
+                        }
+                      } else {
+                        setWorkAssignments(workAssignments.map((a) => (a.responsibility === data.responsibility ? data : a)));
+                      }
+                    }}
+                    onRemove={async (id) => {
+                      if (taskId) {
+                        await supabase.from("task_assignees").delete().eq("id", id);
+                      }
+                      setWorkAssignments(workAssignments.filter((a) => a.id !== id));
+                    }}
                   />
                 </div>
               </div>
@@ -1089,13 +1034,11 @@ export function TaskDialog({
               <X size={14} className="mr-1.5" />
               Cancel
             </Button>
-            {!(isEmployeeTaskEdit && progress >= 100) && (
+            {!isEmployeeTaskEdit && (
               <Button onClick={save} disabled={loading} className="neon-button">
                 {loading
                   ? "Saving..."
-                  : taskId && !isAdmin && !isAssignedTeamLead
-                    ? "Save progress"
-                    : taskId
+                  : taskId
                       ? "Save changes"
                       : "Create task"}
               </Button>

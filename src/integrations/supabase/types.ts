@@ -664,19 +664,37 @@ export type Database = {
       };
       task_assignees: {
         Row: {
-          assigned_at: string;
+          id: string;
           task_id: string;
           user_id: string;
+          responsibility: string;
+          status: Database["public"]["Enums"]["task_assignment_status"];
+          due_date: string | null;
+          notes: string | null;
+          assigned_at: string;
+          updated_at: string;
         };
         Insert: {
-          assigned_at?: string;
+          id?: string;
           task_id: string;
           user_id: string;
+          responsibility: string;
+          status?: Database["public"]["Enums"]["task_assignment_status"];
+          due_date?: string | null;
+          notes?: string | null;
+          assigned_at?: string;
+          updated_at?: string;
         };
         Update: {
-          assigned_at?: string;
+          id?: string;
           task_id?: string;
           user_id?: string;
+          responsibility?: string;
+          status?: Database["public"]["Enums"]["task_assignment_status"];
+          due_date?: string | null;
+          notes?: string | null;
+          assigned_at?: string;
+          updated_at?: string;
         };
         Relationships: [
           {
@@ -1182,6 +1200,7 @@ export type Database = {
       leave_status: "pending" | "approved" | "rejected" | "cancelled" | "half_day_approved";
       leave_type: "sick" | "casual" | "vacation" | "emergency" | "wfh" | "holiday" | "weekend";
       qr_status: "active" | "inactive" | "revoked";
+      task_assignment_status: "not_started" | "in_progress" | "under_review" | "completed" | "blocked";
       task_complexity: "small" | "medium" | "large" | "epic";
       task_priority: "low" | "medium" | "high" | "urgent";
       task_status: "todo" | "in_progress" | "review" | "completed";
@@ -1325,6 +1344,7 @@ export const Constants = {
       leave_status: ["pending", "approved", "rejected", "cancelled"],
       leave_type: ["sick", "casual", "vacation", "emergency", "wfh", "holiday", "weekend"],
       qr_status: ["active", "inactive", "revoked"],
+      task_assignment_status: ["not_started", "in_progress", "under_review", "completed", "blocked"],
       task_complexity: ["small", "medium", "large", "epic"],
       task_priority: ["low", "medium", "high", "urgent"],
       task_status: ["todo", "in_progress", "review", "completed"],
