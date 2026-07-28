@@ -267,6 +267,20 @@ export function TaskDialog({
     }
   }, [open, taskId, defaultStatus, isAdmin, loadTask, resetForm]);
 
+  useEffect(() => {
+    if (workAssignments.length > 0) {
+      let total = 0;
+      workAssignments.forEach((a) => {
+        if (a.status === "completed") total += 100;
+        else if (a.status === "under_review") total += 98;
+        else if (a.status === "in_progress") total += 50;
+        else if (a.status === "blocked") total += 10;
+      });
+      const avg = Math.round(total / workAssignments.length);
+      setProgress(avg);
+    }
+  }, [workAssignments]);
+
   const save = async () => {
     if (!user || !title.trim()) return toast.error("Title required");
     const workflow = syncTaskWorkflow(status, progress);
@@ -962,7 +976,13 @@ export function TaskDialog({
                     }
                   } else {
                     // Optimistic add for unsaved task
-                    setWorkAssignments([...workAssignments, { ...data, id: `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` }]);
+                    setWorkAssignments([
+                      ...workAssignments,
+                      {
+                        ...data,
+                        id: `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                      },
+                    ]);
                   }
                 }}
                 onUpdate={async (data) => {
@@ -981,11 +1001,7 @@ export function TaskDialog({
                       setWorkAssignments(workAssignments.map((a) => (a.id === data.id ? data : a)));
                     }
                   } else {
-                    setWorkAssignments(
-                      workAssignments.map((a) =>
-                        a.id === data.id ? data : a,
-                      ),
-                    );
+                    setWorkAssignments(workAssignments.map((a) => (a.id === data.id ? data : a)));
                   }
                 }}
                 onRemove={async (id) => {
