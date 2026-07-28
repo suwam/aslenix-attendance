@@ -318,6 +318,19 @@ export function TaskDialog({
           error = progressUpdateResult.error;
         }
       }
+
+      // Sync all assignment progresses
+      if (!error && workAssignments.length > 0) {
+        for (const a of workAssignments) {
+          if (a.id && !a.id.toString().startsWith("temp-")) {
+            await supabase
+              .from("task_assignees")
+              .update({ progress: a.progress || 0 })
+              .eq("id", a.id);
+          }
+        }
+      }
+
       setLoading(false);
       if (error) return toast.error(error.message);
       if (progressNoteNotSaved) {
@@ -448,6 +461,18 @@ export function TaskDialog({
             deadline: deadlineIso || "",
           },
         );
+      }
+
+      // Sync all assignment progresses for admin/lead
+      if (workAssignments.length > 0) {
+        for (const a of workAssignments) {
+          if (a.id && !a.id.toString().startsWith("temp-")) {
+            await supabase
+              .from("task_assignees")
+              .update({ progress: a.progress || 0 })
+              .eq("id", a.id);
+          }
+        }
       }
     }
     let progressNoteNotSaved = false;
@@ -1002,6 +1027,11 @@ export function TaskDialog({
                   } else {
                     setWorkAssignments(workAssignments.map((a) => (a.id === data.id ? data : a)));
                   }
+                }}
+                onProgressChange={(id, newProgress) => {
+                  setWorkAssignments(
+                    workAssignments.map((a) => (a.id === id ? { ...a, progress: newProgress } : a)),
+                  );
                 }}
                 onRemove={async (id) => {
                   if (taskId) {

@@ -47,6 +47,7 @@ interface TaskAssignmentsProps {
   onAdd: (data: WorkAssignmentData) => void;
   onUpdate: (data: WorkAssignmentData) => void;
   onRemove: (id: string) => void;
+  onProgressChange?: (id: string, progress: number) => void;
   canEditAny: boolean;
   currentUserId: string;
 }
@@ -57,6 +58,7 @@ export function TaskAssignments({
   onAdd,
   onUpdate,
   onRemove,
+  onProgressChange,
   canEditAny,
   currentUserId,
 }: TaskAssignmentsProps) {
@@ -241,16 +243,19 @@ export function TaskAssignments({
                     {canEditThis ? (
                       <Slider
                         value={[assignment.progress || 0]}
-                        onValueChange={(vals) => onUpdate({ ...assignment, progress: vals[0] })}
+                        onValueChange={(vals) => {
+                          if (onProgressChange && assignment.id) {
+                            onProgressChange(assignment.id, vals[0]);
+                          } else {
+                            onUpdate({ ...assignment, progress: vals[0] });
+                          }
+                        }}
                         max={100}
                         step={1}
                         className="w-full flex-1"
                       />
                     ) : (
-                      <Progress
-                        value={assignment.progress || 0}
-                        className="h-2 w-full flex-1"
-                      />
+                      <Progress value={assignment.progress || 0} className="h-2 w-full flex-1" />
                     )}
                     <span className="text-xs font-medium w-10 text-right text-muted-foreground">
                       {assignment.progress || 0}%
