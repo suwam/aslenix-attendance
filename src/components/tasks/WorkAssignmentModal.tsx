@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -11,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { Database } from "@/integrations/supabase/types";
 
 export type TaskAssignmentStatus = Database["public"]["Enums"]["task_assignment_status"];
@@ -22,6 +29,7 @@ export interface WorkAssignmentData {
   status: TaskAssignmentStatus;
   due_date: string | null;
   notes: string | null;
+  progress?: number;
 }
 
 interface UserOption {
@@ -53,6 +61,7 @@ export function WorkAssignmentModal({
   const [status, setStatus] = useState<TaskAssignmentStatus>("not_started");
   const [dueDate, setDueDate] = useState<string>("");
   const [notes, setNotes] = useState("");
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -63,12 +72,14 @@ export function WorkAssignmentModal({
         setStatus(initialData.status);
         setDueDate(initialData.due_date || "");
         setNotes(initialData.notes || "");
+        setProgress(initialData.progress || 0);
       } else {
         setUserId("");
         setResponsibility("");
         setStatus("not_started");
         setDueDate("");
         setNotes("");
+        setProgress(0);
       }
       setError("");
     }
@@ -88,7 +99,7 @@ export function WorkAssignmentModal({
       existingAssignments.some(
         (a) =>
           a.user_id === userId &&
-          a.responsibility.toLowerCase() === cleanResponsibility.toLowerCase()
+          a.responsibility.toLowerCase() === cleanResponsibility.toLowerCase(),
       )
     ) {
       setError("This employee is already assigned to this responsibility.");
@@ -102,6 +113,7 @@ export function WorkAssignmentModal({
       status,
       due_date: dueDate || null,
       notes: notes.trim() || null,
+      progress,
     });
     onOpenChange(false);
   };
@@ -164,6 +176,16 @@ export function WorkAssignmentModal({
             </div>
           </div>
           <div className="grid gap-2">
+            <Label>Progress: {progress}%</Label>
+            <Slider
+              value={[progress]}
+              onValueChange={(vals) => setProgress(vals[0])}
+              max={100}
+              step={1}
+              disabled={!canEditCoreFields}
+            />
+          </div>
+          <div className="grid gap-2">
             <Label>Notes (Optional)</Label>
             <Textarea
               value={notes}
@@ -176,8 +198,12 @@ export function WorkAssignmentModal({
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSave} className="neon-button">Save Assignment</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} className="neon-button">
+            Save Assignment
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

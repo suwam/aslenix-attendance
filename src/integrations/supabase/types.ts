@@ -671,6 +671,7 @@ export type Database = {
           status: Database["public"]["Enums"]["task_assignment_status"];
           due_date: string | null;
           notes: string | null;
+          progress: number;
           assigned_at: string;
           updated_at: string;
         };
@@ -682,6 +683,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["task_assignment_status"];
           due_date?: string | null;
           notes?: string | null;
+          progress?: number;
           assigned_at?: string;
           updated_at?: string;
         };
@@ -693,6 +695,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["task_assignment_status"];
           due_date?: string | null;
           notes?: string | null;
+          progress?: number;
           assigned_at?: string;
           updated_at?: string;
         };

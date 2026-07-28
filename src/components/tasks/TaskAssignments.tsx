@@ -1,5 +1,15 @@
 import { useState, useMemo } from "react";
-import { Plus, Search, CheckCircle2, Clock, AlertCircle, PlayCircle, MoreVertical, Edit2, Trash2 } from "lucide-react";
+import {
+  Plus,
+  Search,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  PlayCircle,
+  MoreVertical,
+  Edit2,
+  Trash2,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,13 +21,18 @@ import {
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { WorkAssignmentModal, WorkAssignmentData, TaskAssignmentStatus } from "./WorkAssignmentModal";
+import {
+  WorkAssignmentModal,
+  WorkAssignmentData,
+  TaskAssignmentStatus,
+} from "./WorkAssignmentModal";
 
 interface UserOption {
   user_id: string;
@@ -46,7 +61,7 @@ export function TaskAssignments({
 }: TaskAssignmentsProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingData, setEditingData] = useState<WorkAssignmentData | null>(null);
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | TaskAssignmentStatus>("all");
 
@@ -57,11 +72,36 @@ export function TaskAssignments({
 
   const getStatusDisplay = (status: TaskAssignmentStatus) => {
     switch (status) {
-      case "not_started": return { label: "Not Started", icon: <Clock size={14}/>, className: "bg-muted text-muted-foreground" };
-      case "in_progress": return { label: "In Progress", icon: <PlayCircle size={14}/>, className: "bg-blue-500/10 text-blue-500" };
-      case "under_review": return { label: "Under Review", icon: <AlertCircle size={14}/>, className: "bg-orange-500/10 text-orange-500" };
-      case "completed": return { label: "Completed", icon: <CheckCircle2 size={14}/>, className: "bg-green-500/10 text-green-500" };
-      case "blocked": return { label: "Blocked", icon: <AlertCircle size={14}/>, className: "bg-destructive/10 text-destructive" };
+      case "not_started":
+        return {
+          label: "Not Started",
+          icon: <Clock size={14} />,
+          className: "bg-muted text-muted-foreground",
+        };
+      case "in_progress":
+        return {
+          label: "In Progress",
+          icon: <PlayCircle size={14} />,
+          className: "bg-blue-500/10 text-blue-500",
+        };
+      case "under_review":
+        return {
+          label: "Under Review",
+          icon: <AlertCircle size={14} />,
+          className: "bg-orange-500/10 text-orange-500",
+        };
+      case "completed":
+        return {
+          label: "Completed",
+          icon: <CheckCircle2 size={14} />,
+          className: "bg-green-500/10 text-green-500",
+        };
+      case "blocked":
+        return {
+          label: "Blocked",
+          icon: <AlertCircle size={14} />,
+          className: "bg-destructive/10 text-destructive",
+        };
     }
   };
 
@@ -69,7 +109,7 @@ export function TaskAssignments({
     return assignments.filter((a) => {
       if (statusFilter !== "all" && a.status !== statusFilter) return false;
       if (searchQuery) {
-        const emp = employees.find(e => e.user_id === a.user_id);
+        const emp = employees.find((e) => e.user_id === a.user_id);
         const matchName = emp?.full_name.toLowerCase().includes(searchQuery.toLowerCase());
         const matchResp = a.responsibility.toLowerCase().includes(searchQuery.toLowerCase());
         if (!matchName && !matchResp) return false;
@@ -165,19 +205,26 @@ export function TaskAssignments({
           </div>
         ) : (
           filteredAssignments.map((assignment) => {
-            const employee = employees.find(e => e.user_id === assignment.user_id);
+            const employee = employees.find((e) => e.user_id === assignment.user_id);
             const statusDisplay = getStatusDisplay(assignment.status);
             const canEditThis = canEditAny || currentUserId === assignment.user_id;
 
             return (
-              <div key={assignment.id || `${assignment.user_id}-${assignment.responsibility}`} className="flex flex-col sm:flex-row gap-4 p-4 border border-border bg-muted/10 rounded-lg hover:border-primary/20 transition-colors">
+              <div
+                key={assignment.id || `${assignment.user_id}-${assignment.responsibility}`}
+                className="flex flex-col sm:flex-row gap-4 p-4 border border-border bg-muted/10 rounded-lg hover:border-primary/20 transition-colors"
+              >
                 <div className="flex items-center gap-3 w-[250px] shrink-0">
                   <Avatar className="h-10 w-10 border border-primary/20">
                     <AvatarImage src={employee?.avatar_url || ""} />
-                    <AvatarFallback>{employee?.full_name?.substring(0, 2).toUpperCase() || "??"}</AvatarFallback>
+                    <AvatarFallback>
+                      {employee?.full_name?.substring(0, 2).toUpperCase() || "??"}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0">
-                    <div className="font-medium text-sm truncate">{employee?.full_name || "Unknown User"}</div>
+                    <div className="font-medium text-sm truncate">
+                      {employee?.full_name || "Unknown User"}
+                    </div>
                     <div className="text-xs text-muted-foreground truncate">Assigned Worker</div>
                   </div>
                 </div>
@@ -185,20 +232,38 @@ export function TaskAssignments({
                 <div className="flex-1 min-w-0 flex flex-col justify-center">
                   <div className="font-semibold text-sm truncate">{assignment.responsibility}</div>
                   {assignment.notes && (
-                    <div className="text-xs text-muted-foreground truncate mt-0.5">{assignment.notes}</div>
+                    <div className="text-xs text-muted-foreground truncate mt-0.5">
+                      {assignment.notes}
+                    </div>
                   )}
+                  <div className="mt-2 flex items-center gap-2">
+                    <Progress
+                      value={assignment.progress || 0}
+                      className="h-2 w-full max-w-[150px]"
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {assignment.progress || 0}%
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-6 shrink-0 sm:ml-auto">
                   {assignment.due_date && (
                     <div className="text-xs flex flex-col hidden md:flex">
-                      <span className="text-muted-foreground uppercase text-[10px] tracking-wider mb-0.5">Due Date</span>
-                      <span className="font-medium">{new Date(assignment.due_date).toLocaleDateString()}</span>
+                      <span className="text-muted-foreground uppercase text-[10px] tracking-wider mb-0.5">
+                        Due Date
+                      </span>
+                      <span className="font-medium">
+                        {new Date(assignment.due_date).toLocaleDateString()}
+                      </span>
                     </div>
                   )}
-                  
+
                   <div className="w-[120px]">
-                    <Badge variant="outline" className={`w-full justify-center gap-1.5 ${statusDisplay.className}`}>
+                    <Badge
+                      variant="outline"
+                      className={`w-full justify-center gap-1.5 ${statusDisplay.className}`}
+                    >
                       {statusDisplay.icon} {statusDisplay.label}
                     </Badge>
                   </div>
@@ -215,7 +280,10 @@ export function TaskAssignments({
                           <Edit2 size={14} className="mr-2" /> Edit Assignment
                         </DropdownMenuItem>
                         {canEditAny && (
-                          <DropdownMenuItem onClick={() => assignment.id && onRemove(assignment.id)} className="text-destructive focus:text-destructive">
+                          <DropdownMenuItem
+                            onClick={() => assignment.id && onRemove(assignment.id)}
+                            className="text-destructive focus:text-destructive"
+                          >
                             <Trash2 size={14} className="mr-2" /> Delete Assignment
                           </DropdownMenuItem>
                         )}

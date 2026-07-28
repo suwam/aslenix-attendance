@@ -271,10 +271,7 @@ export function TaskDialog({
     if (workAssignments.length > 0) {
       let total = 0;
       workAssignments.forEach((a) => {
-        if (a.status === "completed") total += 100;
-        else if (a.status === "under_review") total += 98;
-        else if (a.status === "in_progress") total += 50;
-        else if (a.status === "blocked") total += 10;
+        total += a.progress || 0;
       });
       const avg = Math.round(total / workAssignments.length);
       setProgress(avg);
@@ -394,6 +391,7 @@ export function TaskDialog({
           user_id: a.user_id,
           responsibility: a.responsibility,
           status: a.status,
+          progress: a.progress || 0,
           due_date: a.due_date,
           notes: a.notes,
         }));
@@ -993,6 +991,7 @@ export function TaskDialog({
                         user_id: data.user_id,
                         responsibility: data.responsibility,
                         status: data.status,
+                        progress: data.progress || 0,
                         due_date: data.due_date,
                         notes: data.notes,
                       })
