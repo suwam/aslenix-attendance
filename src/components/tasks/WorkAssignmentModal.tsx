@@ -35,7 +35,7 @@ interface WorkAssignmentModalProps {
   onSave: (data: WorkAssignmentData) => void;
   initialData?: WorkAssignmentData | null;
   employees: UserOption[];
-  existingResponsibilities: string[];
+  existingAssignments: WorkAssignmentData[];
   canEditCoreFields?: boolean;
 }
 
@@ -45,7 +45,7 @@ export function WorkAssignmentModal({
   onSave,
   initialData,
   employees,
-  existingResponsibilities,
+  existingAssignments,
   canEditCoreFields = true,
 }: WorkAssignmentModalProps) {
   const [userId, setUserId] = useState<string>("");
@@ -85,10 +85,13 @@ export function WorkAssignmentModal({
     }
     const cleanResponsibility = responsibility.trim();
     if (
-      (!initialData || initialData.responsibility.toLowerCase() !== cleanResponsibility.toLowerCase()) &&
-      existingResponsibilities.some((r) => r.toLowerCase() === cleanResponsibility.toLowerCase())
+      existingAssignments.some(
+        (a) =>
+          a.user_id === userId &&
+          a.responsibility.toLowerCase() === cleanResponsibility.toLowerCase()
+      )
     ) {
-      setError("This responsibility is already assigned within this task.");
+      setError("This employee is already assigned to this responsibility.");
       return;
     }
 

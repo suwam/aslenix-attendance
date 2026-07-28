@@ -962,11 +962,11 @@ export function TaskDialog({
                     }
                   } else {
                     // Optimistic add for unsaved task
-                    setWorkAssignments([...workAssignments, data]);
+                    setWorkAssignments([...workAssignments, { ...data, id: `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}` }]);
                   }
                 }}
                 onUpdate={async (data) => {
-                  if (taskId && data.id) {
+                  if (taskId && data.id && !data.id.toString().startsWith("temp-")) {
                     const { error } = await supabase
                       .from("task_assignees")
                       .update({
@@ -983,7 +983,7 @@ export function TaskDialog({
                   } else {
                     setWorkAssignments(
                       workAssignments.map((a) =>
-                        a.responsibility === data.responsibility ? data : a,
+                        a.id === data.id ? data : a,
                       ),
                     );
                   }

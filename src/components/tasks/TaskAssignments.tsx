@@ -96,7 +96,7 @@ export function TaskAssignments({
     }
   };
 
-  const existingResponsibilities = assignments.map(a => a.responsibility);
+  const existingAssignments = assignments.filter((a) => a !== editingData);
 
   return (
     <div className="space-y-6">
@@ -170,7 +170,7 @@ export function TaskAssignments({
             const canEditThis = canEditAny || currentUserId === assignment.user_id;
 
             return (
-              <div key={assignment.id || assignment.responsibility} className="flex flex-col sm:flex-row gap-4 p-4 border border-border bg-muted/10 rounded-lg hover:border-primary/20 transition-colors">
+              <div key={assignment.id || `${assignment.user_id}-${assignment.responsibility}`} className="flex flex-col sm:flex-row gap-4 p-4 border border-border bg-muted/10 rounded-lg hover:border-primary/20 transition-colors">
                 <div className="flex items-center gap-3 w-[250px] shrink-0">
                   <Avatar className="h-10 w-10 border border-primary/20">
                     <AvatarImage src={employee?.avatar_url || ""} />
@@ -235,7 +235,7 @@ export function TaskAssignments({
         onSave={handleSave}
         initialData={editingData}
         employees={employees}
-        existingResponsibilities={existingResponsibilities.filter(r => r !== editingData?.responsibility)}
+        existingAssignments={existingAssignments}
         canEditCoreFields={canEditAny}
       />
     </div>
