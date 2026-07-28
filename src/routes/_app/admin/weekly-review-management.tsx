@@ -287,7 +287,7 @@ function WeeklyReviewManagementPage() {
     () => weeks.map((week) => ({ week, ...getWeekSummary(week.weekNumber, reviewRows) })),
     [reviewRows, weeks],
   );
-  const chartData = useMemo(() => buildChartData(reviewRows, weeks), [reviewRows, weeks]);
+  const chartData = useMemo(() => buildChartData(filteredRows, weeks), [filteredRows, weeks]);
   const topEmployees = useMemo(
     () =>
       filteredRows
