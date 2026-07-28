@@ -198,9 +198,7 @@ export function TaskDialog({
       setInitialProgress(t.progress);
       setProgressNote("");
       setAssignedTo(t.assigned_to);
-      setWorkAssignments(
-        assignees?.length ? assignees as any[] : []
-      );
+      setWorkAssignments(assignees?.length ? (assignees as any[]) : []);
       setDeadlineDateBs(t.deadline ? formatBsInput(t.deadline) : "");
       setDeadlineTime(t.deadline ? format(new Date(t.deadline), "HH:mm") : "");
       setTags((t.tags || []).join(", "));
@@ -373,7 +371,7 @@ export function TaskDialog({
       }
       error = result.error;
       savedTaskId = result.data?.id ?? null;
-      
+
       // For new tasks, insert the work assignments
       if (!error && savedTaskId && workAssignments.length > 0) {
         const assignmentsToInsert = workAssignments.map((a) => ({
@@ -387,7 +385,7 @@ export function TaskDialog({
         await supabase.from("task_assignees").insert(assignmentsToInsert);
       }
     }
-    
+
     if (!error && savedTaskId) {
       // Log activity
       await supabase.from("task_activity_logs").insert({
@@ -828,7 +826,7 @@ export function TaskDialog({
             <div>
               <Label>Total Progress: {progress}%</Label>
               <div className="w-full h-3 bg-muted rounded-full overflow-hidden mt-2">
-                <div 
+                <div
                   className="h-full bg-primary transition-all duration-300"
                   style={{ width: `${progress}%` }}
                 />
@@ -837,73 +835,72 @@ export function TaskDialog({
                 Task progress is calculated automatically based on completed work assignments.
               </p>
             </div>
-              {taskId && !isEmployeeTaskEdit && progressUpdates.length > 0 && (
-                <div className="mt-4 rounded-lg border border-border bg-muted/20 p-3">
-                  <div className="mb-2 flex items-center gap-2 text-sm font-medium">
-                    <TrendingUp size={14} className="text-primary" />
-                    Progress updates
-                  </div>
-                  <div className="max-h-44 space-y-2 overflow-y-auto">
-                    {progressUpdates.map((update) => (
-                      <div key={update.id} className="rounded-md bg-background/50 p-2 text-sm">
-                        <div className="mb-1 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                          <span className="font-medium text-foreground">
-                            {update.old_progress}% -&gt; {update.new_progress}%
-                          </span>
-                          <div className="flex items-center gap-1.5">
-                            <span>{formatTaskDateTime(update.created_at)}</span>
-                            {(isAdmin || update.user_id === user?.id) && (
-                              <button
-                                type="button"
-                                onClick={() => startEditingProgressUpdate(update)}
-                                className="rounded p-1 text-muted-foreground transition-colors hover:bg-primary/15 hover:text-primary"
-                                title="Edit progress update"
-                              >
-                                <Pencil size={12} />
-                              </button>
-                            )}
+            {taskId && !isEmployeeTaskEdit && progressUpdates.length > 0 && (
+              <div className="mt-4 rounded-lg border border-border bg-muted/20 p-3">
+                <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+                  <TrendingUp size={14} className="text-primary" />
+                  Progress updates
+                </div>
+                <div className="max-h-44 space-y-2 overflow-y-auto">
+                  {progressUpdates.map((update) => (
+                    <div key={update.id} className="rounded-md bg-background/50 p-2 text-sm">
+                      <div className="mb-1 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">
+                          {update.old_progress}% -&gt; {update.new_progress}%
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span>{formatTaskDateTime(update.created_at)}</span>
+                          {(isAdmin || update.user_id === user?.id) && (
+                            <button
+                              type="button"
+                              onClick={() => startEditingProgressUpdate(update)}
+                              className="rounded p-1 text-muted-foreground transition-colors hover:bg-primary/15 hover:text-primary"
+                              title="Edit progress update"
+                            >
+                              <Pencil size={12} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {editingProgressUpdateId === update.id ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            value={editingProgressNote}
+                            onChange={(e) => setEditingProgressNote(e.target.value)}
+                            rows={2}
+                            className="text-sm"
+                          />
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={cancelEditingProgressUpdate}
+                            >
+                              <X size={13} className="mr-1.5" />
+                              Cancel
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => saveProgressUpdateNote(update.id)}
+                              disabled={savingProgressUpdateId === update.id}
+                              className="neon-button"
+                            >
+                              <Check size={13} className="mr-1.5" />
+                              {savingProgressUpdateId === update.id ? "Saving..." : "Save"}
+                            </Button>
                           </div>
                         </div>
-                        {editingProgressUpdateId === update.id ? (
-                          <div className="space-y-2">
-                            <Textarea
-                              value={editingProgressNote}
-                              onChange={(e) => setEditingProgressNote(e.target.value)}
-                              rows={2}
-                              className="text-sm"
-                            />
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={cancelEditingProgressUpdate}
-                              >
-                                <X size={13} className="mr-1.5" />
-                                Cancel
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                onClick={() => saveProgressUpdateNote(update.id)}
-                                disabled={savingProgressUpdateId === update.id}
-                                className="neon-button"
-                              >
-                                <Check size={13} className="mr-1.5" />
-                                {savingProgressUpdateId === update.id ? "Saving..." : "Save"}
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-foreground">{update.note}</div>
-                        )}
-                        <div className="mt-1 text-xs text-muted-foreground">{update.author}</div>
-                      </div>
-                    ))}
-                  </div>
+                      ) : (
+                        <div className="text-foreground">{update.note}</div>
+                      )}
+                      <div className="mt-1 text-xs text-muted-foreground">{update.author}</div>
+                    </div>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               <div>
@@ -983,7 +980,11 @@ export function TaskDialog({
                       setWorkAssignments(workAssignments.map((a) => (a.id === data.id ? data : a)));
                     }
                   } else {
-                    setWorkAssignments(workAssignments.map((a) => (a.responsibility === data.responsibility ? data : a)));
+                    setWorkAssignments(
+                      workAssignments.map((a) =>
+                        a.responsibility === data.responsibility ? data : a,
+                      ),
+                    );
                   }
                 }}
                 onRemove={async (id) => {
@@ -1032,11 +1033,7 @@ export function TaskDialog({
             </Button>
             {!isEmployeeTaskEdit && (
               <Button onClick={save} disabled={loading} className="neon-button">
-                {loading
-                  ? "Saving..."
-                  : taskId
-                      ? "Save changes"
-                      : "Create task"}
+                {loading ? "Saving..." : taskId ? "Save changes" : "Create task"}
               </Button>
             )}
             {isEmployeeTaskEdit && progress >= 100 && (
