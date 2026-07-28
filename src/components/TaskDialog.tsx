@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TaskAssignments } from "./tasks/TaskAssignments";
+import { TaskAssignees } from "./tasks/TaskAssignees";
 import { WorkAssignmentData } from "./tasks/WorkAssignmentModal";
 import { TaskDiscussion } from "./tasks/TaskDiscussion";
 import { TaskTimeline } from "./tasks/TaskTimeline";
