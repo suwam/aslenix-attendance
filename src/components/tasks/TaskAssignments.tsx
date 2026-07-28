@@ -22,6 +22,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Slider } from "@/components/ui/slider";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -236,12 +237,22 @@ export function TaskAssignments({
                       {assignment.notes}
                     </div>
                   )}
-                  <div className="mt-2 flex items-center gap-2">
-                    <Progress
-                      value={assignment.progress || 0}
-                      className="h-2 w-full max-w-[150px]"
-                    />
-                    <span className="text-xs text-muted-foreground">
+                  <div className="mt-2 flex items-center gap-3">
+                    {canEditThis ? (
+                      <Slider
+                        value={[assignment.progress || 0]}
+                        onValueChange={(vals) => onUpdate({ ...assignment, progress: vals[0] })}
+                        max={100}
+                        step={1}
+                        className="w-full flex-1"
+                      />
+                    ) : (
+                      <Progress
+                        value={assignment.progress || 0}
+                        className="h-2 w-full flex-1"
+                      />
+                    )}
+                    <span className="text-xs font-medium w-10 text-right text-muted-foreground">
                       {assignment.progress || 0}%
                     </span>
                   </div>
