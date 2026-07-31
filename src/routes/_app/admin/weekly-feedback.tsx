@@ -288,6 +288,9 @@ function WeeklyFeedbackPage() {
         const history = feedback.filter(
           (item: WeeklyFeedbackRow) => item.employee_id === profile.user_id,
         );
+        const currentMonthHistory = history.filter((review) =>
+          reviewWeeks.some((week) => isReviewForWeek(review, week)),
+        );
         const previous = history.find((item: any) => item.week_start !== weekStart);
         return {
           userId: profile.user_id,
@@ -1598,15 +1601,10 @@ function getFeedbackWeekNumber(review: Pick<WeeklyFeedbackRow, "week_number" | "
   return review.week_number || getReviewWeekNumber(new Date(`${review.week_start}T00:00:00`));
 }
 
-function isSameReviewCycle(reviewDate: string, weekStart?: string) {
-  if (!weekStart) return false;
-  const reviewCycleStart = toDateKey(getReviewCycleStart(new Date(`${reviewDate}T00:00:00`)));
-  const weekCycleStart = toDateKey(getReviewCycleStart(new Date(`${weekStart}T00:00:00`)));
-  return reviewCycleStart === weekCycleStart;
-}
-
 function isReviewForWeek(item: WeeklyFeedbackRow, week: any) {
   if (!week) return false;
+
+  // 1. If it has explicit week_number, use it (and verify month/year match).
   if (item.nepali_year && item.week_number != null) {
     return (
       item.nepali_year === week.bsYear &&
@@ -1614,7 +1612,22 @@ function isReviewForWeek(item: WeeklyFeedbackRow, week: any) {
       item.week_number === week.weekNumber
     );
   }
-  return isSameReviewCycle(item.week_start, week.startDate);
+
+  if (!item.week_start || !week.startDate) return false;
+
+  // 2. Fallback 1: Exact date match (for new algorithm submissions missing DB columns)
+  if (item.week_start.slice(0, 10) === week.startDate.slice(0, 10)) {
+    return true;
+  }
+
+  // 3. True legacy fallback: It belongs to the same month and the legacy week number matches the target week number.
+  const rDate = new Date(`${item.week_start.slice(0, 10)}T00:00:00`);
+  const wDate = new Date(`${week.startDate.slice(0, 10)}T00:00:00`);
+  if (toDateKey(getReviewCycleStart(rDate)) === toDateKey(getReviewCycleStart(wDate))) {
+    return getReviewWeekNumber(rDate) === week.weekNumber;
+  }
+
+  return false;
 }
 
 function isHrProfile(profile: { department?: string | null; position?: string | null }) {
