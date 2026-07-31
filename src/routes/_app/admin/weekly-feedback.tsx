@@ -289,7 +289,7 @@ function WeeklyFeedbackPage() {
           (item: WeeklyFeedbackRow) => item.employee_id === profile.user_id,
         );
         const currentMonthHistory = history.filter((review) =>
-          reviewWeeks.some((week) => isReviewForWeek(review, week)),
+          reviewWeeks.some((week) => isReviewForWeek(review, week, reviewWeeks)),
         );
         const previous = history.find((item: any) => item.week_start !== weekStart);
         return {
@@ -325,9 +325,9 @@ function WeeklyFeedbackPage() {
   const selectedHistory = selected?.history || [];
   const selectedWeek =
     reviewWeeks.find((week) => week.weekNumber === selectedWeekNumber) || reviewWeeks[0];
-  const selectedWeekReview = selectedHistory.find((item) => isReviewForWeek(item, selectedWeek));
+  const selectedWeekReview = selectedHistory.find((item) => isReviewForWeek(item, selectedWeek, reviewWeeks));
   const completedWeeks = reviewWeeks.filter((week) =>
-    selectedHistory.some((item) => isReviewForWeek(item, week)),
+    selectedHistory.some((item) => isReviewForWeek(item, week, reviewWeeks)),
   ).length;
   const selectedWeekStatus = getWeekStatus(selectedWeek, Boolean(selectedWeekReview));
   const selectedWeekLocked = selectedWeekStatus === "locked";
@@ -431,7 +431,7 @@ function WeeklyFeedbackPage() {
     : "Select an employee to view weekly progress insight.";
   const currentReviewWeek = reviewWeeks.find((week) => week.weekNumber === currentWeekNumber);
   const reviewedThisWeek = feedbackRows.filter((row) =>
-    isReviewForWeek(row, currentReviewWeek),
+    isReviewForWeek(row, currentReviewWeek, reviewWeeks),
   ).length;
   const totalReviews = feedbackRows.length;
   const avgHrRating = average(feedbackRows.map((row) => resolvedReviewScore(row)));
@@ -766,7 +766,7 @@ function WeeklyFeedbackPage() {
             </h3>
             <div className="space-y-3">
               {reviewWeeks.map((week) => {
-                const review = selectedHistory.find((item) => isReviewForWeek(item, week));
+                const review = selectedHistory.find((item) => isReviewForWeek(item, week, reviewWeeks));
                 const status = getWeekStatus(week, Boolean(review));
                 return (
                   <div key={week.weekNumber} className={`weekly-history-item ${status}`}>
@@ -894,7 +894,7 @@ function WeeklyFeedbackPage() {
                     {/* Horizontal Stepper Navigation */}
                     <div className="hide-scrollbar mb-10 flex items-center gap-2 overflow-x-auto pb-4">
                       {reviewWeeks.map((week, idx) => {
-                        const review = selectedHistory.find((item) => isReviewForWeek(item, week));
+                        const review = selectedHistory.find((item) => isReviewForWeek(item, week, reviewWeeks));
                         const status = getWeekStatus(week, Boolean(review));
                         const isSelected = selectedWeekNumber === week.weekNumber;
 
@@ -1114,7 +1114,7 @@ function WeeklyFeedbackPage() {
                 <div className="flex-1 overflow-y-auto p-4">
                   <div className="flex flex-col gap-3">
                     {reviewWeeks.map((week) => {
-                      const review = selectedHistory.find((item) => isReviewForWeek(item, week));
+                      const review = selectedHistory.find((item) => isReviewForWeek(item, week, reviewWeeks));
                       const status = getWeekStatus(week, Boolean(review));
 
                       return (
@@ -1601,9 +1601,9 @@ function getFeedbackWeekNumber(review: Pick<WeeklyFeedbackRow, "week_number" | "
   return review.week_number || getReviewWeekNumber(new Date(`${review.week_start}T00:00:00`));
 }
 
-function isReviewForWeek(item: WeeklyFeedbackRow, week: any) {
+function isReviewForWeek(item: WeeklyFeedbackRow, week: any, allWeeks?: any[]) {
   if (!week) return false;
-
+  
   // 1. If it has explicit week_number, use it (and verify month/year match).
   if (item.nepali_year && item.week_number != null) {
     return (
@@ -1612,14 +1612,19 @@ function isReviewForWeek(item: WeeklyFeedbackRow, week: any) {
       item.week_number === week.weekNumber
     );
   }
-
+  
   if (!item.week_start || !week.startDate) return false;
-
+  
   // 2. Fallback 1: Exact date match (for new algorithm submissions missing DB columns)
   if (item.week_start.slice(0, 10) === week.startDate.slice(0, 10)) {
     return true;
   }
-
+  
+  // If it perfectly matches ANY OTHER week in the new algorithm, it belongs to that other week!
+  if (allWeeks?.some(w => w.startDate.slice(0, 10) === item.week_start.slice(0, 10))) {
+      return false;
+  }
+  
   // 3. True legacy fallback: It belongs to the same month and the legacy week number matches the target week number.
   const rDate = new Date(`${item.week_start.slice(0, 10)}T00:00:00`);
   const wDate = new Date(`${week.startDate.slice(0, 10)}T00:00:00`);
