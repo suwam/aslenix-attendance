@@ -99,6 +99,7 @@ serve(async (req) => {
           .eq("employee_id", userId)
           .eq("device_fingerprint", deviceFingerprint)
           .eq("status", "Active")
+          .is("force_logout_at", null)
           .maybeSingle();
 
         if (activeDevice) {
