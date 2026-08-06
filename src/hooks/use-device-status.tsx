@@ -92,6 +92,8 @@ export function useDeviceStatus() {
           .select("*")
           .eq("employee_id", user.id)
           .eq("device_fingerprint", fingerprint)
+          .eq("status", "Active")
+          .is("force_logout_at", null)
           .maybeSingle(),
         (supabase as any)
           .from("employee_devices")
@@ -114,15 +116,11 @@ export function useDeviceStatus() {
     setMaxRegisteredDevices(maxDevices);
 
     if (currentDevice) {
-      if (currentDevice.status === "Active" && !currentDevice.force_logout_at) {
-        await (supabase as any)
-          .from("employee_devices")
-          .update({ last_login: new Date().toISOString() })
-          .eq("id", currentDevice.id);
-        setDeviceStatus("registered");
-      } else {
-        setDeviceStatus("inactive");
-      }
+      await (supabase as any)
+        .from("employee_devices")
+        .update({ last_login: new Date().toISOString() })
+        .eq("id", currentDevice.id);
+      setDeviceStatus("registered");
       return;
     }
 
@@ -258,6 +256,11 @@ export function useDeviceStatus() {
               device_name: nameToUse,
               status: "Active",
               last_login: now,
+              force_logout_at: null,
+              force_logout_by: null,
+              removed_at: null,
+              removed_by: null,
+              removal_reason: null,
             },
             { onConflict: "employee_id,device_fingerprint" },
           )
