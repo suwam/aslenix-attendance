@@ -30,6 +30,10 @@ export interface TaskCardData {
   attachments_count?: number;
   assignee_name?: string;
   assignee_names?: string[];
+  total_weekly_tasks?: number;
+  completed_weekly_tasks?: number;
+  in_progress_weekly_tasks?: number;
+  weekly_progress?: number;
 }
 
 export function TaskCard({
@@ -104,14 +108,23 @@ export function TaskCard({
         )}
 
         <div className="mb-3">
+          {(task.total_weekly_tasks ?? 0) > 0 && (
+            <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+              <span>
+                {task.completed_weekly_tasks || 0}/{task.total_weekly_tasks} tasks done
+              </span>
+              <span>{task.in_progress_weekly_tasks || 0} in progress</span>
+            </div>
+          )}
           <div className="h-1.5 rounded-full bg-muted/50 overflow-hidden">
             <div
               className="h-full rounded-full transition-all"
-              style={{ width: `${task.progress}%`, background: "var(--gradient-brand)" }}
+              style={{ width: `${task.weekly_progress ?? task.progress}%`, background: "var(--gradient-brand)" }}
             />
           </div>
           <div className="text-[10px] text-muted-foreground mt-1 tabular-nums">
-            {task.progress}%
+            {task.weekly_progress ?? task.progress}%
+            {(task.total_weekly_tasks ?? 0) > 0 && " Weekly Progress"}
           </div>
         </div>
 

@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, type CSSProperties } from "react";
 import { AnimatePresence } from "framer-motion";
+import { isSameWeek } from "date-fns";
 import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -35,7 +36,7 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
       .order("created_at", { ascending: false });
     const taskIds = (data || []).map((t) => t.id);
     const assigneeResult = taskIds.length
-      ? await supabase.from("task_assignees").select("task_id,user_id").in("task_id", taskIds)
+      ? await supabase.from("task_assignees").select("*").in("task_id", taskIds)
       : { data: [] };
     const assignees =
       "error" in assigneeResult &&
@@ -72,10 +73,10 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
         .in("user_id", ids);
       names = Object.fromEntries((profs || []).map((p) => [p.user_id, p.full_name]));
     }
-    const assigneesByTask: Record<string, string[]> = {};
+    const assigneesByTask: Record<string, any[]> = {};
     (assignees || []).forEach((a) => {
       assigneesByTask[a.task_id] ||= [];
-      assigneesByTask[a.task_id].push(names[a.user_id] || "User");
+      assigneesByTask[a.task_id].push(a);
     });
     // counts
     const cCounts: Record<string, number> = {};
@@ -103,20 +104,61 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
         : data || [];
 
     setTasks(
-      visibleTasks.map((t: any) => ({
-        ...t,
-        assignee_name: names[t.assigned_to],
-        assignee_names: assigneesByTask[t.id]?.length
-          ? assigneesByTask[t.id]
-          : [names[t.assigned_to] || "User"],
-        comments_count: cCounts[t.id] || 0,
-        attachments_count: aCounts[t.id] || 0,
-      })),
+      visibleTasks.map((t: any) => {
+        const taskAssignees = assigneesByTask[t.id] || [];
+        const weeklyAssignees = taskAssignees.filter((a: any) =>
+          a.assigned_at && isSameWeek(new Date(a.assigned_at), new Date(), { weekStartsOn: 1 })
+        );
+        const total_weekly_tasks = weeklyAssignees.length;
+        const completed_weekly_tasks = weeklyAssignees.filter((a: any) => a.status === "completed").length;
+        const in_progress_weekly_tasks = weeklyAssignees.filter((a: any) => a.status === "in_progress").length;
+        const weekly_progress =
+          total_weekly_tasks > 0
+            ? Math.round(
+                weeklyAssignees.reduce((sum, a) => sum + (a.progress || 0), 0) / total_weekly_tasks
+              )
+            : 0;
+
+        return {
+          ...t,
+          assignee_name: names[t.assigned_to],
+          assignee_names: taskAssignees.length
+            ? taskAssignees.map((a: any) => names[a.user_id] || "User")
+            : [names[t.assigned_to] || "User"],
+          comments_count: cCounts[t.id] || 0,
+          attachments_count: aCounts[t.id] || 0,
+          total_weekly_tasks,
+          completed_weekly_tasks,
+          in_progress_weekly_tasks,
+          weekly_progress,
+        };
+      })
     );
   }, [scope, user]);
 
   useEffect(() => {
     load();
+    const channel = supabase
+      .channel("kanban-updates")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "task_assignees" },
+        () => {
+          load();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tasks" },
+        () => {
+          load();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [load]);
 
   const moveTo = async (id: string, status: TaskStatus) => {
