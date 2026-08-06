@@ -84,15 +84,32 @@ serve(async (req) => {
     if (action === "generate-registration-options") {
       const { userId, deviceFingerprint, rpID, username } = payload;
 
-      const { data: existing } = await supabaseAdmin
+      const { data: existingPasskey } = await supabaseAdmin
         .from("device_passkeys")
         .select("id")
         .eq("employee_id", userId)
         .eq("device_fingerprint", deviceFingerprint)
         .maybeSingle();
 
-      if (existing) {
-        throw new Error("Device already has a registered passkey.");
+      if (existingPasskey) {
+        // Only block if the device is currently Active
+        const { data: activeDevice } = await supabaseAdmin
+          .from("employee_devices")
+          .select("id")
+          .eq("employee_id", userId)
+          .eq("device_fingerprint", deviceFingerprint)
+          .eq("status", "Active")
+          .maybeSingle();
+
+        if (activeDevice) {
+          throw new Error("Device already has a registered passkey.");
+        } else {
+          // It's an orphaned passkey or from an Inactive device. Delete it to allow re-registration.
+          await supabaseAdmin
+            .from("device_passkeys")
+            .delete()
+            .eq("id", existingPasskey.id);
+        }
       }
 
       const rpName = "ASLENIX HRMS";
