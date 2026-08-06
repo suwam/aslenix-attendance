@@ -608,6 +608,13 @@ async function removeDevice(deviceId: string) {
   if (error) throw error;
 
   if (device) {
+    // Ensure passkey is deleted so the user can re-register the same device later if needed
+    await (supabase as any)
+      .from("device_passkeys")
+      .delete()
+      .eq("employee_id", device.employee_id)
+      .eq("device_fingerprint", device.device_fingerprint);
+
     await logTrustedDeviceEvent({
       employeeId: device.employee_id,
       deviceId,
