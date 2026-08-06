@@ -31,9 +31,12 @@ export interface TaskCardData {
   assignee_name?: string;
   assignee_names?: string[];
   total_weekly_tasks?: number;
-  completed_weekly_tasks?: number;
-  in_progress_weekly_tasks?: number;
+  approved_weekly_tasks?: number;
+  pending_verification_tasks?: number;
+  rejected_weekly_tasks?: number;
   weekly_progress?: number;
+  completed_weight?: number;
+  total_weight?: number;
 }
 
 export function TaskCard({
@@ -111,9 +114,12 @@ export function TaskCard({
           {(task.total_weekly_tasks ?? 0) > 0 && (
             <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
               <span>
-                {task.completed_weekly_tasks || 0}/{task.total_weekly_tasks} tasks done
+                {task.completed_weight || 0}/{task.total_weight || 0} weight done
               </span>
-              <span>{task.in_progress_weekly_tasks || 0} in progress</span>
+              <span className="flex gap-1.5">
+                {(task.pending_verification_tasks ?? 0) > 0 && <span className="text-blue-400">{task.pending_verification_tasks} pending</span>}
+                {(task.rejected_weekly_tasks ?? 0) > 0 && <span className="text-destructive">{task.rejected_weekly_tasks} rejected</span>}
+              </span>
             </div>
           )}
           <div className="h-1.5 rounded-full bg-muted/50 overflow-hidden">

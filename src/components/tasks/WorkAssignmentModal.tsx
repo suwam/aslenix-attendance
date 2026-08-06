@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Database } from "@/integrations/supabase/types";
+import { TASK_COMPLEXITY_LABELS, type TaskComplexity } from "@/lib/employee-scoring";
 
 export type TaskAssignmentStatus = Database["public"]["Enums"]["task_assignment_status"];
 
@@ -30,6 +31,7 @@ export interface WorkAssignmentData {
   due_date: string | null;
   notes: string | null;
   progress?: number;
+  complexity?: TaskComplexity;
 }
 
 interface UserOption {
@@ -62,6 +64,7 @@ export function WorkAssignmentModal({
   const [dueDate, setDueDate] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [progress, setProgress] = useState(0);
+  const [complexity, setComplexity] = useState<TaskComplexity>("medium");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -73,6 +76,7 @@ export function WorkAssignmentModal({
         setDueDate(initialData.due_date || "");
         setNotes(initialData.notes || "");
         setProgress(initialData.progress || 0);
+        setComplexity(initialData.complexity || "medium");
       } else {
         setUserId("");
         setResponsibility("");
@@ -80,6 +84,7 @@ export function WorkAssignmentModal({
         setDueDate("");
         setNotes("");
         setProgress(0);
+        setComplexity("medium");
       }
       setError("");
     }
@@ -114,6 +119,7 @@ export function WorkAssignmentModal({
       due_date: dueDate || null,
       notes: notes.trim() || null,
       progress,
+      complexity,
     });
     onOpenChange(false);
   };
@@ -162,6 +168,27 @@ export function WorkAssignmentModal({
                   <SelectItem value="under_review">Under Review</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="blocked">Blocked</SelectItem>
+                  {(canEditCoreFields || status === "approved") && (
+                    <SelectItem value="approved" disabled={!canEditCoreFields}>Approved</SelectItem>
+                  )}
+                  {(canEditCoreFields || status === "rejected") && (
+                    <SelectItem value="rejected" disabled={!canEditCoreFields}>Rejected</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Complexity</Label>
+              <Select value={complexity} onValueChange={(val: TaskComplexity) => setComplexity(val)} disabled={!canEditCoreFields}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(TASK_COMPLEXITY_LABELS) as TaskComplexity[]).map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {TASK_COMPLEXITY_LABELS[c]}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -182,7 +209,7 @@ export function WorkAssignmentModal({
               onValueChange={(vals) => setProgress(vals[0])}
               max={100}
               step={1}
-              disabled={!canEditCoreFields}
+              disabled={status === "approved" || (!canEditCoreFields && initialData?.user_id !== userId)}
             />
           </div>
           <div className="grid gap-2">

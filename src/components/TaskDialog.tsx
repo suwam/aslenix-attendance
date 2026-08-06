@@ -325,7 +325,7 @@ export function TaskDialog({
           if (a.id && !a.id.toString().startsWith("temp-")) {
             await supabase
               .from("task_assignees")
-              .update({ progress: a.progress || 0 })
+              .update({ progress: a.progress || 0, complexity: a.complexity || "medium", status: a.status })
               .eq("id", a.id);
           }
         }
@@ -405,6 +405,7 @@ export function TaskDialog({
           responsibility: a.responsibility,
           status: a.status,
           progress: a.progress || 0,
+          complexity: a.complexity || "medium",
           due_date: a.due_date,
           notes: a.notes,
         }));
@@ -469,7 +470,7 @@ export function TaskDialog({
           if (a.id && !a.id.toString().startsWith("temp-")) {
             await supabase
               .from("task_assignees")
-              .update({ progress: a.progress || 0 })
+              .update({ progress: a.progress || 0, complexity: a.complexity || "medium", status: a.status })
               .eq("id", a.id);
           }
         }

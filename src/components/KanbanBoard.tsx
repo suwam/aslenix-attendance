@@ -109,15 +109,27 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
         const weeklyAssignees = taskAssignees.filter((a: any) =>
           a.assigned_at && isSameWeek(new Date(a.assigned_at), new Date(), { weekStartsOn: 1 })
         );
+        const getWeight = (c?: string) => {
+          switch (c) {
+            case "small": return 1;
+            case "medium": return 2;
+            case "large": return 3;
+            case "epic": return 5;
+            default: return 2;
+          }
+        };
+
         const total_weekly_tasks = weeklyAssignees.length;
-        const completed_weekly_tasks = weeklyAssignees.filter((a: any) => a.status === "completed").length;
-        const in_progress_weekly_tasks = weeklyAssignees.filter((a: any) => a.status === "in_progress").length;
-        const weekly_progress =
-          total_weekly_tasks > 0
-            ? Math.round(
-                weeklyAssignees.reduce((sum, a) => sum + (a.progress || 0), 0) / total_weekly_tasks
-              )
-            : 0;
+        const approved_weekly_tasks = weeklyAssignees.filter((a: any) => a.status === "approved").length;
+        const pending_verification_tasks = weeklyAssignees.filter((a: any) => ["completed", "under_review"].includes(a.status)).length;
+        const rejected_weekly_tasks = weeklyAssignees.filter((a: any) => a.status === "rejected").length;
+
+        const total_weight = weeklyAssignees.reduce((sum, a) => sum + getWeight(a.complexity), 0);
+        const completed_weight = weeklyAssignees
+          .filter((a: any) => a.status === "approved")
+          .reduce((sum, a) => sum + ((a.progress || 0) / 100) * getWeight(a.complexity), 0);
+        
+        const weekly_progress = total_weight > 0 ? Math.round((completed_weight / total_weight) * 100) : 0;
 
         return {
           ...t,
@@ -128,9 +140,12 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
           comments_count: cCounts[t.id] || 0,
           attachments_count: aCounts[t.id] || 0,
           total_weekly_tasks,
-          completed_weekly_tasks,
-          in_progress_weekly_tasks,
+          approved_weekly_tasks,
+          pending_verification_tasks,
+          rejected_weekly_tasks,
           weekly_progress,
+          total_weight,
+          completed_weight,
         };
       })
     );

@@ -672,6 +672,7 @@ export type Database = {
           due_date: string | null;
           notes: string | null;
           progress: number;
+          complexity: Database["public"]["Enums"]["task_complexity"];
           assigned_at: string;
           updated_at: string;
         };
@@ -684,6 +685,7 @@ export type Database = {
           due_date?: string | null;
           notes?: string | null;
           progress?: number;
+          complexity?: Database["public"]["Enums"]["task_complexity"];
           assigned_at?: string;
           updated_at?: string;
         };
@@ -696,6 +698,7 @@ export type Database = {
           due_date?: string | null;
           notes?: string | null;
           progress?: number;
+          complexity?: Database["public"]["Enums"]["task_complexity"];
           assigned_at?: string;
           updated_at?: string;
         };
@@ -1203,7 +1206,7 @@ export type Database = {
       leave_status: "pending" | "approved" | "rejected" | "cancelled" | "half_day_approved";
       leave_type: "sick" | "casual" | "vacation" | "emergency" | "wfh" | "holiday" | "weekend";
       qr_status: "active" | "inactive" | "revoked";
-      task_assignment_status: "not_started" | "in_progress" | "under_review" | "completed" | "blocked";
+      task_assignment_status: "not_started" | "in_progress" | "under_review" | "completed" | "blocked" | "approved" | "rejected";
       task_complexity: "small" | "medium" | "large" | "epic";
       task_priority: "low" | "medium" | "high" | "urgent";
       task_status: "todo" | "in_progress" | "review" | "completed";
@@ -1347,7 +1350,7 @@ export const Constants = {
       leave_status: ["pending", "approved", "rejected", "cancelled"],
       leave_type: ["sick", "casual", "vacation", "emergency", "wfh", "holiday", "weekend"],
       qr_status: ["active", "inactive", "revoked"],
-      task_assignment_status: ["not_started", "in_progress", "under_review", "completed", "blocked"],
+      task_assignment_status: ["not_started", "in_progress", "under_review", "completed", "blocked", "approved", "rejected"],
       task_complexity: ["small", "medium", "large", "epic"],
       task_priority: ["low", "medium", "high", "urgent"],
       task_status: ["todo", "in_progress", "review", "completed"],

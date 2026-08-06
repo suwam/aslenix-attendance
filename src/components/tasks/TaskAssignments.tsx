@@ -9,6 +9,8 @@ import {
   MoreVertical,
   Edit2,
   Trash2,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -34,6 +36,7 @@ import {
   WorkAssignmentData,
   TaskAssignmentStatus,
 } from "./WorkAssignmentModal";
+import { TASK_COMPLEXITY_LABELS } from "@/lib/employee-scoring";
 
 interface UserOption {
   user_id: string;
@@ -70,8 +73,9 @@ export function TaskAssignments({
 
   const completed = assignments.filter((a) => a.status === "completed").length;
   const inProgress = assignments.filter((a) => a.status === "in_progress").length;
+  const approved = assignments.filter((a) => a.status === "approved").length;
   const blocked = assignments.filter((a) => a.status === "blocked").length;
-  const pending = assignments.length - completed - inProgress - blocked;
+  const pending = assignments.length - completed - inProgress - blocked - approved - assignments.filter(a => a.status === "rejected").length;
 
   const getStatusDisplay = (status: TaskAssignmentStatus) => {
     switch (status) {
@@ -104,6 +108,18 @@ export function TaskAssignments({
           label: "Blocked",
           icon: <AlertCircle size={14} />,
           className: "bg-destructive/10 text-destructive",
+        };
+      case "approved":
+        return {
+          label: "Approved",
+          icon: <ThumbsUp size={14} />,
+          className: "bg-green-500/10 text-green-500 font-bold border-green-500",
+        };
+      case "rejected":
+        return {
+          label: "Rejected",
+          icon: <ThumbsDown size={14} />,
+          className: "bg-destructive/20 text-destructive font-bold border-destructive",
         };
     }
   };
@@ -150,8 +166,8 @@ export function TaskAssignments({
           <div className="text-xs text-muted-foreground uppercase tracking-wider">Total</div>
         </div>
         <div className="border border-border bg-background rounded-lg p-3 text-center">
-          <div className="text-2xl font-bold text-green-500">{completed}</div>
-          <div className="text-xs text-muted-foreground uppercase tracking-wider">Completed</div>
+          <div className="text-2xl font-bold text-green-500">{approved}</div>
+          <div className="text-xs text-muted-foreground uppercase tracking-wider">Approved</div>
         </div>
         <div className="border border-border bg-background rounded-lg p-3 text-center">
           <div className="text-2xl font-bold text-blue-500">{inProgress}</div>
@@ -190,6 +206,8 @@ export function TaskAssignments({
               <SelectItem value="under_review">Under Review</SelectItem>
               <SelectItem value="completed">Completed</SelectItem>
               <SelectItem value="blocked">Blocked</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -237,6 +255,13 @@ export function TaskAssignments({
                   {assignment.notes && (
                     <div className="text-xs text-muted-foreground truncate mt-0.5">
                       {assignment.notes}
+                    </div>
+                  )}
+                  {assignment.complexity && (
+                    <div className="mt-1">
+                      <Badge variant="secondary" className="text-[10px] uppercase font-normal tracking-wider">
+                        {TASK_COMPLEXITY_LABELS[assignment.complexity]}
+                      </Badge>
                     </div>
                   )}
                   <div className="mt-2 flex items-center gap-3">
