@@ -325,7 +325,11 @@ export function TaskDialog({
           if (a.id && !a.id.toString().startsWith("temp-")) {
             await supabase
               .from("task_assignees")
-              .update({ progress: a.progress || 0, complexity: a.complexity || "medium", status: a.status })
+              .update({
+                progress: a.progress || 0,
+                complexity: a.complexity || "medium",
+                status: a.status,
+              })
               .eq("id", a.id);
           }
         }
@@ -470,7 +474,11 @@ export function TaskDialog({
           if (a.id && !a.id.toString().startsWith("temp-")) {
             await supabase
               .from("task_assignees")
-              .update({ progress: a.progress || 0, complexity: a.complexity || "medium", status: a.status })
+              .update({
+                progress: a.progress || 0,
+                complexity: a.complexity || "medium",
+                status: a.status,
+              })
               .eq("id", a.id);
           }
         }
@@ -613,201 +621,6 @@ export function TaskDialog({
   const toggleAssignee = (assigneeId: string) => {
     setAssignedToMany((prev) => {
       const next = prev.includes(assigneeId)
-        ? prev.filter((id) => id !== assigneeId)
-        : [...prev, assigneeId];
-      setAssignedTo(next[0] || "");
-      return next;
-    });
-  };
-
-  const notifyTaskAssignees = async (
-    assigneeIds: string[],
-    notificationTitle: string,
-    task: { title: string; deadline: string },
-  ) => {
-    if (!assigneeIds.length) return;
-
-    const deadlineText = task.deadline ? ` Deadline: ${formatTaskDateTime(task.deadline)}.` : "";
-    await supabase.from("notifications").insert(
-      assigneeIds.map((assigneeId) => ({
-        user_id: assigneeId,
-        title: notificationTitle,
-        message: `${task.title}.${deadlineText}`,
-        type: "task",
-      })),
-    );
-  };
-
-  const notifyAdminsTaskReviewRequested = async () => {
-    if (!taskId || !user) return;
-
-    const { error } = await (supabase as any).rpc("notify_admins_task_review_requested", {
-      _task_id: taskId,
-    });
-    if (!error) return;
-
-    if (!/function .*notify_admins_task_review_requested/i.test(error.message || "")) {
-      throw error;
-    }
-
-    console.warn(
-      "Task review notification RPC is missing. Apply the latest Supabase migrations.",
-      error,
-    );
-  };
-
-  const requestReview = async () => {
-    if (!taskId || !user || progress < 100) return;
-    const progressChanged = progress !== initialProgress;
-    if (progressChanged && !progressNote.trim()) {
-      return toast.error("Update comment is required when progress changes");
-    }
-
-    setLoading(true);
-    let { error } = await supabase
-      .from("tasks")
-      .update({ progress: 100, status: "review", completed_at: null })
-      .eq("id", taskId);
-    if (!error && progressChanged) {
-      const progressUpdateResult = await saveProgressUpdate(
-        taskId,
-        initialProgress,
-        100,
-        progressNote.trim(),
-      );
-      if (!progressUpdateResult.missingTable) {
-        error = progressUpdateResult.error;
-      }
-    }
-    if (!error) {
-      try {
-        await notifyAdminsTaskReviewRequested();
-      } catch (notificationError: any) {
-        error = notificationError;
-      }
-    }
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    setStatus("review");
-    toast.success("Review requested", { description: "Admins have been notified." });
-    onSaved?.({ taskId, transition: "review" });
-    onOpenChange(false);
-  };
-
-  const updateProgress = (value: number) => {
-    const workflow = syncTaskWorkflow(status, value);
-    setProgress(workflow.progress);
-    setStatus(workflow.status);
-  };
-
-  const updateStatus = (value: TaskStatus) => {
-    setStatus(value);
-    setProgress(progressForStatus(value, progress));
-  };
-
-  const employeeProgressHistory = [...progressUpdates].sort(
-    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-  );
-  const complexityKeys = Object.keys(TASK_COMPLEXITY_LABELS) as TaskComplexity[];
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto glass-strong border-border/50 bg-gradient-to-br from-background/95 via-background/90 to-primary/5 backdrop-blur-2xl shadow-2xl">
-        <DialogHeader>
-          <DialogTitle>
-            {taskId ? (isEmployeeTaskEdit ? "Update Progress" : "Edit Task") : "Create Task"}
-          </DialogTitle>
-          <DialogDescription>
-            {isEmployeeTaskEdit
-              ? "Update task progress and leave a progress comment for review."
-              : "Assign work, set complexity, and track effort-based progress for fair leaderboard scoring."}
-          </DialogDescription>
-        </DialogHeader>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-4 rounded-xl bg-muted/50 p-1 backdrop-blur-md">
-            <TabsTrigger value="details">Details</TabsTrigger>
-            <TabsTrigger value="discussion">Discussion</TabsTrigger>
-            <TabsTrigger value="timeline">Activity Timeline</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="details" className="space-y-4 mt-0">
-            <div>
-              <Label>Title</Label>
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                disabled={!canEditTaskFields}
-                placeholder="What needs to be done?"
-              />
-            </div>
-
-            <div>
-              <Label>Description</Label>
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                disabled={!canEditTaskFields}
-                rows={3}
-                placeholder="Add details…"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div>
-                <Label>Status</Label>
-                <Select
-                  value={status}
-                  onValueChange={(v) => updateStatus(v as TaskStatus)}
-                  disabled={!canEditTaskFields}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TASK_STATUSES.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {STATUS_LABELS[s]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Complexity</Label>
-                <Select
-                  value={taskComplexity}
-                  onValueChange={(v) => setTaskComplexity(v as TaskComplexity)}
-                  disabled={!canEditTaskFields}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(Object.keys(TASK_COMPLEXITY_LABELS) as TaskComplexity[]).map((complexity) => (
-                      <SelectItem key={complexity} value={complexity}>
-                        {TASK_COMPLEXITY_LABELS[complexity]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Priority</Label>
-                <Select
-                  value={priority}
-                  onValueChange={(v) => setPriority(v as TaskPriority)}
-                  disabled={!canEditTaskFields}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PRIORITIES.map((p) => (
-                      <SelectItem key={p} value={p} className="capitalize">
-                        {p}
-                      </SelectItem>
-                    ))}
         ? prev.filter((id) => id !== assigneeId)
         : [...prev, assigneeId];
       setAssignedTo(next[0] || "");
@@ -1176,18 +989,18 @@ export function TaskDialog({
               </div>
             )}
             <div className="mt-4 rounded-xl border border-border/50 bg-background/40 p-4 shadow-sm backdrop-blur-sm">
-                <TaskAssignments
-                  assignments={workAssignments}
-                  employees={employees}
-                  currentUserId={user?.id || ""}
-                  canEditAny={isAdmin || isAssignedTeamLead}
-                  taskTitle={title || "Untitled task"}
-                  taskDescription={description}
-                  taskPriority={priority}
-                  attachmentsCount={attachments.length}
-                  verifierName={isAssignedTeamLead ? "Assigned team lead" : "Admin"}
-                  onComment={() => setActiveTab("discussion")}
-                  onAdd={async (data) => {
+              <TaskAssignments
+                assignments={workAssignments}
+                employees={employees}
+                currentUserId={user?.id || ""}
+                canEditAny={isAdmin || isAssignedTeamLead}
+                taskTitle={title || "Untitled task"}
+                taskDescription={description}
+                taskPriority={priority}
+                attachmentsCount={attachments.length}
+                verifierName={isAssignedTeamLead ? "Assigned team lead" : "Admin"}
+                onComment={() => setActiveTab("discussion")}
+                onAdd={async (data) => {
                   if (taskId) {
                     const { data: newAssignment, error } = await supabase
                       .from("task_assignees")
