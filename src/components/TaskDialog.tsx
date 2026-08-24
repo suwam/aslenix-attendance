@@ -712,7 +712,7 @@ export function TaskDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto glass border-border">
+      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto glass-strong border-border/50 bg-gradient-to-br from-background/95 via-background/90 to-primary/5 backdrop-blur-2xl shadow-2xl">
         <DialogHeader>
           <DialogTitle>
             {taskId ? (isEmployeeTaskEdit ? "Update Progress" : "Edit Task") : "Create Task"}
@@ -725,7 +725,202 @@ export function TaskDialog({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-4">
+          <TabsList className="grid w-full grid-cols-3 mb-4 rounded-xl bg-muted/50 p-1 backdrop-blur-md">
+            <TabsTrigger value="details">Details</TabsTrigger>
+            <TabsTrigger value="discussion">Discussion</TabsTrigger>
+            <TabsTrigger value="timeline">Activity Timeline</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="details" className="space-y-4 mt-0">
+            <div>
+              <Label>Title</Label>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                disabled={!canEditTaskFields}
+                placeholder="What needs to be done?"
+              />
+            </div>
+
+            <div>
+              <Label>Description</Label>
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                disabled={!canEditTaskFields}
+                rows={3}
+                placeholder="Add details…"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div>
+                <Label>Status</Label>
+                <Select
+                  value={status}
+                  onValueChange={(v) => updateStatus(v as TaskStatus)}
+                  disabled={!canEditTaskFields}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TASK_STATUSES.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {STATUS_LABELS[s]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Complexity</Label>
+                <Select
+                  value={taskComplexity}
+                  onValueChange={(v) => setTaskComplexity(v as TaskComplexity)}
+                  disabled={!canEditTaskFields}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(TASK_COMPLEXITY_LABELS) as TaskComplexity[]).map((complexity) => (
+                      <SelectItem key={complexity} value={complexity}>
+                        {TASK_COMPLEXITY_LABELS[complexity]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Priority</Label>
+                <Select
+                  value={priority}
+                  onValueChange={(v) => setPriority(v as TaskPriority)}
+                  disabled={!canEditTaskFields}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRIORITIES.map((p) => (
+                      <SelectItem key={p} value={p} className="capitalize">
+                        {p}
+                      </SelectItem>
+                    ))}
+        ? prev.filter((id) => id !== assigneeId)
+        : [...prev, assigneeId];
+      setAssignedTo(next[0] || "");
+      return next;
+    });
+  };
+
+  const notifyTaskAssignees = async (
+    assigneeIds: string[],
+    notificationTitle: string,
+    task: { title: string; deadline: string },
+  ) => {
+    if (!assigneeIds.length) return;
+
+    const deadlineText = task.deadline ? ` Deadline: ${formatTaskDateTime(task.deadline)}.` : "";
+    await supabase.from("notifications").insert(
+      assigneeIds.map((assigneeId) => ({
+        user_id: assigneeId,
+        title: notificationTitle,
+        message: `${task.title}.${deadlineText}`,
+        type: "task",
+      })),
+    );
+  };
+
+  const notifyAdminsTaskReviewRequested = async () => {
+    if (!taskId || !user) return;
+
+    const { error } = await (supabase as any).rpc("notify_admins_task_review_requested", {
+      _task_id: taskId,
+    });
+    if (!error) return;
+
+    if (!/function .*notify_admins_task_review_requested/i.test(error.message || "")) {
+      throw error;
+    }
+
+    console.warn(
+      "Task review notification RPC is missing. Apply the latest Supabase migrations.",
+      error,
+    );
+  };
+
+  const requestReview = async () => {
+    if (!taskId || !user || progress < 100) return;
+    const progressChanged = progress !== initialProgress;
+    if (progressChanged && !progressNote.trim()) {
+      return toast.error("Update comment is required when progress changes");
+    }
+
+    setLoading(true);
+    let { error } = await supabase
+      .from("tasks")
+      .update({ progress: 100, status: "review", completed_at: null })
+      .eq("id", taskId);
+    if (!error && progressChanged) {
+      const progressUpdateResult = await saveProgressUpdate(
+        taskId,
+        initialProgress,
+        100,
+        progressNote.trim(),
+      );
+      if (!progressUpdateResult.missingTable) {
+        error = progressUpdateResult.error;
+      }
+    }
+    if (!error) {
+      try {
+        await notifyAdminsTaskReviewRequested();
+      } catch (notificationError: any) {
+        error = notificationError;
+      }
+    }
+    setLoading(false);
+    if (error) return toast.error(error.message);
+    setStatus("review");
+    toast.success("Review requested", { description: "Admins have been notified." });
+    onSaved?.({ taskId, transition: "review" });
+    onOpenChange(false);
+  };
+
+  const updateProgress = (value: number) => {
+    const workflow = syncTaskWorkflow(status, value);
+    setProgress(workflow.progress);
+    setStatus(workflow.status);
+  };
+
+  const updateStatus = (value: TaskStatus) => {
+    setStatus(value);
+    setProgress(progressForStatus(value, progress));
+  };
+
+  const employeeProgressHistory = [...progressUpdates].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+  );
+  const complexityKeys = Object.keys(TASK_COMPLEXITY_LABELS) as TaskComplexity[];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto glass-strong border-border/50 bg-gradient-to-br from-background/95 via-background/90 to-primary/5 backdrop-blur-2xl shadow-2xl">
+        <DialogHeader>
+          <DialogTitle>
+            {taskId ? (isEmployeeTaskEdit ? "Update Progress" : "Edit Task") : "Create Task"}
+          </DialogTitle>
+          <DialogDescription>
+            {isEmployeeTaskEdit
+              ? "Update task progress and leave a progress comment for review."
+              : "Assign work, set complexity, and track effort-based progress for fair leaderboard scoring."}
+          </DialogDescription>
+        </DialogHeader>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-4 rounded-xl bg-muted/50 p-1 backdrop-blur-md">
             <TabsTrigger value="details">Details</TabsTrigger>
             <TabsTrigger value="discussion">Discussion</TabsTrigger>
             <TabsTrigger value="timeline">Activity Timeline</TabsTrigger>
@@ -814,7 +1009,7 @@ export function TaskDialog({
             </div>
 
             {canEditTaskFields && (
-              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+              <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-transparent p-5 shadow-inner">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 text-sm font-semibold">
@@ -835,11 +1030,11 @@ export function TaskDialog({
                       type="button"
                       disabled={!canEditTaskFields}
                       onClick={() => setTaskComplexity(complexity)}
-                      className={`rounded-xl border p-3 text-left transition-colors ${
+                      className={`rounded-xl border p-3 text-left transition-all duration-300 ${
                         taskComplexity === complexity
-                          ? "border-primary/60 bg-primary/15"
-                          : "border-border bg-background/40 hover:border-primary/35"
-                      } ${!canEditTaskFields ? "cursor-default opacity-70" : ""}`}
+                          ? "border-primary bg-primary/15 shadow-[0_4px_20px_rgba(79,70,229,0.15)] scale-[1.02]"
+                          : "border-border bg-background/40 hover:border-primary/50 hover:bg-background/80 hover:shadow-md hover:-translate-y-0.5"
+                      } ${!canEditTaskFields ? "cursor-default opacity-70 hover:transform-none hover:shadow-none" : ""}`}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm font-semibold">
@@ -864,9 +1059,9 @@ export function TaskDialog({
 
             <div>
               <Label>Total Progress: {progress}%</Label>
-              <div className="w-full h-3 bg-muted rounded-full overflow-hidden mt-2">
+              <div className="w-full h-3 bg-muted/50 rounded-full overflow-hidden mt-2 shadow-inner">
                 <div
-                  className="h-full bg-primary transition-all duration-300"
+                  className="h-full bg-gradient-to-r from-primary to-neon-blue transition-all duration-500 shadow-[0_0_10px_rgba(79,70,229,0.4)]"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -970,7 +1165,7 @@ export function TaskDialog({
               </div>
             </div>
             {isAdmin && (
-              <div className="mt-4 border border-border bg-muted/10 p-3 rounded-lg">
+              <div className="mt-4 rounded-xl border border-border/50 bg-background/40 p-4 shadow-sm backdrop-blur-sm">
                 <TaskAssignees
                   label="Team Leads"
                   options={availableTeamLeads}
@@ -980,7 +1175,7 @@ export function TaskDialog({
                 />
               </div>
             )}
-            <div className="mt-4 border border-border bg-muted/10 p-3 rounded-lg">
+            <div className="mt-4 rounded-xl border border-border/50 bg-background/40 p-4 shadow-sm backdrop-blur-sm">
                 <TaskAssignments
                   assignments={workAssignments}
                   employees={employees}
@@ -1067,7 +1262,7 @@ export function TaskDialog({
           </TabsContent>
         </Tabs>
 
-        <div className="flex flex-col gap-4 pt-4 border-t border-border">
+        <div className="flex flex-col gap-4 pt-4 border-t border-border/50 mt-4">
           {isEmployeeTaskEdit && progress !== initialProgress && (
             <div className="w-full space-y-3 rounded-lg border border-border bg-muted/20 p-4">
               <div className="flex flex-col gap-2">
