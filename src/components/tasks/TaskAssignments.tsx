@@ -222,7 +222,7 @@ function StatTile({
   tone: string;
 }) {
   return (
-    <div className="rounded-md border border-slate-200 bg-white p-3 shadow-sm">
+    <div className="rounded-xl border border-border/50 bg-background/50 p-4 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-1 hover:shadow-md hover:border-primary/30">
       <div className="flex items-center justify-between gap-2">
         <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
           {label}
@@ -329,7 +329,7 @@ export function TaskAssignments({
 
   return (
     <div className="space-y-5">
-      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 shadow-sm">
+      <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-5 shadow-inner">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
@@ -406,7 +406,7 @@ export function TaskAssignments({
 
       <div className="max-h-[560px] space-y-3 overflow-y-auto pr-1 custom-scrollbar">
         {filteredAssignments.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-slate-300 bg-white py-10 text-center text-sm text-slate-500">
+          <div className="rounded-xl border-2 border-dashed border-border/50 bg-background/30 py-12 text-center text-sm text-muted-foreground backdrop-blur-sm">
             No work assignments found.
           </div>
         ) : (
@@ -424,7 +424,7 @@ export function TaskAssignments({
             return (
               <article
                 key={assignment.id || `${assignment.user_id}-${assignment.responsibility}`}
-                className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md"
+                className="rounded-xl border border-border/50 bg-background/40 p-5 shadow-sm backdrop-blur-sm transition-all duration-300 hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5"
               >
                 <div className="grid gap-4 xl:grid-cols-[minmax(210px,0.75fr)_minmax(320px,1.35fr)_minmax(260px,0.9fr)_auto] xl:items-center">
                   <div className="flex min-w-0 items-center gap-3">

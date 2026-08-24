@@ -71,7 +71,7 @@ export function TaskAssignees({
         {selectedUsers.map((user) => (
           <div
             key={user.user_id}
-            className="flex items-center gap-2 rounded-full border border-border bg-background/50 pl-1 pr-3 py-1 text-sm shadow-sm transition-colors hover:bg-background/80"
+            className="flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 pl-1 pr-3 py-1 text-sm shadow-sm transition-all duration-300 hover:bg-primary/15 hover:border-primary/40"
           >
             <Avatar className="h-6 w-6 border border-primary/20">
               <AvatarImage src={user.avatar_url || ""} />
@@ -98,7 +98,7 @@ export function TaskAssignees({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-8 rounded-full border-dashed px-3 text-xs"
+                className="h-8 rounded-full border-dashed border-primary/30 text-primary hover:bg-primary/10 px-3 text-xs"
               >
                 <UserPlus size={14} className="mr-1.5" />
                 Add
