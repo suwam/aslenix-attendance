@@ -268,10 +268,10 @@ export function TaskAssignments({
     const weightFor = (assignment: WorkAssignmentData) =>
       COMPLEXITY_HOURS[assignment.complexity || "medium"];
     const totalWeight = source.reduce((sum, assignment) => sum + weightFor(assignment), 0);
-    const completedWeight = source.reduce(
-      (sum, assignment) => sum + weightFor(assignment) * ((assignment.progress || 0) / 100),
-      0,
-    );
+    const completedWeight = source.reduce((sum, assignment) => {
+      const isDone = assignment.status === "completed" || assignment.status === "approved";
+      return sum + (isDone ? weightFor(assignment) : 0);
+    }, 0);
 
     return {
       total: source.length,
