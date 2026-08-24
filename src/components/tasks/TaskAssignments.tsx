@@ -222,16 +222,18 @@ function StatTile({
   tone: string;
 }) {
   return (
-    <div className="rounded-xl border border-border/50 bg-background/50 p-4 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-1 hover:shadow-md hover:border-primary/30">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+    <div className="min-w-0 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+      <div className="flex min-w-0 items-start justify-between gap-2">
+        <span className="min-w-0 text-[10px] font-semibold uppercase leading-4 text-slate-500">
           {label}
         </span>
-        <span className={`flex h-7 w-7 items-center justify-center rounded-md ${tone}`}>
-          <Icon size={15} />
+        <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md ${tone}`}>
+          <Icon size={13} />
         </span>
       </div>
-      <div className="mt-2 text-2xl font-semibold text-slate-950">{value}</div>
+      <div className="mt-3 truncate text-2xl font-semibold leading-none text-slate-950">
+        {value}
+      </div>
     </div>
   );
 }
@@ -329,9 +331,9 @@ export function TaskAssignments({
 
   return (
     <div className="space-y-5">
-      <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-5 shadow-inner">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70 p-4 shadow-sm sm:p-5">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(220px,280px)] lg:items-start">
+          <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline" className="border-slate-300 bg-white text-slate-700">
                 Weekly Sprint Summary
@@ -349,30 +351,70 @@ export function TaskAssignments({
               {taskDescription || "Track ownership, delivery progress, and review readiness."}
             </p>
           </div>
-          <div className="min-w-[220px]">
+          <div className="min-w-0 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
             <div className="flex items-center justify-between text-sm">
-              <span className="font-medium text-slate-700">Weekly weighted progress</span>
+              <span className="font-medium text-slate-700">Weighted progress</span>
               <span className="font-semibold text-slate-950">{summary.weightedProgress}%</span>
             </div>
             <Progress value={summary.weightedProgress} className="mt-2 h-2" />
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-8">
-          <StatTile label="Total tasks" value={summary.total} icon={FileText} tone="bg-slate-100 text-slate-700" />
-          <StatTile label="Completed" value={summary.completed} icon={CheckCircle2} tone="bg-emerald-100 text-emerald-700" />
-          <StatTile label="In progress" value={summary.inProgress} icon={Zap} tone="bg-blue-100 text-blue-700" />
-          <StatTile label="Under review" value={summary.underReview} icon={ShieldQuestion} tone="bg-violet-100 text-violet-700" />
-          <StatTile label="Blocked" value={summary.blocked} icon={AlertTriangle} tone="bg-red-100 text-red-700" />
-          <StatTile label="Verified" value={summary.verified} icon={ShieldCheck} tone="bg-green-100 text-green-700" />
-          <StatTile label="Waiting" value={summary.waitingVerification} icon={Clock3} tone="bg-amber-100 text-amber-700" />
-          <StatTile label="Weighted" value={`${summary.weightedProgress}%`} icon={Gauge} tone="bg-cyan-100 text-cyan-700" />
+        <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(112px,1fr))] gap-3">
+          <StatTile
+            label="Total tasks"
+            value={summary.total}
+            icon={FileText}
+            tone="bg-slate-100 text-slate-700"
+          />
+          <StatTile
+            label="Completed"
+            value={summary.completed}
+            icon={CheckCircle2}
+            tone="bg-emerald-100 text-emerald-700"
+          />
+          <StatTile
+            label="In progress"
+            value={summary.inProgress}
+            icon={Zap}
+            tone="bg-blue-100 text-blue-700"
+          />
+          <StatTile
+            label="Under review"
+            value={summary.underReview}
+            icon={ShieldQuestion}
+            tone="bg-violet-100 text-violet-700"
+          />
+          <StatTile
+            label="Blocked"
+            value={summary.blocked}
+            icon={AlertTriangle}
+            tone="bg-red-100 text-red-700"
+          />
+          <StatTile
+            label="Verified"
+            value={summary.verified}
+            icon={ShieldCheck}
+            tone="bg-green-100 text-green-700"
+          />
+          <StatTile
+            label="Waiting"
+            value={summary.waitingVerification}
+            icon={Clock3}
+            tone="bg-amber-100 text-amber-700"
+          />
+          <StatTile
+            label="Weighted"
+            value={`${summary.weightedProgress}%`}
+            icon={Gauge}
+            tone="bg-cyan-100 text-cyan-700"
+          />
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="relative sm:w-80">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        <div className="grid gap-2 sm:grid-cols-[minmax(220px,1fr)_170px]">
+          <div className="relative min-w-0">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
             <Input
               placeholder="Search member, task, or note"
@@ -382,7 +424,7 @@ export function TaskAssignments({
             />
           </div>
           <Select value={statusFilter} onValueChange={(val: any) => setStatusFilter(val)}>
-            <SelectTrigger className="h-9 w-full rounded-md border-slate-200 bg-white sm:w-[170px]">
+            <SelectTrigger className="h-9 w-full rounded-md border-slate-200 bg-white">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -398,7 +440,7 @@ export function TaskAssignments({
           </Select>
         </div>
         {canEditAny && (
-          <Button onClick={openNewModal} size="sm" className="h-9 rounded-md">
+          <Button onClick={openNewModal} size="sm" className="h-9 rounded-md lg:justify-self-end">
             <Plus size={16} className="mr-2" /> Add Assignment
           </Button>
         )}
@@ -484,7 +526,10 @@ export function TaskAssignments({
                           className="min-w-[160px] flex-1"
                         />
                       ) : (
-                        <Progress value={assignment.progress || 0} className="h-2 min-w-[160px] flex-1" />
+                        <Progress
+                          value={assignment.progress || 0}
+                          className="h-2 min-w-[160px] flex-1"
+                        />
                       )}
                       <span className="w-11 text-right text-xs font-semibold text-slate-700">
                         {assignment.progress || 0}%
