@@ -24,6 +24,7 @@ import {
   BrainCircuit,
   Laptop,
   ShieldCheck,
+  CreditCard,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { AslenixLogo } from "@/components/AslenixLogo";
@@ -47,6 +48,7 @@ const adminNav: NavItem[] = [
   { to: "/admin/achievements", label: "Achievements", icon: Trophy },
   { to: "/admin/productivity", label: "AI Productivity", icon: BrainCircuit },
   { to: "/admin/attendance", label: "Attendance", icon: Clock },
+  { to: "/admin/card-reader-attendance", label: "Card Reader", icon: CreditCard },
   { to: "/admin/attendance-corrections", label: "Attendance Corrections", icon: CalendarClock },
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/admin/standups", label: "Daily Standups", icon: ClipboardList },

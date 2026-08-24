@@ -47,6 +47,7 @@ import { Route as AppAdminMeetingsRouteImport } from './routes/_app/admin/meetin
 import { Route as AppAdminLeavesRouteImport } from './routes/_app/admin/leaves'
 import { Route as AppAdminEmployeesRouteImport } from './routes/_app/admin/employees'
 import { Route as AppAdminEmployeeOfMonthRouteImport } from './routes/_app/admin/employee-of-month'
+import { Route as AppAdminCardReaderAttendanceRouteImport } from './routes/_app/admin/card-reader-attendance'
 import { Route as AppAdminAttendanceCorrectionsRouteImport } from './routes/_app/admin/attendance-corrections'
 import { Route as AppAdminAttendanceRouteImport } from './routes/_app/admin/attendance'
 import { Route as AppAdminApprovalsRouteImport } from './routes/_app/admin/approvals'
@@ -242,6 +243,12 @@ const AppAdminEmployeeOfMonthRoute = AppAdminEmployeeOfMonthRouteImport.update({
   path: '/admin/employee-of-month',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminCardReaderAttendanceRoute =
+  AppAdminCardReaderAttendanceRouteImport.update({
+    id: '/admin/card-reader-attendance',
+    path: '/admin/card-reader-attendance',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppAdminAttendanceCorrectionsRoute =
   AppAdminAttendanceCorrectionsRouteImport.update({
     id: '/admin/attendance-corrections',
@@ -291,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/admin/approvals': typeof AppAdminApprovalsRoute
   '/admin/attendance': typeof AppAdminAttendanceRoute
   '/admin/attendance-corrections': typeof AppAdminAttendanceCorrectionsRoute
+  '/admin/card-reader-attendance': typeof AppAdminCardReaderAttendanceRoute
   '/admin/employee-of-month': typeof AppAdminEmployeeOfMonthRoute
   '/admin/employees': typeof AppAdminEmployeesRoute
   '/admin/leaves': typeof AppAdminLeavesRoute
@@ -334,6 +342,7 @@ export interface FileRoutesByTo {
   '/admin/approvals': typeof AppAdminApprovalsRoute
   '/admin/attendance': typeof AppAdminAttendanceRoute
   '/admin/attendance-corrections': typeof AppAdminAttendanceCorrectionsRoute
+  '/admin/card-reader-attendance': typeof AppAdminCardReaderAttendanceRoute
   '/admin/employee-of-month': typeof AppAdminEmployeeOfMonthRoute
   '/admin/employees': typeof AppAdminEmployeesRoute
   '/admin/leaves': typeof AppAdminLeavesRoute
@@ -379,6 +388,7 @@ export interface FileRoutesById {
   '/_app/admin/approvals': typeof AppAdminApprovalsRoute
   '/_app/admin/attendance': typeof AppAdminAttendanceRoute
   '/_app/admin/attendance-corrections': typeof AppAdminAttendanceCorrectionsRoute
+  '/_app/admin/card-reader-attendance': typeof AppAdminCardReaderAttendanceRoute
   '/_app/admin/employee-of-month': typeof AppAdminEmployeeOfMonthRoute
   '/_app/admin/employees': typeof AppAdminEmployeesRoute
   '/_app/admin/leaves': typeof AppAdminLeavesRoute
@@ -424,6 +434,7 @@ export interface FileRouteTypes {
     | '/admin/approvals'
     | '/admin/attendance'
     | '/admin/attendance-corrections'
+    | '/admin/card-reader-attendance'
     | '/admin/employee-of-month'
     | '/admin/employees'
     | '/admin/leaves'
@@ -467,6 +478,7 @@ export interface FileRouteTypes {
     | '/admin/approvals'
     | '/admin/attendance'
     | '/admin/attendance-corrections'
+    | '/admin/card-reader-attendance'
     | '/admin/employee-of-month'
     | '/admin/employees'
     | '/admin/leaves'
@@ -511,6 +523,7 @@ export interface FileRouteTypes {
     | '/_app/admin/approvals'
     | '/_app/admin/attendance'
     | '/_app/admin/attendance-corrections'
+    | '/_app/admin/card-reader-attendance'
     | '/_app/admin/employee-of-month'
     | '/_app/admin/employees'
     | '/_app/admin/leaves'
@@ -808,6 +821,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminEmployeeOfMonthRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin/card-reader-attendance': {
+      id: '/_app/admin/card-reader-attendance'
+      path: '/admin/card-reader-attendance'
+      fullPath: '/admin/card-reader-attendance'
+      preLoaderRoute: typeof AppAdminCardReaderAttendanceRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/admin/attendance-corrections': {
       id: '/_app/admin/attendance-corrections'
       path: '/admin/attendance-corrections'
@@ -858,6 +878,7 @@ interface AppRouteChildren {
   AppAdminApprovalsRoute: typeof AppAdminApprovalsRoute
   AppAdminAttendanceRoute: typeof AppAdminAttendanceRoute
   AppAdminAttendanceCorrectionsRoute: typeof AppAdminAttendanceCorrectionsRoute
+  AppAdminCardReaderAttendanceRoute: typeof AppAdminCardReaderAttendanceRoute
   AppAdminEmployeeOfMonthRoute: typeof AppAdminEmployeeOfMonthRoute
   AppAdminEmployeesRoute: typeof AppAdminEmployeesRoute
   AppAdminLeavesRoute: typeof AppAdminLeavesRoute
@@ -894,6 +915,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminApprovalsRoute: AppAdminApprovalsRoute,
   AppAdminAttendanceRoute: AppAdminAttendanceRoute,
   AppAdminAttendanceCorrectionsRoute: AppAdminAttendanceCorrectionsRoute,
+  AppAdminCardReaderAttendanceRoute: AppAdminCardReaderAttendanceRoute,
   AppAdminEmployeeOfMonthRoute: AppAdminEmployeeOfMonthRoute,
   AppAdminEmployeesRoute: AppAdminEmployeesRoute,
   AppAdminLeavesRoute: AppAdminLeavesRoute,
