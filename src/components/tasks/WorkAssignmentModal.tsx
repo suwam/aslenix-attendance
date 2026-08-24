@@ -171,17 +171,25 @@ export function WorkAssignmentModal({
                   <SelectItem value="completed">Completed</SelectItem>
                   <SelectItem value="blocked">Blocked</SelectItem>
                   {(canEditCoreFields || status === "approved") && (
-                    <SelectItem value="approved" disabled={!canEditCoreFields}>Approved</SelectItem>
+                    <SelectItem value="approved" disabled={!canEditCoreFields}>
+                      Approved
+                    </SelectItem>
                   )}
                   {(canEditCoreFields || status === "rejected") && (
-                    <SelectItem value="rejected" disabled={!canEditCoreFields}>Rejected</SelectItem>
+                    <SelectItem value="rejected" disabled={!canEditCoreFields}>
+                      Rejected
+                    </SelectItem>
                   )}
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-2">
               <Label>Complexity</Label>
-              <Select value={complexity} onValueChange={(val: TaskComplexity) => setComplexity(val)} disabled={!canEditCoreFields}>
+              <Select
+                value={complexity}
+                onValueChange={(val: TaskComplexity) => setComplexity(val)}
+                disabled={!canEditCoreFields}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -195,7 +203,7 @@ export function WorkAssignmentModal({
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label>Due Date</Label>
+              <Label>Completion Date</Label>
               <Input
                 type="date"
                 value={dueDate}
@@ -211,7 +219,9 @@ export function WorkAssignmentModal({
               onValueChange={(vals) => setProgress(vals[0])}
               max={100}
               step={1}
-              disabled={status === "approved" || (!canEditCoreFields && initialData?.user_id !== userId)}
+              disabled={
+                status === "approved" || (!canEditCoreFields && initialData?.user_id !== userId)
+              }
             />
           </div>
           <div className="grid gap-2">

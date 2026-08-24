@@ -106,10 +106,9 @@ function AdminTasks() {
     setStats({
       total: allTasks.length,
       completed: allTasks.filter((t) => t.status === "completed").length,
-      overdue:
-        allTasks.filter(
-          (t) => t.deadline && new Date(t.deadline).getTime() < now && t.status !== "completed",
-        ).length,
+      overdue: allTasks.filter(
+        (t) => t.deadline && new Date(t.deadline).getTime() < now && t.status !== "completed",
+      ).length,
       active: allTasks.filter((t) => t.status === "in_progress" || t.status === "review").length,
     });
 
@@ -137,7 +136,10 @@ function AdminTasks() {
         .select("user_id, full_name, department, position, avatar_url, approval_status")
         .eq("approval_status", "approved")
         .order("full_name"),
-      supabase.from("user_roles").select("user_id, role").in("role", ["admin", "super_admin", "hr_manager"]),
+      supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", ["admin", "super_admin", "hr_manager"]),
       supabase
         .from("attendance")
         .select("user_id,date,status,work_hours")
@@ -327,11 +329,15 @@ function EmployeeTaskOverview({
   onSelect: (id: string) => void;
 }) {
   const inProgressTasks =
-    selectedEmployee?.tasks.filter((task) => task.status === "in_progress" || task.status === "review") || [];
-  const completedTasks = selectedEmployee?.tasks.filter((task) => task.status === "completed") || [];
+    selectedEmployee?.tasks.filter(
+      (task) => task.status === "in_progress" || task.status === "review",
+    ) || [];
+  const completedTasks =
+    selectedEmployee?.tasks.filter((task) => task.status === "completed") || [];
   const otherTasks =
     selectedEmployee?.tasks.filter(
-      (task) => task.status !== "completed" && task.status !== "in_progress" && task.status !== "review",
+      (task) =>
+        task.status !== "completed" && task.status !== "in_progress" && task.status !== "review",
     ) || [];
 
   return (
@@ -407,7 +413,9 @@ function EmployeeTaskOverview({
                   </div>
                 </div>
                 <div className="rounded-2xl border border-primary/20 bg-primary/10 px-5 py-3 text-right">
-                  <div className="text-3xl font-black text-primary">{selectedEmployee.taskProgress}%</div>
+                  <div className="text-3xl font-black text-primary">
+                    {selectedEmployee.taskProgress}%
+                  </div>
                   <div className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     Average progress
                   </div>
@@ -415,16 +423,44 @@ function EmployeeTaskOverview({
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <TaskSummaryCard label="Task count" value={selectedEmployee.totalTasks} icon={ListTodo} />
-                <TaskSummaryCard label="On progress" value={selectedEmployee.inProgressTasks} icon={Gauge} />
-                <TaskSummaryCard label="Work completed" value={selectedEmployee.completedTasks} icon={CheckCircle2} />
-                <TaskSummaryCard label="Working days" value={selectedEmployee.workingDays} icon={Clock3} />
+                <TaskSummaryCard
+                  label="Task count"
+                  value={selectedEmployee.totalTasks}
+                  icon={ListTodo}
+                />
+                <TaskSummaryCard
+                  label="On progress"
+                  value={selectedEmployee.inProgressTasks}
+                  icon={Gauge}
+                />
+                <TaskSummaryCard
+                  label="Work completed"
+                  value={selectedEmployee.completedTasks}
+                  icon={CheckCircle2}
+                />
+                <TaskSummaryCard
+                  label="Working days"
+                  value={selectedEmployee.workingDays}
+                  icon={Clock3}
+                />
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <TaskSummaryCard label="Review tasks" value={selectedEmployee.reviewTasks} icon={Activity} />
-                <TaskSummaryCard label="Todo tasks" value={selectedEmployee.todoTasks} icon={Briefcase} />
-                <TaskSummaryCard label="Overdue" value={selectedEmployee.overdueTasks} icon={AlertTriangle} />
+                <TaskSummaryCard
+                  label="Review tasks"
+                  value={selectedEmployee.reviewTasks}
+                  icon={Activity}
+                />
+                <TaskSummaryCard
+                  label="Todo tasks"
+                  value={selectedEmployee.todoTasks}
+                  icon={Briefcase}
+                />
+                <TaskSummaryCard
+                  label="Overdue"
+                  value={selectedEmployee.overdueTasks}
+                  icon={AlertTriangle}
+                />
                 <TaskSummaryCard
                   label="Work hours"
                   value={formatWorkHours(selectedEmployee.totalWorkHours)}
@@ -432,9 +468,21 @@ function EmployeeTaskOverview({
                 />
               </div>
 
-              <TaskSection title="Tasks on progress" tasks={inProgressTasks} employee={selectedEmployee} />
-              <TaskSection title="Work completed" tasks={completedTasks} employee={selectedEmployee} />
-              <TaskSection title="Other assigned tasks" tasks={otherTasks} employee={selectedEmployee} />
+              <TaskSection
+                title="Tasks on progress"
+                tasks={inProgressTasks}
+                employee={selectedEmployee}
+              />
+              <TaskSection
+                title="Work completed"
+                tasks={completedTasks}
+                employee={selectedEmployee}
+              />
+              <TaskSection
+                title="Other assigned tasks"
+                tasks={otherTasks}
+                employee={selectedEmployee}
+              />
             </div>
           ) : (
             <div className="flex min-h-[520px] items-center justify-center rounded-3xl border border-dashed text-sm text-muted-foreground">
@@ -502,10 +550,16 @@ function TaskDetailCard({ task, employee }: { task: TaskRow; employee: EmployeeT
       </div>
       <ProgressLine value={progress} className="mt-3" />
       <div className="mt-4 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
-        <div>Assigned: {task.created_at ? formatNepaliDate(task.created_at, "DD MMM YYYY") : "-"}</div>
+        <div>
+          Assigned: {task.created_at ? formatNepaliDate(task.created_at, "DD MMM YYYY") : "-"}
+        </div>
         <div>Deadline: {task.deadline ? formatNepaliDate(task.deadline, "DD MMM YYYY") : "-"}</div>
-        <div>Completed: {task.completed_at ? formatNepaliDate(task.completed_at, "DD MMM YYYY") : "-"}</div>
-        <div>Updated: {task.updated_at ? formatNepaliDate(task.updated_at, "DD MMM YYYY") : "-"}</div>
+        <div>
+          Completed: {task.completed_at ? formatNepaliDate(task.completed_at, "DD MMM YYYY") : "-"}
+        </div>
+        <div>
+          Updated: {task.updated_at ? formatNepaliDate(task.updated_at, "DD MMM YYYY") : "-"}
+        </div>
       </div>
     </div>
   );
@@ -526,7 +580,9 @@ function TaskSummaryCard({
         <Icon size={18} />
       </div>
       <div className="text-2xl font-black">{value}</div>
-      <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+      <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        {label}
+      </div>
     </div>
   );
 }
@@ -540,7 +596,13 @@ function MiniMetric({ label, value }: { label: string; value: string | number })
   );
 }
 
-function EmployeeAvatar({ employee, size = "md" }: { employee: EmployeeTaskRow; size?: "md" | "lg" }) {
+function EmployeeAvatar({
+  employee,
+  size = "md",
+}: {
+  employee: EmployeeTaskRow;
+  size?: "md" | "lg";
+}) {
   const initials = employee.name
     .split(" ")
     .map((part) => part[0])
@@ -593,11 +655,20 @@ function buildEmployeeTaskRows(
       .filter(
         (task) =>
           task.assigned_to === profile.user_id ||
-          assignees.some((assignee) => assignee.task_id === task.id && assignee.user_id === profile.user_id),
+          assignees.some(
+            (assignee) => assignee.task_id === task.id && assignee.user_id === profile.user_id,
+          ),
       )
-      .sort((a, b) => +new Date(b.updated_at || b.created_at || 0) - +new Date(a.updated_at || a.created_at || 0));
+      .sort(
+        (a, b) =>
+          +new Date(b.updated_at || b.created_at || 0) -
+          +new Date(a.updated_at || a.created_at || 0),
+      );
     const userAttendance = attendanceByUser.get(profile.user_id) || [];
-    const totalWorkHours = userAttendance.reduce((sum, row) => sum + Number(row.work_hours || 0), 0);
+    const totalWorkHours = userAttendance.reduce(
+      (sum, row) => sum + Number(row.work_hours || 0),
+      0,
+    );
     const workingDays = new Set(userAttendance.map((row) => row.date)).size;
     const completedTasks = assignedTasks.filter((task) => task.status === "completed").length;
     const inProgressTasks = assignedTasks.filter(
@@ -615,11 +686,13 @@ function buildEmployeeTaskRows(
       completedTasks,
       inProgressTasks,
       reviewTasks: assignedTasks.filter((task) => task.status === "review").length,
-      todoTasks: assignedTasks.filter((task) => task.status === "todo" || task.status === "pending").length,
+      todoTasks: assignedTasks.filter((task) => task.status === "todo" || task.status === "pending")
+        .length,
       overdueTasks: assignedTasks.filter(
-        (task) => task.deadline && new Date(task.deadline).getTime() < now && task.status !== "completed",
+        (task) =>
+          task.deadline && new Date(task.deadline).getTime() < now && task.status !== "completed",
       ).length,
-      taskProgress: average(assignedTasks.map((task) => Number(task.progress || 0))),
+      taskProgress: average(assignedTasks.map((task) => (task.status === "completed" ? 100 : 0))),
       workingDays,
       totalWorkHours,
       attendanceRows: userAttendance,
@@ -628,7 +701,12 @@ function buildEmployeeTaskRows(
   });
 
   return rows
-    .sort((a, b) => b.completedTasks - a.completedTasks || b.taskProgress - a.taskProgress || a.name.localeCompare(b.name))
+    .sort(
+      (a, b) =>
+        b.completedTasks - a.completedTasks ||
+        b.taskProgress - a.taskProgress ||
+        a.name.localeCompare(b.name),
+    )
     .map((row, index) => ({ ...row, rank: index + 1 }));
 }
 

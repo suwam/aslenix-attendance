@@ -996,6 +996,7 @@ export function TaskDialog({
                 canEditAny={isAdmin || isAssignedTeamLead}
                 taskTitle={title || "Untitled task"}
                 taskDescription={description}
+                taskDeadline={getDeadlineIso(deadlineDateBs, deadlineTime)}
                 taskPriority={priority}
                 attachmentsCount={attachments.length}
                 verifierName={isAssignedTeamLead ? "Assigned team lead" : "Admin"}

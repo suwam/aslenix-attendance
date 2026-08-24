@@ -110,7 +110,7 @@ export function EmployeeOfMonthSection() {
           const taskMetrics = calculateTaskProgressMetrics(assignedTasks);
           const completedThisMonth = assignedTasks.filter(
             (task: any) =>
-              (task.status === "completed" || Number(task.progress || 0) >= 100) &&
+              task.status === "completed" &&
               (!task.completed_at ||
                 new Date(task.completed_at).getTime() >= new Date(monthStartIso).getTime()),
           ).length;

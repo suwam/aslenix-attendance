@@ -774,8 +774,6 @@ function EmployeeDashboard() {
 
   return (
     <>
-
-
       <NotificationPopup
         notification={notificationPopup}
         meetings={meetings}
@@ -2764,7 +2762,7 @@ function humanize(value: string) {
 }
 
 function isDashboardTaskComplete(task: { status?: string | null; progress?: number | null }) {
-  return task.status === "completed" || Number(task.progress || 0) >= 100;
+  return task.status === "completed";
 }
 
 function getMoodMeta(value: string) {

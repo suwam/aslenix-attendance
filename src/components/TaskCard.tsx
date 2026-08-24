@@ -75,9 +75,7 @@ export function TaskCard({
         onClick={onClick}
         className={`glass kanban-task-card rounded-xl p-3.5 select-none border border-border hover:border-primary/40 hover:-translate-y-0.5 transition-all ${
           draggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
-        } ${
-          autoMoved ? "kanban-task-card-auto-moved" : ""
-        }`}
+        } ${autoMoved ? "kanban-task-card-auto-moved" : ""}`}
       >
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex-1 min-w-0">
@@ -114,18 +112,26 @@ export function TaskCard({
           {(task.total_weekly_tasks ?? 0) > 0 && (
             <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
               <span>
-                {task.completed_weight || 0}/{task.total_weight || 0} weight done
+                {formatWeight(task.completed_weight || 0)}/{formatWeight(task.total_weight || 0)}{" "}
+                weighted progress
               </span>
               <span className="flex gap-1.5">
-                {(task.pending_verification_tasks ?? 0) > 0 && <span className="text-blue-400">{task.pending_verification_tasks} pending</span>}
-                {(task.rejected_weekly_tasks ?? 0) > 0 && <span className="text-destructive">{task.rejected_weekly_tasks} rejected</span>}
+                {(task.pending_verification_tasks ?? 0) > 0 && (
+                  <span className="text-blue-400">{task.pending_verification_tasks} pending</span>
+                )}
+                {(task.rejected_weekly_tasks ?? 0) > 0 && (
+                  <span className="text-destructive">{task.rejected_weekly_tasks} rejected</span>
+                )}
               </span>
             </div>
           )}
           <div className="h-1.5 rounded-full bg-muted/50 overflow-hidden">
             <div
               className="h-full rounded-full transition-all"
-              style={{ width: `${task.weekly_progress ?? task.progress}%`, background: "var(--gradient-brand)" }}
+              style={{
+                width: `${task.weekly_progress ?? task.progress}%`,
+                background: "var(--gradient-brand)",
+              }}
             />
           </div>
           <div className="text-[10px] text-muted-foreground mt-1 tabular-nums">
@@ -197,6 +203,10 @@ export function TaskCard({
       </div>
     </motion.div>
   );
+}
+
+function formatWeight(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
 function getDueCountdown(deadline: string, status: TaskStatus) {

@@ -60,6 +60,7 @@ interface TaskAssignmentsProps {
   currentUserId: string;
   taskTitle?: string;
   taskDescription?: string | null;
+  taskDeadline?: string | null;
   taskPriority?: TaskPriority;
   attachmentsCount?: number;
   verifierName?: string;
@@ -249,6 +250,7 @@ export function TaskAssignments({
   currentUserId,
   taskTitle = "Untitled task",
   taskDescription,
+  taskDeadline,
   taskPriority = "medium",
   attachmentsCount = 0,
   verifierName = "Team Lead",
@@ -259,19 +261,23 @@ export function TaskAssignments({
   const [statusFilter, setStatusFilter] = useState<"all" | TaskAssignmentStatus>("all");
 
   const sprintAssignments = useMemo(
-    () => assignments.filter((assignment) => isThisWeek(assignment.assigned_at)),
-    [assignments],
+    () =>
+      assignments.filter((assignment) =>
+        isThisWeek(assignment.due_date || taskDeadline || assignment.assigned_at),
+      ),
+    [assignments, taskDeadline],
   );
 
   const summary = useMemo(() => {
-    const source = sprintAssignments.length ? sprintAssignments : assignments;
+    const source = sprintAssignments;
     const weightFor = (assignment: WorkAssignmentData) =>
       COMPLEXITY_HOURS[assignment.complexity || "medium"];
     const totalWeight = source.reduce((sum, assignment) => sum + weightFor(assignment), 0);
-    const completedWeight = source.reduce((sum, assignment) => {
-      const isDone = assignment.status === "completed" || assignment.status === "approved";
-      return sum + (isDone ? weightFor(assignment) : 0);
-    }, 0);
+    const completedWeight = source.reduce(
+      (sum, assignment) =>
+        sum + weightFor(assignment) * (Math.min(100, Math.max(0, assignment.progress || 0)) / 100),
+      0,
+    );
 
     return {
       total: source.length,
@@ -286,7 +292,7 @@ export function TaskAssignments({
       ).length,
       weightedProgress: totalWeight ? Math.round((completedWeight / totalWeight) * 100) : 0,
     };
-  }, [assignments, sprintAssignments]);
+  }, [sprintAssignments]);
 
   const filteredAssignments = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();

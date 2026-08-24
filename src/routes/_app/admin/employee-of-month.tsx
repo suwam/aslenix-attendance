@@ -334,7 +334,7 @@ function EmployeeOfMonthPage() {
           const taskMetrics = calculateTaskProgressMetrics(monthRelevantTasks);
           const completedMonthTasks = assignedTasks.filter(
             (task: any) =>
-              (task.status === "completed" || Number(task.progress || 0) >= 100) &&
+              task.status === "completed" &&
               isDateInRange(task.completed_at || task.updated_at, monthStartIso, monthEndIso),
           );
           const completedTasks = completedMonthTasks.length;

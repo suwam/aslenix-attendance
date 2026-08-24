@@ -78,25 +78,16 @@ export function calculateTaskProgressMetrics(tasks: TaskProgressLike[]) {
   const totalTasks = tasks.length;
   const totalEffortPoints = tasks.reduce((sum, task) => sum + effortPointsForTask(task), 0);
   const completedEffortPoints = tasks
-    .filter((task) => task.status === "completed" || Number(task.progress || 0) >= 100)
+    .filter((task) => task.status === "completed")
     .reduce((sum, task) => sum + effortPointsForTask(task), 0);
-  const earnedEffortPoints = tasks.reduce(
-    (sum, task) =>
-      sum +
-      effortPointsForTask(task) * (Math.min(100, Math.max(0, Number(task.progress || 0))) / 100),
-    0,
-  );
+  const earnedEffortPoints = completedEffortPoints;
   const totalTaskProgress = tasks.reduce(
-    (sum, task) => sum + Math.min(100, Math.max(0, Number(task.progress || 0))),
+    (sum, task) => sum + (task.status === "completed" ? 100 : 0),
     0,
   );
   const averageProgress = totalTasks ? Number((totalTaskProgress / totalTasks).toFixed(1)) : 0;
-  const completedTasks = tasks.filter(
-    (task) => task.status === "completed" || Number(task.progress || 0) >= 100,
-  ).length;
-  const activeTasks = tasks.filter(
-    (task) => task.status !== "completed" && Number(task.progress || 0) < 100,
-  ).length;
+  const completedTasks = tasks.filter((task) => task.status === "completed").length;
+  const activeTasks = tasks.filter((task) => task.status !== "completed").length;
   const completionTrend = totalTasks ? Math.round((completedTasks / totalTasks) * 100) : 0;
   const effortProgress = totalEffortPoints
     ? Number(((earnedEffortPoints / totalEffortPoints) * 100).toFixed(1))

@@ -237,7 +237,7 @@ function AdminAchievementsPage() {
         );
         const completedTasks = assignedTasks.filter(
           (task: any) =>
-            (task.status === "completed" || Number(task.progress || 0) >= 100) &&
+            task.status === "completed" &&
             (!task.completed_at ||
               new Date(task.completed_at).getTime() >= new Date(monthStartIso).getTime()),
         ).length;
@@ -245,13 +245,13 @@ function AdminAchievementsPage() {
         const averageProgress = tasksAssigned
           ? Math.round(
               assignedTasks.reduce(
-                (sum: number, task: any) => sum + Number(task.progress || 0),
+                (sum: number, task: any) => sum + (task.status === "completed" ? 100 : 0),
                 0,
               ) / tasksAssigned,
             )
           : 0;
         const pendingTasks = assignedTasks.filter(
-          (task: any) => task.status !== "completed" && Number(task.progress || 0) < 100,
+          (task: any) => task.status !== "completed",
         ).length;
         const reviewsCompleted = weeklyFeedbackRows.filter(
           (row) => row.employee_id === profile.user_id,

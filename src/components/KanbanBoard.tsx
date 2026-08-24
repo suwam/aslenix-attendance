@@ -54,9 +54,7 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
         ? []
         : teamLeadResult.data;
     const nextTeamLeadTaskIds = new Set(
-      (teamLeads || [])
-        .filter((lead) => lead.user_id === user.id)
-        .map((lead) => lead.task_id),
+      (teamLeads || []).filter((lead) => lead.user_id === user.id).map((lead) => lead.task_id),
     );
     setTeamLeadTaskIds(nextTeamLeadTaskIds);
     const ids = Array.from(
@@ -106,30 +104,45 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
     setTasks(
       visibleTasks.map((t: any) => {
         const taskAssignees = assigneesByTask[t.id] || [];
-        const weeklyAssignees = taskAssignees.filter((a: any) =>
-          a.assigned_at && isSameWeek(new Date(a.assigned_at), new Date(), { weekStartsOn: 1 })
-        );
+        const weeklyAssignees = taskAssignees.filter((a: any) => {
+          const weeklyDate = a.due_date || t.deadline || a.assigned_at;
+          return weeklyDate && isSameWeek(new Date(weeklyDate), new Date(), { weekStartsOn: 1 });
+        });
         const getWeight = (c?: string) => {
           switch (c) {
-            case "small": return 1;
-            case "medium": return 2;
-            case "large": return 3;
-            case "epic": return 5;
-            default: return 2;
+            case "small":
+              return 1;
+            case "medium":
+              return 2;
+            case "large":
+              return 3;
+            case "epic":
+              return 5;
+            default:
+              return 2;
           }
         };
 
         const total_weekly_tasks = weeklyAssignees.length;
-        const approved_weekly_tasks = weeklyAssignees.filter((a: any) => a.status === "approved").length;
-        const pending_verification_tasks = weeklyAssignees.filter((a: any) => ["completed", "under_review"].includes(a.status)).length;
-        const rejected_weekly_tasks = weeklyAssignees.filter((a: any) => a.status === "rejected").length;
+        const approved_weekly_tasks = weeklyAssignees.filter(
+          (a: any) => a.status === "approved",
+        ).length;
+        const pending_verification_tasks = weeklyAssignees.filter((a: any) =>
+          ["completed", "under_review"].includes(a.status),
+        ).length;
+        const rejected_weekly_tasks = weeklyAssignees.filter(
+          (a: any) => a.status === "rejected",
+        ).length;
 
         const total_weight = weeklyAssignees.reduce((sum, a) => sum + getWeight(a.complexity), 0);
-        const completed_weight = weeklyAssignees
-          .filter((a: any) => a.status === "approved")
-          .reduce((sum, a) => sum + ((a.progress || 0) / 100) * getWeight(a.complexity), 0);
-        
-        const weekly_progress = total_weight > 0 ? Math.round((completed_weight / total_weight) * 100) : 0;
+        const completed_weight = weeklyAssignees.reduce(
+          (sum, a) =>
+            sum + getWeight(a.complexity) * (Math.min(100, Math.max(0, a.progress || 0)) / 100),
+          0,
+        );
+
+        const weekly_progress =
+          total_weight > 0 ? Math.round((completed_weight / total_weight) * 100) : 0;
 
         return {
           ...t,
@@ -147,7 +160,7 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
           total_weight,
           completed_weight,
         };
-      })
+      }),
     );
   }, [scope, user]);
 
@@ -155,20 +168,12 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
     load();
     const channel = supabase
       .channel("kanban-updates")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "task_assignees" },
-        () => {
-          load();
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "tasks" },
-        () => {
-          load();
-        }
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "task_assignees" }, () => {
+        load();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, () => {
+        load();
+      })
       .subscribe();
 
     return () => {

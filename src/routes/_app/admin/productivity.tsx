@@ -180,7 +180,9 @@ function ProductivityCommandCenter() {
             new Date(task.deadline).getTime() < Date.now() &&
             task.status !== "completed",
         ).length;
-        const taskProgressAvg = average(assignedTasks.map((task) => Number(task.progress || 0)));
+        const taskProgressAvg = average(
+          assignedTasks.map((task) => (task.status === "completed" ? 100 : 0)),
+        );
         const attendedToday =
           attendanceToday && ["present", "late", "wfh"].includes(attendanceToday.status || "");
         const attendanceScore = attendedToday ? (attendanceToday?.is_late ? 78 : 100) : 38;
