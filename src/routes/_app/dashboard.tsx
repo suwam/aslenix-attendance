@@ -18,7 +18,6 @@ import {
 } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { useDeviceStatus } from "@/hooks/use-device-status";
 import { LiveClock } from "@/components/LiveClock";
 import { Button } from "@/components/ui/button";
 import {
@@ -192,7 +191,6 @@ function EmployeeWeeklyReviews({ reviews }: { reviews: any[] }) {
 
 function EmployeeDashboard() {
   const { user, profile, isAdmin, isTeamLead } = useAuth();
-  const { deviceStatus, setupBiometrics, busy: biometricsBusy } = useDeviceStatus();
   const [today, setToday] = useState<any>(null);
   const [monthStats, setMonthStats] = useState({ present: 0, late: 0, leave: 0, hours: 0 });
   const [taskStats, setTaskStats] = useState({
@@ -535,14 +533,6 @@ function EmployeeDashboard() {
 
   const checkIn = async () => {
     if (!user) return;
-    if (!isAdmin) {
-      if (deviceStatus === "setup_required")
-        return toast.error(
-          "Biometric registration required. Please go to the Check-in page to complete setup.",
-        );
-      if (deviceStatus !== "registered")
-        return toast.error("Use an approved registered device to mark attendance.");
-    }
     if (isWeeklyOff) return toast.info("Saturday is a weekly off. Attendance is not required.");
     setBusy(true);
     let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
@@ -586,14 +576,6 @@ function EmployeeDashboard() {
 
   const checkOut = async () => {
     if (!user || !today) return;
-    if (!isAdmin) {
-      if (deviceStatus === "setup_required")
-        return toast.error(
-          "Biometric registration required. Please go to the Check-in page to complete setup.",
-        );
-      if (deviceStatus !== "registered")
-        return toast.error("Use an approved registered device to mark attendance.");
-    }
     setBusy(true);
     let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
     try {
@@ -792,41 +774,7 @@ function EmployeeDashboard() {
 
   return (
     <>
-      <Dialog open={!isAdmin && deviceStatus === "setup_required"}>
-        <DialogContent
-          className="sm:max-w-md [&>button]:hidden"
-          onInteractOutside={(e) => e.preventDefault()}
-          onEscapeKeyDown={(e) => e.preventDefault()}
-        >
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-[#4F46E5] text-xl">
-              <Fingerprint className="h-6 w-6 animate-pulse" />
-              Biometric Setup Required
-            </DialogTitle>
-            <DialogDescription className="text-base pt-3 text-slate-600">
-              Before you can check in, you need to register this device for attendance using your
-              device's built-in biometrics (like Face ID, Touch ID, or Windows Hello).
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-4 py-2">
-            <div className="bg-[#EEF2FF] rounded-lg p-4 border border-[#C4DAFF]">
-              <p className="text-sm text-[#4338CA]">
-                This is a one-time setup. Once registered, you won't need to authenticate with
-                biometrics every day.
-              </p>
-            </div>
-          </div>
-          <DialogFooter className="sm:justify-end mt-2">
-            <Button
-              onClick={() => setupBiometrics()}
-              disabled={biometricsBusy}
-              className="w-full sm:w-auto bg-[#4F46E5] hover:bg-[#4338CA] text-white"
-            >
-              {biometricsBusy ? "Starting..." : "Start Setup"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
 
       <NotificationPopup
         notification={notificationPopup}

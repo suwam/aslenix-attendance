@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { useDeviceStatus } from "@/hooks/use-device-status";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { LiveClock } from "@/components/LiveClock";
@@ -53,7 +52,7 @@ function CheckInPage() {
   const todayDate = format(new Date(), "yyyy-MM-dd");
   const isWeeklyOff = isWeeklyOffDate(todayDate);
 
-  const { deviceStatus, setupBiometrics, busy: biometricsBusy } = useDeviceStatus();
+
 
   const load = async () => {
     if (!user) return;
@@ -87,26 +86,14 @@ function CheckInPage() {
     load();
   }, [user]);
 
-  const requireTrustedDevice = async () => {
-    if (isAdmin) return true;
-    if (deviceStatus !== "registered") {
-      toast.error("Use an approved registered device to mark attendance.");
-      return false;
-    }
 
-    return true;
-  };
 
   const checkIn = async () => {
     if (!user) return;
     if (isWeeklyOff) return toast.info("Saturday is a weekly off. Attendance is not required.");
     setBusy(true);
 
-    const trusted = await requireTrustedDevice();
-    if (!trusted) {
-      setBusy(false);
-      return;
-    }
+
 
     let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
     try {
@@ -153,11 +140,7 @@ function CheckInPage() {
     if (!user || !today) return;
     setBusy(true);
 
-    const trusted = await requireTrustedDevice();
-    if (!trusted) {
-      setBusy(false);
-      return;
-    }
+
 
     let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
     try {
@@ -205,48 +188,12 @@ function CheckInPage() {
     0,
   );
 
-  if (deviceStatus === "loading" || (loading && !today)) {
+  if (loading && !today) {
     return (
       <>
         <PageHeader title="Check-in" subtitle="Daily attendance" />
         <div className="flex justify-center py-20">
           <Loader2 className="animate-spin text-primary" />
-        </div>
-      </>
-    );
-  }
-
-  if (deviceStatus === "setup_required") {
-    return (
-      <>
-        <PageHeader title="Check-in" subtitle="Daily attendance" />
-        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-          <Fingerprint size={48} className="text-primary" />
-          <h2 className="text-xl font-semibold">Biometric Registration Required</h2>
-          <p className="text-sm text-muted-foreground max-w-md">
-            To use this device for attendance, you must register it with a Passkey (e.g. Windows
-            Hello, Face ID, Touch ID). This is a one-time setup process.
-          </p>
-          <Button onClick={setupBiometrics} disabled={biometricsBusy} className="mt-4">
-            {biometricsBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Register Passkey
-          </Button>
-        </div>
-      </>
-    );
-  }
-
-  if (deviceStatus !== "registered") {
-    return (
-      <>
-        <PageHeader title="Check-in" subtitle="Daily attendance" />
-        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-          <ShieldX size={48} className="text-muted-foreground/50" />
-          <h2 className="text-xl font-semibold">Attendance Blocked</h2>
-          <p className="text-sm text-muted-foreground">
-            This device is pending HR approval or is unregistered. Please contact your administrator
-            to authorize this device.
-          </p>
         </div>
       </>
     );

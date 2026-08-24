@@ -52,7 +52,6 @@ const adminNav: NavItem[] = [
   { to: "/admin/standups", label: "Daily Standups", icon: ClipboardList },
   { to: "/admin/weekly-review-management", label: "WR Report", icon: FileBarChart2 },
   { to: "/admin/weekly-reports", label: "Weekly Reports", icon: FileBarChart2 },
-  { to: "/admin/devices", label: "Registered Devices", icon: Laptop },
   { to: "/admin/qr-ids", label: "Digital QR IDs", icon: QrCode },
   { to: "/admin/employee-of-month", label: "Employee of Month", icon: Crown },
   { to: "/admin/employees", label: "Employees", icon: Users },

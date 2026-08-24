@@ -32,6 +32,8 @@ export interface WorkAssignmentData {
   notes: string | null;
   progress?: number;
   complexity?: TaskComplexity;
+  assigned_at?: string;
+  updated_at?: string;
 }
 
 interface UserOption {

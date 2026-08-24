@@ -981,12 +981,18 @@ export function TaskDialog({
               </div>
             )}
             <div className="mt-4 border border-border bg-muted/10 p-3 rounded-lg">
-              <TaskAssignments
-                assignments={workAssignments}
-                employees={employees}
-                currentUserId={user?.id || ""}
-                canEditAny={isAdmin || isAssignedTeamLead}
-                onAdd={async (data) => {
+                <TaskAssignments
+                  assignments={workAssignments}
+                  employees={employees}
+                  currentUserId={user?.id || ""}
+                  canEditAny={isAdmin || isAssignedTeamLead}
+                  taskTitle={title || "Untitled task"}
+                  taskDescription={description}
+                  taskPriority={priority}
+                  attachmentsCount={attachments.length}
+                  verifierName={isAssignedTeamLead ? "Assigned team lead" : "Admin"}
+                  onComment={() => setActiveTab("discussion")}
+                  onAdd={async (data) => {
                   if (taskId) {
                     const { data: newAssignment, error } = await supabase
                       .from("task_assignees")
@@ -1018,6 +1024,7 @@ export function TaskDialog({
                         responsibility: data.responsibility,
                         status: data.status,
                         progress: data.progress || 0,
+                        complexity: data.complexity || "medium",
                         due_date: data.due_date,
                         notes: data.notes,
                       })
