@@ -41,6 +41,13 @@ type WorkingDaySummary = {
   workingDays: number;
 };
 
+type AttendanceDayCredit = {
+  present: number;
+  absent: number;
+  leave: number;
+  wfh: number;
+};
+
 const EMPTY_WORKING_DAY_SUMMARY: WorkingDaySummary = {
   calendarDays: 0,
   weeklyHolidays: 0,
@@ -93,7 +100,7 @@ function ReportsPage() {
       supabase.from("attendance").select("*").eq("date", date).order("date", { ascending: false }),
       supabase
         .from("profiles")
-        .select("user_id, full_name, email, department, approval_status, is_suspended")
+        .select("user_id, full_name, email, department, approval_status, is_suspended, joining_date, created_at")
         .order("full_name"),
       supabase
         .from("user_roles")
@@ -103,7 +110,12 @@ function ReportsPage() {
 
     const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
     const attendanceRows = attendance ?? [];
-    const employeeProfiles = buildHistoricalReportProfiles(profiles ?? [], attendanceRows, adminUserIds);
+    const employeeProfiles = buildHistoricalReportProfiles(
+      profiles ?? [],
+      attendanceRows,
+      adminUserIds,
+      date,
+    );
     const attendanceByUser = new Map(attendanceRows.map((row) => [row.user_id, row]));
     const merged = employeeProfiles.map((profile) => ({
       ...profile,
@@ -134,7 +146,7 @@ function ReportsPage() {
           .order("date", { ascending: true }),
         supabase
           .from("profiles")
-          .select("user_id, full_name, email, department, approval_status, is_suspended")
+          .select("user_id, full_name, email, department, approval_status, is_suspended, joining_date, created_at")
           .order("full_name"),
         supabase
           .from("user_roles")
@@ -150,7 +162,12 @@ function ReportsPage() {
 
     const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
     const attendanceRows = attendance ?? [];
-    const employeeProfiles = buildHistoricalReportProfiles(profiles ?? [], attendanceRows, adminUserIds);
+    const employeeProfiles = buildHistoricalReportProfiles(
+      profiles ?? [],
+      attendanceRows,
+      adminUserIds,
+      endDate,
+    );
     const attendanceByUser = new Map<string, any[]>();
     attendanceRows.forEach((row) => {
       attendanceByUser.set(row.user_id, [...(attendanceByUser.get(row.user_id) ?? []), row]);
@@ -193,61 +210,39 @@ function ReportsPage() {
     const merged = employeeProfiles.map((profile) => {
       const records = attendanceByUser.get(profile.user_id) ?? [];
       const workingRecords = records.filter((record) => workingDateSet.has(record.date));
-      const presentDates = new Set<string>();
-      const absentDates = new Set<string>();
-      const leaveDates = new Set<string>();
-      const wfhDates = new Set<string>();
+      const firstRecordDate = records
+        .map((record) => record.date)
+        .filter(Boolean)
+        .sort()[0];
+      const employeeStartDate = getEmployeeReportStartDate(profile, startDate, firstRecordDate);
+      const employeeWorkingDates = workingDates.filter((day) => day >= employeeStartDate);
+      const elapsedWorkingDates = employeeWorkingDates.filter((day) => day <= todayDate);
+      const creditByDate = new Map<string, AttendanceDayCredit>();
 
       workingRecords.forEach((record) => {
-        if (record.status === "wfh") {
-          wfhDates.add(record.date);
-          return;
-        }
-        if (record.status === "leave" || record.status === "half_day") {
-          leaveDates.add(record.date);
-          return;
-        }
-        if (record.status === "absent") {
-          absentDates.add(record.date);
-          return;
-        }
-        if (["present", "late", "half_day_present"].includes(record.status)) {
-          presentDates.add(record.date);
-        }
+        if (record.date > todayDate) return;
+        const existing = creditByDate.get(record.date) ?? emptyAttendanceDayCredit();
+        creditByDate.set(record.date, mergeAttendanceDayCredit(existing, getAttendanceDayCredit(record)));
       });
 
-      wfhDates.forEach((day) => {
-        presentDates.delete(day);
-        leaveDates.delete(day);
-        absentDates.delete(day);
-      });
-      leaveDates.forEach((day) => {
-        presentDates.delete(day);
-        absentDates.delete(day);
-      });
-      absentDates.forEach((day) => {
-        presentDates.delete(day);
-      });
-
-      const coveredDates = new Set([
-        ...presentDates,
-        ...absentDates,
-        ...leaveDates,
-        ...wfhDates,
-      ]);
-
-      const elapsedWorkingDates = workingDates.filter((day) => day <= todayDate);
-      const coveredElapsedDates = new Set(
-        Array.from(coveredDates).filter((day) => day <= todayDate),
+      const totals = elapsedWorkingDates.reduce(
+        (total, day) => {
+          const credit = creditByDate.get(day) ?? emptyAttendanceDayCredit();
+          const covered = Math.min(credit.present + credit.wfh + credit.leave + credit.absent, 1);
+          return {
+            present: total.present + credit.present,
+            wfh: total.wfh + credit.wfh,
+            leave: total.leave + credit.leave,
+            absent: total.absent + credit.absent + Math.max(1 - covered, 0),
+          };
+        },
+        { present: 0, wfh: 0, leave: 0, absent: 0 },
       );
 
-      const missingAbsentDays = Math.max(elapsedWorkingDates.length - coveredElapsedDates.size, 0);
-      const presentDays = Math.min(presentDates.size, summary.workingDays);
-      const leaveDays = Math.min(leaveDates.size, summary.workingDays);
-      const wfhDays = Math.min(wfhDates.size, summary.workingDays);
-      
-      const elapsedAbsentDates = Array.from(absentDates).filter((day) => day <= todayDate);
-      const absentDays = elapsedAbsentDates.length + missingAbsentDays;
+      const presentDays = roundDayCount(totals.present);
+      const leaveDays = roundDayCount(totals.leave);
+      const wfhDays = roundDayCount(totals.wfh);
+      const absentDays = roundDayCount(totals.absent);
 
       const elapsedWorkingDaysCount = elapsedWorkingDates.length;
       const requiredWorkingDays = Math.max(elapsedWorkingDaysCount - leaveDays, 0);
@@ -264,7 +259,7 @@ function ReportsPage() {
         leaveDays,
         wfhDays,
         attendancePercentage,
-        totalWorkingDays: summary.workingDays,
+        totalWorkingDays: employeeWorkingDates.length,
         requiredWorkingDays,
         lateDays: workingRecords.filter((record) => record.is_late).length,
         earlyCheckoutDays: workingRecords.filter((record) => record.is_early_checkout).length,
@@ -704,10 +699,43 @@ function sortByEmployeeName<T extends { full_name?: string | null }>(rows: T[]) 
   );
 }
 
+function emptyAttendanceDayCredit(): AttendanceDayCredit {
+  return { present: 0, absent: 0, leave: 0, wfh: 0 };
+}
+
+function getAttendanceDayCredit(record: any): AttendanceDayCredit {
+  if (record.status === "wfh") return { present: 0, absent: 0, leave: 0, wfh: 1 };
+  if (record.status === "leave") return { present: 0, absent: 0, leave: 1, wfh: 0 };
+  if (record.status === "half_day") return { present: 0, absent: 0.5, leave: 0.5, wfh: 0 };
+  if (record.status === "half_day_present")
+    return { present: 0.5, absent: 0, leave: 0.5, wfh: 0 };
+  if (record.status === "absent") return { present: 0, absent: 1, leave: 0, wfh: 0 };
+  if (record.status === "present" || record.status === "late")
+    return { present: 1, absent: 0, leave: 0, wfh: 0 };
+  return emptyAttendanceDayCredit();
+}
+
+function mergeAttendanceDayCredit(
+  current: AttendanceDayCredit,
+  next: AttendanceDayCredit,
+): AttendanceDayCredit {
+  return {
+    present: Math.max(current.present, next.present),
+    absent: Math.max(current.absent, next.absent),
+    leave: Math.max(current.leave, next.leave),
+    wfh: Math.max(current.wfh, next.wfh),
+  };
+}
+
+function roundDayCount(value: number) {
+  return Math.round(value * 10) / 10;
+}
+
 function buildHistoricalReportProfiles(
   profiles: any[],
   attendanceRows: any[],
   adminUserIds: Set<string>,
+  rangeEndDate: string,
 ) {
   const attendanceUserIds = new Set(attendanceRows.map((row) => row.user_id).filter(Boolean));
   const profilesByUser = new Map(profiles.map((profile) => [profile.user_id, profile]));
@@ -716,7 +744,9 @@ function buildHistoricalReportProfiles(
     (profile) => {
       const shouldInclude =
         !adminUserIds.has(profile.user_id) &&
-        (profile.approval_status === "approved" || attendanceUserIds.has(profile.user_id));
+        (attendanceUserIds.has(profile.user_id) ||
+          (profile.approval_status === "approved" &&
+            isEmployeeExpectedByDate(profile, rangeEndDate)));
       if (shouldInclude) includedUserIds.add(profile.user_id);
       return shouldInclude;
     },
@@ -735,12 +765,35 @@ function buildHistoricalReportProfiles(
       full_name: "Former employee",
       email: "",
       department: null,
+      joining_date: row.date,
+      created_at: null,
       approval_status: "removed",
       is_suspended: true,
     });
   });
 
   return sortByEmployeeName(rows);
+}
+
+function isEmployeeExpectedByDate(profile: any, rangeEndDate: string) {
+  const startDate = getProfileStartDate(profile);
+  return !startDate || startDate <= rangeEndDate;
+}
+
+function getEmployeeReportStartDate(profile: any, rangeStartDate: string, firstRecordDate?: string) {
+  const profileStartDate = getProfileStartDate(profile);
+  const startCandidates = [rangeStartDate, profileStartDate || firstRecordDate].filter(
+    Boolean,
+  ) as string[];
+  return startCandidates.sort().at(-1) ?? rangeStartDate;
+}
+
+function getProfileStartDate(profile: any) {
+  return normalizeDateOnly(profile?.joining_date) || normalizeDateOnly(profile?.created_at);
+}
+
+function normalizeDateOnly(value?: string | null) {
+  return value ? String(value).slice(0, 10) : null;
 }
 
 type PrintableReportProps = {
