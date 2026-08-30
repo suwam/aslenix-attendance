@@ -289,7 +289,7 @@ function ReportsPage() {
 
   useEffect(() => {
     run();
-  }, []);
+  }, [period, date, weekStart, weekEnd, monthStart, monthEnd, statusFilter]);
 
   const exportCSV = () => {
     if (period === "weekly" || period === "monthly") {
