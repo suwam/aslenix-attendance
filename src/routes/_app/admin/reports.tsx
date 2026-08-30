@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { forwardRef, useEffect, useRef, useState } from "react";
+import { Fragment, forwardRef, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
@@ -243,6 +243,29 @@ function ReportsPage() {
       const leaveDays = roundDayCount(totals.leave);
       const wfhDays = roundDayCount(totals.wfh);
       const absentDays = roundDayCount(totals.absent);
+      const dayDetails = allDates.map((day) => {
+        if (day < employeeStartDate) return buildDayDetail(day, "Not employed");
+        if (weeklyHolidayDates.has(day)) return buildDayDetail(day, "Weekly off");
+        if (publicHolidayDates.has(day)) return buildDayDetail(day, "Public holiday");
+        if (companyHolidayDates.has(day)) return buildDayDetail(day, "Company holiday");
+        if (day > todayDate) return buildDayDetail(day, "Not due");
+
+        const credit = creditByDate.get(day) ?? emptyAttendanceDayCredit();
+        const covered = Math.min(credit.present + credit.wfh + credit.leave + credit.absent, 1);
+        const missingAbsent = Math.max(1 - covered, 0);
+        const absent = roundDayCount(credit.absent + missingAbsent);
+        const parts = [];
+        if (credit.present) parts.push(`${roundDayCount(credit.present)} present`);
+        if (credit.wfh) parts.push(`${roundDayCount(credit.wfh)} WFH`);
+        if (credit.leave) parts.push(`${roundDayCount(credit.leave)} leave`);
+        if (absent) parts.push(`${absent} absent`);
+        return buildDayDetail(day, parts.join(" + ") || "Absent", {
+          present: roundDayCount(credit.present),
+          absent,
+          leave: roundDayCount(credit.leave),
+          wfh: roundDayCount(credit.wfh),
+        });
+      });
 
       const elapsedWorkingDaysCount = elapsedWorkingDates.length;
       const requiredWorkingDays = Math.max(elapsedWorkingDaysCount - leaveDays, 0);
@@ -261,6 +284,7 @@ function ReportsPage() {
         attendancePercentage,
         totalWorkingDays: employeeWorkingDates.length,
         requiredWorkingDays,
+        dayDetails,
         lateDays: workingRecords.filter((record) => record.is_late).length,
         earlyCheckoutDays: workingRecords.filter((record) => record.is_early_checkout).length,
         editedDays: workingRecords.filter((record) => record.is_edited).length,
@@ -731,6 +755,19 @@ function roundDayCount(value: number) {
   return Math.round(value * 10) / 10;
 }
 
+function buildDayDetail(
+  date: string,
+  label: string,
+  credit: AttendanceDayCredit = emptyAttendanceDayCredit(),
+) {
+  return {
+    date,
+    bsDate: formatNepaliDate(date, "DD MMMM YYYY"),
+    label,
+    ...credit,
+  };
+}
+
 function buildHistoricalReportProfiles(
   profiles: any[],
   attendanceRows: any[],
@@ -1167,6 +1204,8 @@ function AggregateReportTable({
   period: ReportPeriod;
   summary: WorkingDaySummary;
 }) {
+  const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -1184,31 +1223,71 @@ function AggregateReportTable({
             <th className="p-3">Working days</th>
             <th className="p-3">Attendance %</th>
             <th className="p-3">Hours</th>
+            <th className="p-3">Details</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
-            <tr key={row.user_id} className="border-b border-border/40 hover:bg-muted/20">
-              <td className="p-3">
-                {period === "monthly"
-                  ? `${label} BS`
-                  : `${formatNepaliDate(startDate, "DD MMMM")} - ${formatNepaliDate(endDate, "DD MMMM YYYY")} BS`}
-              </td>
-              <td className="p-3 font-medium">{row.full_name || "—"}</td>
-              <td className="p-3 text-muted-foreground">{row.department || "—"}</td>
-              <td className="p-3 tabular-nums">{row.presentDays}</td>
-              <td className="p-3 tabular-nums">{row.absentDays}</td>
-              <td className="p-3 tabular-nums">{row.lateDays}</td>
-              <td className="p-3 tabular-nums">{row.earlyCheckoutDays}</td>
-              <td className="p-3 tabular-nums">{row.leaveDays}</td>
-              <td className="p-3 tabular-nums">{row.wfhDays}</td>
-              <td className="p-3 tabular-nums">{row.totalWorkingDays ?? summary.workingDays}</td>
-              <td className="p-3 tabular-nums">{row.attendancePercentage}%</td>
-              <td className="p-3 tabular-nums">{formatWorkHours(row.totalHours)}</td>
-            </tr>
-          ))}
+          {rows.map((row) => {
+            const expanded = expandedUserId === row.user_id;
+            return (
+              <Fragment key={row.user_id}>
+                <tr className="border-b border-border/40 hover:bg-muted/20">
+                  <td className="p-3">
+                    {period === "monthly"
+                      ? `${label} BS`
+                      : `${formatNepaliDate(startDate, "DD MMMM")} - ${formatNepaliDate(endDate, "DD MMMM YYYY")} BS`}
+                  </td>
+                  <td className="p-3 font-medium">{row.full_name || "—"}</td>
+                  <td className="p-3 text-muted-foreground">{row.department || "—"}</td>
+                  <td className="p-3 tabular-nums">{row.presentDays}</td>
+                  <td className="p-3 tabular-nums">{row.absentDays}</td>
+                  <td className="p-3 tabular-nums">{row.lateDays}</td>
+                  <td className="p-3 tabular-nums">{row.earlyCheckoutDays}</td>
+                  <td className="p-3 tabular-nums">{row.leaveDays}</td>
+                  <td className="p-3 tabular-nums">{row.wfhDays}</td>
+                  <td className="p-3 tabular-nums">{row.totalWorkingDays ?? summary.workingDays}</td>
+                  <td className="p-3 tabular-nums">{row.attendancePercentage}%</td>
+                  <td className="p-3 tabular-nums">{formatWorkHours(row.totalHours)}</td>
+                  <td className="p-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 rounded-lg px-3 text-xs"
+                      onClick={() => setExpandedUserId(expanded ? null : row.user_id)}
+                    >
+                      {expanded ? "Hide" : "View days"}
+                    </Button>
+                  </td>
+                </tr>
+                {expanded && (
+                  <tr className="border-b border-border/40 bg-muted/20">
+                    <td colSpan={13} className="p-4">
+                      <AttendanceDayBreakdown days={row.dayDetails ?? []} />
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            );
+          })}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function AttendanceDayBreakdown({ days }: { days: any[] }) {
+  return (
+    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+      {days.map((day) => (
+        <div key={day.date} className="rounded-lg border border-border bg-card p-2">
+          <div className="text-[11px] font-semibold text-foreground">{day.bsDate} BS</div>
+          <div className="text-[10px] text-muted-foreground">{day.date}</div>
+          <div className={`mt-1 text-[11px] font-medium ${day.absent ? "text-destructive" : "text-muted-foreground"}`}>
+            {day.label}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
