@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   CreditCard,
   History,
+  IdCard,
   Loader2,
   LogIn,
   LogOut,
@@ -14,9 +15,11 @@ import {
   RefreshCw,
   Search,
   ShieldCheck,
+  Sparkles,
   UserRound,
   Wifi,
   WifiOff,
+  Zap,
 } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +29,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -42,8 +46,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Scanner } from "@yudiel/react-qr-scanner";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/admin/card-reader-attendance")({
   component: CardReaderAttendancePage,
@@ -57,6 +63,7 @@ type EmployeeProfile = {
   position: string | null;
   avatar_url: string | null;
   qr_token?: string | null;
+  joining_date?: string | null;
 };
 
 type AttendanceSnapshot = {
@@ -97,9 +104,19 @@ type AuditEvent = {
 };
 
 const DEFAULT_REASON = "Employee missed normal attendance";
+const FORCE_REASONS = [
+  "Forgot to check in",
+  "ID card not registered",
+  "Card reader/system issue",
+  "Device issue",
+  "Attendance correction",
+  "Late attendance correction",
+  "Other",
+];
+type AttendanceAction = "check_in" | "check_out";
 
 function CardReaderAttendancePage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, profile, roles } = useAuth();
   const scanInputRef = useRef<HTMLInputElement>(null);
   const [readerId, setReaderId] = useState(
     () =>
@@ -125,6 +142,11 @@ function CardReaderAttendancePage() {
   const [history, setHistory] = useState<AuditEvent[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [selectedAction, setSelectedAction] = useState<AttendanceAction | null>(null);
+  const [forceCheckIn, setForceCheckIn] = useState(false);
+  const [forceReason, setForceReason] = useState("");
+  const [forceOtherReason, setForceOtherReason] = useState("");
+  const [now, setNow] = useState(() => new Date());
 
   const selectedRegisterEmployee = useMemo(
     () => employees.find((employee) => employee.user_id === registerEmployeeId),
@@ -147,15 +169,38 @@ function CardReaderAttendancePage() {
   }, [connected]);
 
   useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  useEffect(() => {
     if (!unknownOpen || registerEmployeeId || !detectedRegisterEmployee) return;
     setRegisterEmployeeId(detectedRegisterEmployee.user_id);
   }, [detectedRegisterEmployee, registerEmployeeId, unknownOpen]);
+
+  useEffect(() => {
+    if (!scanResult?.employee) {
+      setSelectedAction(null);
+      setForceCheckIn(false);
+      return;
+    }
+
+    if (scanResult.available_action === "check_in" || scanResult.available_action === "check_out") {
+      setSelectedAction(scanResult.available_action);
+    } else {
+      setSelectedAction(null);
+    }
+
+    setForceCheckIn(false);
+    setForceReason("");
+    setForceOtherReason("");
+  }, [scanResult?.employee?.user_id, scanResult?.available_action]);
 
   const loadEmployees = async () => {
     const [{ data, error }, { data: roleRows }] = await Promise.all([
       supabase
         .from("profiles")
-        .select("user_id,full_name,employee_code,department,position,avatar_url,qr_token")
+        .select("user_id,full_name,employee_code,department,position,avatar_url,qr_token,joining_date")
         .eq("approval_status", "approved")
         .eq("is_suspended", false)
         .order("full_name", { ascending: true }),
@@ -178,6 +223,23 @@ function CardReaderAttendancePage() {
     setHistoryLoading(false);
     if (error) return toast.error(error.message);
     setHistory((data ?? []) as AuditEvent[]);
+  };
+
+  const loadTodayAttendance = async (employeeId: string) => {
+    const { data, error } = await supabase
+      .from("attendance")
+      .select("id,date,status,check_in_time,check_out_time,work_hours")
+      .eq("user_id", employeeId)
+      .eq("date", format(new Date(), "yyyy-MM-dd"))
+      .is("deleted_at", null)
+      .maybeSingle();
+
+    if (error) {
+      toast.error(error.message);
+      return null;
+    }
+
+    return (data ?? null) as AttendanceSnapshot | null;
   };
 
   const checkReader = async () => {
@@ -231,7 +293,19 @@ function CardReaderAttendancePage() {
 
     if (error) return toast.error(error.message);
 
-    const result = data as ScanResult;
+    let result = enrichScanResult(data as ScanResult, employees);
+    if (!result.employee) {
+      const detectedEmployee = findEmployeeFromScannedValue(cardUid, employees);
+      if (detectedEmployee) {
+        const attendance = await loadTodayAttendance(detectedEmployee.user_id);
+        result = {
+          ...result,
+          employee: detectedEmployee,
+          attendance,
+          available_action: deriveAvailableAction(attendance),
+        };
+      }
+    }
     setScanResult(result);
     setLastScannedCard(result.card_uid);
 
@@ -240,26 +314,38 @@ function CardReaderAttendancePage() {
       toast.warning("Card not registered");
     } else if (result.status === "completed" || result.available_action === "completed") {
       toast.info("Attendance already completed for today");
-    } else if (result.employee && (result.available_action === "check_in" || result.available_action === "check_out")) {
-      // Auto check-in / check-out
-      await processAutoAttendance(result, cardUid);
+    } else if (result.employee) {
+      toast.success("Employee identified");
     }
 
     await loadHistory();
     requestAnimationFrame(() => scanInputRef.current?.focus());
   };
 
-  const processAutoAttendance = async (result: ScanResult, cardUid: string) => {
-    const action = result.available_action;
-    if (!result.employee || !action || action === "completed") return;
-    
+  const processAttendance = async () => {
+    if (!scanResult?.employee) return toast.error("Scan an employee card first");
+
+    const action = forceCheckIn ? "check_in" : selectedAction;
+    if (!action) return toast.error("Choose an attendance action");
+
+    const finalReason =
+      forceCheckIn && forceReason === "Other"
+        ? forceOtherReason.trim()
+        : forceCheckIn
+          ? forceReason
+          : DEFAULT_REASON;
+
+    if (forceCheckIn && !finalReason) {
+      return toast.error("Reason is required for force check-in");
+    }
+
     setBusy(true);
     const { data, error } = await (supabase as any).rpc("admin_card_reader_record_attendance", {
-      _employee_id: result.employee.user_id,
-      _card_uid: cardUid,
+      _employee_id: scanResult.employee.user_id,
+      _card_uid: lastRawCardUid,
       _reader_id: readerId.trim(),
       _action: action,
-      _reason: DEFAULT_REASON,
+      _reason: finalReason,
     });
     setBusy(false);
     if (error) {
@@ -269,13 +355,22 @@ function CardReaderAttendancePage() {
 
     const next = data as { attendance: AttendanceSnapshot; employee: EmployeeProfile };
     setScanResult({
-      ...result,
+      ...scanResult,
+      employee: { ...scanResult.employee, ...next.employee },
       status: next.attendance.check_out_time ? "completed" : "employee_found",
       attendance: next.attendance,
       available_action: next.attendance.check_out_time ? "completed" : "check_out",
     });
+    setForceCheckIn(false);
+    setForceReason("");
+    setForceOtherReason("");
+    await loadHistory();
     
-    toast.success(action === "check_in" ? `Checked in ${result.employee.full_name}` : `Checked out ${result.employee.full_name}`);
+    toast.success(
+      action === "check_in"
+        ? `Checked in ${scanResult.employee.full_name}`
+        : `Checked out ${scanResult.employee.full_name}`,
+    );
   };
 
   const registerCard = async () => {
@@ -319,8 +414,12 @@ function CardReaderAttendancePage() {
   return (
     <>
       <PageHeader
-        title="Card Reader Attendance"
-        subtitle="Admin RFID/NFC attendance for missed employee check-ins and check-outs"
+        title={scanResult?.employee ? "Employee Identified" : "Card Reader Attendance"}
+        subtitle={
+          scanResult?.employee
+            ? "ID card scanned successfully and employee verified."
+            : "Admin RFID/NFC attendance for missed employee check-ins and check-outs"
+        }
       />
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -411,7 +510,33 @@ function CardReaderAttendancePage() {
             </form>
           </GlassCard>
 
-          {scanResult?.employee && <EmployeeScanCard result={scanResult} />}
+          {scanResult?.employee && (
+            <IdentifiedAttendanceWorkspace
+              result={scanResult}
+              connected={connected}
+              selectedAction={selectedAction}
+              setSelectedAction={setSelectedAction}
+              forceCheckIn={forceCheckIn}
+              setForceCheckIn={setForceCheckIn}
+              forceReason={forceReason}
+              setForceReason={setForceReason}
+              forceOtherReason={forceOtherReason}
+              setForceOtherReason={setForceOtherReason}
+              now={now}
+              busy={busy}
+              adminName={profile?.full_name || "Administrator"}
+              adminRole={formatAdminRole(roles)}
+              onCancel={() => {
+                setScanResult(null);
+                setSelectedAction(null);
+                setForceCheckIn(false);
+                setForceReason("");
+                setForceOtherReason("");
+                requestAnimationFrame(() => scanInputRef.current?.focus());
+              }}
+              onConfirm={processAttendance}
+            />
+          )}
 
           {scanResult?.status === "unknown_card" && (
             <GlassCard className="border-destructive/30 p-5">
@@ -572,29 +697,454 @@ function StatusTile({
   );
 }
 
-function EmployeeScanCard({ result }: { result: ScanResult }) {
+function IdentifiedAttendanceWorkspace({
+  result,
+  connected,
+  selectedAction,
+  setSelectedAction,
+  forceCheckIn,
+  setForceCheckIn,
+  forceReason,
+  setForceReason,
+  forceOtherReason,
+  setForceOtherReason,
+  now,
+  busy,
+  adminName,
+  adminRole,
+  onCancel,
+  onConfirm,
+}: {
+  result: ScanResult;
+  connected: boolean;
+  selectedAction: AttendanceAction | null;
+  setSelectedAction: (action: AttendanceAction | null) => void;
+  forceCheckIn: boolean;
+  setForceCheckIn: (enabled: boolean) => void;
+  forceReason: string;
+  setForceReason: (reason: string) => void;
+  forceOtherReason: string;
+  setForceOtherReason: (reason: string) => void;
+  now: Date;
+  busy: boolean;
+  adminName: string;
+  adminRole: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
   if (!result.employee) return null;
-  const completed = result.available_action === "completed";
+
+  const attendance = result.attendance;
+  const cardRegistered = result.status !== "unknown_card";
+  const checkedIn = Boolean(attendance?.check_in_time);
+  const checkedOut = Boolean(attendance?.check_out_time);
+  const completed = result.available_action === "completed" || checkedOut;
+  const checkInEnabled = cardRegistered && !checkedIn && !completed;
+  const checkOutEnabled = cardRegistered && checkedIn && !checkedOut && !completed;
+  const forceReasonReady = !forceCheckIn || Boolean((forceReason === "Other" ? forceOtherReason : forceReason).trim());
+  const canConfirm =
+    !busy &&
+    cardRegistered &&
+    (forceCheckIn ? checkInEnabled && forceReasonReady : Boolean(selectedAction) && !completed);
+  const confirmLabel = forceCheckIn
+    ? "Confirm Force Check-In"
+    : selectedAction === "check_out"
+      ? "Confirm Check-Out"
+      : "Confirm Check-In";
+
   return (
-    <GlassCard className="p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {completed ? (
-            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-          ) : (
-            <UserRound className="h-5 w-5 text-primary" />
-          )}
-          <div className="font-semibold">
-            {completed ? "Attendance Completed" : "Employee Found"}
+    <div className="space-y-5">
+      <GlassCard className="overflow-hidden border-primary/15 p-0 shadow-[0_24px_80px_rgba(79,70,229,0.12)]">
+        <div className="relative p-5 sm:p-6">
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-400 via-primary to-pink-500" />
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="relative grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-primary">
+                <IdCard className="h-7 w-7" />
+                <span className="absolute -right-1 -top-1 h-4 w-4 animate-ping rounded-full bg-emerald-400/60" />
+                <span className="absolute -right-1 -top-1 h-4 w-4 rounded-full bg-emerald-500" />
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700 hover:bg-emerald-100">
+                    <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
+                    Card Verified
+                  </Badge>
+                  <Badge variant="outline" className="rounded-full">
+                    Card: {compactCardLabel(result.card_uid)}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className={cn("rounded-full", connected && "border-emerald-200 text-emerald-700")}
+                  >
+                    Reader: {connected ? "Connected" : "Disconnected"}
+                  </Badge>
+                </div>
+                <div className="mt-2 text-sm text-muted-foreground">
+                  Secure scan completed at {format(now, "d MMM yyyy, h:mm a")}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 rounded-full border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-800">
+              <Sparkles className="h-4 w-4" />
+              Verification active
+            </div>
           </div>
         </div>
-        <Badge variant="outline">{compactCardLabel(result.card_uid)}</Badge>
+      </GlassCard>
+
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
+        <VerifiedProfileCard employee={result.employee} now={now} />
+        <TodayAttendanceCard attendance={attendance} now={now} />
       </div>
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <EmployeeIdentity employee={result.employee} />
-        <AttendanceDetails attendance={result.attendance} />
+
+      {!cardRegistered && (
+        <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 shadow-sm">
+          <div className="flex items-center gap-2 font-semibold">
+            <AlertTriangle className="h-5 w-5" />
+            Card Not Registered
+          </div>
+          <p className="mt-1 text-amber-800">
+            The employee was identified from database information, but this physical card must be
+            registered before attendance can be processed.
+          </p>
+        </div>
+      )}
+
+      <GlassCard className="p-5 sm:p-6">
+        <div className="mb-4">
+          <div className="text-xs font-bold uppercase text-muted-foreground">Attendance Action</div>
+          <div className="mt-1 text-lg font-semibold text-foreground">
+            Choose how today's attendance should be processed.
+          </div>
+        </div>
+        {completed ? (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+            <div className="flex items-center gap-2 font-semibold">
+              <CheckCircle2 className="h-5 w-5" />
+              Attendance Completed
+            </div>
+            <p className="mt-1 text-emerald-700">
+              This employee already has check-in and check-out recorded for today.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            <ActionChoiceCard
+              action="check_in"
+              title="Check In"
+              description="Mark today's attendance"
+              meta={format(now, "h:mm a")}
+              icon={CheckCircle2}
+              enabled={checkInEnabled}
+              selected={!forceCheckIn && selectedAction === "check_in"}
+              onSelect={() => {
+                setForceCheckIn(false);
+                setSelectedAction("check_in");
+              }}
+            />
+            <ActionChoiceCard
+              action="check_out"
+              title="Check Out"
+              description="Complete today's attendance"
+              meta={checkOutEnabled ? format(now, "h:mm a") : "Available after Check In"}
+              icon={LogOut}
+              enabled={checkOutEnabled}
+              selected={!forceCheckIn && selectedAction === "check_out"}
+              onSelect={() => {
+                setForceCheckIn(false);
+                setSelectedAction("check_out");
+              }}
+            />
+          </div>
+        )}
+      </GlassCard>
+
+      <GlassCard className="p-5 sm:p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="text-xs font-bold uppercase text-muted-foreground">Force Check-In</div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Use force check-in only when normal attendance processing is unavailable.
+            </p>
+          </div>
+          <label className="flex cursor-pointer items-center gap-3 rounded-full border border-border bg-background/70 px-4 py-2 text-sm font-semibold">
+            <Checkbox
+              checked={forceCheckIn}
+              disabled={!checkInEnabled || busy}
+              onCheckedChange={(checked) => {
+                const enabled = checked === true;
+                setForceCheckIn(enabled);
+                if (enabled) setSelectedAction(null);
+              }}
+            />
+            Enable Force Check-In
+          </label>
+        </div>
+
+        {forceCheckIn && (
+          <div className="mt-5 grid gap-4">
+            <div className="grid gap-2">
+              <Label>Reason for Force Check-In *</Label>
+              <Select value={forceReason} onValueChange={setForceReason}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a reason" />
+                </SelectTrigger>
+                <SelectContent>
+                  {FORCE_REASONS.map((reason) => (
+                    <SelectItem key={reason} value={reason}>
+                      {reason}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {forceReason === "Other" && (
+              <div className="grid gap-2">
+                <Label>Enter reason *</Label>
+                <Textarea
+                  value={forceOtherReason}
+                  onChange={(event) => setForceOtherReason(event.target.value)}
+                  placeholder="Write the reason here..."
+                />
+              </div>
+            )}
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              <div className="flex items-center gap-2 font-semibold">
+                <AlertTriangle className="h-5 w-5" />
+                Administrative Override
+              </div>
+              <p className="mt-1 text-amber-800">
+                Force check-in will be recorded in the attendance history with the selected reason
+                and the admin who processed it.
+              </p>
+            </div>
+          </div>
+        )}
+      </GlassCard>
+
+      <GlassCard className="p-5 sm:p-6">
+        <div className="mb-4 text-xs font-bold uppercase text-muted-foreground">Processed By</div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <InfoPanel label="Admin Name" value={adminName} />
+          <InfoPanel label="Admin Role" value={adminRole} />
+          <InfoPanel label="Processed At" value={format(now, "d MMM yyyy 'at' h:mm a")} />
+        </div>
+        <div className="mt-3 flex items-center gap-2 text-sm">
+          <span className={cn("h-2.5 w-2.5 rounded-full", connected ? "bg-emerald-500" : "bg-destructive")} />
+          Reader Status: {connected ? "Connected" : "Disconnected"}
+        </div>
+      </GlassCard>
+
+      <div className="sticky bottom-4 z-10 rounded-2xl border border-border/70 bg-background/85 p-3 shadow-[0_18px_60px_rgba(15,23,42,0.14)] backdrop-blur-xl">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm text-muted-foreground">
+            {forceCheckIn
+              ? "Force check-in requires a reason before confirmation."
+              : !cardRegistered
+                ? "Register this scanned card before processing attendance."
+              : selectedAction
+                ? `${humanizeAction(selectedAction)} selected for ${result.employee.full_name}.`
+                : "Select an attendance action to continue."}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onCancel} disabled={busy}>
+              Cancel
+            </Button>
+            <Button onClick={onConfirm} disabled={!canConfirm} className="min-w-44">
+              {busy ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : forceCheckIn ? (
+                <Zap className="mr-2 h-4 w-4" />
+              ) : selectedAction === "check_out" ? (
+                <LogOut className="mr-2 h-4 w-4" />
+              ) : (
+                <LogIn className="mr-2 h-4 w-4" />
+              )}
+              {confirmLabel}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function VerifiedProfileCard({ employee, now }: { employee: EmployeeProfile; now: Date }) {
+  return (
+    <GlassCard className="p-5 sm:p-6">
+      <div className="flex flex-col gap-5 sm:flex-row">
+        <div className="relative mx-auto sm:mx-0">
+          <Avatar className="h-28 w-28 border-4 border-white shadow-xl">
+            <AvatarImage src={employee.avatar_url || ""} />
+            <AvatarFallback className="text-2xl">{initials(employee.full_name)}</AvatarFallback>
+          </Avatar>
+          <div className="absolute -bottom-1 -right-1 grid h-9 w-9 place-items-center rounded-full border-4 border-background bg-emerald-500 text-white">
+            <CheckCircle2 className="h-5 w-5" />
+          </div>
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="truncate text-2xl font-bold text-foreground">{employee.full_name}</h2>
+            <Badge className="rounded-full bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
+              Verified
+            </Badge>
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <InfoPanel label="Employee ID" value={employee.employee_code || "Not assigned"} />
+            <InfoPanel label="Role" value={employee.position || "Employee"} />
+            <InfoPanel label="Department" value={employee.department || "Unassigned"} />
+            <InfoPanel label="Join Date" value={formatDate(employee.joining_date)} />
+            <InfoPanel label="Status" value="Active" tone="success" />
+          </div>
+        </div>
+      </div>
+      <div className="mt-5 rounded-2xl border border-cyan-200 bg-cyan-50/70 p-4">
+        <div className="text-xs font-bold uppercase text-cyan-900">Verification Status</div>
+        <div className="mt-2 flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 font-semibold text-cyan-950">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            Verified by ASLENIX
+          </div>
+          <div className="text-cyan-800">Last Verified: {format(now, "d MMM yyyy, h:mm a")}</div>
+        </div>
       </div>
     </GlassCard>
+  );
+}
+
+function TodayAttendanceCard({
+  attendance,
+  now,
+}: {
+  attendance?: AttendanceSnapshot | null;
+  now: Date;
+}) {
+  const checkedIn = Boolean(attendance?.check_in_time);
+  const checkedOut = Boolean(attendance?.check_out_time);
+  const status = !checkedIn ? "Not Checked In" : checkedOut ? "Attendance Completed" : "Checked In";
+  const previous = !checkedIn
+    ? "No check-in recorded today"
+    : checkedOut
+      ? `Checked out at ${formatTime(attendance?.check_out_time)}`
+      : `Checked in at ${formatTime(attendance?.check_in_time)}`;
+
+  return (
+    <GlassCard className="p-5 sm:p-6">
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div>
+          <div className="text-xs font-bold uppercase text-muted-foreground">Today's Attendance</div>
+          <div className="mt-1 text-2xl font-bold text-foreground">{status}</div>
+        </div>
+        <Badge
+          className={cn(
+            "rounded-full px-3 py-1",
+            checkedOut
+              ? "bg-emerald-100 text-emerald-700"
+              : checkedIn
+                ? "bg-cyan-100 text-cyan-700"
+                : "bg-slate-100 text-slate-700",
+          )}
+        >
+          {checkedIn && !checkedOut ? "Live" : checkedOut ? "Done" : "Pending"}
+        </Badge>
+      </div>
+      <div className="grid gap-3">
+        <InfoPanel label="Date" value={format(now, "d MMM yyyy")} />
+        <InfoPanel label="Scheduled" value="09:00 AM - 06:00 PM" />
+        <InfoPanel label="Current Status" value={status} />
+        <InfoPanel label="Previous Attendance" value={previous} />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <InfoPanel label="Check-In" value={formatTime(attendance?.check_in_time)} />
+          <InfoPanel label="Check-Out" value={formatTime(attendance?.check_out_time)} />
+        </div>
+      </div>
+    </GlassCard>
+  );
+}
+
+function ActionChoiceCard({
+  action,
+  title,
+  description,
+  meta,
+  icon: Icon,
+  enabled,
+  selected,
+  onSelect,
+}: {
+  action: AttendanceAction;
+  title: string;
+  description: string;
+  meta: string;
+  icon: typeof CheckCircle2;
+  enabled: boolean;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={!enabled}
+      onClick={onSelect}
+      className={cn(
+        "group min-h-40 rounded-3xl border p-5 text-left transition-all",
+        "bg-background/70 shadow-sm",
+        enabled && "hover:-translate-y-0.5 hover:shadow-xl",
+        selected
+          ? "border-primary bg-gradient-to-br from-primary/10 via-cyan-50 to-pink-50 shadow-[0_16px_50px_rgba(79,70,229,0.16)]"
+          : "border-border/70",
+        !enabled && "cursor-not-allowed opacity-50",
+      )}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div
+          className={cn(
+            "grid h-12 w-12 place-items-center rounded-2xl",
+            action === "check_in" ? "bg-emerald-100 text-emerald-700" : "bg-orange-100 text-orange-700",
+          )}
+        >
+          <Icon className="h-6 w-6" />
+        </div>
+        {selected && <CheckCircle2 className="h-5 w-5 text-primary" />}
+      </div>
+      <div className="mt-5 text-xl font-bold uppercase text-foreground">{title}</div>
+      <div className="mt-1 text-sm text-muted-foreground">{description}</div>
+      <div className="mt-4 rounded-full bg-muted/70 px-3 py-1 text-sm font-semibold text-foreground">
+        {meta}
+      </div>
+    </button>
+  );
+}
+
+function InfoPanel({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: "success";
+}) {
+  return (
+    <div className="rounded-2xl border border-border/60 bg-background/60 p-4">
+      <div className="text-[11px] font-bold uppercase text-muted-foreground">{label}</div>
+      <div
+        className={cn(
+          "mt-1 break-words text-sm font-semibold text-foreground",
+          tone === "success" && "text-emerald-700",
+        )}
+      >
+        {tone === "success" ? (
+          <span className="inline-flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            {value}
+          </span>
+        ) : (
+          value
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -682,6 +1232,36 @@ function formatTime(value?: string | null) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "-";
   return format(date, "h:mm a");
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return "Not assigned";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Not assigned";
+  return format(date, "d MMM yyyy");
+}
+
+function formatAdminRole(roles: string[]) {
+  if (roles.includes("super_admin")) return "Super Admin";
+  if (roles.includes("admin")) return "Admin";
+  if (roles.includes("hr_manager")) return "HR Manager";
+  return "Administrator";
+}
+
+function deriveAvailableAction(attendance?: AttendanceSnapshot | null): ScanResult["available_action"] {
+  if (!attendance?.check_in_time) return "check_in";
+  if (!attendance.check_out_time) return "check_out";
+  return "completed";
+}
+
+function enrichScanResult(result: ScanResult, employees: EmployeeProfile[]) {
+  if (!result.employee) return result;
+  const fullProfile = employees.find((employee) => employee.user_id === result.employee?.user_id);
+  return {
+    ...result,
+    employee: fullProfile ? { ...result.employee, ...fullProfile } : result.employee,
+    available_action: result.available_action || deriveAvailableAction(result.attendance),
+  };
 }
 
 function compactCardLabel(value?: string | null) {
