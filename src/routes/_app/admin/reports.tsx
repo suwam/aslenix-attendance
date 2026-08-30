@@ -44,7 +44,6 @@ type WorkingDaySummary = {
 type AttendanceDayCredit = {
   present: number;
   absent: number;
-  leave: number;
   wfh: number;
 };
 
@@ -228,19 +227,17 @@ function ReportsPage() {
       const totals = elapsedWorkingDates.reduce(
         (total, day) => {
           const credit = creditByDate.get(day) ?? emptyAttendanceDayCredit();
-          const covered = Math.min(credit.present + credit.wfh + credit.leave + credit.absent, 1);
+          const covered = Math.min(credit.present + credit.wfh + credit.absent, 1);
           return {
             present: total.present + credit.present,
             wfh: total.wfh + credit.wfh,
-            leave: total.leave + credit.leave,
             absent: total.absent + credit.absent + Math.max(1 - covered, 0),
           };
         },
-        { present: 0, wfh: 0, leave: 0, absent: 0 },
+        { present: 0, wfh: 0, absent: 0 },
       );
 
       const presentDays = roundDayCount(totals.present);
-      const leaveDays = roundDayCount(totals.leave);
       const wfhDays = roundDayCount(totals.wfh);
       const absentDays = roundDayCount(totals.absent);
       const dayDetails = allDates.map((day) => {
@@ -251,24 +248,22 @@ function ReportsPage() {
         if (day > todayDate) return buildDayDetail(day, "Not due");
 
         const credit = creditByDate.get(day) ?? emptyAttendanceDayCredit();
-        const covered = Math.min(credit.present + credit.wfh + credit.leave + credit.absent, 1);
+        const covered = Math.min(credit.present + credit.wfh + credit.absent, 1);
         const missingAbsent = Math.max(1 - covered, 0);
         const absent = roundDayCount(credit.absent + missingAbsent);
         const parts = [];
         if (credit.present) parts.push(`${roundDayCount(credit.present)} present`);
         if (credit.wfh) parts.push(`${roundDayCount(credit.wfh)} WFH`);
-        if (credit.leave) parts.push(`${roundDayCount(credit.leave)} leave`);
         if (absent) parts.push(`${absent} absent`);
         return buildDayDetail(day, parts.join(" + ") || "Absent", {
           present: roundDayCount(credit.present),
           absent,
-          leave: roundDayCount(credit.leave),
           wfh: roundDayCount(credit.wfh),
         });
       });
 
       const elapsedWorkingDaysCount = elapsedWorkingDates.length;
-      const requiredWorkingDays = Math.max(elapsedWorkingDaysCount - leaveDays, 0);
+      const requiredWorkingDays = elapsedWorkingDaysCount;
       const attendancePercentage =
         requiredWorkingDays > 0
           ? Math.min(Math.round(((presentDays + wfhDays) / requiredWorkingDays) * 1000) / 10, 100)
@@ -279,7 +274,6 @@ function ReportsPage() {
         records,
         presentDays,
         absentDays,
-        leaveDays,
         wfhDays,
         attendancePercentage,
         totalWorkingDays: employeeWorkingDates.length,
@@ -302,7 +296,6 @@ function ReportsPage() {
             if (statusFilter === "absent") return row.absentDays > 0;
             if (statusFilter === "late") return row.lateDays > 0;
             if (statusFilter === "early_checkout") return row.earlyCheckoutDays > 0;
-            if (statusFilter === "leave") return row.leaveDays > 0;
             if (statusFilter === "wfh") return row.wfhDays > 0;
             if (statusFilter === "present") return row.presentDays > 0;
             if (statusFilter === "weekly_off") return false;
@@ -378,7 +371,6 @@ function ReportsPage() {
       "Absent days",
       "Late days",
       "Early checkout days",
-      "Leave days",
       "WFH days",
       "Attendance %",
       "Edited days",
@@ -400,7 +392,6 @@ function ReportsPage() {
         row.absentDays,
         row.lateDays,
         row.earlyCheckoutDays,
-        row.leaveDays,
         row.wfhDays,
         `${row.attendancePercentage}%`,
         row.editedDays,
@@ -608,7 +599,6 @@ function ReportsPage() {
                 <SelectItem value="early_checkout">Early checkout</SelectItem>
                 <SelectItem value="weekly_off">Weekly off</SelectItem>
                 <SelectItem value="absent">Absent</SelectItem>
-                <SelectItem value="leave">Leave</SelectItem>
                 <SelectItem value="wfh">WFH</SelectItem>
               </SelectContent>
             </Select>
@@ -703,6 +693,8 @@ function ReportsPage() {
 }
 
 function attendanceLabel(attendance: any) {
+  if (attendance.status === "leave" || attendance.status === "half_day") return "Absent";
+  if (attendance.status === "half_day_present") return "Half day present";
   if (attendance.is_early_checkout) return "Early checkout";
   if (attendance.is_late) return "Late";
   return attendance.status.replace("_", " ");
@@ -724,18 +716,18 @@ function sortByEmployeeName<T extends { full_name?: string | null }>(rows: T[]) 
 }
 
 function emptyAttendanceDayCredit(): AttendanceDayCredit {
-  return { present: 0, absent: 0, leave: 0, wfh: 0 };
+  return { present: 0, absent: 0, wfh: 0 };
 }
 
 function getAttendanceDayCredit(record: any): AttendanceDayCredit {
-  if (record.status === "wfh") return { present: 0, absent: 0, leave: 0, wfh: 1 };
-  if (record.status === "leave") return { present: 0, absent: 0, leave: 1, wfh: 0 };
-  if (record.status === "half_day") return { present: 0, absent: 0.5, leave: 0.5, wfh: 0 };
+  if (record.status === "wfh") return { present: 0, absent: 0, wfh: 1 };
+  if (record.status === "leave") return { present: 0, absent: 1, wfh: 0 };
+  if (record.status === "half_day") return { present: 0, absent: 1, wfh: 0 };
   if (record.status === "half_day_present")
-    return { present: 0.5, absent: 0, leave: 0.5, wfh: 0 };
-  if (record.status === "absent") return { present: 0, absent: 1, leave: 0, wfh: 0 };
+    return { present: 0.5, absent: 0.5, wfh: 0 };
+  if (record.status === "absent") return { present: 0, absent: 1, wfh: 0 };
   if (record.status === "present" || record.status === "late")
-    return { present: 1, absent: 0, leave: 0, wfh: 0 };
+    return { present: 1, absent: 0, wfh: 0 };
   return emptyAttendanceDayCredit();
 }
 
@@ -746,7 +738,6 @@ function mergeAttendanceDayCredit(
   return {
     present: Math.max(current.present, next.present),
     absent: Math.max(current.absent, next.absent),
-    leave: Math.max(current.leave, next.leave),
     wfh: Math.max(current.wfh, next.wfh),
   };
 }
@@ -1131,7 +1122,6 @@ function PrintableAggregateTable({
           <th style={{ ...pdfThStyle, width: "7%" }}>Absent</th>
           <th style={{ ...pdfThStyle, width: "6%" }}>Late</th>
           <th style={{ ...pdfThStyle, width: "8%" }}>Early</th>
-          <th style={{ ...pdfThStyle, width: "7%" }}>Leave</th>
           <th style={{ ...pdfThStyle, width: "6%" }}>WFH</th>
           <th style={{ ...pdfThStyle, width: "8%" }}>Working</th>
           <th style={{ ...pdfThStyle, width: "7%" }}>Att %</th>
@@ -1152,7 +1142,6 @@ function PrintableAggregateTable({
             <td style={pdfTdStyle}>{row.absentDays}</td>
             <td style={pdfTdStyle}>{row.lateDays}</td>
             <td style={pdfTdStyle}>{row.earlyCheckoutDays}</td>
-            <td style={pdfTdStyle}>{row.leaveDays}</td>
             <td style={pdfTdStyle}>{row.wfhDays}</td>
             <td style={pdfTdStyle}>{row.totalWorkingDays ?? summary.workingDays}</td>
             <td style={pdfTdStyle}>{row.attendancePercentage}%</td>
@@ -1218,7 +1207,6 @@ function AggregateReportTable({
             <th className="p-3">Absent</th>
             <th className="p-3">Late</th>
             <th className="p-3">Early checkout</th>
-            <th className="p-3">Leave</th>
             <th className="p-3">WFH</th>
             <th className="p-3">Working days</th>
             <th className="p-3">Attendance %</th>
@@ -1243,7 +1231,6 @@ function AggregateReportTable({
                   <td className="p-3 tabular-nums">{row.absentDays}</td>
                   <td className="p-3 tabular-nums">{row.lateDays}</td>
                   <td className="p-3 tabular-nums">{row.earlyCheckoutDays}</td>
-                  <td className="p-3 tabular-nums">{row.leaveDays}</td>
                   <td className="p-3 tabular-nums">{row.wfhDays}</td>
                   <td className="p-3 tabular-nums">{row.totalWorkingDays ?? summary.workingDays}</td>
                   <td className="p-3 tabular-nums">{row.attendancePercentage}%</td>
@@ -1262,7 +1249,7 @@ function AggregateReportTable({
                 </tr>
                 {expanded && (
                   <tr className="border-b border-border/40 bg-muted/20">
-                    <td colSpan={13} className="p-4">
+                    <td colSpan={12} className="p-4">
                       <AttendanceDayBreakdown days={row.dayDetails ?? []} />
                     </td>
                   </tr>
