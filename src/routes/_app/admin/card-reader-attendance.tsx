@@ -56,6 +56,7 @@ type EmployeeProfile = {
   department: string | null;
   position: string | null;
   avatar_url: string | null;
+  qr_token?: string | null;
 };
 
 type AttendanceSnapshot = {
@@ -129,6 +130,10 @@ function CardReaderAttendancePage() {
     () => employees.find((employee) => employee.user_id === registerEmployeeId),
     [employees, registerEmployeeId],
   );
+  const detectedRegisterEmployee = useMemo(
+    () => findEmployeeFromScannedValue(lastRawCardUid, employees),
+    [employees, lastRawCardUid],
+  );
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -141,11 +146,16 @@ function CardReaderAttendancePage() {
     scanInputRef.current?.focus();
   }, [connected]);
 
+  useEffect(() => {
+    if (!unknownOpen || registerEmployeeId || !detectedRegisterEmployee) return;
+    setRegisterEmployeeId(detectedRegisterEmployee.user_id);
+  }, [detectedRegisterEmployee, registerEmployeeId, unknownOpen]);
+
   const loadEmployees = async () => {
     const [{ data, error }, { data: roleRows }] = await Promise.all([
       supabase
         .from("profiles")
-        .select("user_id,full_name,employee_code,department,position,avatar_url")
+        .select("user_id,full_name,employee_code,department,position,avatar_url,qr_token")
         .eq("approval_status", "approved")
         .eq("is_suspended", false)
         .order("full_name", { ascending: true }),
@@ -461,22 +471,32 @@ function CardReaderAttendancePage() {
                 Confirmed from reader scan. No manual card entry is required.
               </div>
             </div>
-            <div className="grid gap-2">
-              <Label>Confirm Employee</Label>
-              <Select value={registerEmployeeId} onValueChange={setRegisterEmployeeId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select active employee" />
-                </SelectTrigger>
-                <SelectContent>
-                  {employees.map((employee) => (
-                    <SelectItem key={employee.user_id} value={employee.user_id}>
-                      {employee.full_name}{" "}
-                      {employee.employee_code ? `(${employee.employee_code})` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {detectedRegisterEmployee ? (
+              <div className="grid gap-2">
+                <Label>Detected Employee</Label>
+                <EmployeeIdentity employee={detectedRegisterEmployee} />
+              </div>
+            ) : (
+              <div className="grid gap-2">
+                <Label>Confirm Employee</Label>
+                <Select value={registerEmployeeId} onValueChange={setRegisterEmployeeId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select active employee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees.map((employee) => (
+                      <SelectItem key={employee.user_id} value={employee.user_id}>
+                        {employee.full_name}{" "}
+                        {employee.employee_code ? `(${employee.employee_code})` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="text-xs text-muted-foreground">
+                  No employee match was found in the database for this scanned value.
+                </div>
+              </div>
+            )}
             {selectedRegisterEmployee && (
               <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950">
                 <div className="flex items-center gap-2 font-semibold">
@@ -671,6 +691,43 @@ function compactCardLabel(value?: string | null) {
   if (normalized.startsWith("*") && visibleTail) return `****${visibleTail.slice(-4)}`;
   if (normalized.length <= 12) return normalized;
   return `****${normalized.slice(-4)}`;
+}
+
+function findEmployeeFromScannedValue(value: string, employees: EmployeeProfile[]) {
+  const tokens = extractScanTokens(value);
+  if (tokens.length === 0) return undefined;
+
+  return employees.find((employee) => {
+    const candidates = [
+      employee.user_id,
+      employee.employee_code,
+      employee.qr_token,
+    ].flatMap((candidate) => extractScanTokens(candidate || ""));
+
+    return candidates.some((candidate) => tokens.includes(candidate));
+  });
+}
+
+function extractScanTokens(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return [];
+
+  const rawParts = new Set<string>([trimmed]);
+
+  try {
+    const url = new URL(trimmed);
+    rawParts.add(url.pathname.split("/").filter(Boolean).at(-1) || "");
+    url.searchParams.forEach((paramValue) => rawParts.add(paramValue));
+  } catch {
+    const verifyMatch = trimmed.match(/verify-employee\/([^/?#]+)/i);
+    if (verifyMatch?.[1]) rawParts.add(verifyMatch[1]);
+  }
+
+  return Array.from(rawParts)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .flatMap((part) => [part.toLowerCase(), part.replace(/\s+/g, "").toLowerCase()])
+    .filter((part, index, parts) => parts.indexOf(part) === index);
 }
 
 function humanizeAction(action: string) {

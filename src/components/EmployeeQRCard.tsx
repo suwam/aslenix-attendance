@@ -13,6 +13,7 @@ export type QRProfile = {
   qr_status: "active" | "inactive" | "revoked";
   approval_status: string;
   avatar_url: string | null;
+  is_suspended: boolean;
 };
 
 export function buildVerifyUrl(token: string | null) {
@@ -27,7 +28,10 @@ export function buildQRPayload(p: QRProfile) {
 
 export const EmployeeQRCard = forwardRef<HTMLDivElement, { profile: QRProfile; size?: number }>(
   function EmployeeQRCard({ profile, size = 160 }, ref) {
-    const disabled = profile.qr_status !== "active";
+    const disabled =
+      profile.qr_status !== "active" ||
+      profile.approval_status !== "approved" ||
+      profile.is_suspended;
     const initials = profile.full_name
       ?.split(" ")
       .map((s) => s[0])

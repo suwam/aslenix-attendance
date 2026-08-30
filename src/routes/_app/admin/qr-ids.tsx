@@ -50,6 +50,8 @@ function QRIdsPage() {
         .select(
           "user_id,full_name,email,department,position,employee_code,qr_token,qr_status,approval_status,avatar_url,is_suspended",
         )
+        .eq("approval_status", "approved")
+        .eq("is_suspended", false)
         .order("full_name"),
       supabase
         .from("user_roles")
@@ -78,6 +80,10 @@ function QRIdsPage() {
   );
 
   const regenerate = async (u: QRProfile) => {
+    if (!canUseQr(u)) {
+      return toast.error("Only approved active employees can have QR IDs");
+    }
+
     const token = crypto.getRandomValues(new Uint8Array(24));
     const hex = Array.from(token)
       .map((b) => b.toString(16).padStart(2, "0"))
@@ -93,6 +99,10 @@ function QRIdsPage() {
   };
 
   const setQrStatus = async (u: QRProfile, newStatus: "active" | "inactive" | "revoked") => {
+    if (newStatus === "active" && !canUseQr(u)) {
+      return toast.error("Only approved active employees can have active QR IDs");
+    }
+
     const { error } = await supabase
       .from("profiles")
       .update({ qr_status: newStatus })
@@ -299,4 +309,8 @@ function QRIdsPage() {
       </Dialog>
     </>
   );
+}
+
+function canUseQr(user: QRProfile) {
+  return user.approval_status === "approved" && !user.is_suspended;
 }
