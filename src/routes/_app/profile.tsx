@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { BSDateInput } from "@/components/BSDateInput";
+import { EmployeeQRCard } from "@/components/EmployeeQRCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -236,6 +237,18 @@ function ProfilePage() {
         </div>
 
         <div className="grid gap-5">
+          {form.approval_status === "approved" && form.qr_status === "active" && (
+            <div className="flex flex-col items-center justify-center gap-2 lg:flex-row lg:items-start lg:justify-start rounded-2xl bg-card p-5 border border-border">
+              <div className="flex flex-col gap-1 w-full max-w-sm mr-auto text-left mb-4 lg:mb-0">
+                <h3 className="text-lg font-semibold text-foreground">Digital Employee ID</h3>
+                <p className="text-sm text-muted-foreground">
+                  Use this QR code for fast, contactless check-ins at the office scanner.
+                </p>
+              </div>
+              <EmployeeQRCard profile={form as any} />
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <InfoTile
               icon={IdCard}

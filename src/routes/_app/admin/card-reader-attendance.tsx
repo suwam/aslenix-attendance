@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   BadgeCheck,
+  Camera,
   CheckCircle2,
   CreditCard,
   History,
@@ -43,6 +44,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { Scanner } from "@yudiel/react-qr-scanner";
 
 export const Route = createFileRoute("/_app/admin/card-reader-attendance")({
   component: CardReaderAttendancePage,
@@ -117,13 +119,13 @@ function CardReaderAttendancePage() {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [checkingReader, setCheckingReader] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
   const [unknownOpen, setUnknownOpen] = useState(false);
   const [reason, setReason] = useState(DEFAULT_REASON);
   const [employees, setEmployees] = useState<EmployeeProfile[]>([]);
   const [registerEmployeeId, setRegisterEmployeeId] = useState("");
   const [history, setHistory] = useState<AuditEvent[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
 
   const selectedRegisterEmployee = useMemo(
     () => employees.find((employee) => employee.user_id === registerEmployeeId),
@@ -164,9 +166,7 @@ function CardReaderAttendancePage() {
 
   const loadHistory = async () => {
     setHistoryLoading(true);
-    const { data, error } = await (supabase as any).rpc("admin_card_reader_audit_history", {
-      _limit: 50,
-    });
+    const { data, error } = await (supabase as any).rpc("admin_card_reader_audit_history");
     setHistoryLoading(false);
     if (error) return toast.error(error.message);
     setHistory((data ?? []) as AuditEvent[]);
@@ -233,38 +233,42 @@ function CardReaderAttendancePage() {
       toast.warning("Card not registered");
     } else if (result.status === "completed" || result.available_action === "completed") {
       toast.info("Attendance already completed for today");
-    } else {
-      setConfirmOpen(true);
-      toast.success("Employee found");
+    } else if (result.employee && (result.available_action === "check_in" || result.available_action === "check_out")) {
+      // Auto check-in / check-out
+      await processAutoAttendance(result, cardUid);
     }
 
     await loadHistory();
     requestAnimationFrame(() => scanInputRef.current?.focus());
   };
 
-  const confirmAttendance = async (action: "check_in" | "check_out") => {
-    if (!scanResult?.employee || !lastRawCardUid) return;
+  const processAutoAttendance = async (result: ScanResult, cardUid: string) => {
+    const action = result.available_action;
+    if (!result.employee || !action || action === "completed") return;
+    
     setBusy(true);
     const { data, error } = await (supabase as any).rpc("admin_card_reader_record_attendance", {
-      _employee_id: scanResult.employee.user_id,
-      _card_uid: lastRawCardUid,
+      _employee_id: result.employee.user_id,
+      _card_uid: cardUid,
       _reader_id: readerId.trim(),
       _action: action,
-      _reason: reason.trim() || DEFAULT_REASON,
+      _reason: DEFAULT_REASON,
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
 
     const next = data as { attendance: AttendanceSnapshot; employee: EmployeeProfile };
     setScanResult({
-      ...scanResult,
+      ...result,
       status: next.attendance.check_out_time ? "completed" : "employee_found",
       attendance: next.attendance,
       available_action: next.attendance.check_out_time ? "completed" : "check_out",
     });
-    setConfirmOpen(false);
-    toast.success(action === "check_in" ? "Check-in recorded" : "Check-out recorded");
-    await loadHistory();
+    
+    toast.success(action === "check_in" ? `Checked in ${result.employee.full_name}` : `Checked out ${result.employee.full_name}`);
   };
 
   const registerCard = async () => {
@@ -387,10 +391,16 @@ function CardReaderAttendancePage() {
                   autoComplete="off"
                 />
               </div>
-              <Button type="submit" disabled={!connected || busy || !scanValue.trim()}>
-                {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Process Scan
-              </Button>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={() => setCameraOpen(true)} disabled={!connected || busy}>
+                  <Camera className="mr-2 h-4 w-4" />
+                  Camera
+                </Button>
+                <Button type="submit" disabled={!connected || busy || !scanValue.trim()}>
+                  {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Process Scan
+                </Button>
+              </div>
             </form>
           </GlassCard>
 
@@ -437,48 +447,6 @@ function CardReaderAttendancePage() {
         </GlassCard>
       </div>
 
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Employee Found</DialogTitle>
-          </DialogHeader>
-          {scanResult?.employee && (
-            <div className="space-y-4">
-              <EmployeeIdentity employee={scanResult.employee} />
-              <AttendanceDetails attendance={scanResult.attendance} />
-              <div className="grid gap-2">
-                <Label>Reason</Label>
-                <Textarea value={reason} onChange={(event) => setReason(event.target.value)} />
-              </div>
-              {scanResult.available_action === "completed" && (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-medium text-amber-800">
-                  Attendance already completed for today.
-                </div>
-              )}
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => confirmAttendance("check_in")}
-              disabled={busy || scanResult?.available_action !== "check_in"}
-            >
-              <LogIn className="mr-2 h-4 w-4" />
-              Confirm Check-In
-            </Button>
-            <Button
-              onClick={() => confirmAttendance("check_out")}
-              disabled={busy || scanResult?.available_action !== "check_out"}
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Confirm Check-Out
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       <Dialog open={unknownOpen} onOpenChange={setUnknownOpen}>
         <DialogContent>
           <DialogHeader>
@@ -521,6 +489,26 @@ function CardReaderAttendancePage() {
               Register Card
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={cameraOpen} onOpenChange={setCameraOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Scan Employee QR Code</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-hidden rounded-lg">
+            {cameraOpen && (
+              <Scanner
+                onScan={(result) => {
+                  if (result && result.length > 0) {
+                    setCameraOpen(false);
+                    scanCard(result[0].rawValue);
+                  }
+                }}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </>

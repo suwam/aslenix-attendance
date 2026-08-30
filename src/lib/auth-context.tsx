@@ -22,6 +22,8 @@ export interface Profile {
   approval_status: ApprovalStatus;
   is_eom_eligible: boolean;
   is_suspended: boolean;
+  qr_token: string | null;
+  qr_status: "active" | "inactive" | "revoked";
 }
 
 interface AuthState {
