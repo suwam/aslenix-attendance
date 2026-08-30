@@ -42,7 +42,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Scanner } from "@yudiel/react-qr-scanner";
 
@@ -120,7 +119,6 @@ function CardReaderAttendancePage() {
   const [busy, setBusy] = useState(false);
   const [checkingReader, setCheckingReader] = useState(false);
   const [unknownOpen, setUnknownOpen] = useState(false);
-  const [reason, setReason] = useState(DEFAULT_REASON);
   const [employees, setEmployees] = useState<EmployeeProfile[]>([]);
   const [registerEmployeeId, setRegisterEmployeeId] = useState("");
   const [history, setHistory] = useState<AuditEvent[]>([]);
@@ -226,7 +224,6 @@ function CardReaderAttendancePage() {
     const result = data as ScanResult;
     setScanResult(result);
     setLastScannedCard(result.card_uid);
-    setReason(DEFAULT_REASON);
 
     if (result.status === "unknown_card") {
       setUnknownOpen(true);
@@ -279,7 +276,7 @@ function CardReaderAttendancePage() {
       _employee_id: registerEmployeeId,
       _card_uid: lastRawCardUid,
       _reader_id: readerId.trim(),
-      _reason: reason.trim() || "Registered from card reader attendance",
+      _reason: DEFAULT_REASON,
     });
     setBusy(false);
     if (error) return toast.error(error.message);
@@ -359,7 +356,7 @@ function CardReaderAttendancePage() {
               <StatusTile label="Reader ID" value={readerId || "-"} icon={BadgeCheck} />
               <StatusTile
                 label="Last scanned card"
-                value={lastScannedCard || readerStatus?.last_card_uid || "-"}
+                value={compactCardLabel(lastScannedCard || readerStatus?.last_card_uid)}
                 icon={History}
               />
             </div>
@@ -413,8 +410,8 @@ function CardReaderAttendancePage() {
                 <div>
                   <div className="font-semibold text-destructive">Card not registered.</div>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Last scanned card: {scanResult.card_uid}. Authorized admins can register this
-                    card to an active employee.
+                    Scanned card {compactCardLabel(scanResult.card_uid)} can be registered to an
+                    active employee.
                   </p>
                   <Button className="mt-3" onClick={() => setUnknownOpen(true)}>
                     Register Card
@@ -454,10 +451,18 @@ function CardReaderAttendancePage() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-sm">
-              Card {lastScannedCard || "unknown"} is not assigned to an active employee.
+              <div className="text-xs font-semibold uppercase text-muted-foreground">
+                Scanned Card
+              </div>
+              <div className="mt-1 font-mono text-base font-semibold">
+                {compactCardLabel(lastScannedCard)}
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                Confirmed from reader scan. No manual card entry is required.
+              </div>
             </div>
             <div className="grid gap-2">
-              <Label>Register to Employee</Label>
+              <Label>Confirm Employee</Label>
               <Select value={registerEmployeeId} onValueChange={setRegisterEmployeeId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select active employee" />
@@ -472,21 +477,31 @@ function CardReaderAttendancePage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid gap-2">
-              <Label>Reason</Label>
-              <Textarea
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
-                placeholder="Why is this card being registered?"
-              />
-            </div>
+            {selectedRegisterEmployee && (
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-950">
+                <div className="flex items-center gap-2 font-semibold">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  Ready to register and process attendance
+                </div>
+                <div className="mt-2 grid gap-1 text-xs">
+                  <div>
+                    Employee: {selectedRegisterEmployee.full_name}
+                    {selectedRegisterEmployee.employee_code
+                      ? ` (${selectedRegisterEmployee.employee_code})`
+                      : ""}
+                  </div>
+                  <div>Card: {compactCardLabel(lastScannedCard)}</div>
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setUnknownOpen(false)}>
               Cancel
             </Button>
             <Button onClick={registerCard} disabled={busy || !registerEmployeeId}>
-              Register Card
+              {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Register & Process
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -553,7 +568,7 @@ function EmployeeScanCard({ result }: { result: ScanResult }) {
             {completed ? "Attendance Completed" : "Employee Found"}
           </div>
         </div>
-        <Badge variant="outline">{result.card_uid}</Badge>
+        <Badge variant="outline">{compactCardLabel(result.card_uid)}</Badge>
       </div>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
         <EmployeeIdentity employee={result.employee} />
@@ -647,6 +662,15 @@ function formatTime(value?: string | null) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "-";
   return format(date, "h:mm a");
+}
+
+function compactCardLabel(value?: string | null) {
+  if (!value) return "-";
+  const normalized = value.trim();
+  const visibleTail = normalized.replace(/^\*+/, "");
+  if (normalized.startsWith("*") && visibleTail) return `****${visibleTail.slice(-4)}`;
+  if (normalized.length <= 12) return normalized;
+  return `****${normalized.slice(-4)}`;
 }
 
 function humanizeAction(action: string) {
