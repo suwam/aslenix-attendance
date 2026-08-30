@@ -91,7 +91,7 @@ RETURNS TEXT
 LANGUAGE SQL
 IMMUTABLE
 AS $$
-  SELECT encode(digest(upper(regexp_replace(COALESCE(_card_uid, ''), '\s+', '', 'g')), 'sha256'), 'hex');
+  SELECT encode(extensions.digest(upper(regexp_replace(COALESCE(_card_uid, ''), '\s+', '', 'g')), 'sha256'), 'hex');
 $$;
 
 CREATE OR REPLACE FUNCTION public.card_uid_last4(_card_uid TEXT)

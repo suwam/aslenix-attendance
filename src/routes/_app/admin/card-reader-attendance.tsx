@@ -166,9 +166,7 @@ function CardReaderAttendancePage() {
 
   const loadHistory = async () => {
     setHistoryLoading(true);
-    const { data, error } = await (supabase as any).rpc("admin_card_reader_audit_history", {
-      _limit: 50,
-    });
+    const { data, error } = await (supabase as any).rpc("admin_card_reader_audit_history");
     setHistoryLoading(false);
     if (error) return toast.error(error.message);
     setHistory((data ?? []) as AuditEvent[]);
