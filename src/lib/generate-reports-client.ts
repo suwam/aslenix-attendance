@@ -44,15 +44,11 @@ export async function generateReportsForWeekClient(
 
     if (onProgress) onProgress(`Fetching data for ${reportType} report: ${startAd} to ${endAd}...`);
 
-    // Fetch all profiles
+    // Fetch current profiles. Removed employees are added back below when they have history.
     const { data: profiles, error: profileErr } = await supabase
       .from("profiles")
-      .select("user_id, full_name, department, employee_code")
-      .eq("approval_status", "approved");
+      .select("user_id, full_name, department, employee_code, approval_status");
     if (profileErr) throw profileErr;
-
-    if (onProgress)
-      onProgress(`Found ${profiles?.length || 0} approved employees. Processing data...`);
 
     // Fetch all standups for the date range
     const { data: standups, error: standupErr } = await supabase
@@ -70,12 +66,17 @@ export async function generateReportsForWeekClient(
       .lte("date", endAd);
     if (attErr) throw attErr;
 
+    const reportProfiles = buildHistoricalReportProfiles(profiles ?? [], attendances ?? [], standups ?? []);
+
+    if (onProgress)
+      onProgress(`Found ${reportProfiles.length} employees with current or historical data. Processing data...`);
+
     const daysInInterval = eachDayOfInterval({ start: new Date(startAd), end: new Date(endAd) });
     const totalWorkingDays = daysInInterval.filter((d) => d.getDay() !== 6).length; // Exclude Saturdays
 
     let successCount = 0;
 
-    for (const profile of profiles || []) {
+    for (const profile of reportProfiles) {
       const userStandups = standups?.filter((s) => s.user_id === profile.user_id) || [];
       const userAttendance = attendances?.filter((a) => a.user_id === profile.user_id) || [];
 
@@ -254,4 +255,31 @@ export async function generateReportsForWeekClient(
     console.error(`Manual ${reportType} report generation error:`, error);
     return { success: false, error: error.message };
   }
+}
+
+function buildHistoricalReportProfiles(profiles: any[], attendances: any[], standups: any[]) {
+  const historyUserIds = new Set(
+    [...attendances, ...standups].map((row) => row.user_id).filter(Boolean),
+  );
+  const profilesByUser = new Map(profiles.map((profile) => [profile.user_id, profile]));
+  const rows = profiles.filter(
+    (profile) => profile.approval_status === "approved" || historyUserIds.has(profile.user_id),
+  );
+
+  historyUserIds.forEach((userId) => {
+    if (profilesByUser.has(userId)) return;
+    rows.push({
+      user_id: userId,
+      full_name: "Former employee",
+      department: null,
+      employee_code: null,
+      approval_status: "removed",
+    });
+  });
+
+  return rows.sort((a, b) =>
+    String(a.full_name || "").localeCompare(String(b.full_name || ""), undefined, {
+      sensitivity: "base",
+    }),
+  );
 }

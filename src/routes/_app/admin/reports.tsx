@@ -93,8 +93,7 @@ function ReportsPage() {
       supabase.from("attendance").select("*").eq("date", date).order("date", { ascending: false }),
       supabase
         .from("profiles")
-        .select("user_id, full_name, email, department")
-        .eq("approval_status", "approved")
+        .select("user_id, full_name, email, department, approval_status, is_suspended")
         .order("full_name"),
       supabase
         .from("user_roles")
@@ -103,10 +102,9 @@ function ReportsPage() {
     ]);
 
     const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
-    const employeeProfiles = sortByEmployeeName(
-      (profiles ?? []).filter((profile) => !adminUserIds.has(profile.user_id)),
-    );
-    const attendanceByUser = new Map((attendance ?? []).map((row) => [row.user_id, row]));
+    const attendanceRows = attendance ?? [];
+    const employeeProfiles = buildHistoricalReportProfiles(profiles ?? [], attendanceRows, adminUserIds);
+    const attendanceByUser = new Map(attendanceRows.map((row) => [row.user_id, row]));
     const merged = employeeProfiles.map((profile) => ({
       ...profile,
       attendance: attendanceByUser.get(profile.user_id) ?? null,
@@ -136,8 +134,7 @@ function ReportsPage() {
           .order("date", { ascending: true }),
         supabase
           .from("profiles")
-          .select("user_id, full_name, email, department")
-          .eq("approval_status", "approved")
+          .select("user_id, full_name, email, department, approval_status, is_suspended")
           .order("full_name"),
         supabase
           .from("user_roles")
@@ -152,11 +149,10 @@ function ReportsPage() {
       ]);
 
     const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
-    const employeeProfiles = sortByEmployeeName(
-      (profiles ?? []).filter((profile) => !adminUserIds.has(profile.user_id)),
-    );
+    const attendanceRows = attendance ?? [];
+    const employeeProfiles = buildHistoricalReportProfiles(profiles ?? [], attendanceRows, adminUserIds);
     const attendanceByUser = new Map<string, any[]>();
-    (attendance ?? []).forEach((row) => {
+    attendanceRows.forEach((row) => {
       attendanceByUser.set(row.user_id, [...(attendanceByUser.get(row.user_id) ?? []), row]);
     });
 
@@ -704,6 +700,45 @@ function sortByEmployeeName<T extends { full_name?: string | null }>(rows: T[]) 
       sensitivity: "base",
     }),
   );
+}
+
+function buildHistoricalReportProfiles(
+  profiles: any[],
+  attendanceRows: any[],
+  adminUserIds: Set<string>,
+) {
+  const attendanceUserIds = new Set(attendanceRows.map((row) => row.user_id).filter(Boolean));
+  const profilesByUser = new Map(profiles.map((profile) => [profile.user_id, profile]));
+  const includedUserIds = new Set<string>();
+  const rows = profiles.filter(
+    (profile) => {
+      const shouldInclude =
+        !adminUserIds.has(profile.user_id) &&
+        (profile.approval_status === "approved" || attendanceUserIds.has(profile.user_id));
+      if (shouldInclude) includedUserIds.add(profile.user_id);
+      return shouldInclude;
+    },
+  );
+
+  attendanceRows.forEach((row) => {
+    if (
+      adminUserIds.has(row.user_id) ||
+      profilesByUser.has(row.user_id) ||
+      includedUserIds.has(row.user_id)
+    )
+      return;
+    includedUserIds.add(row.user_id);
+    rows.push({
+      user_id: row.user_id,
+      full_name: "Former employee",
+      email: "",
+      department: null,
+      approval_status: "removed",
+      is_suspended: true,
+    });
+  });
+
+  return sortByEmployeeName(rows);
 }
 
 type PrintableReportProps = {

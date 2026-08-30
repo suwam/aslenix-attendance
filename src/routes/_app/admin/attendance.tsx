@@ -72,6 +72,8 @@ type EmployeeRow = {
   email: string;
   department: string | null;
   avatar_url: string | null;
+  approval_status?: string | null;
+  is_suspended?: boolean | null;
   attendance?: AttendanceRecord;
 };
 
@@ -137,7 +139,7 @@ function AttendancePage() {
     const [{ data: att }, { data: profs }, { data: roleRows }, correctionsResult] =
       await Promise.all([
         supabase.from("attendance").select("*").eq("date", date),
-        supabase.from("profiles").select("*").eq("approval_status", "approved"),
+        supabase.from("profiles").select("*"),
         supabase
           .from("user_roles")
           .select("user_id, role")
@@ -146,15 +148,14 @@ function AttendancePage() {
       ]);
     if (correctionsResult.error)
       toast.error(`Unable to load correction requests: ${correctionsResult.error.message}`);
+    const attendanceRecords = (att ?? []) as AttendanceRecord[];
     const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
-    const employeeProfiles = ((profs ?? []) as EmployeeRow[])
-      .filter((profile) => !adminUserIds.has(profile.user_id))
-      .sort((a, b) =>
-        String(a.full_name || "").localeCompare(String(b.full_name || ""), undefined, {
-          sensitivity: "base",
-        }),
-      );
-    const map = new Map(((att ?? []) as AttendanceRecord[]).map((a) => [a.user_id, a]));
+    const employeeProfiles = buildHistoricalEmployeeRows(
+      (profs ?? []) as EmployeeRow[],
+      attendanceRecords,
+      adminUserIds,
+    );
+    const map = new Map(attendanceRecords.map((a) => [a.user_id, a]));
     const merged = employeeProfiles.map((p) => ({ ...p, attendance: map.get(p.user_id) }));
     setRows(merged);
     setCorrectionRequests(
@@ -680,6 +681,51 @@ function AttendancePage() {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function buildHistoricalEmployeeRows(
+  profiles: EmployeeRow[],
+  attendanceRecords: AttendanceRecord[],
+  adminUserIds: Set<string>,
+) {
+  const attendanceUserIds = new Set(attendanceRecords.map((record) => record.user_id).filter(Boolean));
+  const profilesByUser = new Map(profiles.map((profile) => [profile.user_id, profile]));
+  const includedUserIds = new Set<string>();
+  const rows = profiles.filter(
+    (profile) => {
+      const shouldInclude =
+        !adminUserIds.has(profile.user_id) &&
+        (profile.approval_status === "approved" || attendanceUserIds.has(profile.user_id));
+      if (shouldInclude) includedUserIds.add(profile.user_id);
+      return shouldInclude;
+    },
+  );
+
+  attendanceRecords.forEach((record) => {
+    if (
+      adminUserIds.has(record.user_id) ||
+      profilesByUser.has(record.user_id) ||
+      includedUserIds.has(record.user_id)
+    )
+      return;
+    includedUserIds.add(record.user_id);
+    rows.push({
+      id: `attendance-${record.id}`,
+      user_id: record.user_id,
+      full_name: "Former employee",
+      email: "",
+      department: null,
+      avatar_url: null,
+      approval_status: "removed",
+      is_suspended: true,
+    });
+  });
+
+  return rows.sort((a, b) =>
+    String(a.full_name || "").localeCompare(String(b.full_name || ""), undefined, {
+      sensitivity: "base",
+    }),
   );
 }
 
