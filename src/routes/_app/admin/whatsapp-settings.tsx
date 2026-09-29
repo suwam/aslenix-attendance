@@ -60,7 +60,7 @@ function WhatsAppSettings() {
     const { error } = await supabase.from("whatsapp_notifications").insert({
         notification_type: 'TEST_MESSAGE',
         recipient_number: testNumber,
-        template_name: 'test_template',
+        template_name: 'hello_world',
         template_parameters: { test: true },
         status: 'PENDING'
     });
