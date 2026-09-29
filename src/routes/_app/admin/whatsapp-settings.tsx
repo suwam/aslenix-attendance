@@ -57,9 +57,9 @@ function WhatsAppSettings() {
     setTesting(true);
     
     // Simulate API call to queue test message
-    const { data: user } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("whatsapp_notifications").insert({
-        employee_id: user.user?.id,
+        employee_id: user?.id,
         notification_type: 'TEST_MESSAGE',
         recipient_number: testNumber,
         template_name: 'test_template',
