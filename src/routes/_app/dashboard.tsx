@@ -142,52 +142,7 @@ const MOODS = [
   { value: "stressed", label: "Stressed", emoji: "😔" },
 ];
 
-function EmployeeWeeklyReviews({ reviews }: { reviews: any[] }) {
-  const reviewCycles = useMemo(() => getWeeklyReviewCyclesForNepaliMonth(new Date()), []);
-  const todayDate = format(new Date(), "yyyy-MM-dd");
 
-  return (
-    <GlassPanel className="p-5 sm:p-6">
-      <SectionTitle icon={Target} eyebrow="Performance" title="Weekly Reviews" />
-      <div className="mt-5 space-y-3">
-        {reviewCycles.map((cycle) => {
-          const review = reviews.find(
-            (r) =>
-              (r.nepali_year === cycle.bsYear &&
-                r.nepali_month === cycle.bsMonth &&
-                r.week_number === cycle.weekNumber) ||
-              r.week_start === cycle.startDate,
-          );
-
-          let statusLabel = "Available [Write Review]";
-          let statusStyle = "bg-[#EEF2FF] text-[#6B8AE5] border-[#C4DAFF]";
-
-          if (review) {
-            statusLabel = "Completed";
-            statusStyle = "bg-[#ECFDF5] text-[#10B981] border-[#A7F3D0]";
-          } else if (cycle.unlockDate > todayDate) {
-            statusLabel = "Locked";
-            statusStyle = "bg-[#F1F5F9] text-[#64748B] border-[#E2E8F0]";
-          }
-
-          return (
-            <div
-              key={cycle.weekNumber}
-              className="flex items-center justify-between rounded-xl border border-[#E2E8F0] bg-white p-4 shadow-sm"
-            >
-              <div className="font-semibold text-[#0F172A]">Week {cycle.weekNumber}</div>
-              <div
-                className={`rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider ${statusStyle}`}
-              >
-                {statusLabel}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </GlassPanel>
-  );
-}
 
 function EmployeeDashboard() {
   const { user, profile, isAdmin, isTeamLead } = useAuth();
@@ -264,26 +219,14 @@ function EmployeeDashboard() {
         .eq("employee_id", user.id)
         .eq("month_start", monthStart)
         .maybeSingle(),
-      (supabase as any)
-        .from("weekly_feedback")
-        .select("id,week_start,rating,improvements,created_at")
-        .eq("employee_id", user.id)
-        .not("improvements", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
+      Promise.resolve({ data: null, error: null }),
       (supabase as any)
         .from("mood_logs")
         .select("*")
         .eq("user_id", user.id)
         .gte("log_date", historyStart)
         .order("log_date", { ascending: false }),
-      (supabase as any)
-        .from("weekly_feedback")
-        .select("*")
-        .eq("employee_id", user.id)
-        .gte("week_start", monthStart)
-        .order("week_number", { ascending: true }),
+      Promise.resolve({ data: null, error: null }),
     ]);
 
     setToday(t);
@@ -400,14 +343,7 @@ function EmployeeDashboard() {
       .limit(8);
     setMeetings(meetingRows ?? []);
 
-    const [{ data: standups }] = await Promise.all([
-      supabase
-        .from("standups")
-        .select("id,date,today,updated_at")
-        .eq("user_id", user.id)
-        .order("updated_at", { ascending: false })
-        .limit(5),
-    ]);
+    const standups: any[] = [];
     const items = [
       ...(t?.check_in_time
         ? [
@@ -436,11 +372,7 @@ function EmployeeDashboard() {
           when: task.updated_at,
           text: `${task.title} moved to ${isDashboardTaskComplete(task) ? "completed" : humanize(task.status)}`,
         })),
-      ...(standups || []).map((standup: any) => ({
-        kind: "Standup",
-        when: standup.updated_at,
-        text: `Submitted standup for ${standup.date}`,
-      })),
+
     ]
       .sort((a, b) => +new Date(b.when) - +new Date(a.when))
       .slice(0, 7);
@@ -1189,7 +1121,7 @@ function EmployeeDashboard() {
         </section>
 
         <section className="grid gap-6 xl:grid-cols-3">
-          <EmployeeWeeklyReviews reviews={weeklyReviews} />
+
           <ActivityTimelinePanel items={recent} />
           <GlassPanel className="p-5 sm:p-6">
             <SectionTitle icon={BellDot} eyebrow="Live" title="Notification center" />

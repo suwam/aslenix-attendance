@@ -45,15 +45,10 @@ type NotificationPreview = {
 
 const adminNav: NavItem[] = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/admin/achievements", label: "Achievements", icon: Trophy },
-  { to: "/admin/productivity", label: "AI Productivity", icon: BrainCircuit },
   { to: "/admin/attendance", label: "Attendance", icon: Clock },
   { to: "/admin/card-reader-attendance", label: "Card Reader", icon: CreditCard },
   { to: "/admin/attendance-corrections", label: "Attendance Corrections", icon: CalendarClock },
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
-  { to: "/admin/standups", label: "Daily Standups", icon: ClipboardList },
-  { to: "/admin/weekly-review-management", label: "WR Report", icon: FileBarChart2 },
-  { to: "/admin/weekly-reports", label: "Weekly Reports", icon: FileBarChart2 },
   { to: "/admin/qr-ids", label: "Digital QR IDs", icon: QrCode },
   { to: "/admin/employee-of-month", label: "Employee of Month", icon: Crown },
   { to: "/admin/employees", label: "Employees", icon: Users },
@@ -64,15 +59,12 @@ const adminNav: NavItem[] = [
   { to: "/admin/reports", label: "Reports", icon: FileBarChart2 },
   { to: "/admin/tasks", label: "Tasks", icon: ClipboardList },
   { to: "/admin/approvals", label: "User Approvals", icon: UserCheck },
-  { to: "/admin/weekly-feedback", label: "Weekly Feedback", icon: MessageSquare },
 ];
 
 const empNav: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/achievements", label: "Achievements", icon: Trophy },
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/check-in", label: "Check-in", icon: Clock },
-  { to: "/standup", label: "Daily Standup", icon: ClipboardList },
   { to: "/meetings", label: "Meetings", icon: CalendarClock },
   { to: "/messages", label: "Messages", icon: MessageSquare },
   { to: "/my-attendance", label: "My Attendance", icon: ClipboardList },
