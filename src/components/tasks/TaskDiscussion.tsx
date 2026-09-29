@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import { formatTaskDateTime } from "@/lib/nepali-calendar"; // fallback if formatTaskDateTime is exported elsewhere, let's use date-fns for now
+
 import { format } from "date-fns";
 import { formatNepaliDate } from "@/lib/nepali-calendar";
 import { Button } from "@/components/ui/button";

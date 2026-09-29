@@ -402,7 +402,7 @@ function EmployeeOfMonthPage() {
           const latestReview = reviews[0] || null;
           const latestReviewScore = latestReview ? resolvedReviewScore(latestReview) : 0;
           const previousReviewScore = reviews[1] ? resolvedReviewScore(reviews[1]) : null;
-          const reviewTrend =
+          const reviewTrend = (
             previousReviewScore === null
               ? latestReview
                 ? "new"
@@ -411,7 +411,8 @@ function EmployeeOfMonthPage() {
                 ? "up"
                 : latestReviewScore < previousReviewScore
                   ? "down"
-                  : "steady";
+                  : "steady"
+          ) as "up" | "down" | "steady" | "new";
           const achievementBonus = Math.min(100, Math.round((badges.length / 6) * 100));
           const overduePenalty = calculateOverduePenalty(overdueTasks);
           const score = calculateFinalEmployeeScore({
@@ -835,7 +836,7 @@ function EmployeeOfMonthPage() {
               setNotes={setNotes}
               recognitionDialogOpen={recognitionDialogOpen}
               setRecognitionDialogOpen={setRecognitionDialogOpen}
-              onSubmit={submitFeedback}
+              onSubmit={submitFeedback as any}
               saving={savingAward}
               monthLabel={nepaliMonth.label}
               successAward={successAward}

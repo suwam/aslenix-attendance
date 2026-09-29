@@ -232,11 +232,7 @@ function EmployeeDashboard() {
     setToday(t);
     setAttendanceHistory(historyRows ?? []);
     setMonthAward(awardResult.error ? null : awardResult.data);
-    const improvement = improvementResult.error ? null : improvementResult.data;
-    setLatestImprovement(improvement);
-    if (improvement?.id && !isImprovementDismissed(user.id, improvement.id)) {
-      setImprovementOpen(true);
-    }
+    setLatestImprovement(null);
     if (!moodResult.error) {
       const moodRows = (moodResult.data || []) as MoodLog[];
       setMoodHistory(moodRows);

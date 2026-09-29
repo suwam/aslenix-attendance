@@ -404,7 +404,7 @@ export function TaskDialog({
       // For new tasks, insert the work assignments
       if (!error && savedTaskId && workAssignments.length > 0) {
         const assignmentsToInsert = workAssignments.map((a) => ({
-          task_id: savedTaskId,
+          task_id: savedTaskId as string,
           user_id: a.user_id,
           responsibility: a.responsibility,
           status: a.status,
@@ -420,7 +420,7 @@ export function TaskDialog({
     if (!error && savedTaskId) {
       // Log activity
       await supabase.from("task_activity_logs").insert({
-        task_id: savedTaskId,
+        task_id: savedTaskId as string,
         user_id: user?.id,
         action: taskId ? "status_changed" : "created",
         new_value: { status: workflow.status, progress: workflow.progress },
@@ -429,7 +429,7 @@ export function TaskDialog({
       if (isAdmin) {
         // Save team leads
         const tlRows = teamLeads.map((uid) => ({
-          task_id: savedTaskId,
+          task_id: savedTaskId as string,
           user_id: uid,
         }));
         const tlDelete = await supabase.from("task_team_leads").delete().eq("task_id", savedTaskId);
@@ -526,7 +526,7 @@ export function TaskDialog({
     note: string,
   ) => {
     const { error } = await supabase.from("task_progress_updates").insert({
-      task_id: savedTaskId,
+      task_id: savedTaskId as string,
       user_id: user!.id,
       old_progress: oldProgress,
       new_progress: newProgress,
@@ -618,15 +618,6 @@ export function TaskDialog({
     }
   };
 
-  const toggleAssignee = (assigneeId: string) => {
-    setAssignedToMany((prev) => {
-      const next = prev.includes(assigneeId)
-        ? prev.filter((id) => id !== assigneeId)
-        : [...prev, assigneeId];
-      setAssignedTo(next[0] || "");
-      return next;
-    });
-  };
 
   const notifyTaskAssignees = async (
     assigneeIds: string[],
