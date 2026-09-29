@@ -18,9 +18,7 @@ import { Route as AccountLockedRouteImport } from './routes/account-locked'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VerifyEmployeeQrTokenRouteImport } from './routes/verify-employee.$qrToken'
-import { Route as AppWeeklyReportsRouteImport } from './routes/_app/weekly-reports'
 import { Route as AppTasksRouteImport } from './routes/_app/tasks'
-import { Route as AppStandupRouteImport } from './routes/_app/standup'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppProfileRouteImport } from './routes/_app/profile'
 import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
@@ -31,17 +29,13 @@ import { Route as AppMeetingsRouteImport } from './routes/_app/meetings'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppCheckInRouteImport } from './routes/_app/check-in'
 import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
-import { Route as AppAchievementsRouteImport } from './routes/_app/achievements'
 import { Route as AppAdminIndexRouteImport } from './routes/_app/admin/index'
-import { Route as AppAdminWeeklyReviewManagementRouteImport } from './routes/_app/admin/weekly-review-management'
-import { Route as AppAdminWeeklyReportsRouteImport } from './routes/_app/admin/weekly-reports'
-import { Route as AppAdminWeeklyFeedbackRouteImport } from './routes/_app/admin/weekly-feedback'
+import { Route as AppAdminWhatsappSettingsRouteImport } from './routes/_app/admin/whatsapp-settings'
+import { Route as AppAdminWhatsappHistoryRouteImport } from './routes/_app/admin/whatsapp-history'
 import { Route as AppAdminTasksRouteImport } from './routes/_app/admin/tasks'
-import { Route as AppAdminStandupsRouteImport } from './routes/_app/admin/standups'
 import { Route as AppAdminSettingsRouteImport } from './routes/_app/admin/settings'
 import { Route as AppAdminReportsRouteImport } from './routes/_app/admin/reports'
 import { Route as AppAdminQrIdsRouteImport } from './routes/_app/admin/qr-ids'
-import { Route as AppAdminProductivityRouteImport } from './routes/_app/admin/productivity'
 import { Route as AppAdminNotificationsRouteImport } from './routes/_app/admin/notifications'
 import { Route as AppAdminMeetingsRouteImport } from './routes/_app/admin/meetings'
 import { Route as AppAdminLeavesRouteImport } from './routes/_app/admin/leaves'
@@ -51,7 +45,6 @@ import { Route as AppAdminCardReaderAttendanceRouteImport } from './routes/_app/
 import { Route as AppAdminAttendanceCorrectionsRouteImport } from './routes/_app/admin/attendance-corrections'
 import { Route as AppAdminAttendanceRouteImport } from './routes/_app/admin/attendance'
 import { Route as AppAdminApprovalsRouteImport } from './routes/_app/admin/approvals'
-import { Route as AppAdminAchievementsRouteImport } from './routes/_app/admin/achievements'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -97,19 +90,9 @@ const VerifyEmployeeQrTokenRoute = VerifyEmployeeQrTokenRouteImport.update({
   path: '/verify-employee/$qrToken',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppWeeklyReportsRoute = AppWeeklyReportsRouteImport.update({
-  id: '/weekly-reports',
-  path: '/weekly-reports',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppTasksRoute = AppTasksRouteImport.update({
   id: '/tasks',
   path: '/tasks',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppStandupRoute = AppStandupRouteImport.update({
-  id: '/standup',
-  path: '/standup',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -162,40 +145,25 @@ const AppCalendarRoute = AppCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAchievementsRoute = AppAchievementsRouteImport.update({
-  id: '/achievements',
-  path: '/achievements',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAdminWeeklyReviewManagementRoute =
-  AppAdminWeeklyReviewManagementRouteImport.update({
-    id: '/admin/weekly-review-management',
-    path: '/admin/weekly-review-management',
+const AppAdminWhatsappSettingsRoute =
+  AppAdminWhatsappSettingsRouteImport.update({
+    id: '/admin/whatsapp-settings',
+    path: '/admin/whatsapp-settings',
     getParentRoute: () => AppRoute,
   } as any)
-const AppAdminWeeklyReportsRoute = AppAdminWeeklyReportsRouteImport.update({
-  id: '/admin/weekly-reports',
-  path: '/admin/weekly-reports',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminWeeklyFeedbackRoute = AppAdminWeeklyFeedbackRouteImport.update({
-  id: '/admin/weekly-feedback',
-  path: '/admin/weekly-feedback',
+const AppAdminWhatsappHistoryRoute = AppAdminWhatsappHistoryRouteImport.update({
+  id: '/admin/whatsapp-history',
+  path: '/admin/whatsapp-history',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAdminTasksRoute = AppAdminTasksRouteImport.update({
   id: '/admin/tasks',
   path: '/admin/tasks',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminStandupsRoute = AppAdminStandupsRouteImport.update({
-  id: '/admin/standups',
-  path: '/admin/standups',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAdminSettingsRoute = AppAdminSettingsRouteImport.update({
@@ -211,11 +179,6 @@ const AppAdminReportsRoute = AppAdminReportsRouteImport.update({
 const AppAdminQrIdsRoute = AppAdminQrIdsRouteImport.update({
   id: '/admin/qr-ids',
   path: '/admin/qr-ids',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminProductivityRoute = AppAdminProductivityRouteImport.update({
-  id: '/admin/productivity',
-  path: '/admin/productivity',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAdminNotificationsRoute = AppAdminNotificationsRouteImport.update({
@@ -265,11 +228,6 @@ const AppAdminApprovalsRoute = AppAdminApprovalsRouteImport.update({
   path: '/admin/approvals',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAdminAchievementsRoute = AppAdminAchievementsRouteImport.update({
-  id: '/admin/achievements',
-  path: '/admin/achievements',
-  getParentRoute: () => AppRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -279,7 +237,6 @@ export interface FileRoutesByFullPath {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/achievements': typeof AppAchievementsRoute
   '/calendar': typeof AppCalendarRoute
   '/check-in': typeof AppCheckInRoute
   '/dashboard': typeof AppDashboardRoute
@@ -290,11 +247,8 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AppNotificationsRoute
   '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRoute
-  '/standup': typeof AppStandupRoute
   '/tasks': typeof AppTasksRoute
-  '/weekly-reports': typeof AppWeeklyReportsRoute
   '/verify-employee/$qrToken': typeof VerifyEmployeeQrTokenRoute
-  '/admin/achievements': typeof AppAdminAchievementsRoute
   '/admin/approvals': typeof AppAdminApprovalsRoute
   '/admin/attendance': typeof AppAdminAttendanceRoute
   '/admin/attendance-corrections': typeof AppAdminAttendanceCorrectionsRoute
@@ -304,15 +258,12 @@ export interface FileRoutesByFullPath {
   '/admin/leaves': typeof AppAdminLeavesRoute
   '/admin/meetings': typeof AppAdminMeetingsRoute
   '/admin/notifications': typeof AppAdminNotificationsRoute
-  '/admin/productivity': typeof AppAdminProductivityRoute
   '/admin/qr-ids': typeof AppAdminQrIdsRoute
   '/admin/reports': typeof AppAdminReportsRoute
   '/admin/settings': typeof AppAdminSettingsRoute
-  '/admin/standups': typeof AppAdminStandupsRoute
   '/admin/tasks': typeof AppAdminTasksRoute
-  '/admin/weekly-feedback': typeof AppAdminWeeklyFeedbackRoute
-  '/admin/weekly-reports': typeof AppAdminWeeklyReportsRoute
-  '/admin/weekly-review-management': typeof AppAdminWeeklyReviewManagementRoute
+  '/admin/whatsapp-history': typeof AppAdminWhatsappHistoryRoute
+  '/admin/whatsapp-settings': typeof AppAdminWhatsappSettingsRoute
   '/admin/': typeof AppAdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -323,7 +274,6 @@ export interface FileRoutesByTo {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/achievements': typeof AppAchievementsRoute
   '/calendar': typeof AppCalendarRoute
   '/check-in': typeof AppCheckInRoute
   '/dashboard': typeof AppDashboardRoute
@@ -334,11 +284,8 @@ export interface FileRoutesByTo {
   '/notifications': typeof AppNotificationsRoute
   '/profile': typeof AppProfileRoute
   '/settings': typeof AppSettingsRoute
-  '/standup': typeof AppStandupRoute
   '/tasks': typeof AppTasksRoute
-  '/weekly-reports': typeof AppWeeklyReportsRoute
   '/verify-employee/$qrToken': typeof VerifyEmployeeQrTokenRoute
-  '/admin/achievements': typeof AppAdminAchievementsRoute
   '/admin/approvals': typeof AppAdminApprovalsRoute
   '/admin/attendance': typeof AppAdminAttendanceRoute
   '/admin/attendance-corrections': typeof AppAdminAttendanceCorrectionsRoute
@@ -348,15 +295,12 @@ export interface FileRoutesByTo {
   '/admin/leaves': typeof AppAdminLeavesRoute
   '/admin/meetings': typeof AppAdminMeetingsRoute
   '/admin/notifications': typeof AppAdminNotificationsRoute
-  '/admin/productivity': typeof AppAdminProductivityRoute
   '/admin/qr-ids': typeof AppAdminQrIdsRoute
   '/admin/reports': typeof AppAdminReportsRoute
   '/admin/settings': typeof AppAdminSettingsRoute
-  '/admin/standups': typeof AppAdminStandupsRoute
   '/admin/tasks': typeof AppAdminTasksRoute
-  '/admin/weekly-feedback': typeof AppAdminWeeklyFeedbackRoute
-  '/admin/weekly-reports': typeof AppAdminWeeklyReportsRoute
-  '/admin/weekly-review-management': typeof AppAdminWeeklyReviewManagementRoute
+  '/admin/whatsapp-history': typeof AppAdminWhatsappHistoryRoute
+  '/admin/whatsapp-settings': typeof AppAdminWhatsappSettingsRoute
   '/admin': typeof AppAdminIndexRoute
 }
 export interface FileRoutesById {
@@ -369,7 +313,6 @@ export interface FileRoutesById {
   '/pending': typeof PendingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
-  '/_app/achievements': typeof AppAchievementsRoute
   '/_app/calendar': typeof AppCalendarRoute
   '/_app/check-in': typeof AppCheckInRoute
   '/_app/dashboard': typeof AppDashboardRoute
@@ -380,11 +323,8 @@ export interface FileRoutesById {
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/profile': typeof AppProfileRoute
   '/_app/settings': typeof AppSettingsRoute
-  '/_app/standup': typeof AppStandupRoute
   '/_app/tasks': typeof AppTasksRoute
-  '/_app/weekly-reports': typeof AppWeeklyReportsRoute
   '/verify-employee/$qrToken': typeof VerifyEmployeeQrTokenRoute
-  '/_app/admin/achievements': typeof AppAdminAchievementsRoute
   '/_app/admin/approvals': typeof AppAdminApprovalsRoute
   '/_app/admin/attendance': typeof AppAdminAttendanceRoute
   '/_app/admin/attendance-corrections': typeof AppAdminAttendanceCorrectionsRoute
@@ -394,15 +334,12 @@ export interface FileRoutesById {
   '/_app/admin/leaves': typeof AppAdminLeavesRoute
   '/_app/admin/meetings': typeof AppAdminMeetingsRoute
   '/_app/admin/notifications': typeof AppAdminNotificationsRoute
-  '/_app/admin/productivity': typeof AppAdminProductivityRoute
   '/_app/admin/qr-ids': typeof AppAdminQrIdsRoute
   '/_app/admin/reports': typeof AppAdminReportsRoute
   '/_app/admin/settings': typeof AppAdminSettingsRoute
-  '/_app/admin/standups': typeof AppAdminStandupsRoute
   '/_app/admin/tasks': typeof AppAdminTasksRoute
-  '/_app/admin/weekly-feedback': typeof AppAdminWeeklyFeedbackRoute
-  '/_app/admin/weekly-reports': typeof AppAdminWeeklyReportsRoute
-  '/_app/admin/weekly-review-management': typeof AppAdminWeeklyReviewManagementRoute
+  '/_app/admin/whatsapp-history': typeof AppAdminWhatsappHistoryRoute
+  '/_app/admin/whatsapp-settings': typeof AppAdminWhatsappSettingsRoute
   '/_app/admin/': typeof AppAdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -415,7 +352,6 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
-    | '/achievements'
     | '/calendar'
     | '/check-in'
     | '/dashboard'
@@ -426,11 +362,8 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/profile'
     | '/settings'
-    | '/standup'
     | '/tasks'
-    | '/weekly-reports'
     | '/verify-employee/$qrToken'
-    | '/admin/achievements'
     | '/admin/approvals'
     | '/admin/attendance'
     | '/admin/attendance-corrections'
@@ -440,15 +373,12 @@ export interface FileRouteTypes {
     | '/admin/leaves'
     | '/admin/meetings'
     | '/admin/notifications'
-    | '/admin/productivity'
     | '/admin/qr-ids'
     | '/admin/reports'
     | '/admin/settings'
-    | '/admin/standups'
     | '/admin/tasks'
-    | '/admin/weekly-feedback'
-    | '/admin/weekly-reports'
-    | '/admin/weekly-review-management'
+    | '/admin/whatsapp-history'
+    | '/admin/whatsapp-settings'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -459,7 +389,6 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
-    | '/achievements'
     | '/calendar'
     | '/check-in'
     | '/dashboard'
@@ -470,11 +399,8 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/profile'
     | '/settings'
-    | '/standup'
     | '/tasks'
-    | '/weekly-reports'
     | '/verify-employee/$qrToken'
-    | '/admin/achievements'
     | '/admin/approvals'
     | '/admin/attendance'
     | '/admin/attendance-corrections'
@@ -484,15 +410,12 @@ export interface FileRouteTypes {
     | '/admin/leaves'
     | '/admin/meetings'
     | '/admin/notifications'
-    | '/admin/productivity'
     | '/admin/qr-ids'
     | '/admin/reports'
     | '/admin/settings'
-    | '/admin/standups'
     | '/admin/tasks'
-    | '/admin/weekly-feedback'
-    | '/admin/weekly-reports'
-    | '/admin/weekly-review-management'
+    | '/admin/whatsapp-history'
+    | '/admin/whatsapp-settings'
     | '/admin'
   id:
     | '__root__'
@@ -504,7 +427,6 @@ export interface FileRouteTypes {
     | '/pending'
     | '/reset-password'
     | '/signup'
-    | '/_app/achievements'
     | '/_app/calendar'
     | '/_app/check-in'
     | '/_app/dashboard'
@@ -515,11 +437,8 @@ export interface FileRouteTypes {
     | '/_app/notifications'
     | '/_app/profile'
     | '/_app/settings'
-    | '/_app/standup'
     | '/_app/tasks'
-    | '/_app/weekly-reports'
     | '/verify-employee/$qrToken'
-    | '/_app/admin/achievements'
     | '/_app/admin/approvals'
     | '/_app/admin/attendance'
     | '/_app/admin/attendance-corrections'
@@ -529,15 +448,12 @@ export interface FileRouteTypes {
     | '/_app/admin/leaves'
     | '/_app/admin/meetings'
     | '/_app/admin/notifications'
-    | '/_app/admin/productivity'
     | '/_app/admin/qr-ids'
     | '/_app/admin/reports'
     | '/_app/admin/settings'
-    | '/_app/admin/standups'
     | '/_app/admin/tasks'
-    | '/_app/admin/weekly-feedback'
-    | '/_app/admin/weekly-reports'
-    | '/_app/admin/weekly-review-management'
+    | '/_app/admin/whatsapp-history'
+    | '/_app/admin/whatsapp-settings'
     | '/_app/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -618,25 +534,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VerifyEmployeeQrTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/weekly-reports': {
-      id: '/_app/weekly-reports'
-      path: '/weekly-reports'
-      fullPath: '/weekly-reports'
-      preLoaderRoute: typeof AppWeeklyReportsRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/tasks': {
       id: '/_app/tasks'
       path: '/tasks'
       fullPath: '/tasks'
       preLoaderRoute: typeof AppTasksRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/standup': {
-      id: '/_app/standup'
-      path: '/standup'
-      fullPath: '/standup'
-      preLoaderRoute: typeof AppStandupRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/settings': {
@@ -709,13 +611,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCalendarRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/achievements': {
-      id: '/_app/achievements'
-      path: '/achievements'
-      fullPath: '/achievements'
-      preLoaderRoute: typeof AppAchievementsRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/admin/': {
       id: '/_app/admin/'
       path: '/admin'
@@ -723,25 +618,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/admin/weekly-review-management': {
-      id: '/_app/admin/weekly-review-management'
-      path: '/admin/weekly-review-management'
-      fullPath: '/admin/weekly-review-management'
-      preLoaderRoute: typeof AppAdminWeeklyReviewManagementRouteImport
+    '/_app/admin/whatsapp-settings': {
+      id: '/_app/admin/whatsapp-settings'
+      path: '/admin/whatsapp-settings'
+      fullPath: '/admin/whatsapp-settings'
+      preLoaderRoute: typeof AppAdminWhatsappSettingsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/admin/weekly-reports': {
-      id: '/_app/admin/weekly-reports'
-      path: '/admin/weekly-reports'
-      fullPath: '/admin/weekly-reports'
-      preLoaderRoute: typeof AppAdminWeeklyReportsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin/weekly-feedback': {
-      id: '/_app/admin/weekly-feedback'
-      path: '/admin/weekly-feedback'
-      fullPath: '/admin/weekly-feedback'
-      preLoaderRoute: typeof AppAdminWeeklyFeedbackRouteImport
+    '/_app/admin/whatsapp-history': {
+      id: '/_app/admin/whatsapp-history'
+      path: '/admin/whatsapp-history'
+      fullPath: '/admin/whatsapp-history'
+      preLoaderRoute: typeof AppAdminWhatsappHistoryRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/admin/tasks': {
@@ -749,13 +637,6 @@ declare module '@tanstack/react-router' {
       path: '/admin/tasks'
       fullPath: '/admin/tasks'
       preLoaderRoute: typeof AppAdminTasksRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin/standups': {
-      id: '/_app/admin/standups'
-      path: '/admin/standups'
-      fullPath: '/admin/standups'
-      preLoaderRoute: typeof AppAdminStandupsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/admin/settings': {
@@ -777,13 +658,6 @@ declare module '@tanstack/react-router' {
       path: '/admin/qr-ids'
       fullPath: '/admin/qr-ids'
       preLoaderRoute: typeof AppAdminQrIdsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin/productivity': {
-      id: '/_app/admin/productivity'
-      path: '/admin/productivity'
-      fullPath: '/admin/productivity'
-      preLoaderRoute: typeof AppAdminProductivityRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/admin/notifications': {
@@ -849,18 +723,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminApprovalsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/admin/achievements': {
-      id: '/_app/admin/achievements'
-      path: '/admin/achievements'
-      fullPath: '/admin/achievements'
-      preLoaderRoute: typeof AppAdminAchievementsRouteImport
-      parentRoute: typeof AppRoute
-    }
   }
 }
 
 interface AppRouteChildren {
-  AppAchievementsRoute: typeof AppAchievementsRoute
   AppCalendarRoute: typeof AppCalendarRoute
   AppCheckInRoute: typeof AppCheckInRoute
   AppDashboardRoute: typeof AppDashboardRoute
@@ -871,10 +737,7 @@ interface AppRouteChildren {
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppProfileRoute: typeof AppProfileRoute
   AppSettingsRoute: typeof AppSettingsRoute
-  AppStandupRoute: typeof AppStandupRoute
   AppTasksRoute: typeof AppTasksRoute
-  AppWeeklyReportsRoute: typeof AppWeeklyReportsRoute
-  AppAdminAchievementsRoute: typeof AppAdminAchievementsRoute
   AppAdminApprovalsRoute: typeof AppAdminApprovalsRoute
   AppAdminAttendanceRoute: typeof AppAdminAttendanceRoute
   AppAdminAttendanceCorrectionsRoute: typeof AppAdminAttendanceCorrectionsRoute
@@ -884,20 +747,16 @@ interface AppRouteChildren {
   AppAdminLeavesRoute: typeof AppAdminLeavesRoute
   AppAdminMeetingsRoute: typeof AppAdminMeetingsRoute
   AppAdminNotificationsRoute: typeof AppAdminNotificationsRoute
-  AppAdminProductivityRoute: typeof AppAdminProductivityRoute
   AppAdminQrIdsRoute: typeof AppAdminQrIdsRoute
   AppAdminReportsRoute: typeof AppAdminReportsRoute
   AppAdminSettingsRoute: typeof AppAdminSettingsRoute
-  AppAdminStandupsRoute: typeof AppAdminStandupsRoute
   AppAdminTasksRoute: typeof AppAdminTasksRoute
-  AppAdminWeeklyFeedbackRoute: typeof AppAdminWeeklyFeedbackRoute
-  AppAdminWeeklyReportsRoute: typeof AppAdminWeeklyReportsRoute
-  AppAdminWeeklyReviewManagementRoute: typeof AppAdminWeeklyReviewManagementRoute
+  AppAdminWhatsappHistoryRoute: typeof AppAdminWhatsappHistoryRoute
+  AppAdminWhatsappSettingsRoute: typeof AppAdminWhatsappSettingsRoute
   AppAdminIndexRoute: typeof AppAdminIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppAchievementsRoute: AppAchievementsRoute,
   AppCalendarRoute: AppCalendarRoute,
   AppCheckInRoute: AppCheckInRoute,
   AppDashboardRoute: AppDashboardRoute,
@@ -908,10 +767,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppNotificationsRoute: AppNotificationsRoute,
   AppProfileRoute: AppProfileRoute,
   AppSettingsRoute: AppSettingsRoute,
-  AppStandupRoute: AppStandupRoute,
   AppTasksRoute: AppTasksRoute,
-  AppWeeklyReportsRoute: AppWeeklyReportsRoute,
-  AppAdminAchievementsRoute: AppAdminAchievementsRoute,
   AppAdminApprovalsRoute: AppAdminApprovalsRoute,
   AppAdminAttendanceRoute: AppAdminAttendanceRoute,
   AppAdminAttendanceCorrectionsRoute: AppAdminAttendanceCorrectionsRoute,
@@ -921,15 +777,12 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminLeavesRoute: AppAdminLeavesRoute,
   AppAdminMeetingsRoute: AppAdminMeetingsRoute,
   AppAdminNotificationsRoute: AppAdminNotificationsRoute,
-  AppAdminProductivityRoute: AppAdminProductivityRoute,
   AppAdminQrIdsRoute: AppAdminQrIdsRoute,
   AppAdminReportsRoute: AppAdminReportsRoute,
   AppAdminSettingsRoute: AppAdminSettingsRoute,
-  AppAdminStandupsRoute: AppAdminStandupsRoute,
   AppAdminTasksRoute: AppAdminTasksRoute,
-  AppAdminWeeklyFeedbackRoute: AppAdminWeeklyFeedbackRoute,
-  AppAdminWeeklyReportsRoute: AppAdminWeeklyReportsRoute,
-  AppAdminWeeklyReviewManagementRoute: AppAdminWeeklyReviewManagementRoute,
+  AppAdminWhatsappHistoryRoute: AppAdminWhatsappHistoryRoute,
+  AppAdminWhatsappSettingsRoute: AppAdminWhatsappSettingsRoute,
   AppAdminIndexRoute: AppAdminIndexRoute,
 }
 

@@ -33,7 +33,9 @@ import {
   ShieldCheck,
   Sparkles,
   UserRound,
+  MessageCircle,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { bsInputToAdDateString, formatBsInput, formatNepaliDate } from "@/lib/nepali-calendar";
 
 export const Route = createFileRoute("/_app/profile")({ component: ProfilePage });
@@ -137,6 +139,12 @@ function ProfilePage() {
         address: form.address,
         blood_group: form.blood_group,
         emergency_contact: form.emergency_contact,
+        whatsapp_number: form.whatsapp_number,
+        whatsapp_notifications: form.whatsapp_notifications,
+        whatsapp_checkin: form.whatsapp_checkin,
+        whatsapp_checkout: form.whatsapp_checkout,
+        whatsapp_late: form.whatsapp_late,
+        whatsapp_early: form.whatsapp_early,
       })
       .eq("id", form.id);
     setSaving(false);
@@ -347,6 +355,57 @@ function ProfilePage() {
                 />
               </ProfileField>
             </div>
+          </GlassCard>
+
+          <GlassCard className="border-border bg-card">
+             <div className="mb-5">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                   <MessageCircle size={18} className="text-green-500" /> WhatsApp Notifications
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                   Receive automatic attendance updates on WhatsApp.
+                </p>
+             </div>
+             
+             <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                   <Label className="font-semibold text-sm">Enable WhatsApp Updates</Label>
+                   <Switch 
+                      checked={form.whatsapp_notifications ?? true}
+                      onCheckedChange={(c) => setForm({ ...form, whatsapp_notifications: c })}
+                   />
+                </div>
+                {form.whatsapp_notifications !== false && (
+                   <>
+                      <ProfileField label="WhatsApp Number" icon={Phone}>
+                         <Input
+                           placeholder="+9779812345678"
+                           value={form.whatsapp_number || ""}
+                           onChange={(e) => setForm({ ...form, whatsapp_number: e.target.value })}
+                         />
+                      </ProfileField>
+                      
+                      <div className="space-y-3 pt-3 border-t">
+                         <div className="flex items-center justify-between">
+                            <Label className="text-sm text-muted-foreground">Check-In</Label>
+                            <Switch checked={form.whatsapp_checkin ?? true} onCheckedChange={(c) => setForm({ ...form, whatsapp_checkin: c })} />
+                         </div>
+                         <div className="flex items-center justify-between">
+                            <Label className="text-sm text-muted-foreground">Check-Out</Label>
+                            <Switch checked={form.whatsapp_checkout ?? true} onCheckedChange={(c) => setForm({ ...form, whatsapp_checkout: c })} />
+                         </div>
+                         <div className="flex items-center justify-between">
+                            <Label className="text-sm text-muted-foreground">Late Check-In</Label>
+                            <Switch checked={form.whatsapp_late ?? true} onCheckedChange={(c) => setForm({ ...form, whatsapp_late: c })} />
+                         </div>
+                         <div className="flex items-center justify-between">
+                            <Label className="text-sm text-muted-foreground">Early Check-Out</Label>
+                            <Switch checked={form.whatsapp_early ?? true} onCheckedChange={(c) => setForm({ ...form, whatsapp_early: c })} />
+                         </div>
+                      </div>
+                   </>
+                )}
+             </div>
           </GlassCard>
         </div>
       </div>

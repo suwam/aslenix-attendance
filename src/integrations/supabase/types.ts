@@ -897,6 +897,12 @@ export type Database = {
           salary: number | null
           updated_at: string
           user_id: string
+          whatsapp_checkin: boolean | null
+          whatsapp_checkout: boolean | null
+          whatsapp_early: boolean | null
+          whatsapp_late: boolean | null
+          whatsapp_notifications: boolean | null
+          whatsapp_number: string | null
         }
         Insert: {
           address?: string | null
@@ -921,6 +927,12 @@ export type Database = {
           salary?: number | null
           updated_at?: string
           user_id: string
+          whatsapp_checkin?: boolean | null
+          whatsapp_checkout?: boolean | null
+          whatsapp_early?: boolean | null
+          whatsapp_late?: boolean | null
+          whatsapp_notifications?: boolean | null
+          whatsapp_number?: string | null
         }
         Update: {
           address?: string | null
@@ -945,6 +957,12 @@ export type Database = {
           salary?: number | null
           updated_at?: string
           user_id?: string
+          whatsapp_checkin?: boolean | null
+          whatsapp_checkout?: boolean | null
+          whatsapp_early?: boolean | null
+          whatsapp_late?: boolean | null
+          whatsapp_notifications?: boolean | null
+          whatsapp_number?: string | null
         }
         Relationships: []
       }
@@ -1484,6 +1502,114 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      whatsapp_notifications: {
+        Row: {
+          attempt_count: number | null
+          attendance_id: string | null
+          created_at: string | null
+          delivered_at: string | null
+          employee_id: string | null
+          error_message: string | null
+          id: string
+          notification_type: string
+          provider_message_id: string | null
+          read_at: string | null
+          recipient_number: string | null
+          sent_at: string | null
+          status: string | null
+          template_name: string | null
+          template_parameters: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          attempt_count?: number | null
+          attendance_id?: string | null
+          created_at?: string | null
+          delivered_at?: string | null
+          employee_id?: string | null
+          error_message?: string | null
+          id?: string
+          notification_type: string
+          provider_message_id?: string | null
+          read_at?: string | null
+          recipient_number?: string | null
+          sent_at?: string | null
+          status?: string | null
+          template_name?: string | null
+          template_parameters?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          attempt_count?: number | null
+          attendance_id?: string | null
+          created_at?: string | null
+          delivered_at?: string | null
+          employee_id?: string | null
+          error_message?: string | null
+          id?: string
+          notification_type?: string
+          provider_message_id?: string | null
+          read_at?: string | null
+          recipient_number?: string | null
+          sent_at?: string | null
+          status?: string | null
+          template_name?: string | null
+          template_parameters?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_notifications_attendance_id_fkey"
+            columns: ["attendance_id"]
+            isOneToOne: false
+            referencedRelation: "attendance"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "whatsapp_notifications_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_enabled: boolean | null
+          provider: string | null
+          send_checkin: boolean | null
+          send_checkout: boolean | null
+          send_early: boolean | null
+          send_late: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          provider?: string | null
+          send_checkin?: boolean | null
+          send_checkout?: boolean | null
+          send_early?: boolean | null
+          send_late?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          provider?: string | null
+          send_checkin?: boolean | null
+          send_checkout?: boolean | null
+          send_early?: boolean | null
+          send_late?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {

@@ -59,6 +59,7 @@ const adminNav: NavItem[] = [
   { to: "/admin/reports", label: "Reports", icon: FileBarChart2 },
   { to: "/admin/tasks", label: "Tasks", icon: ClipboardList },
   { to: "/admin/approvals", label: "User Approvals", icon: UserCheck },
+  { to: "/admin/whatsapp-settings", label: "WhatsApp Setup", icon: MessageSquare },
 ];
 
 const empNav: NavItem[] = [

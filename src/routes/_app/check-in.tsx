@@ -133,7 +133,7 @@ function CheckInPage() {
     if (error || !insertedToday) return toast.error(error?.message ?? "Unable to check in");
     setToday(insertedToday as AttendanceRow);
     await load();
-    toast.success(isLate ? "Checked in (late)" : "Checked in");
+    toast.success(isLate ? "Checked in (late)\nWhatsApp notification: Queued" : "Checked in\nWhatsApp notification: Queued");
   };
 
   const checkOut = async () => {
@@ -177,7 +177,7 @@ function CheckInPage() {
     if (error || !updatedToday) return toast.error(error?.message ?? "Unable to check out");
     setToday(updatedToday as AttendanceRow);
     await load();
-    toast.success(isEarlyCheckout ? "Checked out early" : "Checked out");
+    toast.success(isEarlyCheckout ? "Checked out early\nWhatsApp notification: Queued" : "Checked out\nWhatsApp notification: Queued");
   };
 
   const lastSevenDays = buildLastSevenDays(history);
