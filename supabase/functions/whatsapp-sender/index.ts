@@ -20,6 +20,11 @@ serve(async (req) => {
     try {
         const payload: WebhookPayload = await req.json()
         
+        const WEBHOOK_SECRET = "6709a4a18d4843c9bda94898b151214475d652d145069c5f02c7dec5887aaaf7";
+        if (req.headers.get('x-webhook-secret') !== WEBHOOK_SECRET) {
+            return new Response('Unauthorized', { status: 401 })
+        }
+
         // Ensure this is a WhatsApp notification webhook payload
         if (payload.table !== 'whatsapp_notifications' || payload.record?.status !== 'PENDING') {
             return new Response('Not a pending notification', { status: 200 })
