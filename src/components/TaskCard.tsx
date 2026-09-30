@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Flag, FolderKanban, Target } from "lucide-react";
+import { Flag, FolderKanban, Target, User } from "lucide-react";
 import {
   PRIORITY_COLORS,
   STATUS_BADGE_CLASSES,
@@ -7,7 +7,6 @@ import {
   type TaskPriority,
   type TaskStatus,
 } from "@/lib/tasks-utils";
-import { formatNepaliDate } from "@/lib/nepali-calendar";
 
 export interface TaskCardData {
   id: string;
@@ -23,6 +22,10 @@ export interface TaskCardData {
   role: string;
   assignee_name?: string;
   weight: number;
+  project_id: string;
+  project_name: string;
+  sprint_id: string;
+  week_number: number;
 }
 
 export function TaskCard({
@@ -49,53 +52,64 @@ export function TaskCard({
         draggable={draggable}
         onDragStart={draggable ? onDragStart : undefined}
         onClick={onClick}
-        className={`glass kanban-task-card rounded-xl p-3.5 select-none border border-border hover:border-primary/40 hover:-translate-y-0.5 transition-all ${
+        className={`glass kanban-task-card rounded-xl p-4 select-none border border-border hover:border-primary/40 hover:-translate-y-1 hover:shadow-lg transition-all ${
           draggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
-        } ${autoMoved ? "kanban-task-card-auto-moved" : ""}`}
+        } ${autoMoved ? "kanban-task-card-auto-moved ring-2 ring-primary/50" : ""}`}
       >
-        <div className="flex items-start justify-between gap-2 mb-2">
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium leading-tight line-clamp-2">{task.title}</div>
-            <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground truncate">
-              <FolderKanban size={12} className="shrink-0" />
-              <span className="truncate">{task.module_name} ({task.role})</span>
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <div className="text-sm font-semibold leading-tight line-clamp-2">{task.title}</div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <div className="flex items-center gap-1 text-[11px] text-muted-foreground truncate max-w-full">
+                <FolderKanban size={11} className="shrink-0" />
+                <span className="truncate font-medium">{task.module_name}</span>
+              </div>
+              <span className="text-[9px] uppercase tracking-wider font-bold bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
+                {task.role}
+              </span>
             </div>
           </div>
           <span
-            className="shrink-0 text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-md"
+            className="shrink-0 text-[10px] uppercase font-bold px-2 py-0.5 rounded-md"
             style={{
-              background: `color-mix(in oklab, ${PRIORITY_COLORS[task.priority]} 22%, transparent)`,
-              color: PRIORITY_COLORS[task.priority],
+              background: `color-mix(in oklab, ${PRIORITY_COLORS[task.priority] || '#888'} 15%, transparent)`,
+              color: PRIORITY_COLORS[task.priority] || '#888',
             }}
           >
-            <Flag size={9} className="inline -mt-0.5 mr-0.5" />
-            {task.priority}
+            <Flag size={9} className="inline -mt-0.5 mr-1" />
+            {task.priority || 'NORMAL'}
           </span>
         </div>
 
-        <div className="mb-2 flex flex-wrap gap-1.5">
-          <span
-            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${STATUS_BADGE_CLASSES[task.status]}`}
-          >
-            {STATUS_LABELS[task.status]}
-          </span>
-          <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-secondary-foreground">
-            {task.progress}%
-          </span>
+        <div className="mb-4">
+          <div className="flex items-center justify-between text-xs mb-1.5">
+            <span className="font-medium text-muted-foreground">Progress</span>
+            <span className="font-bold">{task.progress}%</span>
+          </div>
+          <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-primary transition-all duration-500 ease-out rounded-full"
+              style={{ width: `${task.progress}%` }}
+            />
+          </div>
         </div>
 
-        <div className="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-border/50">
-          <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground truncate">
+        <div className="flex items-center justify-between pt-3 border-t border-border/50">
+          <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
             {task.deadline ? (
               <>
                 <Target size={12} className="shrink-0" />
-                <span className="truncate">Target: {task.deadline}</span>
+                <span>Target · {task.deadline}</span>
               </>
-            ) : null}
+            ) : (
+              <span>No Target</span>
+            )}
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <span className="text-xs font-semibold">{task.assignee_name || 'User'}</span>
-          </div>
+          <span
+            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide ${STATUS_BADGE_CLASSES[task.status] || ''}`}
+          >
+            {STATUS_LABELS[task.status] || 'WAITING'}
+          </span>
         </div>
       </div>
     </motion.div>
