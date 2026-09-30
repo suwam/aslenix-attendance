@@ -1,4 +1,10 @@
-import { useEffect, useState } from "react";
+import os
+
+def write_file(path, content):
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+TASK_DIALOG_TSX = """import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -363,3 +369,6 @@ export function TaskDialog({
     </Dialog>
   );
 }
+"""
+
+write_file("src/components/TaskDialog.tsx", TASK_DIALOG_TSX)
