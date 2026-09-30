@@ -1,4 +1,4 @@
-export const TASK_STATUSES = ["todo", "in_progress", "review", "completed"] as const;
+export const TASK_STATUSES = ["todo", "in_progress", "review", "completed", "blocked", "changes_requested"] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 
 export const STATUS_LABELS: Record<TaskStatus, string> = {
@@ -6,6 +6,8 @@ export const STATUS_LABELS: Record<TaskStatus, string> = {
   in_progress: "In Progress",
   review: "Review",
   completed: "Completed",
+  blocked: "Blocked",
+  changes_requested: "Changes Requested"
 };
 
 export const STATUS_COLORS: Record<TaskStatus, string> = {
@@ -13,6 +15,8 @@ export const STATUS_COLORS: Record<TaskStatus, string> = {
   in_progress: "oklch(0.64 0.19 255)",
   review: "oklch(0.82 0.17 75)",
   completed: "oklch(0.7 0.17 150)",
+  blocked: "oklch(0.5 0.2 20)",
+  changes_requested: "oklch(0.6 0.2 20)"
 };
 
 export const STATUS_BADGE_CLASSES: Record<TaskStatus, string> = {
@@ -20,6 +24,8 @@ export const STATUS_BADGE_CLASSES: Record<TaskStatus, string> = {
   in_progress: "border-blue-400/25 bg-blue-500/12 text-blue-300",
   review: "border-amber-400/30 bg-amber-500/14 text-amber-300",
   completed: "border-emerald-400/25 bg-emerald-500/12 text-emerald-300",
+  blocked: "border-red-400/30 bg-red-500/14 text-red-300",
+  changes_requested: "border-orange-400/30 bg-orange-500/14 text-orange-300"
 };
 
 export type WorkflowTransition = "review" | "completed" | null;

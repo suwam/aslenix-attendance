@@ -1,4 +1,10 @@
-import { useEffect, useState } from "react";
+import os
+
+def write_file(path, content):
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+TASK_DIALOG_TSX = """import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -104,13 +110,12 @@ export function TaskDialog({
       .single();
 
     if (error || !data) return toast.error("Failed to load work item");
-    const dataAny = data as any;
     
     setTitle(data.title);
     setNotes(data.notes || "");
     setStatus((data.status as TaskStatus) || 'todo');
     setProgress(data.progress || 0);
-    setBlockerReason(dataAny.blocker_reason || "");
+    setBlockerReason(data.blocker_reason || "");
     setModuleAssignmentId(data.module_assignment_id);
     setPriority(data.priority || 'medium');
     setWeight(data.weight || 10);
@@ -119,7 +124,7 @@ export function TaskDialog({
     setInitialNotes(data.notes || "");
     setInitialStatus((data.status as TaskStatus) || 'todo');
     setInitialProgress(data.progress || 0);
-    setInitialBlocker(dataAny.blocker_reason || "");
+    setInitialBlocker(data.blocker_reason || "");
     
     const assignee = Array.isArray(data.module_assignments) ? data.module_assignments[0] : data.module_assignments;
     setCanEdit(isAdmin || (user && assignee && assignee.user_id === user.id));
@@ -141,7 +146,7 @@ export function TaskDialog({
 
   const loadLogs = async () => {
     if (!workId) return;
-    const { data } = await supabase.from("work_item_logs" as any).select("*").eq("work_item_id", workId).order("created_at", { ascending: false });
+    const { data } = await supabase.from("work_item_logs").select("*").eq("work_item_id", workId).order("created_at", { ascending: false });
     if (data) setLogs(data);
   };
 
@@ -216,7 +221,7 @@ export function TaskDialog({
 
     // Insert log
     if (hasChanges || overrideStatus) {
-      await supabase.from("work_item_logs" as any).insert({
+      await supabase.from("work_item_logs").insert({
         work_item_id: workId,
         user_id: user?.id,
         old_progress: initialProgress,
@@ -283,7 +288,7 @@ export function TaskDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[850px] p-0 overflow-hidden border border-border shadow-2xl rounded-2xl bg-card [&>button]:hidden">
+      <DialogContent className="sm:max-w-[850px] p-0 overflow-hidden border border-border shadow-2xl rounded-2xl bg-card" hideCloseButton>
         {/* HEADER */}
         <div className="px-8 py-6 border-b border-border/40 relative">
           <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-8 w-8 text-muted-foreground rounded-full hover:bg-muted" onClick={handleClose}>
@@ -490,48 +495,18 @@ export function TaskDialog({
             <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mr-2">Review Status</h3>
             {reviewStatus === "pending" ? (
               <span className="text-xs font-semibold text-amber-600 flex items-center gap-1.5 bg-amber-500/10 px-2.5 py-1 rounded-full"><Clock size={12}/> Pending Review</span>
-            ) : reviewStatus === "verified" || status === "completed" ? (
-              <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1.5 bg-emerald-500/10 px-2.5 py-1 rounded-full"><CheckCircle2 size={12}/> Verified & Completed</span>
-            ) : status === "changes_requested" ? (
-              <span className="text-xs font-semibold text-orange-600 flex items-center gap-1.5 bg-orange-500/10 px-2.5 py-1 rounded-full"><AlertCircle size={12}/> Changes Requested</span>
+            ) : reviewStatus === "verified" ? (
+              <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1.5 bg-emerald-500/10 px-2.5 py-1 rounded-full"><CheckCircle2 size={12}/> Verified</span>
             ) : (
               <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40"/> Not Submitted</span>
             )}
           </div>
           
-          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto mt-4 sm:mt-0">
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
             <Button variant="ghost" onClick={handleClose} className="text-xs font-semibold">
-              Close
+              Cancel
             </Button>
-            
-            {isAdmin && reviewStatus === "pending" && (
-              <div className="flex items-center gap-2 border-l border-border/60 pl-4 ml-2">
-                <Button 
-                  onClick={() => {
-                    const msg = prompt("Reason for requesting changes:");
-                    if (msg) {
-                      setNotes(prev => prev ? prev + "\\n\\nAdmin feedback: " + msg : "Admin feedback: " + msg);
-                      saveToDb("changes_requested", "returned");
-                    }
-                  }} 
-                  variant="outline" 
-                  disabled={loading} 
-                  className="text-xs font-bold border-orange-200 text-orange-600 hover:bg-orange-50"
-                >
-                  Request Changes
-                </Button>
-                <Button 
-                  onClick={() => saveToDb("completed", "verified")} 
-                  disabled={loading} 
-                  className="text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
-                >
-                  <CheckCircle2 className="size-3.5 mr-1.5" />
-                  Approve & Verify
-                </Button>
-              </div>
-            )}
-
-            {canEdit && !isAdmin && reviewStatus !== "verified" && status !== "completed" && (
+            {canEdit && (
               <>
                 <Button 
                   onClick={() => {
@@ -540,7 +515,7 @@ export function TaskDialog({
                     }
                   }} 
                   variant="outline" 
-                  disabled={loading || status === "review"} 
+                  disabled={loading || status === "completed"} 
                   className="text-xs font-bold"
                 >
                   Submit for Review <ArrowRight className="size-3.5 ml-1.5" />
@@ -555,20 +530,11 @@ export function TaskDialog({
                 </Button>
               </>
             )}
-            
-            {canEdit && isAdmin && reviewStatus !== "pending" && (
-              <Button 
-                onClick={() => saveToDb()} 
-                disabled={loading || !hasChanges} 
-                className="text-xs font-bold px-6 shadow-md"
-              >
-                <Save className="size-3.5 mr-2" />
-                {loading ? "Saving..." : "Save Admin Edits"}
-              </Button>
-            )}
           </div>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+"""
+write_file("src/components/TaskDialog.tsx", TASK_DIALOG_TSX)
