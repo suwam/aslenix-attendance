@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback, type CSSProperties } from "react";
 import { AnimatePresence } from "framer-motion";
-import { isSameWeek } from "date-fns";
 import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -12,15 +11,12 @@ import {
   STATUS_COLORS,
   progressForStatus,
   type TaskStatus,
-  type WorkflowTransition,
 } from "@/lib/tasks-utils";
-import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
 import { toast } from "sonner";
 
 export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
   const { user, isAdmin } = useAuth();
   const [tasks, setTasks] = useState<TaskCardData[]>([]);
-  const [teamLeadTaskIds, setTeamLeadTaskIds] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [defaultStatus, setDefaultStatus] = useState<TaskStatus>("todo");
@@ -30,152 +26,68 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
 
   const load = useCallback(async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from("tasks")
-      .select("*")
-      .order("created_at", { ascending: false });
-    const taskIds = (data || []).map((t) => t.id);
-    const assigneeResult = taskIds.length
-      ? await supabase.from("task_assignees").select("*").in("task_id", taskIds)
-      : { data: [] };
-    const assignees =
-      "error" in assigneeResult &&
-      assigneeResult.error &&
-      isMissingSupabaseTableError(assigneeResult.error, "task_assignees")
-        ? []
-        : assigneeResult.data;
-    const teamLeadResult = taskIds.length
-      ? await supabase.from("task_team_leads").select("task_id,user_id").in("task_id", taskIds)
-      : { data: [] };
-    const teamLeads =
-      "error" in teamLeadResult &&
-      teamLeadResult.error &&
-      isMissingSupabaseTableError(teamLeadResult.error, "task_team_leads")
-        ? []
-        : teamLeadResult.data;
-    const nextTeamLeadTaskIds = new Set(
-      (teamLeads || []).filter((lead) => lead.user_id === user.id).map((lead) => lead.task_id),
-    );
-    setTeamLeadTaskIds(nextTeamLeadTaskIds);
-    const ids = Array.from(
-      new Set([
-        ...(data || []).map((t) => t.assigned_to),
-        ...(assignees || []).map((a) => a.user_id),
-      ]),
-    );
-    let names: Record<string, string> = {};
-    if (ids.length) {
-      const { data: profs } = await supabase
-        .from("profiles")
-        .select("user_id, full_name")
-        .in("user_id", ids);
-      names = Object.fromEntries((profs || []).map((p) => [p.user_id, p.full_name]));
-    }
-    const assigneesByTask: Record<string, any[]> = {};
-    (assignees || []).forEach((a) => {
-      assigneesByTask[a.task_id] ||= [];
-      assigneesByTask[a.task_id].push(a);
-    });
-    // counts
-    const cCounts: Record<string, number> = {};
-    const aCounts: Record<string, number> = {};
-    if (taskIds.length) {
-      const [{ data: cs }, { data: as }] = await Promise.all([
-        supabase.from("task_comments").select("task_id").in("task_id", taskIds),
-        supabase.from("task_attachments").select("task_id").in("task_id", taskIds),
-      ]);
-      (cs || []).forEach((c: any) => {
-        cCounts[c.task_id] = (cCounts[c.task_id] || 0) + 1;
-      });
-      (as || []).forEach((a: any) => {
-        aCounts[a.task_id] = (aCounts[a.task_id] || 0) + 1;
-      });
-    }
-    const visibleTasks =
-      scope === "mine"
-        ? (data || []).filter(
-            (t: any) =>
-              t.assigned_to === user.id ||
-              nextTeamLeadTaskIds.has(t.id) ||
-              (assignees || []).some((a) => a.task_id === t.id && a.user_id === user.id),
+    const { data: workItems, error } = await supabase
+      .from("work_items")
+      .select(`
+        *,
+        module_assignments!inner (
+          id,
+          user_id,
+          role,
+          profiles ( full_name ),
+          sprint_modules (
+            id,
+            modules ( name ),
+            weekly_sprints ( target_date )
           )
-        : data || [];
+        )
+      `)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    const visibleItems = scope === "mine"
+      ? (workItems || []).filter((w: any) => w.module_assignments?.user_id === user.id || isAdmin)
+      : workItems || [];
 
     setTasks(
-      visibleTasks.map((t: any) => {
-        const taskAssignees = assigneesByTask[t.id] || [];
-        const weeklyAssignees = taskAssignees.filter((a: any) => {
-          const weeklyDate = a.due_date || t.deadline || a.assigned_at;
-          return weeklyDate && isSameWeek(new Date(weeklyDate), new Date(), { weekStartsOn: 1 });
-        });
-        const getWeight = (c?: string) => {
-          switch (c) {
-            case "small":
-              return 1;
-            case "medium":
-              return 2;
-            case "large":
-              return 3;
-            case "epic":
-              return 5;
-            default:
-              return 2;
-          }
-        };
-
-        const total_weekly_tasks = weeklyAssignees.length;
-        const approved_weekly_tasks = weeklyAssignees.filter(
-          (a: any) => a.status === "approved",
-        ).length;
-        const pending_verification_tasks = weeklyAssignees.filter((a: any) =>
-          ["completed", "under_review"].includes(a.status),
-        ).length;
-        const rejected_weekly_tasks = weeklyAssignees.filter(
-          (a: any) => a.status === "rejected",
-        ).length;
-
-        const total_weight = weeklyAssignees.reduce((sum, a) => sum + getWeight(a.complexity), 0);
-        const completed_weight = weeklyAssignees.reduce(
-          (sum, a) =>
-            sum + getWeight(a.complexity) * (Math.min(100, Math.max(0, a.progress || 0)) / 100),
-          0,
-        );
-
-        const weekly_progress =
-          total_weight > 0 ? Math.round((completed_weight / total_weight) * 100) : 0;
-
+      visibleItems.map((w: any) => {
+        const ma = w.module_assignments;
+        const profile = ma?.profiles;
+        const sprintModule = ma?.sprint_modules;
+        const moduleName = sprintModule?.modules?.name || "Unknown Module";
+        const targetDate = sprintModule?.weekly_sprints?.target_date;
+        
         return {
-          ...t,
-          assignee_name: names[t.assigned_to],
-          assignee_names: taskAssignees.length
-            ? taskAssignees.map((a: any) => names[a.user_id] || "User")
-            : [names[t.assigned_to] || "User"],
-          comments_count: cCounts[t.id] || 0,
-          attachments_count: aCounts[t.id] || 0,
-          total_weekly_tasks,
-          approved_weekly_tasks,
-          pending_verification_tasks,
-          rejected_weekly_tasks,
-          weekly_progress,
-          total_weight,
-          completed_weight,
+          id: w.id,
+          title: w.title,
+          description: w.description,
+          status: w.status as TaskStatus,
+          priority: w.priority,
+          progress: w.progress,
+          deadline: targetDate,
+          assigned_to: ma?.user_id,
+          assignee_name: profile?.full_name,
+          module_name: moduleName,
+          role: ma?.role,
+          module_assignment_id: ma?.id,
+          weight: w.weight
         };
-      }),
+      })
     );
-  }, [scope, user]);
+  }, [scope, user, isAdmin]);
 
   useEffect(() => {
     load();
     const channel = supabase
-      .channel("kanban-updates")
-      .on("postgres_changes", { event: "*", schema: "public", table: "task_assignees" }, () => {
-        load();
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, () => {
+      .channel("kanban-work-items")
+      .on("postgres_changes", { event: "*", schema: "public", table: "work_items" }, () => {
         load();
       })
       .subscribe();
-
     return () => {
       supabase.removeChannel(channel);
     };
@@ -184,42 +96,54 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
   const moveTo = async (id: string, status: TaskStatus) => {
     const t = tasks.find((x) => x.id === id);
     if (!t || t.status === status) return;
-    if (!canManageTask(id)) {
-      toast.error("Open the task to update progress and add a comment.");
+    if (!isAdmin && t.assigned_to !== user?.id) {
+      toast.error("You can only manage your own work items.");
       return;
     }
     const nextProgress = progressForStatus(status, t.progress);
-    const completedAt = status === "completed" ? new Date().toISOString() : null;
     setTasks((prev) =>
       prev.map((x) => (x.id === id ? { ...x, status, progress: nextProgress } : x)),
     );
     const { error } = await supabase
-      .from("tasks")
+      .from("work_items")
       .update({
         status,
         progress: nextProgress,
-        completed_at: completedAt,
       })
       .eq("id", id);
     if (error) {
       toast.error(error.message);
       load();
+    } else {
+      recalculateModuleProgress(t.module_assignment_id);
     }
   };
 
-  const canManageTask = (taskId: string) => isAdmin || teamLeadTaskIds.has(taskId);
-
-  const handleSaved = async (result?: {
-    taskId?: string | null;
-    transition?: WorkflowTransition;
-  }) => {
-    await load();
-    if (!result?.taskId || !result.transition) return;
-
-    setAutoMovedId(result.taskId);
-    window.setTimeout(() => {
-      setAutoMovedId((current) => (current === result.taskId ? null : current));
-    }, 1800);
+  const recalculateModuleProgress = async (module_assignment_id: string) => {
+    // 1. Recalculate module_assignment progress
+    const { data: items } = await supabase.from('work_items').select('weight, progress').eq('module_assignment_id', module_assignment_id);
+    let totalWeight = 0;
+    let completedWeight = 0;
+    (items as any[])?.forEach((i: any) => {
+      totalWeight += (i.weight || 10);
+      completedWeight += (i.weight || 10) * ((i.progress || 0) / 100);
+    });
+    const moduleProgress = totalWeight > 0 ? Math.round((completedWeight / totalWeight) * 100) : 0;
+    await supabase.from('module_assignments').update({ progress: moduleProgress } as any).eq('id', module_assignment_id);
+    
+    // 2. Recalculate sprint_module progress
+    const { data: ma } = await supabase.from('module_assignments').select('sprint_module_id').eq('id', module_assignment_id).maybeSingle();
+    if (ma?.sprint_module_id) {
+      const { data: siblings } = await supabase.from('module_assignments').select('weight, progress' as any).eq('sprint_module_id', ma.sprint_module_id);
+      let smTotal = 0;
+      let smComp = 0;
+      (siblings as any[])?.forEach((s: any) => {
+        smTotal += (s.weight || 100);
+        smComp += (s.weight || 100) * ((s.progress || 0) / 100);
+      });
+      const smProgress = smTotal > 0 ? Math.round((smComp / smTotal) * 100) : 0;
+      await supabase.from('sprint_modules').update({ progress: smProgress } as any).eq('id', ma.sprint_module_id);
+    }
   };
 
   return (
@@ -263,19 +187,6 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
                     {colTasks.length}
                   </span>
                 </div>
-                {isAdmin && (
-                  <button
-                    onClick={() => {
-                      setEditId(null);
-                      setDefaultStatus(status);
-                      setOpen(true);
-                    }}
-                    className="p-1 rounded-md hover:bg-primary/15 hover:text-primary transition-colors"
-                    title="Add task"
-                  >
-                    <Plus size={14} />
-                  </button>
-                )}
               </div>
               <div className="kanban-board-list flex-1 space-y-2 overflow-y-auto pr-1">
                 <AnimatePresence>
@@ -287,7 +198,7 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
                         setEditId(t.id);
                         setOpen(true);
                       }}
-                      draggable={canManageTask(t.id)}
+                      draggable={isAdmin || t.assigned_to === user?.id}
                       onDragStart={() => setDragId(t.id)}
                       autoMoved={autoMovedId === t.id}
                     />
@@ -307,9 +218,14 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
       <TaskDialog
         open={open}
         onOpenChange={setOpen}
-        taskId={editId}
-        defaultStatus={defaultStatus}
-        onSaved={handleSaved}
+        workId={editId}
+        onSaved={async () => {
+          await load();
+          if (editId) {
+            setAutoMovedId(editId);
+            window.setTimeout(() => setAutoMovedId(null), 1800);
+          }
+        }}
       />
     </>
   );
