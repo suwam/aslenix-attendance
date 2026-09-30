@@ -36,9 +36,9 @@ export function WeeklySprintWizard({ open, onOpenChange, project, profiles, onSa
       const { data: sprintData, error: sprintErr } = await supabase.from('weekly_sprints').insert({
         project_id: project.id,
         week_number: Number(week.week_number),
-        start_date: week.start_date,
-        end_date: week.end_date,
-        target_date: week.target_date,
+        start_date: week.start_date || null,
+        end_date: week.end_date || null,
+        target_date: week.target_date || null,
         sprint_goal: week.sprint_goal
       }).select().single();
       if (sprintErr) throw sprintErr;
@@ -135,7 +135,7 @@ export function WeeklySprintWizard({ open, onOpenChange, project, profiles, onSa
         const { data: targetData, error: tgErr } = await supabase.from('weekly_targets').insert({
           sprint_id: sprintData.id,
           name: targets[0].name,
-          target_date: targets[0].target_date || sprintData.target_date
+          target_date: targets[0].target_date || sprintData.target_date || null
         }).select().single();
         if (tgErr) throw tgErr;
 
