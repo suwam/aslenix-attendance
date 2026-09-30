@@ -125,6 +125,7 @@ export function WeeklySprintWizard({ open, onOpenChange, project, profiles, onSa
           module_assignment_id: assignmentId,
           title: wi.title,
           description: wi.description,
+          status: 'todo',
           weight: Number(wi.weight),
           priority: wi.priority
         });
