@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -177,7 +178,7 @@ function LeavesPage() {
     const rpcName = status === "approved" ? "approve_leave_request" : "reject_leave_request";
     const { error } = await supabase.rpc(rpcName, {
       p_leave_id: leave.id,
-      p_admin_id: user?.id,
+      p_admin_id: user?.id || "",
       p_comment: comments[leave.id] || "",
     });
 
@@ -214,7 +215,7 @@ function LeavesPage() {
     setResolving(true);
     const { error } = await supabase.rpc("resolve_leave_attendance_conflict", {
       p_leave_id: conflictLeave.id,
-      p_admin_id: user?.id,
+      p_admin_id: user?.id || "",
       p_action: action,
       p_comment: resolutionComment,
       p_reason: resolutionReason,
@@ -239,7 +240,7 @@ function LeavesPage() {
     setRevertingId(leaveId);
     const { error } = await supabase.rpc("revert_leave_conflict_resolution", {
       p_leave_id: leaveId,
-      p_admin_id: user?.id,
+      p_admin_id: user?.id || "",
     });
     setRevertingId(null);
 
@@ -261,9 +262,9 @@ function LeavesPage() {
     setEditBusy(true);
     const { error } = await supabase.rpc("modify_leave_request", {
       p_leave_id: editingLeave.id,
-      p_admin_id: user?.id,
+      p_admin_id: user?.id || "",
       p_new_start: startDate,
-      p_new_end: endDate,
+      p_new_end: endDate as string,
     });
     setEditBusy(false);
 
@@ -762,7 +763,7 @@ function LeavesPage() {
                     required
                     placeholder="Enter reason for this conflict resolution (stored in audit log)"
                     value={resolutionReason}
-                    onChange={(e) => setResolutionReason(e.target.value)}
+                    onChange={(e: any) => setResolutionReason(e.target.value)}
                     className="h-10 rounded-xl border-border bg-card"
                   />
                 </div>

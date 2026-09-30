@@ -18,7 +18,7 @@ export const generateRegistrationOptions = createServerFn({ method: "POST" })
     const { userId, deviceFingerprint, rpID, username } = data;
 
     // Check if device passkey already exists
-    const { data: existing } = await supabaseAdmin
+    const { data: existing } = await (supabaseAdmin as any)
       .from("device_passkeys")
       .select("id")
       .eq("employee_id", userId)
@@ -43,7 +43,7 @@ export const generateRegistrationOptions = createServerFn({ method: "POST" })
     });
 
     // Store the challenge
-    await supabaseAdmin.from("webauthn_challenges").insert({
+    await (supabaseAdmin as any).from("webauthn_challenges").insert({
       employee_id: userId,
       device_fingerprint: deviceFingerprint,
       challenge: options.challenge,
@@ -60,7 +60,7 @@ export const verifyRegistrationResponse = createServerFn({ method: "POST" })
     const { userId, deviceFingerprint, rpID, response } = data;
 
     // Get the stored challenge
-    const { data: storedChallenge, error: challengeError } = await supabaseAdmin
+    const { data: storedChallenge, error: challengeError } = await (supabaseAdmin as any)
       .from("webauthn_challenges")
       .select("challenge")
       .eq("employee_id", userId)
@@ -74,7 +74,7 @@ export const verifyRegistrationResponse = createServerFn({ method: "POST" })
     }
 
     // Clean up all challenges for this device/user
-    await supabaseAdmin
+    await (supabaseAdmin as any)
       .from("webauthn_challenges")
       .delete()
       .eq("employee_id", userId)
@@ -97,7 +97,7 @@ export const verifyRegistrationResponse = createServerFn({ method: "POST" })
       // Base64 encode the public key so it can be safely stored in TEXT/BYTEA
       const publicKeyBase64 = Buffer.from(credential.publicKey).toString("base64");
 
-      const { error: insertError } = await supabaseAdmin.from("device_passkeys").insert({
+      const { error: insertError } = await (supabaseAdmin as any).from("device_passkeys").insert({
         employee_id: userId,
         device_fingerprint: deviceFingerprint,
         credential_id: credential.id,
@@ -121,7 +121,7 @@ export const generateAuthenticationOptions = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { userId, deviceFingerprint, rpID } = data;
 
-    const { data: passkey } = await supabaseAdmin
+    const { data: passkey } = await (supabaseAdmin as any)
       .from("device_passkeys")
       .select("*")
       .eq("employee_id", userId)
@@ -144,7 +144,7 @@ export const generateAuthenticationOptions = createServerFn({ method: "POST" })
       userVerification: "preferred",
     });
 
-    await supabaseAdmin.from("webauthn_challenges").insert({
+    await (supabaseAdmin as any).from("webauthn_challenges").insert({
       employee_id: userId,
       device_fingerprint: deviceFingerprint,
       challenge: options.challenge,
@@ -160,7 +160,7 @@ export const verifyAuthenticationResponse = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { userId, deviceFingerprint, rpID, response } = data;
 
-    const { data: passkey } = await supabaseAdmin
+    const { data: passkey } = await (supabaseAdmin as any)
       .from("device_passkeys")
       .select("*")
       .eq("employee_id", userId)
@@ -169,7 +169,7 @@ export const verifyAuthenticationResponse = createServerFn({ method: "POST" })
 
     if (!passkey) throw new Error("Passkey not found.");
 
-    const { data: storedChallenge } = await supabaseAdmin
+    const { data: storedChallenge } = await (supabaseAdmin as any)
       .from("webauthn_challenges")
       .select("challenge")
       .eq("employee_id", userId)
@@ -182,7 +182,7 @@ export const verifyAuthenticationResponse = createServerFn({ method: "POST" })
       throw new Error("No active authentication challenge found.");
     }
 
-    await supabaseAdmin
+    await (supabaseAdmin as any)
       .from("webauthn_challenges")
       .delete()
       .eq("employee_id", userId)
@@ -205,7 +205,7 @@ export const verifyAuthenticationResponse = createServerFn({ method: "POST" })
     });
 
     if (verification.verified) {
-      await supabaseAdmin
+      await (supabaseAdmin as any)
         .from("device_passkeys")
         .update({ counter: verification.authenticationInfo.newCounter })
         .eq("id", passkey.id);

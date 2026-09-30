@@ -41,7 +41,7 @@ function WhatsAppSettings() {
     setSaving(true);
     const { error } = await supabase
       .from("whatsapp_settings")
-      .update({ [key]: value })
+      .update({ [key]: value } as any)
       .eq("id", settings.id);
     setSaving(false);
     if (error) {
@@ -79,9 +79,9 @@ function WhatsAppSettings() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <PageHeader title="WhatsApp Integration" description="Configure automatic WhatsApp notifications for attendance" />
+          <PageHeader title="WhatsApp Integration" subtitle="Configure automatic WhatsApp notifications for attendance" />
           <Button asChild variant="outline" className="rounded-xl font-bold">
-             <Link to="/_app/admin/whatsapp-history">
+             <Link to="/admin/whatsapp-history">
                <History className="mr-2 size-4" /> View History
              </Link>
           </Button>

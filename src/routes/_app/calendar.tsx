@@ -201,7 +201,7 @@ function CalendarPage() {
       </div>
 
       <div className="grid w-full max-w-7xl grid-cols-1 gap-4 overflow-hidden sm:gap-5 xl:grid-cols-[minmax(560px,1fr)_minmax(360px,440px)]">
-        <NepaliCalendar isAdmin={isAdmin} />
+        <NepaliCalendar isAdmin={isAdmin} onHolidaysChange={() => {}} />
 
         <GlassCard className="min-w-0 overflow-hidden self-start p-4 sm:p-5" glow="red">
           <div className="relative z-10">

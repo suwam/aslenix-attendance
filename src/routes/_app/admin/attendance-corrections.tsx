@@ -62,11 +62,11 @@ function AttendanceCorrectionsPage() {
       action === "approved"
         ? await supabase.rpc("approve_attendance_correction_request", {
             _request_id: id,
-            _admin_comment: comment,
+            _admin_comment: comment as any,
           })
         : await supabase.rpc("reject_attendance_correction_request", {
             _request_id: id,
-            _admin_comment: comment,
+            _admin_comment: comment as any,
           });
     setBusy(null);
     if (result.error) return toast.error(result.error.message);

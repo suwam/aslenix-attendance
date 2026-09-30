@@ -95,7 +95,7 @@ function LocationButton({
   return (
     <div className="space-y-1">
       <Button asChild variant="outline" size="sm" className="h-8 px-2">
-        <a href={mapUrl(latitude, longitude)} target="_blank" rel="noreferrer">
+        <a href={mapUrl(latitude as number, longitude as number)} target="_blank" rel="noreferrer">
           <MapPin size={14} />
           {label}
         </a>
@@ -125,8 +125,8 @@ function locationLabel(
   const distanceMeters = distanceBetweenMeters(
     officeLocation.latitude,
     officeLocation.longitude,
-    latitude,
-    longitude,
+    latitude as number,
+    longitude as number,
   );
 
   return distanceMeters <= officeLocation.radiusMeters ? "Office" : "Map";

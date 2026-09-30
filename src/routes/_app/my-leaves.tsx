@@ -88,7 +88,7 @@ function MyLeaves() {
     const { error } = await supabase.from("leave_requests").insert({
       leave_type: form.leave_type as any,
       start_date: startDate,
-      end_date: endDate,
+      end_date: endDate as any,
       reason: form.reason,
       user_id: user.id,
       is_half_day: form.is_half_day,

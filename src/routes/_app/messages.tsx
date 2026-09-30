@@ -283,10 +283,10 @@ function MessagesPage() {
               (item.department || "").toLowerCase().includes("hr");
             return {
               ...item,
-              role: roleByUser.get(item.user_id) ?? (isHr ? "hr_manager" : null),
+              role: (roleByUser.get(item.user_id) ?? (isHr ? "hr_manager" : null)) as any,
             };
           })
-          .sort(sortOfficials),
+          .sort(sortOfficials as any) as any,
       );
     }
   }, [db, isChatAdmin, user]);

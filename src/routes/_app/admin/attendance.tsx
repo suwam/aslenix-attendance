@@ -229,8 +229,8 @@ function AttendancePage() {
     setSaving(true);
     const { error } = await supabase.rpc("apply_admin_attendance_edit", {
       _attendance_id: editing.attendance.id,
-      _check_in_time: fromDateTimeInput(form.checkIn),
-      _check_out_time: fromDateTimeInput(form.checkOut),
+      _check_in_time: fromDateTimeInput(form.checkIn) as any,
+      _check_out_time: fromDateTimeInput(form.checkOut) as any,
       _status: form.status,
       _work_location: form.workLocation,
       _reason: form.reason,

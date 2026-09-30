@@ -192,7 +192,7 @@ export function TaskDialog({
     if (t) {
       setTitle(t.title);
       setDescription(t.description || "");
-      setStatus(t.status);
+      setStatus(t.status as any);
       setPriority(t.priority);
       setTaskComplexity((t.task_complexity || "medium") as TaskComplexity);
       setProgress(t.progress);
@@ -315,7 +315,7 @@ export function TaskDialog({
         if (progressUpdateResult.missingTable) {
           progressNoteNotSaved = true;
         } else {
-          error = progressUpdateResult.error;
+          error = progressUpdateResult.error as any;
         }
       }
 
@@ -373,16 +373,16 @@ export function TaskDialog({
     let savedTaskId = taskId;
     let complexityNotSaved = false;
     if (taskId) {
-      ({ error } = await supabase.from("tasks").update(payload).eq("id", taskId));
+      ({ error } = await (supabase as any).from("tasks").update(payload).eq("id", taskId));
       if (isMissingSupabaseColumnError(error, "tasks", "task_complexity")) {
         complexityNotSaved = true;
         setTaskComplexityUnavailable(true);
         const legacyPayload = { ...payload };
         delete legacyPayload.task_complexity;
-        ({ error } = await supabase.from("tasks").update(legacyPayload).eq("id", taskId));
+        ({ error } = await (supabase as any).from("tasks").update(legacyPayload).eq("id", taskId));
       }
     } else {
-      let result = await supabase
+      let result = await (supabase as any)
         .from("tasks")
         .insert({ ...payload, created_by: user.id })
         .select("id")
@@ -392,7 +392,7 @@ export function TaskDialog({
         setTaskComplexityUnavailable(true);
         const legacyPayload = { ...payload };
         delete legacyPayload.task_complexity;
-        result = await supabase
+        result = await (supabase as any)
           .from("tasks")
           .insert({ ...legacyPayload, created_by: user.id })
           .select("id")
@@ -495,7 +495,7 @@ export function TaskDialog({
       if (progressUpdateResult.missingTable) {
         progressNoteNotSaved = true;
       } else {
-        error = progressUpdateResult.error;
+        error = progressUpdateResult.error as any;
       }
     }
     setLoading(false);
@@ -675,7 +675,7 @@ export function TaskDialog({
         progressNote.trim(),
       );
       if (!progressUpdateResult.missingTable) {
-        error = progressUpdateResult.error;
+        error = progressUpdateResult.error as any;
       }
     }
     if (!error) {

@@ -69,7 +69,7 @@ function WhatsAppHistory() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <PageHeader title="WhatsApp Notification History" description="View delivery status of automated messages" />
+          <PageHeader title="WhatsApp Notification History" subtitle="View delivery status of automated messages" />
           <div className="flex items-center gap-3">
              <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />

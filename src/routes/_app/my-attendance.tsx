@@ -240,7 +240,7 @@ function MyAttendance() {
         <GlassCard className="p-4">
           <div className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Status</div>
           <div className="mt-3">
-            <StatusPill status={summary.status} variant={summary.variant} />
+            <StatusPill status={summary.status} variant={summary.variant as any} />
           </div>
         </GlassCard>
         <GlassCard className="p-4">

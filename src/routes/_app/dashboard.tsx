@@ -1920,7 +1920,7 @@ function ActionCard({
   icon: Icon,
   label,
 }: {
-  to: "/tasks" | "/standup" | "/my-leaves" | "/my-attendance" | "/meetings";
+  to: any;
   icon: any;
   label: string;
 }) {
@@ -2380,7 +2380,7 @@ function QuickActionLink({
   icon: Icon,
   label,
 }: {
-  to: "/tasks" | "/standup" | "/my-leaves" | "/my-attendance" | "/meetings" | "/profile";
+  to: any;
   icon: typeof Target;
   label: string;
 }) {

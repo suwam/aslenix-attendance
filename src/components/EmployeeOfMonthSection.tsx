@@ -254,9 +254,9 @@ function WinnerCard({ winner }: { winner: EmployeeRank }) {
       </div>
 
       <div className="relative z-10 mt-8 grid grid-cols-3 gap-3">
-        <WinnerMetric label="Score" value={winner.score} icon={ZapIcon} />
-        <WinnerMetric label="Task progress" value={`${winner.taskProgress}%`} icon={CheckCircle2} />
-        <WinnerMetric label="Attendance" value={`${winner.attendancePct}%`} icon={BadgeCheck} />
+        <WinnerMetric label="Score" value={winner.score} icon={ZapIcon as any} />
+        <WinnerMetric label="Task progress" value={`${winner.taskProgress}%`} icon={CheckCircle2 as any} />
+        <WinnerMetric label="Attendance" value={`${winner.attendancePct}%`} icon={BadgeCheck as any} />
       </div>
 
       <div className="relative z-10 mt-7 space-y-4">

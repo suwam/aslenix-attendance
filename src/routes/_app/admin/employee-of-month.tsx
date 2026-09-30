@@ -288,7 +288,7 @@ function EmployeeOfMonthPage() {
           .select("user_id,date,status,work_hours")
           .gte("date", monthStart)
           .lte("date", effectiveEnd),
-        supabase
+        (supabase as any)
           .from("standups")
           .select("user_id,date,yesterday,today,blockers,work_hours")
           .gte("date", monthStart)
@@ -353,11 +353,11 @@ function EmployeeOfMonthPage() {
               task.status !== "completed",
           ).length;
           const employeeAttendance = (attendance || []).filter(
-            (row) => row.user_id === profile.user_id,
+            (row: any) => row.user_id === profile.user_id,
           );
           const attendancePct = calculateWeightedAttendancePct(employeeAttendance, elapsedDays);
           const employeeStandups = (standups || []).filter(
-            (row) => row.user_id === profile.user_id,
+            (row: any) => row.user_id === profile.user_id,
           );
           const standupMetrics = calculateStandupScore(employeeStandups, elapsedDays);
           const assignedTaskIds = new Set(monthRelevantTasks.map((task: any) => task.id));

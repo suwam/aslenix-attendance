@@ -61,7 +61,7 @@ function SettingsPage() {
       updates.auto_checkout_time = s.auto_checkout_time;
     }
 
-    const { error } = await supabase.from("settings").update(updates).eq("id", s.id);
+    const { error } = await supabase.from("settings").update(updates as any).eq("id", s.id);
     setSaving(false);
     if (error) return toast.error(error.message);
     setInitial(s);
