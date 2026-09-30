@@ -115,20 +115,41 @@ export function WeeklySprintWizard({ open, onOpenChange, project, profiles, onSa
       }
 
       // 6. Create Work Items
-      for (let i = 0; i < workItems.length; i++) {
-        const wi = workItems[i];
-        if (!wi.title) continue;
-        const assignmentId = assignmentMap.get(Number(wi.assignmentIndex));
-        if (!assignmentId) continue;
-
-        await supabase.from('work_items').insert({
-          module_assignment_id: assignmentId,
-          title: wi.title,
-          description: wi.description,
-          status: 'todo',
-          weight: Number(wi.weight),
-          priority: wi.priority
-        });
+      if (workItems.length === 0 || !workItems.some(wi => wi.title)) {
+        // Auto-generate a work item for each assignment if they skipped this step
+        for (const [idx, asgId] of assignmentMap.entries()) {
+          const asg = assignments[idx];
+          const modName = modules[asg.moduleIndex]?.name || "Module";
+          const { error: wiErr } = await supabase.from('work_items').insert({
+            module_assignment_id: asgId,
+            title: `Complete ${modName} Tasks`,
+            description: `Auto-generated task for ${asg.role}`,
+            status: 'todo',
+            weight: Number(asg.weight) || 10,
+            priority: 'medium'
+          });
+          if (wiErr) console.error("Auto WorkItem Error:", wiErr);
+        }
+      } else {
+        for (let i = 0; i < workItems.length; i++) {
+          const wi = workItems[i];
+          if (!wi.title) continue;
+          const assignmentId = assignmentMap.get(Number(wi.assignmentIndex));
+          if (!assignmentId) continue;
+  
+          const { error: wiErr } = await supabase.from('work_items').insert({
+            module_assignment_id: assignmentId,
+            title: wi.title,
+            description: wi.description,
+            status: 'todo',
+            weight: Number(wi.weight),
+            priority: wi.priority
+          });
+          if (wiErr) {
+            console.error("WorkItem Error:", wiErr);
+            throw wiErr;
+          }
+        }
       }
 
       // 7. Create Target
