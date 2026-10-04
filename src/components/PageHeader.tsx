@@ -43,7 +43,7 @@ export function StatCard({
   };
   return (
     <div>
-      <GlassCard className="overflow-hidden">
+      <GlassCard className={`metric-card-${accent} overflow-hidden p-5 sm:p-6`}>
         <div className="flex items-start justify-between">
           <div>
             <div className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
@@ -53,7 +53,7 @@ export function StatCard({
             {hint && <div className="text-xs text-muted-foreground mt-1">{hint}</div>}
           </div>
           <div
-            className="h-11 w-11 rounded-xl flex items-center justify-center"
+            className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/80 bg-white/75 shadow-sm"
             style={{
               background: `color-mix(in oklab, ${colors[accent]} 22%, transparent)`,
               color: colors[accent],

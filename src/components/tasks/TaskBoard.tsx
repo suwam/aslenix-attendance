@@ -584,6 +584,16 @@ export function TaskBoard({
   const [detailsTask, setDetailsTask] = useState<BoardTask | null>(null);
   const [progressDraft, setProgressDraft] = useState(0);
   const [savingProgress, setSavingProgress] = useState(false);
+  const priorityStyle = {
+    high: "border-rose-200 bg-rose-50 text-rose-700",
+    medium: "border-amber-200 bg-amber-50 text-amber-700",
+    low: "border-sky-200 bg-sky-50 text-sky-700",
+  }[detailsTask?.priority?.toLowerCase() || "medium"] || "border-border bg-muted text-muted-foreground";
+
+  const uniqueWeeks = useMemo(
+    () => Array.from(new Map(weeks.map((week) => [week.label, week])).values()),
+    [weeks],
+  );
 
   const openTaskDetails = (task: BoardTask) => {
     setDetailsTask(task);
@@ -656,7 +666,7 @@ export function TaskBoard({
     <div className="min-w-0 space-y-4">
       <FilterBar
         modules={modules}
-        weeks={weeks}
+        weeks={uniqueWeeks}
         selectedWeekId={selectedWeekId}
         onWeekChange={onWeekChange}
         employees={employees}
@@ -805,8 +815,9 @@ export function TaskBoard({
           if (!open && !savingProgress) setDetailsTask(null);
         }}
       >
-        <DialogContent className="max-h-[calc(100dvh-1rem)] gap-0 overflow-hidden rounded-2xl border-border/70 bg-background p-0 shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:max-w-xl">
-          <DialogHeader className="relative border-b bg-gradient-to-br from-primary/[0.08] via-background to-background px-5 pb-5 pt-5 pr-12 text-left sm:px-6 sm:pb-6 sm:pt-6 sm:pr-14">
+        <DialogContent className="max-h-[calc(100dvh-1rem)] gap-0 overflow-hidden rounded-[28px] border-border/70 bg-background p-0 shadow-[0_28px_80px_rgba(15,23,42,0.18)] sm:max-h-[calc(100dvh-2rem)] sm:max-w-2xl">
+          <DialogHeader className="relative overflow-hidden border-b bg-[radial-gradient(circle_at_88%_10%,oklch(0.62_0.22_270/.15),transparent_30%),linear-gradient(135deg,oklch(0.97_0.02_270),oklch(1_0_0))] px-5 pb-5 pt-5 pr-12 text-left sm:px-7 sm:pb-6 sm:pt-6 sm:pr-14">
+            <div className="absolute -right-10 -top-14 size-44 rounded-full bg-primary/5 blur-2xl" />
             <div className="flex items-center justify-between gap-3 pr-1">
               <div className="flex items-center gap-2">
                 <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
@@ -818,10 +829,10 @@ export function TaskBoard({
               </div>
               {detailsTask && <StatusBadge status={detailsTask.status} />}
             </div>
-            <DialogTitle className="mt-3 break-words text-[17px] font-semibold leading-[1.3] tracking-tight sm:text-lg">
+            <DialogTitle className="relative mt-3 max-w-[90%] break-words text-[18px] font-bold leading-[1.28] tracking-tight sm:text-xl">
               {detailsTask?.title}
             </DialogTitle>
-            <DialogDescription className="mt-1.5 text-[13px] leading-5">
+            <DialogDescription className="relative mt-2 text-[13px] leading-5">
               Track ownership, delivery progress, and the latest task update.
             </DialogDescription>
             {detailsTask?.projectName && (
@@ -832,7 +843,7 @@ export function TaskBoard({
             )}
           </DialogHeader>
           {detailsTask && (
-            <div className="max-h-[calc(100dvh-13rem)] space-y-5 overflow-y-auto bg-muted/[0.03] px-5 py-5 sm:px-6">
+            <div className="max-h-[calc(100dvh-13rem)] space-y-5 overflow-y-auto bg-muted/[0.18] px-5 py-5 sm:px-7">
               <div>
                 <div className="mb-2.5 flex items-center justify-between gap-2">
                   <div>
@@ -852,7 +863,7 @@ export function TaskBoard({
                   {detailsTask.employees.map((employee) => (
                     <div
                       key={employee.userId}
-                      className="flex items-center gap-3 rounded-xl border border-border/70 bg-card p-3 shadow-sm transition-colors hover:border-primary/25"
+                      className="flex items-center gap-3 rounded-2xl border border-border/70 bg-card p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
                     >
                       {employee.avatarUrl ? (
                         <img
@@ -879,13 +890,13 @@ export function TaskBoard({
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-2.5 text-sm sm:grid-cols-2">
-                <div className="rounded-xl border border-border/60 bg-card p-3.5 shadow-sm">
+                <div className="rounded-2xl border border-border/60 bg-card p-3.5 shadow-sm">
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <FolderKanban className="size-3.5" /> Module
                   </div>
                   <div className="mt-1.5 font-semibold">{detailsTask.moduleName}</div>
                 </div>
-                <div className="rounded-xl border border-border/60 bg-card p-3.5 shadow-sm">
+                <div className="rounded-2xl border border-border/60 bg-card p-3.5 shadow-sm">
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <CalendarDays className="size-3.5" /> Due date
                   </div>
@@ -895,15 +906,15 @@ export function TaskBoard({
                       : "Not set"}
                   </div>
                 </div>
-                <div className="rounded-xl border border-border/60 bg-card p-3.5 shadow-sm">
+                <div className="rounded-2xl border border-border/60 bg-card p-3.5 shadow-sm">
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Flag className="size-3.5" /> Priority
                   </div>
-                  <div className="mt-1.5 font-semibold capitalize">
+                  <div className={`mt-2 inline-flex rounded-full border px-2 py-0.5 text-xs font-bold capitalize ${priorityStyle}`}>
                     {detailsTask.priority || "medium"}
                   </div>
                 </div>
-                <div className="rounded-xl border border-border/60 bg-card p-3.5 shadow-sm">
+                <div className="rounded-2xl border border-border/60 bg-card p-3.5 shadow-sm">
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <CheckCircle2 className="size-3.5" /> Status
                   </div>
@@ -912,7 +923,7 @@ export function TaskBoard({
                   </div>
                 </div>
               </div>
-              <section className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.10] via-primary/[0.04] to-background p-4 shadow-sm">
+              <section className="rounded-2xl border border-primary/25 bg-gradient-to-br from-primary/[0.13] via-primary/[0.05] to-card p-4 shadow-[0_12px_30px_rgba(79,70,229,0.08)]">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
                     <div className="flex items-center gap-2 text-sm font-semibold">
@@ -927,7 +938,7 @@ export function TaskBoard({
                         : "Move the slider to save progress for this task."}
                     </p>
                   </div>
-                  <span className="rounded-xl bg-primary px-2.5 py-1.5 text-2xl font-bold tabular-nums text-primary-foreground shadow-sm">
+                  <span className="rounded-2xl bg-primary px-3 py-2 text-2xl font-black tabular-nums text-primary-foreground shadow-[0_8px_18px_rgba(79,70,229,0.25)]">
                     {progressDraft}%
                   </span>
                 </div>
@@ -991,7 +1002,7 @@ export function TaskBoard({
                     </span>
                   )}
                 </div>
-                <p className="whitespace-pre-wrap rounded-xl border border-border/60 bg-card p-3.5 text-sm leading-relaxed text-muted-foreground shadow-sm">
+                <p className="whitespace-pre-wrap rounded-2xl border border-border/60 bg-card p-3.5 text-sm leading-relaxed text-muted-foreground shadow-sm">
                   {detailsTask.notes || "No note added yet."}
                 </p>
               </div>

@@ -134,10 +134,15 @@ function AdminTasksRedesign() {
     if (!selectedProjectId) return;
     const fetchProj = async () => {
       const { data: sData } = await supabase.from("weekly_sprints").select("*").eq("project_id", selectedProjectId).order("week_number");
-      setSprints(sData || []);
-      if (sData?.length) {
-        if (!selectedSprintId || !sData.find(s => s.id === selectedSprintId)) {
-          setSelectedSprintId(sData[sData.length - 1].id);
+      // Guard against cached/legacy duplicate rows: the UI always treats one
+      // project + week number as one week, even before a refresh completes.
+      const uniqueSprints = Array.from(
+        new Map((sData || []).map(sprint => [String(sprint.week_number), sprint])).values(),
+      );
+      setSprints(uniqueSprints);
+      if (uniqueSprints.length) {
+        if (!selectedSprintId || !uniqueSprints.find(s => s.id === selectedSprintId)) {
+          setSelectedSprintId(uniqueSprints[uniqueSprints.length - 1].id);
         }
       } else {
         setSelectedSprintId("");
