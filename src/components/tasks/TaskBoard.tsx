@@ -343,8 +343,8 @@ function KanbanColumn({
   onStatusChange: (task: BoardTask, status: BoardStatus) => void;
 }) {
   return (
-    <section className="min-w-0 rounded-xl bg-muted/40 p-2.5 sm:p-3">
-      <header className="mb-3 flex items-center justify-between gap-2 px-1">
+    <section className="flex min-h-0 min-w-0 max-h-[70dvh] flex-col rounded-xl bg-muted/40 p-2.5 sm:p-3">
+      <header className="mb-3 flex shrink-0 items-center justify-between gap-2 px-1">
         <h3 className="flex min-w-0 items-center gap-2 text-xs font-bold uppercase tracking-wide text-foreground">
           <span className={`size-2 shrink-0 rounded-full ${column.marker}`} />
           <span className="truncate">{column.title}</span>
@@ -353,7 +353,7 @@ function KanbanColumn({
           {tasks.length}
         </span>
       </header>
-      <div className="grid min-w-0 content-start gap-2.5">
+      <div className="grid min-h-0 min-w-0 flex-1 content-start gap-2.5 overflow-y-auto overscroll-y-contain pr-1">
         {tasks.map((task) => (
           <TaskCard
             key={task.id}
