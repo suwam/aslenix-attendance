@@ -7,11 +7,13 @@ CREATE TABLE IF NOT EXISTS public.work_item_assignees (
 
 ALTER TABLE public.work_item_assignees ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow read access to everyone"
+CREATE POLICY "Admins manage work item assignees"
+    ON public.work_item_assignees
+    FOR ALL
+    USING (public.is_admin(auth.uid()))
+    WITH CHECK (public.is_admin(auth.uid()));
+
+CREATE POLICY "Users view own work item assignments"
     ON public.work_item_assignees
     FOR SELECT
-    USING (true);
-
-CREATE POLICY "Allow all for admins"
-    ON public.work_item_assignees
-    USING (true);
+    USING (auth.uid() = user_id OR public.is_admin(auth.uid()));
