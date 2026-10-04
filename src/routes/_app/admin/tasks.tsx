@@ -81,6 +81,7 @@ function AdminTasksRedesign() {
 
   const [refreshKey, setRefreshKey] = useState(0);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [moduleEditorOpen, setModuleEditorOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [editingWorkItem, setEditingWorkItem] = useState<any | null>(null);
   const [deletingWorkItem, setDeletingWorkItem] = useState<any | null>(null);
@@ -109,8 +110,14 @@ function AdminTasksRedesign() {
   const [savingAssignment, setSavingAssignment] = useState(false);
   const [deletingAssignmentBusy, setDeletingAssignmentBusy] = useState(false);
   const [savingWeek, setSavingWeek] = useState(false);
+  const [savingModule, setSavingModule] = useState(false);
   const [deletingWeek, setDeletingWeek] = useState(false);
   const [assignmentTableOpen, setAssignmentTableOpen] = useState(false);
+  const [newModuleName, setNewModuleName] = useState("");
+  const [newModuleDescription, setNewModuleDescription] = useState("");
+  const [newModulePriority, setNewModulePriority] = useState("medium");
+  const [newModuleWeight, setNewModuleWeight] = useState("10");
+  const [newModuleTeamId, setNewModuleTeamId] = useState("");
 
   useEffect(() => {
     const fetchInit = async () => {
@@ -507,6 +514,85 @@ function AdminTasksRedesign() {
     setAssignmentEditorOpen(true);
   };
 
+  const openNewModule = () => {
+    if (!selectedSprint) {
+      toast.error("Select a week before adding a module.");
+      return;
+    }
+    if (!teams.length) {
+      toast.error("This week needs a team before a module can be added.");
+      return;
+    }
+    setNewModuleName("");
+    setNewModuleDescription("");
+    setNewModulePriority("medium");
+    setNewModuleWeight("10");
+    setNewModuleTeamId(teams[0].id);
+    setModuleEditorOpen(true);
+  };
+
+  const saveNewModule = async () => {
+    if (!selectedSprint || !selectedProject) return;
+    const name = newModuleName.trim();
+    const weight = Number(newModuleWeight);
+    if (!name) {
+      toast.error("Module name is required.");
+      return;
+    }
+    if (!newModuleTeamId) {
+      toast.error("Select the team responsible for this module.");
+      return;
+    }
+    if (!Number.isFinite(weight) || weight <= 0) {
+      toast.error("Module weight must be greater than zero.");
+      return;
+    }
+
+    setSavingModule(true);
+    try {
+      let moduleId = modules.find(module => module.name?.trim().toLowerCase() === name.toLowerCase())?.id;
+      if (!moduleId) {
+        const { data, error } = await supabase
+          .from("modules")
+          .insert({ project_id: selectedProject.id, name, description: newModuleDescription.trim() || null })
+          .select("id")
+          .single();
+        if (error) throw error;
+        moduleId = data.id;
+      }
+
+      const { data: existing, error: lookupError } = await supabase
+        .from("sprint_modules")
+        .select("id")
+        .eq("sprint_id", selectedSprint.id)
+        .eq("module_id", moduleId)
+        .maybeSingle();
+      if (lookupError) throw lookupError;
+      if (existing) {
+        toast.error("This module is already part of the selected week.");
+        return;
+      }
+
+      const { error } = await supabase.from("sprint_modules").insert({
+        sprint_id: selectedSprint.id,
+        module_id: moduleId,
+        team_id: newModuleTeamId,
+        priority: newModulePriority,
+        weight,
+        target_date: selectedSprint.target_date || null,
+      });
+      if (error) throw error;
+
+      toast.success(`Added ${name} to Week ${selectedSprint.week_number}.`);
+      setModuleEditorOpen(false);
+      setRefreshKey(key => key + 1);
+    } catch (error: any) {
+      toast.error(`Unable to add module. ${error.message || "Please try again."}`);
+    } finally {
+      setSavingModule(false);
+    }
+  };
+
   const saveAssignment = async () => {
     const weight = Number(assignmentWeight);
     if (!assignmentUserId) {
@@ -744,6 +830,9 @@ function AdminTasksRedesign() {
           <Button variant="outline" onClick={() => setReportOpen(true)} disabled={!selectedSprint} className="font-medium">
             <Download className="size-4"/> <span className="hidden sm:inline">View Weekly Report</span><span className="sm:hidden">Report</span>
           </Button>
+          <Button variant="outline" onClick={openNewModule} disabled={!selectedSprint} className="font-medium">
+            <Plus className="size-4"/> <span className="hidden sm:inline">Add module</span><span className="sm:hidden">Module</span>
+          </Button>
           <Button onClick={() => setWizardOpen(true)} className="font-semibold">
             <Plus className="size-4"/> <span className="hidden sm:inline">Add Weekly Assignment</span><span className="sm:hidden">Add week</span>
           </Button>
@@ -974,6 +1063,54 @@ function AdminTasksRedesign() {
       )}
 
       {/* Modals */}
+      <Dialog open={moduleEditorOpen} onOpenChange={setModuleEditorOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Add module to Week {selectedSprint?.week_number}</DialogTitle>
+            <DialogDescription>Create a new module for this selected week without creating another week.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-2">
+            <div className="grid gap-2">
+              <Label htmlFor="new-module-name">Module name</Label>
+              <Input id="new-module-name" value={newModuleName} onChange={event => setNewModuleName(event.target.value)} placeholder="e.g. Inventory management" autoFocus />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="new-module-description">Description <span className="text-muted-foreground">(optional)</span></Label>
+              <Textarea id="new-module-description" value={newModuleDescription} onChange={event => setNewModuleDescription(event.target.value)} placeholder="What this module covers" rows={3} />
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="grid gap-2 sm:col-span-2">
+                <Label>Responsible team</Label>
+                <Select value={newModuleTeamId} onValueChange={setNewModuleTeamId}>
+                  <SelectTrigger><SelectValue placeholder="Select team" /></SelectTrigger>
+                  <SelectContent>
+                    {teams.map(team => <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="new-module-weight">Weight</Label>
+                <Input id="new-module-weight" type="number" min="1" value={newModuleWeight} onChange={event => setNewModuleWeight(event.target.value)} />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label>Priority</Label>
+              <Select value={newModulePriority} onValueChange={setNewModulePriority}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setModuleEditorOpen(false)} disabled={savingModule}>Cancel</Button>
+            <Button type="button" onClick={saveNewModule} disabled={savingModule}>{savingModule ? "Adding..." : "Add module"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <WeeklySprintWizard 
         open={wizardOpen} 
         onOpenChange={setWizardOpen} 

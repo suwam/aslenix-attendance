@@ -805,15 +805,18 @@ export function TaskBoard({
           if (!open && !savingProgress) setDetailsTask(null);
         }}
       >
-        <DialogContent className="max-h-[calc(100dvh-2rem)] gap-0 overflow-hidden rounded-2xl border-border/70 p-0 shadow-2xl sm:max-w-xl">
-          <DialogHeader className="relative border-b bg-muted/20 px-5 pb-4 pt-5 pr-12 text-left sm:px-6 sm:pb-5 sm:pt-6 sm:pr-14">
-            <div className="flex items-center gap-2">
-              <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-                <Activity className="size-3.5" />
-              </span>
-              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                Task overview
-              </span>
+        <DialogContent className="max-h-[calc(100dvh-1rem)] gap-0 overflow-hidden rounded-2xl border-border/70 bg-background p-0 shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:max-w-xl">
+          <DialogHeader className="relative border-b bg-gradient-to-br from-primary/[0.08] via-background to-background px-5 pb-5 pt-5 pr-12 text-left sm:px-6 sm:pb-6 sm:pt-6 sm:pr-14">
+            <div className="flex items-center justify-between gap-3 pr-1">
+              <div className="flex items-center gap-2">
+                <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                  <Activity className="size-3.5" />
+                </span>
+                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  Task overview
+                </span>
+              </div>
+              {detailsTask && <StatusBadge status={detailsTask.status} />}
             </div>
             <DialogTitle className="mt-3 break-words text-[17px] font-semibold leading-[1.3] tracking-tight sm:text-lg">
               {detailsTask?.title}
@@ -821,13 +824,24 @@ export function TaskBoard({
             <DialogDescription className="mt-1.5 text-[13px] leading-5">
               Track ownership, delivery progress, and the latest task update.
             </DialogDescription>
+            {detailsTask?.projectName && (
+              <div className="mt-3 inline-flex max-w-full items-center gap-1.5 rounded-full border border-border/60 bg-background/75 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+                <FolderKanban className="size-3 shrink-0 text-primary" />
+                <span className="truncate">{detailsTask.projectName}</span>
+              </div>
+            )}
           </DialogHeader>
           {detailsTask && (
-            <div className="max-h-[calc(100dvh-12rem)] space-y-5 overflow-y-auto px-6 py-5">
+            <div className="max-h-[calc(100dvh-13rem)] space-y-5 overflow-y-auto bg-muted/[0.03] px-5 py-5 sm:px-6">
               <div>
                 <div className="mb-2.5 flex items-center justify-between gap-2">
-                  <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-                    Assigned employees
+                  <div>
+                    <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                      Assigned employees
+                    </div>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      People responsible for delivery
+                    </p>
                   </div>
                   <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
                     {detailsTask.employees.length}{" "}
@@ -838,7 +852,7 @@ export function TaskBoard({
                   {detailsTask.employees.map((employee) => (
                     <div
                       key={employee.userId}
-                      className="flex items-center gap-3 rounded-xl border border-border/70 bg-card p-3 shadow-sm"
+                      className="flex items-center gap-3 rounded-xl border border-border/70 bg-card p-3 shadow-sm transition-colors hover:border-primary/25"
                     >
                       {employee.avatarUrl ? (
                         <img
@@ -864,14 +878,14 @@ export function TaskBoard({
                   )}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2.5 text-sm">
-                <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
+              <div className="grid grid-cols-1 gap-2.5 text-sm sm:grid-cols-2">
+                <div className="rounded-xl border border-border/60 bg-card p-3.5 shadow-sm">
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <FolderKanban className="size-3.5" /> Module
                   </div>
                   <div className="mt-1.5 font-semibold">{detailsTask.moduleName}</div>
                 </div>
-                <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
+                <div className="rounded-xl border border-border/60 bg-card p-3.5 shadow-sm">
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <CalendarDays className="size-3.5" /> Due date
                   </div>
@@ -881,7 +895,7 @@ export function TaskBoard({
                       : "Not set"}
                   </div>
                 </div>
-                <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
+                <div className="rounded-xl border border-border/60 bg-card p-3.5 shadow-sm">
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Flag className="size-3.5" /> Priority
                   </div>
@@ -889,7 +903,7 @@ export function TaskBoard({
                     {detailsTask.priority || "medium"}
                   </div>
                 </div>
-                <div className="rounded-xl border border-border/60 bg-muted/20 p-3.5">
+                <div className="rounded-xl border border-border/60 bg-card p-3.5 shadow-sm">
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <CheckCircle2 className="size-3.5" /> Status
                   </div>
@@ -898,17 +912,22 @@ export function TaskBoard({
                   </div>
                 </div>
               </div>
-              <section className="rounded-xl border border-primary/15 bg-gradient-to-br from-primary/[0.06] to-background p-4">
+              <section className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.10] via-primary/[0.04] to-background p-4 shadow-sm">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-sm font-semibold">Task progress</div>
+                    <div className="flex items-center gap-2 text-sm font-semibold">
+                      Task progress
+                      <span className="hidden rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-muted-foreground sm:inline">
+                        Live update
+                      </span>
+                    </div>
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       {detailsTask.status === "completed" || detailsTask.status === "Completed"
                         ? "This task is complete."
                         : "Move the slider to save progress for this task."}
                     </p>
                   </div>
-                  <span className="text-2xl font-bold tabular-nums text-primary">
+                  <span className="rounded-xl bg-primary px-2.5 py-1.5 text-2xl font-bold tabular-nums text-primary-foreground shadow-sm">
                     {progressDraft}%
                   </span>
                 </div>
@@ -933,8 +952,8 @@ export function TaskBoard({
                   <span>75%</span>
                   <span>100%</span>
                 </div>
-                <div className="mt-3 flex min-h-5 items-center justify-between gap-3 border-t border-border/50 pt-3 text-xs">
-                  <span className="text-muted-foreground">
+                <div className="mt-3 flex min-h-5 items-center justify-between gap-3 border-t border-primary/10 pt-3 text-xs">
+                  <span className="font-medium text-muted-foreground">
                     {progressDraft === 100
                       ? "Ready for review"
                       : progressDraft === 0
@@ -962,14 +981,21 @@ export function TaskBoard({
                     </p>
                   </div>
                 )}
-                <div className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-                  Latest note
+                <div className="mb-1.5 flex items-center justify-between gap-3">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                    Latest note
+                  </div>
+                  {detailsTask.notes && (
+                    <span className="text-[10px] font-medium text-muted-foreground">
+                      Task update
+                    </span>
+                  )}
                 </div>
-                <p className="whitespace-pre-wrap rounded-xl border border-border/60 bg-muted/20 p-3.5 text-sm leading-relaxed text-muted-foreground">
+                <p className="whitespace-pre-wrap rounded-xl border border-border/60 bg-card p-3.5 text-sm leading-relaxed text-muted-foreground shadow-sm">
                   {detailsTask.notes || "No note added yet."}
                 </p>
               </div>
-              <div className="flex flex-wrap justify-end gap-2 border-t border-border/60 pt-4">
+              <div className="sticky bottom-0 -mx-5 flex flex-wrap justify-end gap-2 border-t border-border/70 bg-background/95 px-5 pb-1 pt-4 backdrop-blur sm:-mx-6 sm:px-6">
                 {detailsTask.progress === 100 &&
                   detailsTask.status === "review" &&
                   detailsTask.source?.review_status === "pending" && (

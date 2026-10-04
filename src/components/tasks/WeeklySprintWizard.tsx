@@ -32,23 +32,55 @@ export function WeeklySprintWizard({ open, onOpenChange, project, profiles, onSa
   const handleSave = async () => {
     try {
       setLoading(true);
-      // 1. Create Sprint
-      const { data: sprintData, error: sprintErr } = await supabase.from('weekly_sprints').insert({
-        project_id: project.id,
-        week_number: Number(week.week_number),
-        start_date: week.start_date || null,
-        end_date: week.end_date || null,
-        target_date: week.target_date || null,
-        sprint_goal: week.sprint_goal
-      }).select().single();
-      if (sprintErr) throw sprintErr;
+      const weekNumber = Number(week.week_number);
+      if (!Number.isInteger(weekNumber) || weekNumber < 1) {
+        toast.error("Enter a valid week number.");
+        return;
+      }
 
-      // 2. Create Team
-      const { data: teamData, error: teamErr } = await supabase.from('sprint_teams').insert({
-        sprint_id: sprintData.id,
-        name: team.name
-      }).select().single();
-      if (teamErr) throw teamErr;
+      // Reuse an existing week when the admin is adding another module to it.
+      // This prevents the duplicate-week error while keeping the full assignment flow.
+      const { data: existingSprint, error: sprintLookupError } = await supabase
+        .from('weekly_sprints')
+        .select('*')
+        .eq('project_id', project.id)
+        .eq('week_number', weekNumber)
+        .maybeSingle();
+      if (sprintLookupError) throw sprintLookupError;
+
+      let sprintData = existingSprint;
+      let teamData: any = null;
+      if (sprintData) {
+        const { data: existingTeams, error: teamLookupError } = await supabase
+          .from('sprint_teams')
+          .select('*')
+          .eq('sprint_id', sprintData.id)
+          .order('created_at')
+          .limit(1);
+        if (teamLookupError) throw teamLookupError;
+        teamData = existingTeams?.[0] || null;
+      } else {
+        const { data, error: sprintErr } = await supabase.from('weekly_sprints').insert({
+          project_id: project.id,
+          week_number: weekNumber,
+          start_date: week.start_date || null,
+          end_date: week.end_date || null,
+          target_date: week.target_date || null,
+          sprint_goal: week.sprint_goal
+        }).select().single();
+        if (sprintErr) throw sprintErr;
+        sprintData = data;
+      }
+
+      // Create a team only when the chosen week does not already have one.
+      if (!teamData) {
+        const { data, error: teamErr } = await supabase.from('sprint_teams').insert({
+          sprint_id: sprintData.id,
+          name: team.name.trim() || `Week ${weekNumber} team`
+        }).select().single();
+        if (teamErr) throw teamErr;
+        teamData = data;
+      }
 
       // 3. Create Team Members (unique users from assignments)
       const uniqueUsers = Array.from(new Set(assignments.map(a => a.user_id)));
@@ -171,7 +203,7 @@ export function WeeklySprintWizard({ open, onOpenChange, project, profiles, onSa
         }
       }
 
-      toast.success("Weekly assignment successfully created!");
+      toast.success(existingSprint ? "Module added to the existing week!" : "Weekly assignment successfully created!");
       setStep(1);
       onSaved();
       onOpenChange(false);
@@ -187,6 +219,7 @@ export function WeeklySprintWizard({ open, onOpenChange, project, profiles, onSa
       case 1: return (
         <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
           <h3 className="text-xl font-bold">Step 1: Define Week</h3>
+          <p className="text-sm text-muted-foreground">Use an existing week number to add modules to that week. A new week is created only when the number does not exist yet.</p>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Week Number</Label>
