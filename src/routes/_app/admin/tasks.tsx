@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ADStoredBSDateInput } from "@/components/BSDateInput";
 import { formatNepaliDate } from "@/lib/nepali-calendar";
 import {
@@ -34,12 +35,13 @@ import {
   Users,
   FileText,
   CheckCircle2,
-  Circle,
   Pencil,
   Trash2,
+  ChevronDown,
 } from "lucide-react";
 import { WeeklySprintWizard } from "@/components/tasks/WeeklySprintWizard";
 import { WeeklySprintReport } from "@/components/tasks/WeeklySprintReport";
+import { ModuleHeader, TaskBoard, type BoardTask } from "@/components/tasks/TaskBoard";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/admin/tasks")({ component: AdminTasksRedesign });
@@ -70,6 +72,7 @@ function AdminTasksRedesign() {
   const [sprintModules, setSprintModules] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [workItems, setWorkItems] = useState<any[]>([]);
+  const [workItemAssignees, setWorkItemAssignees] = useState<any[]>([]);
   const [targets, setTargets] = useState<any[]>([]);
   const [requirements, setRequirements] = useState<any[]>([]);
 
@@ -89,6 +92,7 @@ function AdminTasksRedesign() {
   const [editPriority, setEditPriority] = useState("medium");
   const [editWeight, setEditWeight] = useState("10");
   const [editAssignmentId, setEditAssignmentId] = useState("");
+  const [collaboratorIds, setCollaboratorIds] = useState<string[]>([]);
   const [assignmentUserId, setAssignmentUserId] = useState("");
   const [assignmentRole, setAssignmentRole] = useState("");
   const [assignmentWeight, setAssignmentWeight] = useState("50");
@@ -103,6 +107,7 @@ function AdminTasksRedesign() {
   const [deletingAssignmentBusy, setDeletingAssignmentBusy] = useState(false);
   const [savingWeek, setSavingWeek] = useState(false);
   const [deletingWeek, setDeletingWeek] = useState(false);
+  const [assignmentTableOpen, setAssignmentTableOpen] = useState(false);
 
   useEffect(() => {
     const fetchInit = async () => {
@@ -135,7 +140,17 @@ function AdminTasksRedesign() {
   }, [selectedProjectId, refreshKey]);
 
   useEffect(() => {
-    if (!selectedSprintId) return;
+    if (!selectedSprintId) {
+      setTeams([]);
+      setTeamMembers([]);
+      setSprintModules([]);
+      setAssignments([]);
+      setWorkItems([]);
+      setWorkItemAssignees([]);
+      setTargets([]);
+      setRequirements([]);
+      return;
+    }
     const fetchSprint = async () => {
       const [tData, tmData, smData, aData, wData, tgtData, reqData] = await Promise.all([
         supabase.from("sprint_teams").select("*").eq("sprint_id", selectedSprintId),
@@ -151,7 +166,22 @@ function AdminTasksRedesign() {
       setTeamMembers(tmData.data || []);
       setSprintModules(smData.data || []);
       setAssignments(aData.data || []);
-      setWorkItems(wData.data || []);
+      const sprintWorkItems = wData.data || [];
+      setWorkItems(sprintWorkItems);
+      if (sprintWorkItems.length) {
+        const { data: assigneeData, error: assigneeError } = await supabase
+          .from("work_item_assignees")
+          .select("*")
+          .in("work_item_id", sprintWorkItems.map(item => item.id));
+        if (assigneeError) {
+          toast.error(`Unable to load task collaborators. ${assigneeError.message}`);
+          setWorkItemAssignees([]);
+        } else {
+          setWorkItemAssignees(assigneeData || []);
+        }
+      } else {
+        setWorkItemAssignees([]);
+      }
       setTargets(tgtData.data || []);
       setRequirements(reqData.data || []);
     };
@@ -161,6 +191,44 @@ function AdminTasksRedesign() {
   // Derived calculations
   const selectedSprint = sprints.find(s => s.id === selectedSprintId);
   const selectedProject = projects.find(p => p.id === selectedProjectId);
+  const boardTasks = useMemo<BoardTask[]>(() => workItems.map(workItem => {
+    const assignment = assignments.find(item => item.id === workItem.module_assignment_id);
+    const sprintModule = sprintModules.find(item => item.id === assignment?.sprint_module_id);
+    const module = modules.find(item => item.id === sprintModule?.module_id);
+    const profile = profiles.find(item => item.user_id === assignment?.user_id);
+    const collaborators = workItemAssignees
+      .filter(item => item.work_item_id === workItem.id)
+      .map(item => profiles.find(profileItem => profileItem.user_id === item.user_id))
+      .filter(Boolean);
+    const people = [profile, ...collaborators].filter(
+      (person, index, all) => person && all.findIndex(item => item?.user_id === person.user_id) === index,
+    );
+    return {
+      id: workItem.id,
+      title: workItem.title || "Untitled task",
+      description: workItem.description,
+      status: workItem.status || "todo",
+      progress: Number(workItem.progress || 0),
+      priority: workItem.priority || "medium",
+      dueDate: workItem.due_date || selectedSprint?.target_date || null,
+      moduleId: module?.id || "",
+      moduleName: module?.name || "Unassigned module",
+      projectName: selectedProject?.name || "Project",
+      assignmentId: assignment?.id || "",
+      employees: people.map(person => ({
+        userId: person.user_id,
+        name: person.full_name || "Unknown employee",
+        avatarUrl: person.avatar_url,
+        role: person.user_id === assignment?.user_id
+          ? assignment.role || ""
+          : assignments.find(item =>
+              item.user_id === person.user_id &&
+              item.sprint_module_id === assignment?.sprint_module_id,
+            )?.role || "Collaborator",
+      })),
+      source: workItem,
+    };
+  }), [workItems, workItemAssignees, assignments, sprintModules, modules, profiles, selectedSprint, selectedProject]);
 
   // Weekly Progress
   const weeklyProgress = useMemo(() => {
@@ -175,14 +243,17 @@ function AdminTasksRedesign() {
     return totalWeight > 0 ? Math.round((completedWeight / totalWeight) * 100) : 0;
   }, [workItems]);
 
-  const toggleWorkItem = async (wi: any) => {
-    const isCompleted = wi.status === 'Completed' || wi.status === 'completed';
-    const newStatus = isCompleted ? 'In Progress' : 'Completed';
-    const { error } = await supabase.from('work_items').update({ status: newStatus }).eq('id', wi.id);
+  const updateBoardTaskStatus = async (task: BoardTask, status: "todo" | "in_progress" | "review" | "completed") => {
+    const progress = status === "todo" ? 0 : status === "in_progress" ? 40 : status === "review" ? 98 : 100;
+    const { error } = await supabase
+      .from("work_items")
+      .update({ status, progress })
+      .eq("id", task.id);
     if (error) {
       toast.error(`Unable to update task status. ${error.message}`);
       return;
     }
+    toast.success(`Task moved to ${status.replace("_", " ")}.`);
     setRefreshKey(k => k + 1);
   };
 
@@ -193,6 +264,11 @@ function AdminTasksRedesign() {
     setEditPriority(workItem.priority || "medium");
     setEditWeight(String(workItem.weight ?? 10));
     setEditAssignmentId(workItem.module_assignment_id || "");
+    setCollaboratorIds(
+      workItemAssignees
+        .filter(assignee => assignee.work_item_id === workItem.id)
+        .map(assignee => assignee.user_id),
+    );
   };
 
   const saveWorkItem = async () => {
@@ -222,12 +298,46 @@ function AdminTasksRedesign() {
         module_assignment_id: editAssignmentId,
       })
       .eq("id", editingWorkItem.id);
-    setSavingWorkItem(false);
     if (error) {
+      setSavingWorkItem(false);
       toast.error(`Unable to save task. ${error.message}`);
       return;
     }
 
+    const primaryUserId = assignments.find(assignment => assignment.id === editAssignmentId)?.user_id;
+    const desiredCollaboratorIds = collaboratorIds.filter(userId => userId !== primaryUserId);
+    const currentCollaborators = workItemAssignees.filter(
+      assignee => assignee.work_item_id === editingWorkItem.id,
+    );
+    const currentCollaboratorIds = currentCollaborators.map(assignee => assignee.user_id);
+    const newCollaboratorIds = desiredCollaboratorIds.filter(userId => !currentCollaboratorIds.includes(userId));
+    if (newCollaboratorIds.length) {
+      const { error: collaboratorInsertError } = await supabase
+        .from("work_item_assignees")
+        .insert(newCollaboratorIds.map(userId => ({ work_item_id: editingWorkItem.id, user_id: userId })));
+      if (collaboratorInsertError) {
+        setSavingWorkItem(false);
+        toast.error(`Task updated, but collaborators could not be saved. ${collaboratorInsertError.message}`);
+        setRefreshKey(k => k + 1);
+        return;
+      }
+    }
+    const removedCollaboratorIds = currentCollaboratorIds.filter(userId => !desiredCollaboratorIds.includes(userId));
+    if (removedCollaboratorIds.length) {
+      const { error: collaboratorDeleteError } = await supabase
+        .from("work_item_assignees")
+        .delete()
+        .eq("work_item_id", editingWorkItem.id)
+        .in("user_id", removedCollaboratorIds);
+      if (collaboratorDeleteError) {
+        setSavingWorkItem(false);
+        toast.error(`Task updated, but some collaborators could not be removed. ${collaboratorDeleteError.message}`);
+        setRefreshKey(k => k + 1);
+        return;
+      }
+    }
+
+    setSavingWorkItem(false);
     toast.success("Task updated.");
     setEditingWorkItem(null);
     setRefreshKey(k => k + 1);
@@ -501,7 +611,7 @@ function AdminTasksRedesign() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-w-0 space-y-6">
       {/* Top Header Selector */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
         <div>
@@ -597,190 +707,126 @@ function AdminTasksRedesign() {
         <div className="py-12 text-center text-muted-foreground">Select or create a week to view dashboard.</div>
       )}
 
-      {/* MODULE CARDS */}
-      <div className="space-y-5 mt-6">
-        {sprintModules.map(sm => {
-          const mod = modules.find(m => m.id === sm.module_id);
-          const modAsgs = assignments.filter(a => a.sprint_module_id === sm.id);
-          const modItems = workItems.filter(w => modAsgs.some(a => a.id === w.module_assignment_id));
-          
-          let mTotal = 0; let mComp = 0;
-          modItems.forEach(w => { mTotal += (w.weight||10); if(w.status === 'Completed' || w.status === 'completed') mComp += (w.weight||10); });
-          const modProg = mTotal > 0 ? Math.round((mComp/mTotal)*100) : 0;
-
-          return (
-            <section key={sm.id} className="overflow-hidden rounded-xl border bg-card">
-              <div className="p-4 sm:p-5 bg-muted/30 border-b flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <FolderDot className="size-5 text-primary"/> {mod?.name || 'Unknown Module'}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mt-1">{modItems.length} tasks · {modAsgs.length} assigned employees</p>
-                </div>
-                <div className="text-right flex items-center gap-3">
-                  <Button type="button" variant="outline" size="sm" onClick={() => openNewAssignment(sm.id)} className="inline-flex">
-                    <Plus className="size-4"/> <span className="hidden sm:inline">Assign employee</span><span className="sm:hidden">Assign</span>
-                  </Button>
-                  <div className="text-right hidden sm:block">
-                     <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Module Progress</div>
-                     <div className="w-32 h-2.5 rounded-full bg-background border shadow-inner overflow-hidden">
-                       <div className="h-full bg-primary transition-all duration-500" style={{width:`${modProg}%`}}/>
-                     </div>
-                  </div>
-                  <div className="text-xl font-bold text-primary">{modProg}%</div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-border">
-                {modAsgs.length === 0 && (
-                  <div className="p-5 md:col-span-2 lg:col-span-3">
-                    <p className="mb-3 text-sm text-muted-foreground">No employees are assigned to this module yet.</p>
-                    <Button type="button" variant="outline" size="sm" onClick={() => openNewAssignment(sm.id)}>
-                      <Plus className="size-4"/> Assign employee
-                    </Button>
-                  </div>
-                )}
-                {modAsgs.map(asg => {
-                  const prof = profiles.find(p => p.user_id === asg.user_id);
-                  const asgItems = modItems.filter(w => w.module_assignment_id === asg.id);
-                  let aTotal = 0; let aComp = 0;
-                  asgItems.forEach(w => { aTotal += (w.weight||10); if(w.status === 'Completed' || w.status === 'completed') aComp += (w.weight||10); });
-                  const aProg = aTotal > 0 ? Math.round((aComp/aTotal)*100) : 0;
-                  const isDone = aProg === 100;
-
-                  return (
-                    <div key={asg.id} className="p-4 sm:p-5 space-y-4">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-3">
-                          <Avatar url={prof?.avatar_url} name={prof?.full_name}/>
-                          <div>
-                            <div className="font-semibold text-sm">{prof?.full_name || 'Unknown'}</div>
-                            <div className="text-xs font-medium text-muted-foreground mt-1">{asg.role}</div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-semibold">{aProg}%</div>
-                        </div>
-                      </div>
-                      <div className="flex justify-end gap-1 -mt-2">
-                        <Button type="button" variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => openAssignmentEditor(asg)}>
-                          <Pencil className="size-3.5"/> Edit assignment
-                        </Button>
-                        <Button type="button" variant="ghost" size="icon" className="size-8 text-destructive hover:text-destructive" onClick={() => setDeletingAssignment(asg)} aria-label={`Delete ${prof?.full_name || "employee"} assignment`} title="Delete assignment">
-                          <Trash2 className="size-4"/>
-                        </Button>
-                      </div>
-                      
-                      <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
-                         <div className={`h-full transition-all ${isDone ? 'bg-green-500' : 'bg-primary'}`} style={{width:`${aProg}%`}}/>
-                      </div>
-
-                      <ul className="space-y-2">
-                        {asgItems.map(wi => {
-                          const isCompleted = wi.status === 'Completed' || wi.status === 'completed';
-                          return (
-                            <li key={wi.id} className="flex items-start gap-2 rounded-lg border bg-background p-2.5">
-                              <button
-                                type="button"
-                                className="mt-0.5 shrink-0 text-muted-foreground hover:text-primary"
-                                onClick={() => toggleWorkItem(wi)}
-                                aria-label={isCompleted ? `Mark ${wi.title} incomplete` : `Mark ${wi.title} complete`}
-                                title={isCompleted ? "Mark incomplete" : "Mark complete"}
-                              >
-                                {isCompleted ? <CheckCircle2 className="size-4 text-green-600"/> : <Circle className="size-4"/>}
-                              </button>
-                              <div className="min-w-0 flex-1">
-                                <div className={`text-sm font-medium ${isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'}`}>{wi.title}</div>
-                                {wi.description && <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{wi.description}</p>}
-                                <span className="mt-1 inline-flex rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium capitalize text-muted-foreground">{wi.priority || "medium"} priority</span>
-                              </div>
-                              <div className="flex shrink-0 items-center gap-1">
-                                <Button type="button" variant="ghost" size="icon" className="size-8" onClick={() => openWorkItemEditor(wi)} aria-label={`Edit ${wi.title}`} title="Edit task">
-                                  <Pencil className="size-4"/>
-                                </Button>
-                                <Button type="button" variant="ghost" size="icon" className="size-8 text-destructive hover:text-destructive" onClick={() => setDeletingWorkItem(wi)} aria-label={`Delete ${wi.title}`} title="Delete task">
-                                  <Trash2 className="size-4"/>
-                                </Button>
-                              </div>
-                            </li>
-                          );
-                        })}
-                        {asgItems.length === 0 && <li className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">No tasks assigned yet.</li>}
-                      </ul>
-                    </div>
-                  )
-                })}
-              </div>
-            </section>
-          );
-        })}
-      </div>
-
-      {/* TARGETS & CHECKMARKS (ASLENIX DOCUMENT STYLE) */}
-      {targets.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-lg font-black uppercase tracking-widest text-muted-foreground mb-4">Weekly Targets</h2>
-          <div className="grid gap-4">
-            {targets.map(tgt => {
-              const reqs = requirements.filter(r => r.target_id === tgt.id);
-              return (
-                <section key={tgt.id} className="overflow-hidden rounded-xl border bg-card">
-                  <div className="bg-primary/5 p-4 border-b flex justify-between items-center">
-                    <div>
-                      <h4 className="font-black text-lg text-primary uppercase tracking-wider">{tgt.name}</h4>
-                      <div className="text-xs font-bold text-muted-foreground uppercase mt-1">
-                        Target Date: {tgt.target_date ? `${formatNepaliDate(tgt.target_date)} BS` : "Not set"}
-                      </div>
-                    </div>
-                    <div className="px-4 py-1.5 rounded-full border border-primary/30 bg-background shadow-sm text-xs font-black text-primary uppercase tracking-widest">
-                      {tgt.status}
-                    </div>
-                  </div>
-                  <div className="p-0">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted/30">
-                        <tr>
-                          <th className="text-left font-black p-4 uppercase tracking-widest text-xs text-muted-foreground w-1/3">Module</th>
-                          <th className="text-left font-black p-4 uppercase tracking-widest text-xs text-muted-foreground">Required Assignments</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border/50">
-                        {sprintModules.map(sm => {
-                          const mod = modules.find(m => m.id === sm.module_id);
-                          const asgs = assignments.filter(a => a.sprint_module_id === sm.id);
-                          // For visual purpose matching the user prompt table Checkmarks
-                          return (
-                            <tr key={sm.id}>
-                              <td className="p-4 font-bold border-r">{mod?.name}</td>
-                              <td className="p-4 flex flex-wrap gap-4">
-                                {asgs.map(a => {
-                                  const asgItems = workItems.filter(w => w.module_assignment_id === a.id);
-                                  const allDone = asgItems.length > 0 && asgItems.every(w => w.status === 'Completed' || w.status === 'completed');
-                                  return (
-                                    <div key={a.id} className="flex items-center gap-2 bg-background border px-3 py-1.5 rounded-full shadow-sm">
-                                      <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{a.role}</span>
-                                      {allDone ? <CheckCircle2 className="size-4 text-green-500" /> : <div className="size-4 rounded-full border-2 border-muted-foreground/20"/>}
-                                    </div>
-                                  )
-                                })}
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </section>
-              )
-            })}
-          </div>
+      {selectedSprint && sprintModules.length > 0 && (
+        <div className="grid min-w-0 gap-2 sm:grid-cols-2">
+          {sprintModules.map(sprintModule => {
+            const moduleAssignments = assignments.filter(assignment => assignment.sprint_module_id === sprintModule.id);
+            const assignmentIds = new Set(moduleAssignments.map(assignment => assignment.id));
+            const moduleWorkItems = workItems.filter(item => assignmentIds.has(item.module_assignment_id));
+            const totalWeight = moduleWorkItems.reduce((total, item) => total + Number(item.weight || 10), 0);
+            const completedWeight = moduleWorkItems.reduce(
+              (total, item) => total + (item.status === "completed" || item.status === "Completed" ? Number(item.weight || 10) : 0),
+              0,
+            );
+            return (
+              <ModuleHeader
+                key={sprintModule.id}
+                name={modules.find(module => module.id === sprintModule.module_id)?.name || "Unknown module"}
+                taskCount={moduleWorkItems.length}
+                assignmentCount={moduleAssignments.length}
+                employeeCount={new Set(moduleAssignments.map(assignment => assignment.user_id)).size}
+                progress={totalWeight ? Math.round(completedWeight / totalWeight * 100) : 0}
+                onAddAssignment={() => openNewAssignment(sprintModule.id)}
+              />
+            );
+          })}
         </div>
       )}
 
-      {/* DETAILED TABLE */}
+      <div className="min-w-0">
+        <TaskBoard
+          tasks={boardTasks}
+          modules={sprintModules.map(sprintModule => ({
+            id: sprintModule.module_id,
+            name: modules.find(module => module.id === sprintModule.module_id)?.name || "Unknown module",
+          })).filter((module, index, all) => all.findIndex(item => item.id === module.id) === index)}
+          onEdit={task => openWorkItemEditor(task.source)}
+          onDelete={task => setDeletingWorkItem(task.source)}
+          onStatusChange={updateBoardTaskStatus}
+        />
+      </div>
+
+      {/* WEEKLY TARGET SUMMARY */}
+      {targets.length > 0 && (
+        <section className="min-w-0 overflow-hidden rounded-xl border bg-card">
+          <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
+            <div>
+              <h2 className="text-sm font-semibold">Weekly targets</h2>
+              <p className="text-xs text-muted-foreground">Compact progress summary by module.</p>
+            </div>
+            <span className="rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">{targets.length} targets</span>
+          </div>
+          <div className="w-full min-w-0 overflow-x-auto">
+            <table className="w-full min-w-[650px] text-sm">
+              <thead className="bg-muted/30 text-left text-xs font-semibold text-muted-foreground">
+                <tr>
+                  <th className="p-3">Module</th>
+                  <th className="p-3">Target</th>
+                  <th className="p-3">Required assignments</th>
+                  <th className="w-36 p-3">Progress</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {targets.flatMap(target => sprintModules.map(sprintModule => {
+                  const moduleAssignments = assignments.filter(assignment =>
+                    assignment.sprint_module_id === sprintModule.id &&
+                    requirements.some(requirement =>
+                      requirement.target_id === target.id &&
+                      requirement.module_assignment_id === assignment.id,
+                    ),
+                  );
+                  if (moduleAssignments.length === 0) return null;
+                  const targetItems = workItems.filter(item =>
+                    moduleAssignments.some(assignment => assignment.id === item.module_assignment_id),
+                  );
+                  const totalWeight = targetItems.reduce((total, item) => total + Number(item.weight || 10), 0);
+                  const completedWeight = targetItems.reduce(
+                    (total, item) =>
+                      total + ((item.status === "completed" || item.status === "Completed") ? Number(item.weight || 10) : 0),
+                    0,
+                  );
+                  const progress = totalWeight ? Math.round(completedWeight / totalWeight * 100) : 0;
+                  return (
+                    <tr key={`${target.id}-${sprintModule.id}`}>
+                      <td className="p-3 font-medium">{modules.find(module => module.id === sprintModule.module_id)?.name || "Unknown module"}</td>
+                      <td className="p-3">
+                        <div className="font-medium">{target.name}</div>
+                        <div className="text-xs text-muted-foreground">{target.target_date ? `${formatNepaliDate(target.target_date)} BS` : "No target date"}</div>
+                      </td>
+                      <td className="p-3 text-muted-foreground">
+                        {moduleAssignments.map(assignment => assignment.role).filter(Boolean).join(", ") || `${moduleAssignments.length} assignments`}
+                      </td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-muted">
+                            <div className="h-full rounded-full bg-primary" style={{ width: `${progress}%` }} />
+                          </div>
+                          <span className="w-8 text-right text-xs font-semibold tabular-nums">{progress}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {/* SECONDARY EMPLOYEE ASSIGNMENT TABLE */}
       {assignments.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-lg font-black uppercase tracking-widest text-muted-foreground mb-4">Employee Assignment Table</h2>
+        <section className="min-w-0">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold">Employee assignment details</h2>
+              <p className="text-xs text-muted-foreground">Detailed workload and completion overview.</p>
+            </div>
+            <Button type="button" variant="outline" size="sm" onClick={() => setAssignmentTableOpen(open => !open)}>
+              {assignmentTableOpen ? "Hide assignment table" : "View assignment table"}
+              <ChevronDown className={`size-4 transition-transform ${assignmentTableOpen ? "rotate-180" : ""}`} />
+            </Button>
+          </div>
+          {assignmentTableOpen && (
           <div className="overflow-hidden overflow-x-auto rounded-xl border bg-card">
             <table className="w-full text-sm">
               <thead className="bg-muted/30">
@@ -838,7 +884,8 @@ function AdminTasksRedesign() {
               </tbody>
             </table>
           </div>
-        </div>
+          )}
+        </section>
       )}
 
       {/* Modals */}
@@ -975,6 +1022,35 @@ function AdminTasksRedesign() {
                   })}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Working together</Label>
+              <p className="text-xs text-muted-foreground">
+                Add teammates who share this task. The assigned employee is included automatically.
+              </p>
+              <div className="max-h-40 space-y-1 overflow-y-auto rounded-lg border p-2">
+                {profiles
+                  .filter(profile => profile.user_id !== assignments.find(assignment => assignment.id === editAssignmentId)?.user_id)
+                  .map(profile => {
+                    const isSelected = collaboratorIds.includes(profile.user_id);
+                    return (
+                      <label
+                        key={profile.user_id}
+                        className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/50"
+                      >
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={checked => setCollaboratorIds(current =>
+                            checked
+                              ? [...new Set([...current, profile.user_id])]
+                              : current.filter(userId => userId !== profile.user_id),
+                          )}
+                        />
+                        <span className="truncate">{profile.full_name || "Unnamed employee"}</span>
+                      </label>
+                    );
+                  })}
+              </div>
             </div>
           </div>
           <DialogFooter>

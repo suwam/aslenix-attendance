@@ -404,6 +404,39 @@ export type Database = {
           }
         ]
       }
+      work_item_assignees: {
+        Row: {
+          created_at: string
+          user_id: string
+          work_item_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+          work_item_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+          work_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_item_assignees_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "work_item_assignees_work_item_id_fkey"
+            columns: ["work_item_id"]
+            isOneToOne: false
+            referencedRelation: "work_items"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       activity_logs: {
         Row: {
           action: string

@@ -348,17 +348,17 @@ export function WeeklySprintWizard({ open, onOpenChange, project, profiles, onSa
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] border-none shadow-2xl p-0 overflow-hidden">
-        <DialogHeader className="p-6 bg-muted/30 border-b">
+      <DialogContent className="flex max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] flex-col overflow-hidden border-none p-0 shadow-2xl sm:max-w-[700px]">
+        <DialogHeader className="shrink-0 border-b bg-muted/30 p-4 sm:p-6">
           <DialogTitle className="text-xl font-bold flex items-center gap-2">
             <span className="bg-primary text-primary-foreground w-8 h-8 rounded-full flex items-center justify-center text-sm">{step}</span>
             Create Weekly Assignment
           </DialogTitle>
         </DialogHeader>
-        <div className="p-6 min-h-[400px]">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
           {renderStep()}
         </div>
-        <div className="p-4 bg-muted/20 border-t flex items-center justify-between">
+        <div className="flex shrink-0 items-center justify-between gap-2 border-t bg-muted/20 p-3 sm:p-4">
           <Button variant="ghost" onClick={handlePrev} disabled={step === 1 || loading} className="rounded-xl"><ChevronLeft className="size-4 mr-1"/> Back</Button>
           <div className="flex gap-1">
             {[1,2,3,4,5,6,7,8].map(i => (

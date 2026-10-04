@@ -9,66 +9,50 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SignupRouteImport } from './routes/signup'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as PendingRouteImport } from './routes/pending'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as AccountLockedRouteImport } from './routes/account-locked'
-import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as VerifyEmployeeQrTokenRouteImport } from './routes/verify-employee.$qrToken'
-import { Route as AppTasksRouteImport } from './routes/_app/tasks'
-import { Route as AppSettingsRouteImport } from './routes/_app/settings'
-import { Route as AppProfileRouteImport } from './routes/_app/profile'
-import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
-import { Route as AppMyLeavesRouteImport } from './routes/_app/my-leaves'
-import { Route as AppMyAttendanceRouteImport } from './routes/_app/my-attendance'
-import { Route as AppMessagesRouteImport } from './routes/_app/messages'
-import { Route as AppMeetingsRouteImport } from './routes/_app/meetings'
-import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
-import { Route as AppCheckInRouteImport } from './routes/_app/check-in'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as AccountLockedRouteImport } from './routes/account-locked'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as PendingRouteImport } from './routes/pending'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
+import { Route as AppCheckInRouteImport } from './routes/_app/check-in'
+import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppMeetingsRouteImport } from './routes/_app/meetings'
+import { Route as AppMessagesRouteImport } from './routes/_app/messages'
+import { Route as AppMyAttendanceRouteImport } from './routes/_app/my-attendance'
+import { Route as AppMyLeavesRouteImport } from './routes/_app/my-leaves'
+import { Route as AppNotificationsRouteImport } from './routes/_app/notifications'
+import { Route as AppProfileRouteImport } from './routes/_app/profile'
+import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppTasksRouteImport } from './routes/_app/tasks'
+import { Route as VerifyEmployeeQrTokenRouteImport } from './routes/verify-employee.$qrToken'
 import { Route as AppAdminIndexRouteImport } from './routes/_app/admin/index'
-import { Route as AppAdminWhatsappSettingsRouteImport } from './routes/_app/admin/whatsapp-settings'
-import { Route as AppAdminWhatsappHistoryRouteImport } from './routes/_app/admin/whatsapp-history'
-import { Route as AppAdminTasksRouteImport } from './routes/_app/admin/tasks'
-import { Route as AppAdminSettingsRouteImport } from './routes/_app/admin/settings'
-import { Route as AppAdminReportsRouteImport } from './routes/_app/admin/reports'
-import { Route as AppAdminQrIdsRouteImport } from './routes/_app/admin/qr-ids'
-import { Route as AppAdminNotificationsRouteImport } from './routes/_app/admin/notifications'
-import { Route as AppAdminMeetingsRouteImport } from './routes/_app/admin/meetings'
-import { Route as AppAdminLeavesRouteImport } from './routes/_app/admin/leaves'
-import { Route as AppAdminEmployeesRouteImport } from './routes/_app/admin/employees'
-import { Route as AppAdminEmployeeOfMonthRouteImport } from './routes/_app/admin/employee-of-month'
-import { Route as AppAdminCardReaderAttendanceRouteImport } from './routes/_app/admin/card-reader-attendance'
-import { Route as AppAdminAttendanceCorrectionsRouteImport } from './routes/_app/admin/attendance-corrections'
-import { Route as AppAdminAttendanceRouteImport } from './routes/_app/admin/attendance'
 import { Route as AppAdminApprovalsRouteImport } from './routes/_app/admin/approvals'
+import { Route as AppAdminAttendanceRouteImport } from './routes/_app/admin/attendance'
+import { Route as AppAdminAttendanceCorrectionsRouteImport } from './routes/_app/admin/attendance-corrections'
+import { Route as AppAdminCardReaderAttendanceRouteImport } from './routes/_app/admin/card-reader-attendance'
+import { Route as AppAdminEmployeeOfMonthRouteImport } from './routes/_app/admin/employee-of-month'
+import { Route as AppAdminEmployeesRouteImport } from './routes/_app/admin/employees'
+import { Route as AppAdminLeavesRouteImport } from './routes/_app/admin/leaves'
+import { Route as AppAdminMeetingsRouteImport } from './routes/_app/admin/meetings'
+import { Route as AppAdminNotificationsRouteImport } from './routes/_app/admin/notifications'
+import { Route as AppAdminQrIdsRouteImport } from './routes/_app/admin/qr-ids'
+import { Route as AppAdminReportsRouteImport } from './routes/_app/admin/reports'
+import { Route as AppAdminSettingsRouteImport } from './routes/_app/admin/settings'
+import { Route as AppAdminTasksRouteImport } from './routes/_app/admin/tasks'
+import { Route as AppAdminWhatsappHistoryRouteImport } from './routes/_app/admin/whatsapp-history'
+import { Route as AppAdminWhatsappSettingsRouteImport } from './routes/_app/admin/whatsapp-settings'
 
-const SignupRoute = SignupRouteImport.update({
-  id: '/signup',
-  path: '/signup',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PendingRoute = PendingRouteImport.update({
-  id: '/pending',
-  path: '/pending',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AccountLockedRoute = AccountLockedRouteImport.update({
@@ -76,63 +60,34 @@ const AccountLockedRoute = AccountLockedRouteImport.update({
   path: '/account-locked',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppRoute = AppRouteImport.update({
-  id: '/_app',
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const VerifyEmployeeQrTokenRoute = VerifyEmployeeQrTokenRouteImport.update({
-  id: '/verify-employee/$qrToken',
-  path: '/verify-employee/$qrToken',
+const PendingRoute = PendingRouteImport.update({
+  id: '/pending',
+  path: '/pending',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppTasksRoute = AppTasksRouteImport.update({
-  id: '/tasks',
-  path: '/tasks',
-  getParentRoute: () => AppRoute,
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppSettingsRoute = AppSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AppRoute,
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppProfileRoute = AppProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppNotificationsRoute = AppNotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppMyLeavesRoute = AppMyLeavesRouteImport.update({
-  id: '/my-leaves',
-  path: '/my-leaves',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppMyAttendanceRoute = AppMyAttendanceRouteImport.update({
-  id: '/my-attendance',
-  path: '/my-attendance',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppMessagesRoute = AppMessagesRouteImport.update({
-  id: '/messages',
-  path: '/messages',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppMeetingsRoute = AppMeetingsRouteImport.update({
-  id: '/meetings',
-  path: '/meetings',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppDashboardRoute = AppDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+const AppCalendarRoute = AppCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
   getParentRoute: () => AppRoute,
 } as any)
 const AppCheckInRoute = AppCheckInRouteImport.update({
@@ -140,14 +95,131 @@ const AppCheckInRoute = AppCheckInRouteImport.update({
   path: '/check-in',
   getParentRoute: () => AppRoute,
 } as any)
-const AppCalendarRoute = AppCalendarRouteImport.update({
-  id: '/calendar',
-  path: '/calendar',
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => AppRoute,
+} as any)
+const AppMeetingsRoute = AppMeetingsRouteImport.update({
+  id: '/meetings',
+  path: '/meetings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMessagesRoute = AppMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyAttendanceRoute = AppMyAttendanceRouteImport.update({
+  id: '/my-attendance',
+  path: '/my-attendance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyLeavesRoute = AppMyLeavesRouteImport.update({
+  id: '/my-leaves',
+  path: '/my-leaves',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotificationsRoute = AppNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTasksRoute = AppTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => AppRoute,
+} as any)
+const VerifyEmployeeQrTokenRoute = VerifyEmployeeQrTokenRouteImport.update({
+  id: '/verify-employee/$qrToken',
+  path: '/verify-employee/$qrToken',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminApprovalsRoute = AppAdminApprovalsRouteImport.update({
+  id: '/admin/approvals',
+  path: '/admin/approvals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminAttendanceRoute = AppAdminAttendanceRouteImport.update({
+  id: '/admin/attendance',
+  path: '/admin/attendance',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminAttendanceCorrectionsRoute =
+  AppAdminAttendanceCorrectionsRouteImport.update({
+    id: '/admin/attendance-corrections',
+    path: '/admin/attendance-corrections',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppAdminCardReaderAttendanceRoute =
+  AppAdminCardReaderAttendanceRouteImport.update({
+    id: '/admin/card-reader-attendance',
+    path: '/admin/card-reader-attendance',
+    getParentRoute: () => AppRoute,
+  } as any)
+const AppAdminEmployeeOfMonthRoute = AppAdminEmployeeOfMonthRouteImport.update({
+  id: '/admin/employee-of-month',
+  path: '/admin/employee-of-month',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminEmployeesRoute = AppAdminEmployeesRouteImport.update({
+  id: '/admin/employees',
+  path: '/admin/employees',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminLeavesRoute = AppAdminLeavesRouteImport.update({
+  id: '/admin/leaves',
+  path: '/admin/leaves',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminMeetingsRoute = AppAdminMeetingsRouteImport.update({
+  id: '/admin/meetings',
+  path: '/admin/meetings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminNotificationsRoute = AppAdminNotificationsRouteImport.update({
+  id: '/admin/notifications',
+  path: '/admin/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminQrIdsRoute = AppAdminQrIdsRouteImport.update({
+  id: '/admin/qr-ids',
+  path: '/admin/qr-ids',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminReportsRoute = AppAdminReportsRouteImport.update({
+  id: '/admin/reports',
+  path: '/admin/reports',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminSettingsRoute = AppAdminSettingsRouteImport.update({
+  id: '/admin/settings',
+  path: '/admin/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminTasksRoute = AppAdminTasksRouteImport.update({
+  id: '/admin/tasks',
+  path: '/admin/tasks',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminWhatsappHistoryRoute = AppAdminWhatsappHistoryRouteImport.update({
+  id: '/admin/whatsapp-history',
+  path: '/admin/whatsapp-history',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAdminWhatsappSettingsRoute =
@@ -156,78 +228,6 @@ const AppAdminWhatsappSettingsRoute =
     path: '/admin/whatsapp-settings',
     getParentRoute: () => AppRoute,
   } as any)
-const AppAdminWhatsappHistoryRoute = AppAdminWhatsappHistoryRouteImport.update({
-  id: '/admin/whatsapp-history',
-  path: '/admin/whatsapp-history',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminTasksRoute = AppAdminTasksRouteImport.update({
-  id: '/admin/tasks',
-  path: '/admin/tasks',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminSettingsRoute = AppAdminSettingsRouteImport.update({
-  id: '/admin/settings',
-  path: '/admin/settings',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminReportsRoute = AppAdminReportsRouteImport.update({
-  id: '/admin/reports',
-  path: '/admin/reports',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminQrIdsRoute = AppAdminQrIdsRouteImport.update({
-  id: '/admin/qr-ids',
-  path: '/admin/qr-ids',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminNotificationsRoute = AppAdminNotificationsRouteImport.update({
-  id: '/admin/notifications',
-  path: '/admin/notifications',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminMeetingsRoute = AppAdminMeetingsRouteImport.update({
-  id: '/admin/meetings',
-  path: '/admin/meetings',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminLeavesRoute = AppAdminLeavesRouteImport.update({
-  id: '/admin/leaves',
-  path: '/admin/leaves',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminEmployeesRoute = AppAdminEmployeesRouteImport.update({
-  id: '/admin/employees',
-  path: '/admin/employees',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminEmployeeOfMonthRoute = AppAdminEmployeeOfMonthRouteImport.update({
-  id: '/admin/employee-of-month',
-  path: '/admin/employee-of-month',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminCardReaderAttendanceRoute =
-  AppAdminCardReaderAttendanceRouteImport.update({
-    id: '/admin/card-reader-attendance',
-    path: '/admin/card-reader-attendance',
-    getParentRoute: () => AppRoute,
-  } as any)
-const AppAdminAttendanceCorrectionsRoute =
-  AppAdminAttendanceCorrectionsRouteImport.update({
-    id: '/admin/attendance-corrections',
-    path: '/admin/attendance-corrections',
-    getParentRoute: () => AppRoute,
-  } as any)
-const AppAdminAttendanceRoute = AppAdminAttendanceRouteImport.update({
-  id: '/admin/attendance',
-  path: '/admin/attendance',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppAdminApprovalsRoute = AppAdminApprovalsRouteImport.update({
-  id: '/admin/approvals',
-  path: '/admin/approvals',
-  getParentRoute: () => AppRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -471,46 +471,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/signup': {
-      id: '/signup'
-      path: '/signup'
-      fullPath: '/signup'
-      preLoaderRoute: typeof SignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pending': {
-      id: '/pending'
-      path: '/pending'
-      fullPath: '/pending'
-      preLoaderRoute: typeof PendingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/forgot-password': {
-      id: '/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof ForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/account-locked': {
-      id: '/account-locked'
-      path: '/account-locked'
-      fullPath: '/account-locked'
-      preLoaderRoute: typeof AccountLockedRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app': {
@@ -520,81 +485,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/account-locked': {
+      id: '/account-locked'
+      path: '/account-locked'
+      fullPath: '/account-locked'
+      preLoaderRoute: typeof AccountLockedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/verify-employee/$qrToken': {
-      id: '/verify-employee/$qrToken'
-      path: '/verify-employee/$qrToken'
-      fullPath: '/verify-employee/$qrToken'
-      preLoaderRoute: typeof VerifyEmployeeQrTokenRouteImport
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/tasks': {
-      id: '/_app/tasks'
-      path: '/tasks'
-      fullPath: '/tasks'
-      preLoaderRoute: typeof AppTasksRouteImport
-      parentRoute: typeof AppRoute
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/settings': {
-      id: '/_app/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppRoute
+    '/pending': {
+      id: '/pending'
+      path: '/pending'
+      fullPath: '/pending'
+      preLoaderRoute: typeof PendingRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/profile': {
-      id: '/_app/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof AppProfileRouteImport
-      parentRoute: typeof AppRoute
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/notifications': {
-      id: '/_app/notifications'
-      path: '/notifications'
-      fullPath: '/notifications'
-      preLoaderRoute: typeof AppNotificationsRouteImport
-      parentRoute: typeof AppRoute
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_app/my-leaves': {
-      id: '/_app/my-leaves'
-      path: '/my-leaves'
-      fullPath: '/my-leaves'
-      preLoaderRoute: typeof AppMyLeavesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/my-attendance': {
-      id: '/_app/my-attendance'
-      path: '/my-attendance'
-      fullPath: '/my-attendance'
-      preLoaderRoute: typeof AppMyAttendanceRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/messages': {
-      id: '/_app/messages'
-      path: '/messages'
-      fullPath: '/messages'
-      preLoaderRoute: typeof AppMessagesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/meetings': {
-      id: '/_app/meetings'
-      path: '/meetings'
-      fullPath: '/meetings'
-      preLoaderRoute: typeof AppMeetingsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/dashboard': {
-      id: '/_app/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AppDashboardRouteImport
+    '/_app/calendar': {
+      id: '/_app/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof AppCalendarRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/check-in': {
@@ -604,12 +541,75 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCheckInRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/calendar': {
-      id: '/_app/calendar'
-      path: '/calendar'
-      fullPath: '/calendar'
-      preLoaderRoute: typeof AppCalendarRouteImport
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/_app/meetings': {
+      id: '/_app/meetings'
+      path: '/meetings'
+      fullPath: '/meetings'
+      preLoaderRoute: typeof AppMeetingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/messages': {
+      id: '/_app/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof AppMessagesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-attendance': {
+      id: '/_app/my-attendance'
+      path: '/my-attendance'
+      fullPath: '/my-attendance'
+      preLoaderRoute: typeof AppMyAttendanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-leaves': {
+      id: '/_app/my-leaves'
+      path: '/my-leaves'
+      fullPath: '/my-leaves'
+      preLoaderRoute: typeof AppMyLeavesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/notifications': {
+      id: '/_app/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AppNotificationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/profile': {
+      id: '/_app/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/tasks': {
+      id: '/_app/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof AppTasksRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/verify-employee/$qrToken': {
+      id: '/verify-employee/$qrToken'
+      path: '/verify-employee/$qrToken'
+      fullPath: '/verify-employee/$qrToken'
+      preLoaderRoute: typeof VerifyEmployeeQrTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/admin/': {
       id: '/_app/admin/'
@@ -618,95 +618,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/admin/whatsapp-settings': {
-      id: '/_app/admin/whatsapp-settings'
-      path: '/admin/whatsapp-settings'
-      fullPath: '/admin/whatsapp-settings'
-      preLoaderRoute: typeof AppAdminWhatsappSettingsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin/whatsapp-history': {
-      id: '/_app/admin/whatsapp-history'
-      path: '/admin/whatsapp-history'
-      fullPath: '/admin/whatsapp-history'
-      preLoaderRoute: typeof AppAdminWhatsappHistoryRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin/tasks': {
-      id: '/_app/admin/tasks'
-      path: '/admin/tasks'
-      fullPath: '/admin/tasks'
-      preLoaderRoute: typeof AppAdminTasksRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin/settings': {
-      id: '/_app/admin/settings'
-      path: '/admin/settings'
-      fullPath: '/admin/settings'
-      preLoaderRoute: typeof AppAdminSettingsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin/reports': {
-      id: '/_app/admin/reports'
-      path: '/admin/reports'
-      fullPath: '/admin/reports'
-      preLoaderRoute: typeof AppAdminReportsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin/qr-ids': {
-      id: '/_app/admin/qr-ids'
-      path: '/admin/qr-ids'
-      fullPath: '/admin/qr-ids'
-      preLoaderRoute: typeof AppAdminQrIdsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin/notifications': {
-      id: '/_app/admin/notifications'
-      path: '/admin/notifications'
-      fullPath: '/admin/notifications'
-      preLoaderRoute: typeof AppAdminNotificationsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin/meetings': {
-      id: '/_app/admin/meetings'
-      path: '/admin/meetings'
-      fullPath: '/admin/meetings'
-      preLoaderRoute: typeof AppAdminMeetingsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin/leaves': {
-      id: '/_app/admin/leaves'
-      path: '/admin/leaves'
-      fullPath: '/admin/leaves'
-      preLoaderRoute: typeof AppAdminLeavesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin/employees': {
-      id: '/_app/admin/employees'
-      path: '/admin/employees'
-      fullPath: '/admin/employees'
-      preLoaderRoute: typeof AppAdminEmployeesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin/employee-of-month': {
-      id: '/_app/admin/employee-of-month'
-      path: '/admin/employee-of-month'
-      fullPath: '/admin/employee-of-month'
-      preLoaderRoute: typeof AppAdminEmployeeOfMonthRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin/card-reader-attendance': {
-      id: '/_app/admin/card-reader-attendance'
-      path: '/admin/card-reader-attendance'
-      fullPath: '/admin/card-reader-attendance'
-      preLoaderRoute: typeof AppAdminCardReaderAttendanceRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/admin/attendance-corrections': {
-      id: '/_app/admin/attendance-corrections'
-      path: '/admin/attendance-corrections'
-      fullPath: '/admin/attendance-corrections'
-      preLoaderRoute: typeof AppAdminAttendanceCorrectionsRouteImport
+    '/_app/admin/approvals': {
+      id: '/_app/admin/approvals'
+      path: '/admin/approvals'
+      fullPath: '/admin/approvals'
+      preLoaderRoute: typeof AppAdminApprovalsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/admin/attendance': {
@@ -716,11 +632,95 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminAttendanceRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/admin/approvals': {
-      id: '/_app/admin/approvals'
-      path: '/admin/approvals'
-      fullPath: '/admin/approvals'
-      preLoaderRoute: typeof AppAdminApprovalsRouteImport
+    '/_app/admin/attendance-corrections': {
+      id: '/_app/admin/attendance-corrections'
+      path: '/admin/attendance-corrections'
+      fullPath: '/admin/attendance-corrections'
+      preLoaderRoute: typeof AppAdminAttendanceCorrectionsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/card-reader-attendance': {
+      id: '/_app/admin/card-reader-attendance'
+      path: '/admin/card-reader-attendance'
+      fullPath: '/admin/card-reader-attendance'
+      preLoaderRoute: typeof AppAdminCardReaderAttendanceRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/employee-of-month': {
+      id: '/_app/admin/employee-of-month'
+      path: '/admin/employee-of-month'
+      fullPath: '/admin/employee-of-month'
+      preLoaderRoute: typeof AppAdminEmployeeOfMonthRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/employees': {
+      id: '/_app/admin/employees'
+      path: '/admin/employees'
+      fullPath: '/admin/employees'
+      preLoaderRoute: typeof AppAdminEmployeesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/leaves': {
+      id: '/_app/admin/leaves'
+      path: '/admin/leaves'
+      fullPath: '/admin/leaves'
+      preLoaderRoute: typeof AppAdminLeavesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/meetings': {
+      id: '/_app/admin/meetings'
+      path: '/admin/meetings'
+      fullPath: '/admin/meetings'
+      preLoaderRoute: typeof AppAdminMeetingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/notifications': {
+      id: '/_app/admin/notifications'
+      path: '/admin/notifications'
+      fullPath: '/admin/notifications'
+      preLoaderRoute: typeof AppAdminNotificationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/qr-ids': {
+      id: '/_app/admin/qr-ids'
+      path: '/admin/qr-ids'
+      fullPath: '/admin/qr-ids'
+      preLoaderRoute: typeof AppAdminQrIdsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/reports': {
+      id: '/_app/admin/reports'
+      path: '/admin/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AppAdminReportsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/settings': {
+      id: '/_app/admin/settings'
+      path: '/admin/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AppAdminSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/tasks': {
+      id: '/_app/admin/tasks'
+      path: '/admin/tasks'
+      fullPath: '/admin/tasks'
+      preLoaderRoute: typeof AppAdminTasksRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/whatsapp-history': {
+      id: '/_app/admin/whatsapp-history'
+      path: '/admin/whatsapp-history'
+      fullPath: '/admin/whatsapp-history'
+      preLoaderRoute: typeof AppAdminWhatsappHistoryRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin/whatsapp-settings': {
+      id: '/_app/admin/whatsapp-settings'
+      path: '/admin/whatsapp-settings'
+      fullPath: '/admin/whatsapp-settings'
+      preLoaderRoute: typeof AppAdminWhatsappSettingsRouteImport
       parentRoute: typeof AppRoute
     }
   }
