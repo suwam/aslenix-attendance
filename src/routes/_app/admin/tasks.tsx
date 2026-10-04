@@ -64,6 +64,7 @@ function AdminTasksRedesign() {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [sprints, setSprints] = useState<any[]>([]);
   const [selectedSprintId, setSelectedSprintId] = useState("");
+  const [boardModuleFilter, setBoardModuleFilter] = useState("all");
   
   // Drill-down data
   const [teams, setTeams] = useState<any[]>([]);
@@ -141,6 +142,7 @@ function AdminTasksRedesign() {
 
   useEffect(() => {
     if (!selectedSprintId) {
+      setBoardModuleFilter("all");
       setTeams([]);
       setTeamMembers([]);
       setSprintModules([]);
@@ -207,6 +209,7 @@ function AdminTasksRedesign() {
       id: workItem.id,
       title: workItem.title || "Untitled task",
       description: workItem.description,
+      notes: workItem.notes,
       status: workItem.status || "todo",
       progress: Number(workItem.progress || 0),
       priority: workItem.priority || "medium",
@@ -722,6 +725,7 @@ function AdminTasksRedesign() {
               <ModuleHeader
                 key={sprintModule.id}
                 name={modules.find(module => module.id === sprintModule.module_id)?.name || "Unknown module"}
+                onSelectModule={() => setBoardModuleFilter(sprintModule.module_id)}
                 taskCount={moduleWorkItems.length}
                 assignmentCount={moduleAssignments.length}
                 employeeCount={new Set(moduleAssignments.map(assignment => assignment.user_id)).size}
@@ -736,6 +740,8 @@ function AdminTasksRedesign() {
       <div className="min-w-0">
         <TaskBoard
           tasks={boardTasks}
+          moduleFilter={boardModuleFilter}
+          setModuleFilter={setBoardModuleFilter}
           modules={sprintModules.map(sprintModule => ({
             id: sprintModule.module_id,
             name: modules.find(module => module.id === sprintModule.module_id)?.name || "Unknown module",

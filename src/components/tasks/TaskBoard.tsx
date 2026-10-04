@@ -43,6 +43,7 @@ export type BoardTask = {
   id: string;
   title: string;
   description?: string | null;
+  notes?: string | null;
   status: string;
   progress: number;
   priority: string;
@@ -65,6 +66,7 @@ const columns: { id: BoardStatus; title: string; marker: string }[] = [
 ];
 
 export function ModuleHeader({
+  onSelectModule,
   name,
   taskCount,
   assignmentCount,
@@ -72,6 +74,7 @@ export function ModuleHeader({
   progress,
   onAddAssignment,
 }: {
+  onSelectModule: () => void;
   name: string;
   taskCount: number;
   assignmentCount: number;
@@ -81,13 +84,19 @@ export function ModuleHeader({
 }) {
   return (
     <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3">
-      <div className="min-w-0">
-        <h2 className="truncate text-sm font-semibold">{name}</h2>
+      <button
+        type="button"
+        onClick={onSelectModule}
+        className="min-w-0 text-left rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        aria-label={`View tasks in ${name}`}
+      >
+        <h2 className="truncate text-sm font-semibold hover:text-primary">{name}</h2>
         <p className="mt-1 text-xs text-muted-foreground">
           {taskCount} tasks · {assignmentCount} assignments · {employeeCount} employees · {progress}
           % overall
         </p>
-      </div>
+        <span className="mt-1 block text-[10px] text-primary">View module tasks</span>
+      </button>
       <div className="flex shrink-0 items-center gap-3">
         <div className="hidden w-20 overflow-hidden rounded-full bg-muted sm:block">
           <div
@@ -504,17 +513,20 @@ function FilterBar({
 export function TaskBoard({
   tasks,
   modules,
+  moduleFilter,
+  setModuleFilter,
   onEdit,
   onDelete,
   onStatusChange,
 }: {
   tasks: BoardTask[];
   modules: { id: string; name: string }[];
+  moduleFilter: string;
+  setModuleFilter: (value: string) => void;
   onEdit: (task: BoardTask) => void;
   onDelete: (task: BoardTask) => void;
   onStatusChange: (task: BoardTask, status: BoardStatus) => void;
 }) {
-  const [moduleFilter, setModuleFilter] = useState("all");
   const [employeeFilter, setEmployeeFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -591,18 +603,25 @@ export function TaskBoard({
       />
 
       {view === "kanban" ? (
-        <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {columns.map((column) => (
-            <KanbanColumn
-              key={column.id}
-              column={column}
-              tasks={filteredTasks.filter((task) => normalizeStatus(task.status) === column.id)}
-              onOpen={setDetailsTask}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onStatusChange={onStatusChange}
-            />
-          ))}
+        <div
+          aria-label="Kanban columns"
+          className="w-full min-w-0 overflow-x-auto overscroll-x-contain pb-2"
+          role="region"
+          tabIndex={0}
+        >
+          <div className="grid w-max auto-cols-[minmax(280px,85vw)] grid-flow-col gap-3 sm:w-full sm:min-w-0 sm:auto-cols-auto sm:grid-flow-row sm:grid-cols-2 xl:min-w-[1080px] xl:grid-cols-4">
+            {columns.map((column) => (
+              <KanbanColumn
+                key={column.id}
+                column={column}
+                tasks={filteredTasks.filter((task) => normalizeStatus(task.status) === column.id)}
+                onOpen={setDetailsTask}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onStatusChange={onStatusChange}
+              />
+            ))}
+          </div>
         </div>
       ) : (
         <div className="w-full min-w-0 overflow-x-auto rounded-xl border bg-card">
@@ -771,16 +790,27 @@ export function TaskBoard({
                 </div>
               </div>
               <div>
+                {detailsTask.description && (
+                  <div className="mb-4">
+                    <div className="mb-1.5 text-xs font-semibold text-muted-foreground">
+                      Description
+                    </div>
+                    <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                      {detailsTask.description}
+                    </p>
+                  </div>
+                )}
                 <div className="mb-2 text-xs font-semibold text-muted-foreground">
                   Progress · {detailsTask.progress}%
                 </div>
                 <ProgressIndicator progress={detailsTask.progress} />
               </div>
-              {detailsTask.description && (
-                <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                  {detailsTask.description}
+              <div className="space-y-1.5">
+                <div className="text-xs font-semibold text-muted-foreground">Note</div>
+                <p className="whitespace-pre-wrap rounded-lg bg-muted/40 p-3 text-sm text-muted-foreground">
+                  {detailsTask.notes || "No note added yet."}
                 </p>
-              )}
+              </div>
               <div className="flex justify-end">
                 <Button
                   type="button"
