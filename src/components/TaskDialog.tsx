@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -63,6 +63,7 @@ export function TaskDialog({
   const [reviewStatus, setReviewStatus] = useState<string | null>(null);
   
   const [logs, setLogs] = useState<any[]>([]);
+  const workUpdateRef = useRef<HTMLTextAreaElement>(null);
 
   // Calculate if there are unsaved changes
   const hasChanges = progress !== initialProgress || status !== initialStatus || notes !== initialNotes || blockerReason !== initialBlocker;
@@ -291,7 +292,7 @@ export function TaskDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[850px] p-0 overflow-hidden border border-border shadow-2xl rounded-2xl bg-card [&>button]:hidden">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto overscroll-contain sm:max-w-[850px] p-0 border border-border shadow-2xl rounded-2xl bg-card [&>button]:hidden">
         {/* HEADER */}
         <div className="px-8 py-6 border-b border-border/40 relative">
           <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-8 w-8 text-muted-foreground rounded-full hover:bg-muted" onClick={handleClose}>
@@ -313,7 +314,7 @@ export function TaskDialog({
         {/* BODY */}
         <div className="flex flex-col lg:flex-row">
           {/* LEFT COLUMN */}
-          <div className="flex-1 p-8 lg:border-r border-border/40 overflow-y-auto max-h-[60vh] lg:max-h-[70vh]">
+          <div className="min-w-0 flex-1 p-5 sm:p-8 lg:border-r border-border/40">
             
             {/* Progress Section */}
             <div className="mb-10">
@@ -354,6 +355,25 @@ export function TaskDialog({
               <p className="text-xs font-medium text-primary mt-3 bg-primary/5 inline-block px-2.5 py-1 rounded-md">
                 {progressGuidance()}
               </p>
+              {needsProgressUpdateNote && (
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-primary/15 bg-primary/[0.04] px-3 py-2.5">
+                  <span className="text-xs text-muted-foreground">
+                    Progress changed. Add a note describing the work completed.
+                  </span>
+                  <button
+                    type="button"
+                    className="shrink-0 text-xs font-semibold text-primary underline-offset-4 hover:underline"
+                    onClick={() =>
+                      workUpdateRef.current?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      })
+                    }
+                  >
+                    Add work update
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Status Section */}
@@ -411,6 +431,7 @@ export function TaskDialog({
                   : "Describe what you worked on, what was completed, and what remains."}
               </p>
               <Textarea 
+                ref={workUpdateRef}
                 value={notes} 
                 onChange={(e) => setNotes(e.target.value.slice(0, 1000))} 
                 disabled={!canEdit} 
@@ -462,7 +483,7 @@ export function TaskDialog({
           </div>
 
           {/* RIGHT COLUMN */}
-          <div className="lg:w-[320px] bg-muted/10 p-8 flex flex-col justify-between">
+          <div className="min-w-0 bg-muted/10 p-5 sm:p-8 lg:w-[320px] lg:shrink-0">
             <div>
               <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-6">Assignment Details</h3>
               
