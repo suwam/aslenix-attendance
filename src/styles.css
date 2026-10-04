@@ -195,14 +195,16 @@
   }
 
   .kanban-board-column {
-    height: min(34rem, calc(100dvh - 10rem));
+    /* On touch devices, let task cards extend the page instead of trapping
+       vertical swipes inside a fixed-height column. */
+    height: auto;
     min-height: 0;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .kanban-board-list {
     min-height: 0;
-    overscroll-behavior: contain;
+    overflow: visible;
     scrollbar-color: oklch(0.6 0.25 260 / 0.45) oklch(1 0 0 / 0.06);
     scrollbar-width: thin;
   }
@@ -215,6 +217,12 @@
 
     .kanban-board-column {
       height: 100%;
+      overflow: hidden;
+    }
+
+    .kanban-board-list {
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
   }
 
