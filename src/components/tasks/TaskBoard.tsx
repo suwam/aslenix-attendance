@@ -561,6 +561,7 @@ export function TaskBoard({
   onDelete,
   onStatusChange,
   onProgressChange,
+  onApprove,
 }: {
   tasks: BoardTask[];
   modules: { id: string; name: string }[];
@@ -573,6 +574,7 @@ export function TaskBoard({
   onDelete: (task: BoardTask) => void;
   onStatusChange: (task: BoardTask, status: BoardStatus) => void;
   onProgressChange: (task: BoardTask, progress: number) => Promise<string | null>;
+  onApprove: (task: BoardTask) => Promise<boolean>;
 }) {
   const [employeeFilter, setEmployeeFilter] = useState("all");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -967,7 +969,21 @@ export function TaskBoard({
                   {detailsTask.notes || "No note added yet."}
                 </p>
               </div>
-              <div className="flex justify-end border-t border-border/60 pt-4">
+              <div className="flex flex-wrap justify-end gap-2 border-t border-border/60 pt-4">
+                {detailsTask.progress === 100 &&
+                  detailsTask.status === "review" &&
+                  detailsTask.source?.review_status === "pending" && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                      onClick={async () => {
+                        if (await onApprove(detailsTask)) setDetailsTask(null);
+                      }}
+                    >
+                      <CheckCircle2 className="size-4" /> Approve & complete
+                    </Button>
+                  )}
                 <Button
                   type="button"
                   className="shadow-sm"

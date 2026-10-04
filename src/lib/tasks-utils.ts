@@ -37,8 +37,7 @@ export function clampProgress(value: number) {
 export function statusForProgress(progressValue: number): TaskStatus {
   const progress = clampProgress(progressValue);
   if (progress === 0) return "todo";
-  if (progress === 100) return "completed";
-  if (progress >= 98) return "review";
+  if (progress === 100) return "review";
   return "in_progress";
 }
 
@@ -46,13 +45,14 @@ export function progressForStatus(status: TaskStatus, progressValue: number) {
   const progress = clampProgress(progressValue);
   if (status === "todo") return 0;
   if (status === "completed") return 100;
-  if (status === "review") return Math.min(99, Math.max(98, progress));
-  return Math.min(97, Math.max(1, progress));
+  if (status === "review") return 100;
+  return Math.min(99, Math.max(1, progress));
 }
 
 export function syncTaskWorkflow(status: TaskStatus, progressValue: number) {
   const progress = clampProgress(progressValue);
-  const nextStatus = statusForProgress(progress);
+  const nextStatus =
+    progress === 100 && status === "completed" ? "completed" : statusForProgress(progress);
   const transition: WorkflowTransition =
     status === "in_progress" && nextStatus === "review"
       ? "review"

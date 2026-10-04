@@ -128,7 +128,17 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
       toast.error("You can only manage your own work items.");
       return;
     }
+    if (!isAdmin && (status === "review" || status === "completed")) {
+      toast.error(
+        status === "review"
+          ? "Update progress to 100% and add a work note to submit this task for review."
+          : "Only an administrator can mark a task as completed.",
+      );
+      return;
+    }
     const nextProgress = progressForStatus(status, t.progress);
+    const reviewStatus =
+      status === "review" ? "pending" : status === "completed" ? "verified" : null;
     setTasks((prev) =>
       prev.map((x) => (x.id === id ? { ...x, status, progress: nextProgress } : x)),
     );
@@ -137,6 +147,7 @@ export function KanbanBoard({ scope = "mine" }: { scope?: "mine" | "all" }) {
       .update({
         status,
         progress: nextProgress,
+        review_status: reviewStatus,
       } as any)
       .eq("id", id);
     if (error) {

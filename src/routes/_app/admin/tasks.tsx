@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ADStoredBSDateInput } from "@/components/BSDateInput";
 import { formatNepaliDate } from "@/lib/nepali-calendar";
+import { useAuth } from "@/lib/auth-context";
 import {
   Dialog,
   DialogContent,
@@ -59,6 +60,7 @@ function Avatar({ url, name, size = "md" }: { url?: string | null, name?: string
 }
 
 function AdminTasksRedesign() {
+  const { user } = useAuth();
   const [projects, setProjects] = useState<any[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -247,10 +249,20 @@ function AdminTasksRedesign() {
   }, [workItems]);
 
   const updateBoardTaskStatus = async (task: BoardTask, status: "todo" | "in_progress" | "review" | "completed") => {
-    const progress = status === "todo" ? 0 : status === "in_progress" ? 40 : status === "review" ? 98 : 100;
+    if (status === "completed") {
+      if (task.progress === 100 && task.source.review_status === "pending") {
+        await approveBoardTask(task);
+      } else {
+        toast.error("A task must be at 100% and pending review before it can be approved.");
+      }
+      return;
+    }
+
+    const progress = status === "todo" ? 0 : status === "in_progress" ? 40 : 100;
+    const reviewStatus = status === "review" ? "pending" : null;
     const { error } = await supabase
       .from("work_items")
-      .update({ status, progress })
+      .update({ status, progress, review_status: reviewStatus })
       .eq("id", task.id);
     if (error) {
       toast.error(`Unable to update task status. ${error.message}`);
@@ -262,18 +274,16 @@ function AdminTasksRedesign() {
 
   const updateBoardTaskProgress = async (task: BoardTask, progress: number) => {
     const nextProgress = Math.max(0, Math.min(100, Math.round(progress)));
-    let status = task.status;
-    if (nextProgress === 100) {
-      status = "review";
-    } else if (nextProgress === 0) {
-      status = "todo";
-    } else if (["todo", "in_progress", "review"].includes(status)) {
-      status = "in_progress";
-    }
+    const status =
+      nextProgress === 100 ? "review" : nextProgress === 0 ? "todo" : "in_progress";
 
     const { error } = await supabase
       .from("work_items")
-      .update({ status, progress: nextProgress })
+      .update({
+        status,
+        progress: nextProgress,
+        review_status: nextProgress === 100 ? "pending" : null,
+      })
       .eq("id", task.id);
     if (error) {
       toast.error(`Unable to update progress for "${task.title}". ${error.message}`);
@@ -283,6 +293,39 @@ function AdminTasksRedesign() {
     toast.success(`"${task.title}" updated to ${nextProgress}% progress.`);
     setRefreshKey((k) => k + 1);
     return status;
+  };
+
+  const approveBoardTask = async (task: BoardTask) => {
+    if (task.status !== "review" || task.progress !== 100 || task.source.review_status !== "pending") {
+      toast.error("Only tasks at 100% with a pending review can be approved.");
+      return false;
+    }
+
+    const { error } = await supabase
+      .from("work_items")
+      .update({ status: "completed", review_status: "verified" })
+      .eq("id", task.id);
+    if (error) {
+      toast.error(`Unable to approve "${task.title}". ${error.message}`);
+      return false;
+    }
+
+    const { error: logError } = await supabase.from("work_item_logs" as any).insert({
+      work_item_id: task.id,
+      user_id: user?.id,
+      old_progress: task.progress,
+      new_progress: task.progress,
+      old_status: task.status,
+      new_status: "completed",
+      update_text: "Approved and verified by admin",
+    } as any);
+    if (logError) {
+      toast.error(`Task approved, but the approval could not be added to its work history. ${logError.message}`);
+    } else {
+      toast.success(`"${task.title}" approved and marked completed.`);
+    }
+    setRefreshKey((k) => k + 1);
+    return true;
   };
 
   const openWorkItemEditor = (workItem: any) => {
@@ -784,6 +827,7 @@ function AdminTasksRedesign() {
           onDelete={task => setDeletingWorkItem(task.source)}
           onStatusChange={updateBoardTaskStatus}
           onProgressChange={updateBoardTaskProgress}
+          onApprove={approveBoardTask}
         />
       </div>
 

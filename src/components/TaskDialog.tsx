@@ -151,16 +151,28 @@ export function TaskDialog({
   };
 
   const handleStatusChange = (val: TaskStatus) => {
+    if (val === "review" && progress !== 100) {
+      toast.error("A task must reach 100% progress before it can be submitted for review.");
+      return;
+    }
+    if (
+      val === "completed" &&
+      status !== "completed" &&
+      (!isAdmin || progress !== 100 || status !== "review" || reviewStatus !== "pending")
+    ) {
+      toast.error("Only an administrator can approve a task at 100% that is pending review.");
+      return;
+    }
     setStatus(val);
   };
 
   const handleProgressChange = (val: number) => {
     setProgress(val);
-    if (val === 100 && status !== "completed") {
+    if (val === 100) {
       setStatus("review");
-    } else if (val === 0 && status !== "todo") {
+    } else if (val === 0) {
       setStatus("todo");
-    } else if (val > 0 && val < 100 && (status === "todo" || status === "review")) {
+    } else {
       setStatus("in_progress");
     }
   };
@@ -193,7 +205,16 @@ export function TaskDialog({
   const saveToDb = async (overrideStatus?: TaskStatus, overrideReviewStatus?: string) => {
     if (!workId) return;
     const newStatus = overrideStatus || status;
-    const revStat = overrideReviewStatus !== undefined ? overrideReviewStatus : reviewStatus;
+    const revStat =
+      overrideReviewStatus !== undefined
+        ? overrideReviewStatus
+        : !isAdmin && newStatus === "review" && progress === 100
+          ? "pending"
+          : !isAdmin && progress < 100 && reviewStatus === "pending"
+            ? null
+            : isAdmin && newStatus === "completed"
+              ? "verified"
+              : reviewStatus;
 
     if (needsProgressUpdateNote) {
       toast.error("Add a work update describing what you completed before saving progress.");
@@ -232,7 +253,14 @@ export function TaskDialog({
         new_progress: progress,
         old_status: initialStatus,
         new_status: newStatus,
-        update_text: notes !== initialNotes ? notes : (overrideReviewStatus ? "Submitted for review" : "Updated progress")
+        update_text:
+          notes !== initialNotes
+            ? notes
+            : newStatus === "completed"
+              ? "Approved and verified by admin"
+              : revStat === "pending"
+                ? "Submitted for review"
+                : "Updated progress",
       } as any);
     }
 
@@ -266,7 +294,7 @@ export function TaskDialog({
     if (progress < 40) return "Initial work started";
     if (progress < 70) return "Halfway completed";
     if (progress < 100) return "Almost complete";
-    return "Work completed";
+    return "Ready for admin review";
   };
 
   const renderTargetDate = () => {
@@ -328,7 +356,7 @@ export function TaskDialog({
                   type="range"
                   min="0"
                   max="100"
-                  step="5"
+                  step="0.5"
                   value={progress}
                   onChange={(e) => handleProgressChange(Number(e.target.value))}
                   disabled={!canEdit || status === "completed"}
@@ -387,7 +415,11 @@ export function TaskDialog({
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  {TASK_STATUSES.filter(s => s !== "completed" || status === "completed").map((s) => (
+                  {TASK_STATUSES.filter(
+                    (s) =>
+                      (s !== "completed" || isAdmin || status === "completed") &&
+                      (s !== "review" || progress === 100),
+                  ).map((s) => (
                     <SelectItem key={s} value={s} className="font-medium text-sm py-2">
                       {STATUS_LABELS[s]}
                     </SelectItem>
@@ -552,7 +584,7 @@ export function TaskDialog({
               Close
             </Button>
             
-            {isAdmin && reviewStatus === "pending" && (
+            {isAdmin && reviewStatus === "pending" && status === "review" && progress === 100 && (
               <div className="flex items-center gap-2 border-l border-border/60 pl-4 ml-2">
                 <Button 
                   onClick={() => {
