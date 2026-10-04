@@ -376,6 +376,9 @@ function KanbanColumn({
 
 function FilterBar({
   modules,
+  weeks,
+  selectedWeekId,
+  onWeekChange,
   employees,
   roles,
   moduleFilter,
@@ -392,6 +395,9 @@ function FilterBar({
   setView,
 }: {
   modules: { id: string; name: string }[];
+  weeks: { id: string; label: string }[];
+  selectedWeekId: string;
+  onWeekChange: (weekId: string) => void;
   employees: { id: string; name: string }[];
   roles: string[];
   moduleFilter: string;
@@ -415,7 +421,7 @@ function FilterBar({
         <div className="min-w-0">
           <h2 className="text-sm font-semibold">Task board</h2>
           <p className="text-xs text-muted-foreground">
-            Filter tasks by module, employee, role, status, or progress.
+            Filter tasks by week, module, employee, role, status, or progress.
           </p>
         </div>
         <div className="flex shrink-0 rounded-lg border bg-muted/40 p-1">
@@ -440,6 +446,18 @@ function FilterBar({
         </div>
       </div>
       <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+        <Select value={selectedWeekId} onValueChange={onWeekChange}>
+          <SelectTrigger className={selectClass}>
+            <SelectValue placeholder="Select week" />
+          </SelectTrigger>
+          <SelectContent>
+            {weeks.map((week) => (
+              <SelectItem key={week.id} value={week.id}>
+                {week.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={moduleFilter} onValueChange={setModuleFilter}>
           <SelectTrigger className={selectClass}>
             <SelectValue placeholder="All modules" />
@@ -513,6 +531,9 @@ function FilterBar({
 export function TaskBoard({
   tasks,
   modules,
+  weeks,
+  selectedWeekId,
+  onWeekChange,
   moduleFilter,
   setModuleFilter,
   onEdit,
@@ -521,6 +542,9 @@ export function TaskBoard({
 }: {
   tasks: BoardTask[];
   modules: { id: string; name: string }[];
+  weeks: { id: string; label: string }[];
+  selectedWeekId: string;
+  onWeekChange: (weekId: string) => void;
   moduleFilter: string;
   setModuleFilter: (value: string) => void;
   onEdit: (task: BoardTask) => void;
@@ -586,6 +610,9 @@ export function TaskBoard({
     <div className="min-w-0 space-y-4">
       <FilterBar
         modules={modules}
+        weeks={weeks}
+        selectedWeekId={selectedWeekId}
+        onWeekChange={onWeekChange}
         employees={employees}
         roles={roles}
         moduleFilter={moduleFilter}
@@ -600,6 +627,11 @@ export function TaskBoard({
         setProgressFilter={setProgressFilter}
         view={view}
         setView={setView}
+      />
+
+      <div
+        aria-hidden="true"
+        className="h-px bg-gradient-to-r from-transparent via-border to-transparent"
       />
 
       {view === "kanban" ? (

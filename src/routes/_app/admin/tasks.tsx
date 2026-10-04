@@ -740,6 +740,15 @@ function AdminTasksRedesign() {
       <div className="min-w-0">
         <TaskBoard
           tasks={boardTasks}
+          weeks={sprints.map(sprint => ({
+            id: sprint.id,
+            label: `Week ${sprint.week_number}${sprint.start_date ? ` — ${formatNepaliDate(sprint.start_date)} BS` : ""}`,
+          }))}
+          selectedWeekId={selectedSprintId}
+          onWeekChange={weekId => {
+            setSelectedSprintId(weekId);
+            setBoardModuleFilter("all");
+          }}
           moduleFilter={boardModuleFilter}
           setModuleFilter={setBoardModuleFilter}
           modules={sprintModules.map(sprintModule => ({
