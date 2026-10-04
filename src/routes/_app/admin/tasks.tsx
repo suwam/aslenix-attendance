@@ -260,6 +260,31 @@ function AdminTasksRedesign() {
     setRefreshKey(k => k + 1);
   };
 
+  const updateBoardTaskProgress = async (task: BoardTask, progress: number) => {
+    const nextProgress = Math.max(0, Math.min(100, Math.round(progress)));
+    let status = task.status;
+    if (nextProgress === 100) {
+      status = "review";
+    } else if (nextProgress === 0) {
+      status = "todo";
+    } else if (["todo", "in_progress", "review"].includes(status)) {
+      status = "in_progress";
+    }
+
+    const { error } = await supabase
+      .from("work_items")
+      .update({ status, progress: nextProgress })
+      .eq("id", task.id);
+    if (error) {
+      toast.error(`Unable to update progress for "${task.title}". ${error.message}`);
+      return null;
+    }
+
+    toast.success(`"${task.title}" updated to ${nextProgress}% progress.`);
+    setRefreshKey((k) => k + 1);
+    return status;
+  };
+
   const openWorkItemEditor = (workItem: any) => {
     setEditingWorkItem(workItem);
     setEditTitle(workItem.title || "");
@@ -758,6 +783,7 @@ function AdminTasksRedesign() {
           onEdit={task => openWorkItemEditor(task.source)}
           onDelete={task => setDeletingWorkItem(task.source)}
           onStatusChange={updateBoardTaskStatus}
+          onProgressChange={updateBoardTaskProgress}
         />
       </div>
 
