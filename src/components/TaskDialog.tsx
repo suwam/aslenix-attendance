@@ -292,9 +292,9 @@ export function TaskDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto overscroll-contain sm:max-w-[850px] p-0 border border-border shadow-2xl rounded-2xl bg-card [&>button]:hidden">
+      <DialogContent className="flex flex-col h-[calc(100dvh-1rem)] max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-none gap-0 overflow-x-hidden overflow-y-auto overscroll-y-contain touch-pan-y [-webkit-overflow-scrolling:touch] p-0 border border-border shadow-2xl rounded-2xl bg-card sm:h-auto sm:max-h-[calc(100dvh-2rem)] sm:w-full sm:max-w-[850px] [&>button]:hidden">
         {/* HEADER */}
-        <div className="px-8 py-6 border-b border-border/40 relative">
+        <div className="relative shrink-0 border-b border-border/40 px-5 py-5 sm:px-8 sm:py-6">
           <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-8 w-8 text-muted-foreground rounded-full hover:bg-muted" onClick={handleClose}>
             <X className="size-4" />
           </Button>
@@ -312,7 +312,7 @@ export function TaskDialog({
         </div>
 
         {/* BODY */}
-        <div className="flex flex-col lg:flex-row">
+        <div className="flex shrink-0 flex-col lg:flex-row">
           {/* LEFT COLUMN */}
           <div className="min-w-0 flex-1 p-5 sm:p-8 lg:border-r border-border/40">
             
@@ -533,7 +533,7 @@ export function TaskDialog({
         </div>
 
         {/* REVIEW STATUS & ACTIONS */}
-        <div className="px-8 py-5 border-t border-border bg-muted/5 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex shrink-0 flex-col items-stretch justify-between gap-4 border-t border-border bg-muted/5 px-5 py-4 sm:flex-row sm:items-center sm:px-8 sm:py-5">
           <div className="flex items-center gap-2">
             <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mr-2">Review Status</h3>
             {reviewStatus === "pending" ? (
