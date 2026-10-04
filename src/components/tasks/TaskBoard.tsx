@@ -804,19 +804,19 @@ export function TaskBoard({
         }}
       >
         <DialogContent className="max-h-[calc(100dvh-2rem)] gap-0 overflow-hidden rounded-2xl border-border/70 p-0 shadow-2xl sm:max-w-xl">
-          <DialogHeader className="relative overflow-hidden border-b bg-gradient-to-br from-primary/[0.09] via-background to-background px-6 pb-5 pt-6 pr-14 text-left">
-            <div className="mb-3 flex items-center gap-2">
-              <span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-primary">
-                <Activity className="size-4" />
+          <DialogHeader className="relative border-b bg-muted/20 px-5 pb-4 pt-5 pr-12 text-left sm:px-6 sm:pb-5 sm:pt-6 sm:pr-14">
+            <div className="flex items-center gap-2">
+              <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                <Activity className="size-3.5" />
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 Task overview
               </span>
             </div>
-            <DialogTitle className="break-words text-xl font-bold leading-tight tracking-tight">
+            <DialogTitle className="mt-3 break-words text-[17px] font-semibold leading-[1.3] tracking-tight sm:text-lg">
               {detailsTask?.title}
             </DialogTitle>
-            <DialogDescription className="mt-1 text-sm">
+            <DialogDescription className="mt-1.5 text-[13px] leading-5">
               Track ownership, delivery progress, and the latest task update.
             </DialogDescription>
           </DialogHeader>
