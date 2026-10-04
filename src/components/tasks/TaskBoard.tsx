@@ -236,7 +236,21 @@ function TaskCard({
   const normalized = normalizeStatus(task.status);
 
   return (
-    <article className="min-w-0 rounded-xl border bg-card p-3 shadow-sm transition-shadow hover:shadow-md">
+    <article
+      role="button"
+      tabIndex={0}
+      aria-label={`View progress details for ${task.title}`}
+      aria-haspopup="dialog"
+      onClick={onOpen}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen();
+        }
+      }}
+      className="min-w-0 cursor-pointer rounded-xl border bg-card p-3 shadow-sm transition-[box-shadow,border-color] hover:border-primary/30 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
       <div className="mb-2 flex items-start justify-between gap-2">
         <button
           type="button"
@@ -253,6 +267,7 @@ function TaskCard({
               size="icon"
               className="size-7 shrink-0"
               aria-label={`Actions for ${task.title}`}
+              onClick={(event) => event.stopPropagation()}
             >
               <MoreHorizontal className="size-4" />
             </Button>
