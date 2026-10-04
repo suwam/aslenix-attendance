@@ -17,6 +17,7 @@ const pickerIconButtonClass =
 const pickerSectionClass = "rounded-2xl border border-border bg-background";
 
 type BSDateInputProps = {
+  id?: string;
   value: string;
   onChange: (value: string) => void;
   className?: string;
@@ -27,6 +28,7 @@ type BSDateInputProps = {
 };
 
 export function BSDateInput({
+  id,
   value,
   onChange,
   className,
@@ -79,6 +81,7 @@ export function BSDateInput({
   return (
     <div className={cn("relative", className)}>
       <Input
+        id={id}
         value={value}
         required={required}
         disabled={disabled}
@@ -213,6 +216,43 @@ export function BSDateInput({
         </PopoverContent>
       </Popover>
     </div>
+  );
+}
+
+export function ADStoredBSDateInput({
+  value,
+  onChange,
+  ...props
+}: Omit<BSDateInputProps, "value" | "onChange"> & {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [bsValue, setBsValue] = useState(() => (value ? formatBsInput(value) : ""));
+
+  useEffect(() => {
+    setBsValue(value ? formatBsInput(value) : "");
+  }, [value]);
+
+  const handleChange = (nextValue: string) => {
+    setBsValue(nextValue);
+    if (!nextValue) {
+      onChange("");
+      return;
+    }
+
+    const adDate = bsInputToAdDateString(nextValue);
+    if (adDate && formatBsInput(adDate) === nextValue) {
+      onChange(adDate);
+    }
+  };
+
+  return (
+    <BSDateInput
+      {...props}
+      value={bsValue}
+      placeholder={props.placeholder || "YYYY-MM-DD (BS)"}
+      onChange={handleChange}
+    />
   );
 }
 

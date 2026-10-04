@@ -6,6 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { ADStoredBSDateInput } from "@/components/BSDateInput";
+import { formatNepaliDate } from "@/lib/nepali-calendar";
 import {
   Dialog,
   DialogContent,
@@ -530,14 +532,18 @@ function AdminTasksRedesign() {
                 <SelectValue placeholder="Select Week" />
               </SelectTrigger>
               <SelectContent>
-                {sprints.map(s => <SelectItem key={s.id} value={s.id}>Week {s.week_number} — {s.start_date}</SelectItem>)}
+                {sprints.map(s => (
+                  <SelectItem key={s.id} value={s.id}>
+                    Week {s.week_number} — {s.start_date ? `${formatNepaliDate(s.start_date)} BS` : "Dates not set"}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
           {selectedSprint && (
             <div className="min-w-0">
               <div className="text-sm font-medium text-foreground">
-                {selectedSprint.start_date || "No start date"} <span className="text-muted-foreground">to</span> {selectedSprint.end_date || "No end date"}
+                {selectedSprint.start_date ? `${formatNepaliDate(selectedSprint.start_date)} BS` : "No start date"} <span className="text-muted-foreground">to</span> {selectedSprint.end_date ? `${formatNepaliDate(selectedSprint.end_date)} BS` : "No end date"}
               </div>
               {selectedSprint.sprint_goal && <div className="truncate text-xs text-muted-foreground">{selectedSprint.sprint_goal}</div>}
             </div>
@@ -722,7 +728,9 @@ function AdminTasksRedesign() {
                   <div className="bg-primary/5 p-4 border-b flex justify-between items-center">
                     <div>
                       <h4 className="font-black text-lg text-primary uppercase tracking-wider">{tgt.name}</h4>
-                      <div className="text-xs font-bold text-muted-foreground uppercase mt-1">Target Date: {tgt.target_date}</div>
+                      <div className="text-xs font-bold text-muted-foreground uppercase mt-1">
+                        Target Date: {tgt.target_date ? `${formatNepaliDate(tgt.target_date)} BS` : "Not set"}
+                      </div>
                     </div>
                     <div className="px-4 py-1.5 rounded-full border border-primary/30 bg-background shadow-sm text-xs font-black text-primary uppercase tracking-widest">
                       {tgt.status}
@@ -855,16 +863,16 @@ function AdminTasksRedesign() {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="grid gap-2">
                 <Label htmlFor="week-start">Start date</Label>
-                <Input id="week-start" type="date" value={weekStartDate} onChange={event => setWeekStartDate(event.target.value)} />
+                <ADStoredBSDateInput id="week-start" value={weekStartDate} onChange={setWeekStartDate} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="week-end">End date</Label>
-                <Input id="week-end" type="date" value={weekEndDate} onChange={event => setWeekEndDate(event.target.value)} />
+                <ADStoredBSDateInput id="week-end" value={weekEndDate} onChange={setWeekEndDate} />
               </div>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="week-target">Target date</Label>
-              <Input id="week-target" type="date" value={weekTargetDate} onChange={event => setWeekTargetDate(event.target.value)} />
+              <ADStoredBSDateInput id="week-target" value={weekTargetDate} onChange={setWeekTargetDate} />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="week-goal">Week goal</Label>

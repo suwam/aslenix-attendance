@@ -23,6 +23,7 @@ import {
 } from "@/lib/tasks-utils";
 import { X, ArrowRight, Save, Clock, History, CheckCircle2, Shield, AlertCircle, FileText } from "lucide-react";
 import { differenceInDays, format } from "date-fns";
+import { formatNepaliDate } from "@/lib/nepali-calendar";
 
 export function TaskDialog({
   open,
@@ -266,14 +267,14 @@ export function TaskDialog({
     if (diff < 0 && status !== 'completed' && status !== 'review') {
       return (
         <div>
-          <span className="font-semibold">{format(new Date(targetDate), 'dd MMM yyyy')}</span>
+          <span className="font-semibold">{formatNepaliDate(targetDate)} BS</span>
           <span className="block text-destructive text-[11px] font-bold uppercase mt-0.5">{Math.abs(diff)} days overdue</span>
         </div>
       );
     }
     return (
       <div>
-        <span className="font-semibold">{format(new Date(targetDate), 'dd MMM yyyy')}</span>
+        <span className="font-semibold">{formatNepaliDate(targetDate)} BS</span>
         {status !== 'completed' && status !== 'review' && (
           <span className="block text-muted-foreground text-[11px] mt-0.5">{diff === 0 ? "Due today" : `${diff} days remaining`}</span>
         )}
@@ -419,7 +420,7 @@ export function TaskDialog({
                     <div key={log.id} className="relative pl-4">
                       <div className="absolute -left-[21px] top-1.5 h-2 w-2 rounded-full bg-muted-foreground" />
                       <div className="flex items-baseline justify-between mb-1">
-                        <span className="text-xs font-semibold text-foreground">{format(new Date(log.created_at), 'dd MMM yyyy, HH:mm')}</span>
+                        <span className="text-xs font-semibold text-foreground">{formatNepaliDate(log.created_at)} BS, {format(new Date(log.created_at), 'HH:mm')}</span>
                         {log.old_progress !== log.new_progress && (
                           <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                             {log.old_progress}% → {log.new_progress}%

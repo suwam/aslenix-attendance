@@ -2,6 +2,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Printer, CheckCircle2 } from 'lucide-react';
+import { formatNepaliDate } from '@/lib/nepali-calendar';
 
 export function WeeklySprintReport({ open, onOpenChange, sprint, project, teams, teamMembers, sprintModules, modules, assignments, workItems, targets, requirements, profiles }: any) {
   
@@ -34,7 +35,9 @@ export function WeeklySprintReport({ open, onOpenChange, sprint, project, teams,
             </div>
             <div className="text-right">
               <div className="text-gray-500 uppercase text-xs font-bold tracking-widest">Week</div>
-              <div className="text-lg font-black">Week {sprint.week_number} — {sprint.start_date} to {sprint.end_date}</div>
+              <div className="text-lg font-black">
+                Week {sprint.week_number} — {sprint.start_date ? `${formatNepaliDate(sprint.start_date)} BS` : "No start date"} to {sprint.end_date ? `${formatNepaliDate(sprint.end_date)} BS` : "No end date"}
+              </div>
             </div>
             <div className="col-span-2">
               <div className="text-gray-500 uppercase text-xs font-bold tracking-widest">Teams</div>
@@ -99,7 +102,9 @@ export function WeeklySprintReport({ open, onOpenChange, sprint, project, teams,
                 <div key={tgt.id}>
                   <div className="flex items-center justify-between mb-2">
                     <div className="font-black text-lg">{tgt.name}</div>
-                    <div className="font-bold text-sm text-gray-500">By {tgt.target_date}</div>
+                    <div className="font-bold text-sm text-gray-500">
+                      By {tgt.target_date ? `${formatNepaliDate(tgt.target_date)} BS` : "No target date"}
+                    </div>
                   </div>
                   <table className="w-full text-sm border-collapse border border-gray-300">
                     <thead>

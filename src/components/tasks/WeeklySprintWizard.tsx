@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { ChevronRight, ChevronLeft, Plus, Trash2 } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
-import { format } from 'date-fns';
+import { ADStoredBSDateInput } from '@/components/BSDateInput';
 
 export function WeeklySprintWizard({ open, onOpenChange, project, profiles, onSaved }: any) {
   const [step, setStep] = useState(1);
@@ -198,15 +198,15 @@ export function WeeklySprintWizard({ open, onOpenChange, project, profiles, onSa
             </div>
             <div className="space-y-2">
               <Label>Start Date</Label>
-              <Input type="date" value={week.start_date} onChange={e => setWeek({...week, start_date: e.target.value})} />
+              <ADStoredBSDateInput value={week.start_date} onChange={value => setWeek({...week, start_date: value})} />
             </div>
             <div className="space-y-2">
               <Label>End Date</Label>
-              <Input type="date" value={week.end_date} onChange={e => setWeek({...week, end_date: e.target.value})} />
+              <ADStoredBSDateInput value={week.end_date} onChange={value => setWeek({...week, end_date: value})} />
             </div>
             <div className="space-y-2 col-span-2">
               <Label>Target Date (Deadline)</Label>
-              <Input type="date" value={week.target_date} onChange={e => setWeek({...week, target_date: e.target.value})} />
+              <ADStoredBSDateInput value={week.target_date} onChange={value => setWeek({...week, target_date: value})} />
             </div>
           </div>
         </div>
@@ -327,7 +327,7 @@ export function WeeklySprintWizard({ open, onOpenChange, project, profiles, onSa
           </div>
           <div className="space-y-2">
             <Label>Target Date</Label>
-            <Input type="date" value={targets[0].target_date} onChange={e => setTargets([{...targets[0], target_date: e.target.value}])} />
+            <ADStoredBSDateInput value={targets[0].target_date} onChange={value => setTargets([{...targets[0], target_date: value}])} />
           </div>
           <div className="p-4 border rounded-xl bg-primary/10 mt-4">
             <p className="text-sm font-semibold text-primary">This target will require all assigned modules and roles to be marked completed before it turns green.</p>
