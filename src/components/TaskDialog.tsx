@@ -66,6 +66,9 @@ export function TaskDialog({
 
   // Calculate if there are unsaved changes
   const hasChanges = progress !== initialProgress || status !== initialStatus || notes !== initialNotes || blockerReason !== initialBlocker;
+  const needsProgressUpdateNote =
+    progress !== initialProgress &&
+    (!notes.trim() || notes.trim() === initialNotes.trim());
 
   useEffect(() => {
     if (open && workId) {
@@ -188,16 +191,20 @@ export function TaskDialog({
 
   const saveToDb = async (overrideStatus?: TaskStatus, overrideReviewStatus?: string) => {
     if (!workId) return;
-    setLoading(true);
     const newStatus = overrideStatus || status;
     const revStat = overrideReviewStatus !== undefined ? overrideReviewStatus : reviewStatus;
-    
-    if (newStatus === "blocked" && !blockerReason.trim()) {
-      toast.error("Please provide a blocker reason.");
-      setLoading(false);
+
+    if (needsProgressUpdateNote) {
+      toast.error("Add a work update describing what you completed before saving progress.");
       return;
     }
 
+    if (newStatus === "blocked" && !blockerReason.trim()) {
+      toast.error("Please provide a blocker reason.");
+      return;
+    }
+
+    setLoading(true);
     const { error } = await supabase
       .from("work_items")
       .update({
@@ -393,20 +400,39 @@ export function TaskDialog({
             {/* Work Update Section */}
             <div className="mb-8">
               <div className="flex justify-between items-end mb-3">
-                <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">Work Update</h3>
+                <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
+                  Work Update{progress !== initialProgress ? " · Required" : ""}
+                </h3>
                 <span className="text-[10px] text-muted-foreground font-medium">{notes.length} / 1000</span>
               </div>
               <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
-                Describe what you worked on, what was completed, and what remains.
+                {progress !== initialProgress
+                  ? "Describe what you completed or worked on for this progress change."
+                  : "Describe what you worked on, what was completed, and what remains."}
               </p>
               <Textarea 
                 value={notes} 
                 onChange={(e) => setNotes(e.target.value.slice(0, 1000))} 
                 disabled={!canEdit} 
-                placeholder="Example: Completed the AI API integration and database schema. Remaining: error handling."
-                className="min-h-[120px] resize-none text-sm p-4 leading-relaxed bg-muted/20"
+                placeholder={progress !== initialProgress
+                  ? "Required: describe the work completed for this progress update."
+                  : "Example: Completed the AI API integration and database schema. Remaining: error handling."}
+                aria-invalid={needsProgressUpdateNote}
+                aria-describedby={needsProgressUpdateNote ? "progress-update-note-error" : undefined}
+                className={`min-h-[120px] resize-none text-sm p-4 leading-relaxed bg-muted/20 ${
+                  needsProgressUpdateNote ? "border-destructive focus-visible:ring-destructive" : ""
+                }`}
                 maxLength={1000}
               />
+              {needsProgressUpdateNote && (
+                <p
+                  id="progress-update-note-error"
+                  className="mt-2 text-xs font-medium text-destructive"
+                  role="alert"
+                >
+                  A new work update is required before this progress change can be saved.
+                </p>
+              )}
             </div>
 
             {/* Work Log History */}
@@ -516,14 +542,14 @@ export function TaskDialog({
                     }
                   }} 
                   variant="outline" 
-                  disabled={loading} 
+                  disabled={loading || needsProgressUpdateNote}
                   className="text-xs font-bold border-orange-200 text-orange-600 hover:bg-orange-50"
                 >
                   Request Changes
                 </Button>
                 <Button 
                   onClick={() => saveToDb("completed", "verified")} 
-                  disabled={loading} 
+                  disabled={loading || needsProgressUpdateNote}
                   className="text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
                 >
                   <CheckCircle2 className="size-3.5 mr-1.5" />
@@ -541,14 +567,14 @@ export function TaskDialog({
                     }
                   }} 
                   variant="outline" 
-                  disabled={loading || status === "review"} 
+                  disabled={loading || status === "review" || needsProgressUpdateNote}
                   className="text-xs font-bold"
                 >
                   Submit for Review <ArrowRight className="size-3.5 ml-1.5" />
                 </Button>
                 <Button 
                   onClick={() => saveToDb()} 
-                  disabled={loading || !hasChanges} 
+                  disabled={loading || !hasChanges || needsProgressUpdateNote}
                   className="text-xs font-bold px-6 shadow-md"
                 >
                   <Save className="size-3.5 mr-2" />
@@ -560,7 +586,7 @@ export function TaskDialog({
             {canEdit && isAdmin && reviewStatus !== "pending" && (
               <Button 
                 onClick={() => saveToDb()} 
-                disabled={loading || !hasChanges} 
+                disabled={loading || !hasChanges || needsProgressUpdateNote}
                 className="text-xs font-bold px-6 shadow-md"
               >
                 <Save className="size-3.5 mr-2" />
