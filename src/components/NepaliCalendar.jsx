@@ -557,14 +557,14 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
               {monthHolidayGroups.map((group) => (
                 <div
                   key={group.holidays[0].id}
-                  className="flex items-center justify-between gap-2 rounded-xl border border-border bg-card/45 px-3 py-2 text-xs shadow-[0_0_22px_-18px_var(--primary)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:border-red-500/25 hover:bg-red-500/10 hover:shadow-[0_0_28px_-14px_var(--primary)]"
+                  className="flex items-center justify-between gap-2 rounded-xl border border-red-500/20 bg-gradient-to-r from-red-500/10 via-rose-500/5 to-transparent px-3 py-2 text-xs shadow-[0_0_22px_-18px_rgba(239,68,68,0.35)] backdrop-blur-xl transition-all duration-300 ease-out hover:-translate-y-0.5 hover:scale-[1.01] hover:border-red-500/35 hover:from-red-500/15 hover:via-rose-500/10 hover:shadow-[0_0_28px_-14px_rgba(239,68,68,0.45)]"
                 >
                   <div className="min-w-0">
-                    <div className="truncate font-medium">{group.title}</div>
+                    <div className="truncate font-semibold text-red-600 dark:text-red-400">{group.title}</div>
                     <div className="text-muted-foreground">
-                      {format(new Date(`${group.startAd}T00:00:00`), "MM/dd/yyyy")}
+                      {group.startDate} BS
                       {group.startDate !== group.endDate &&
-                        ` to ${format(new Date(`${group.endAd}T00:00:00`), "MM/dd/yyyy")}`}
+                        ` to ${group.endDate} BS`}
                     </div>
                   </div>
                   {isAdmin && (
