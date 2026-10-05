@@ -126,7 +126,11 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
 
   const [visible, setVisible] = useState({ year: initialYear, month: initialMonth });
   const [holidays, setHolidays] = useState([]);
-  const [form, setForm] = useState({ bsDate: formatBsDate(initialYear, initialMonth, 1), title: "" });
+  const [form, setForm] = useState({
+    bsDate: formatBsDate(initialYear, initialMonth, 1),
+    endDate: formatBsDate(initialYear, initialMonth, 1),
+    title: "",
+  });
   const [editingId, setEditingId] = useState(null);
   const [isLoadingHolidays, setIsLoadingHolidays] = useState(true);
   const [isSavingHoliday, setIsSavingHoliday] = useState(false);
@@ -201,7 +205,11 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
 
   const selectDay = (day) => {
     if (!day || !isAdmin) return;
-    setForm({ bsDate: day.bsDate, title: holidaysByDate[day.bsDate]?.title ?? "" });
+    setForm({
+      bsDate: day.bsDate,
+      endDate: day.bsDate,
+      title: holidaysByDate[day.bsDate]?.title ?? "",
+    });
     setEditingId(holidaysByDate[day.bsDate]?.id ?? null);
   };
 
@@ -209,14 +217,36 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
     const title = form.title.trim();
     if (!title || !isValidBsDate(form.bsDate)) return;
 
-    const adDate = bsInputToAdDateString(form.bsDate);
-    if (!adDate) return;
+    const endDate = form.endDate && isValidBsDate(form.endDate) ? form.endDate : form.bsDate;
+    if (endDate < form.bsDate) {
+      setHolidayError("End date must be on or after the start date.");
+      return;
+    }
+
+    const dateRange = buildBsDateRange(form.bsDate, endDate);
+    if (!dateRange.length) {
+      setHolidayError("Could not create the holiday range. Please try again.");
+      return;
+    }
+
+    const adDates = dateRange.map((value) => bsInputToAdDateString(value)).filter(Boolean);
+    if (!adDates.length) {
+      setHolidayError("One or more selected dates are invalid.");
+      return;
+    }
 
     setHolidayError(null);
     setHolidayNotice(null);
     setIsSavingHoliday(true);
 
     if (editingId) {
+      const adDate = bsInputToAdDateString(form.bsDate);
+      if (!adDate) {
+        setHolidayError("The selected date is invalid.");
+        setIsSavingHoliday(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from("holidays")
         .update({ date: adDate, name: title, is_active: true })
@@ -235,14 +265,16 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
         items.map((item) => (item.id === editingId ? mapHolidayRow(data) : item)).sort(sortByBsDate),
       );
     } else {
+      const rows = dateRange.map((bsDateValue) => ({
+        date: bsInputToAdDateString(bsDateValue),
+        name: title,
+        is_active: true,
+      }));
+
       const { data, error } = await supabase
         .from("holidays")
-        .upsert(
-          { date: adDate, name: title, is_active: true },
-          { onConflict: "date" },
-        )
-        .select("id, date, name")
-        .single();
+        .upsert(rows, { onConflict: "date" })
+        .select("id, date, name");
 
       if (error) {
         console.error("Failed to save holiday", error);
@@ -251,20 +283,27 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
         return;
       }
 
-      setHolidays((items) => [
-        ...items.filter((item) => item.bsDate !== form.bsDate),
-        mapHolidayRow(data),
-      ].sort(sortByBsDate));
+      const inserted = (data ?? []).map(mapHolidayRow);
+      setHolidays((items) => {
+        const preserved = items.filter((item) => !dateRange.includes(item.bsDate));
+        return [...preserved, ...inserted].sort(sortByBsDate);
+      });
     }
-    setHolidayNotice(`${form.bsDate} BS holiday saved.`);
-    setForm({ bsDate: form.bsDate, title: "" });
+
+    const dateLabel = dateRange.length > 1 ? `${form.bsDate} to ${endDate} BS` : `${form.bsDate} BS`;
+    setHolidayNotice(`${dateLabel} holiday saved.`);
+    setForm({
+      bsDate: form.bsDate,
+      endDate: form.bsDate,
+      title: "",
+    });
     setEditingId(null);
     setIsSavingHoliday(false);
     setHolidayReloadKey((value) => value + 1);
   };
 
   const editHoliday = (holiday) => {
-    setForm({ bsDate: holiday.bsDate, title: holiday.title });
+    setForm({ bsDate: holiday.bsDate, endDate: holiday.bsDate, title: holiday.title });
     setEditingId(holiday.id);
   };
 
@@ -534,13 +573,31 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
 
             <div className="grid gap-2">
               <div>
-                <Label className="text-[11px]">BS date</Label>
+                <Label className="text-[11px]">Start BS date</Label>
                 <BSDateInput
                   value={form.bsDate}
-                  onChange={(value) => setForm((current) => ({ ...current, bsDate: value }))}
+                  onChange={(value) =>
+                    setForm((current) => ({
+                      ...current,
+                      bsDate: value,
+                      endDate: current.endDate && value <= current.endDate ? current.endDate : value,
+                    }))
+                  }
                   placeholder="2083-01-01"
                   inputClassName="h-9 rounded-xl"
                 />
+              </div>
+              <div>
+                <Label className="text-[11px]">End BS date (optional)</Label>
+                <BSDateInput
+                  value={form.endDate}
+                  onChange={(value) => setForm((current) => ({ ...current, endDate: value }))}
+                  placeholder="2083-01-05"
+                  inputClassName="h-9 rounded-xl"
+                />
+                <div className="mt-1 text-[10px] text-muted-foreground">
+                  Leave empty for one day. Set both dates to save the same holiday name across a range.
+                </div>
               </div>
               <div>
                 <Label className="text-[11px]">Holiday name</Label>
@@ -572,7 +629,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
                   className="h-9 rounded-xl"
                   onClick={() => {
                     setEditingId(null);
-                    setForm((current) => ({ ...current, title: "" }));
+                    setForm((current) => ({ ...current, endDate: current.bsDate, title: "" }));
                   }}
                   disabled={isSavingHoliday}
                 >
@@ -593,6 +650,26 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
     </GlassCard>
   );
 
+}
+
+function buildBsDateRange(startDate, endDate) {
+  const startAd = bsInputToAdDateString(startDate);
+  const endAd = bsInputToAdDateString(endDate);
+  if (!startAd || !endAd) return [];
+
+  const start = new Date(`${startAd}T00:00:00`);
+  const end = new Date(`${endAd}T00:00:00`);
+  if (start > end) return [];
+
+  const dates = [];
+  const iterator = new Date(start);
+
+  while (iterator <= end) {
+    dates.push(formatBsInput(iterator));
+    iterator.setDate(iterator.getDate() + 1);
+  }
+
+  return dates;
 }
 
 function mapHolidayRow(row) {
