@@ -42,6 +42,14 @@ const TYPES = [
   { v: "wfh", l: "Work From Home" },
 ];
 
+const DEFAULT_LEAVE_BALANCE: Record<string, number> = {
+  vacation: 50,
+};
+
+function getDefaultBalance(leaveType: string) {
+  return DEFAULT_LEAVE_BALANCE[leaveType] ?? 4;
+}
+
 function MyLeaves() {
   const { user } = useAuth();
   const [rows, setRows] = useState<any[]>([]);
@@ -87,7 +95,10 @@ function MyLeaves() {
 
     const requestedDays = getLeaveDays(startDate, endDate, form.is_half_day);
     const balanceRow = balances.find((b) => b.leave_type === form.leave_type);
-    const availableDays = Math.max(0, Number(balanceRow?.balance ?? 0) - Number(balanceRow?.used ?? 0));
+    const availableDays = Math.max(
+      0,
+      Number(balanceRow?.balance ?? getDefaultBalance(form.leave_type)) - Number(balanceRow?.used ?? 0),
+    );
     const isEmergencyRequest =
       form.leave_type === "emergency" ||
       /emergency|urgent|medical|family|critical/i.test(form.reason || "");
@@ -96,6 +107,10 @@ function MyLeaves() {
       return toast.error(
         `Insufficient leave balance (Required: ${requestedDays}, Available: ${availableDays})`,
       );
+    }
+
+    if (form.leave_type === "vacation" && requestedDays > 50) {
+      return toast.error("Vacation leave can be requested for up to 50 working days.");
     }
 
     if (requestedDays > 30 && isEmergencyRequest) {
@@ -174,7 +189,7 @@ function MyLeaves() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
           {TYPES.map((t) => {
             const bal = balances.find((b) => b.leave_type === t.v);
-            const total = bal ? Number(bal.balance) : 0;
+            const total = bal ? Number(bal.balance) : getDefaultBalance(t.v);
             const used = bal ? Number(bal.used) : 0;
             const remaining = total - used;
             return (
@@ -259,7 +274,7 @@ function MyLeaves() {
                       const balanceRow = balances.find((b) => b.leave_type === form.leave_type);
                       const remainingDays = Math.max(
                         0,
-                        Number(balanceRow?.balance ?? 0) - Number(balanceRow?.used ?? 0),
+                        Number(balanceRow?.balance ?? getDefaultBalance(form.leave_type)) - Number(balanceRow?.used ?? 0),
                       );
                       const isEmergencyRequest =
                         form.leave_type === "emergency" ||
