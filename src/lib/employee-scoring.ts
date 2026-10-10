@@ -132,7 +132,7 @@ export function effortPointsForTask(task: TaskProgressLike) {
 export function attendanceCreditForStatus(status?: string | null) {
   if (status === "present" || status === "wfh") return 1;
   if (status === "late") return 0.7;
-  if (status === "half_day") return 0.5;
+  if (status === "half_day" || status === "half_day_present") return 0.5;
   return 0;
 }
 

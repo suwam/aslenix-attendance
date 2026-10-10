@@ -84,6 +84,30 @@ function MyLeaves() {
     const endDate = bsInputToAdDateString(form.is_half_day ? form.start_date : form.end_date);
     if (!startDate || (!form.is_half_day && !endDate))
       return toast.error("Enter valid BS dates in YYYY-MM-DD format");
+
+    const requestedDays = getLeaveDays(startDate, endDate, form.is_half_day);
+    const balanceRow = balances.find((b) => b.leave_type === form.leave_type);
+    const availableDays = Math.max(0, Number(balanceRow?.balance ?? 0) - Number(balanceRow?.used ?? 0));
+    const isEmergencyRequest =
+      form.leave_type === "emergency" ||
+      /emergency|urgent|medical|family|critical/i.test(form.reason || "");
+
+    if (requestedDays > availableDays && !isEmergencyRequest) {
+      return toast.error(
+        `Insufficient leave balance (Required: ${requestedDays}, Available: ${availableDays})`,
+      );
+    }
+
+    if (requestedDays > 30 && isEmergencyRequest) {
+      return toast.error("Emergency leave can be allocated up to 30 days only.");
+    }
+
+    if (requestedDays > availableDays && isEmergencyRequest) {
+      toast.warning(
+        "Emergency leave exceeds the normal balance. This request will be marked for special HR review.",
+      );
+    }
+
     setBusy(true);
     const { error } = await supabase.from("leave_requests").insert({
       leave_type: form.leave_type as any,
@@ -224,6 +248,33 @@ function MyLeaves() {
                       form.is_half_day,
                     )}{" "}
                     {form.is_half_day ? "day" : "days"}
+                  </div>
+                  <div className="mt-2 text-xs text-amber-700">
+                    {(() => {
+                      const requestedDays = getLeaveDays(
+                        form.start_date,
+                        form.is_half_day ? form.start_date : form.end_date,
+                        form.is_half_day,
+                      );
+                      const balanceRow = balances.find((b) => b.leave_type === form.leave_type);
+                      const remainingDays = Math.max(
+                        0,
+                        Number(balanceRow?.balance ?? 0) - Number(balanceRow?.used ?? 0),
+                      );
+                      const isEmergencyRequest =
+                        form.leave_type === "emergency" ||
+                        /emergency|urgent|medical|critical/i.test(form.reason || "");
+
+                      if (requestedDays > remainingDays && isEmergencyRequest) {
+                        return "Emergency leave up to 30 days may be allocated with HR review.";
+                      }
+
+                      if (requestedDays > remainingDays) {
+                        return `Insufficient leave balance: ${remainingDays} day(s) available.`;
+                      }
+
+                      return "Available balance covers this request.";
+                    })()}
                   </div>
                 </div>
               )}

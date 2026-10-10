@@ -95,7 +95,7 @@ function ReportsPage() {
       return;
     }
     setWorkingDaySummary(EMPTY_WORKING_DAY_SUMMARY);
-    const [{ data: attendance }, { data: profiles }, { data: roleRows }] = await Promise.all([
+    const [attendanceResult, profilesResult, roleResult] = await Promise.all([
       supabase.from("attendance").select("*").eq("date", date).order("date", { ascending: false }),
       supabase
         .from("profiles")
@@ -107,10 +107,18 @@ function ReportsPage() {
         .in("role", ["admin", "super_admin", "hr_manager"]),
     ]);
 
-    const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
-    const attendanceRows = attendance ?? [];
+    const queryError = attendanceResult.error ?? profilesResult.error ?? roleResult.error;
+    if (queryError) {
+      setRows([]);
+      toast.error(`Failed to load attendance report: ${queryError.message}`);
+      setLoading(false);
+      return;
+    }
+
+    const adminUserIds = new Set((roleResult.data ?? []).map((row) => row.user_id));
+    const attendanceRows = attendanceResult.data ?? [];
     const employeeProfiles = buildHistoricalReportProfiles(
-      profiles ?? [],
+      profilesResult.data ?? [],
       attendanceRows,
       adminUserIds,
       date,
@@ -125,7 +133,11 @@ function ReportsPage() {
         ? merged
         : merged.filter((row) => {
             if (statusFilter === "weekly_off") return isWeeklyOff && !row.attendance;
-            if (statusFilter === "absent") return !isFutureDate && !isWeeklyOff && !row.attendance;
+            if (statusFilter === "absent")
+              return (
+                row.attendance?.status === "absent" ||
+                (!isFutureDate && !isWeeklyOff && !row.attendance)
+              );
             if (statusFilter === "late") return row.attendance?.is_late;
             if (statusFilter === "early_checkout") return row.attendance?.is_early_checkout;
             return row.attendance?.status === statusFilter;
@@ -135,34 +147,44 @@ function ReportsPage() {
   };
 
   const runAggregateReport = async (startDate: string, endDate: string) => {
-    const [{ data: attendance }, { data: profiles }, { data: roleRows }, { data: holidays }] =
-      await Promise.all([
-        supabase
-          .from("attendance")
-          .select("*")
-          .gte("date", startDate)
-          .lte("date", endDate)
-          .order("date", { ascending: true }),
-        supabase
-          .from("profiles")
-          .select("user_id, full_name, email, department, approval_status, is_suspended, joining_date, created_at")
-          .order("full_name"),
-        supabase
-          .from("user_roles")
-          .select("user_id, role")
-          .in("role", ["admin", "super_admin", "hr_manager"]),
-        supabase
-          .from("holidays")
-          .select("*")
-          .eq("is_active", true)
-          .gte("date", startDate)
-          .lte("date", endDate),
-      ]);
+    const [attendanceResult, profilesResult, roleResult, holidayResult] = await Promise.all([
+      supabase
+        .from("attendance")
+        .select("*")
+        .gte("date", startDate)
+        .lte("date", endDate)
+        .order("date", { ascending: true }),
+      supabase
+        .from("profiles")
+        .select(
+          "user_id, full_name, email, department, approval_status, is_suspended, joining_date, created_at",
+        )
+        .order("full_name"),
+      supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", ["admin", "super_admin", "hr_manager"]),
+      supabase
+        .from("holidays")
+        .select("*")
+        .eq("is_active", true)
+        .gte("date", startDate)
+        .lte("date", endDate),
+    ]);
 
-    const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
-    const attendanceRows = attendance ?? [];
+    const queryError =
+      attendanceResult.error ?? profilesResult.error ?? roleResult.error ?? holidayResult.error;
+    if (queryError) {
+      setRows([]);
+      setWorkingDaySummary(EMPTY_WORKING_DAY_SUMMARY);
+      toast.error(`Failed to load attendance report: ${queryError.message}`);
+      return;
+    }
+
+    const adminUserIds = new Set((roleResult.data ?? []).map((row) => row.user_id));
+    const attendanceRows = attendanceResult.data ?? [];
     const employeeProfiles = buildHistoricalReportProfiles(
-      profiles ?? [],
+      profilesResult.data ?? [],
       attendanceRows,
       adminUserIds,
       endDate,
@@ -177,7 +199,7 @@ function ReportsPage() {
     const publicHolidayDates = new Set<string>();
     const companyHolidayDates = new Set<string>();
 
-    (holidays ?? []).forEach((holiday: any) => {
+    (holidayResult.data ?? []).forEach((holiday: any) => {
       if (!holiday?.date || weeklyHolidayDates.has(holiday.date)) return;
       if (isCompanyHoliday(holiday)) {
         companyHolidayDates.add(holiday.date);
@@ -693,7 +715,8 @@ function ReportsPage() {
 }
 
 function attendanceLabel(attendance: any) {
-  if (attendance.status === "leave" || attendance.status === "half_day") return "Absent";
+  if (attendance.status === "leave") return "Leave";
+  if (attendance.status === "half_day") return "Half day";
   if (attendance.status === "half_day_present") return "Half day present";
   if (attendance.is_early_checkout) return "Early checkout";
   if (attendance.is_late) return "Late";
@@ -722,8 +745,7 @@ function emptyAttendanceDayCredit(): AttendanceDayCredit {
 function getAttendanceDayCredit(record: any): AttendanceDayCredit {
   if (record.status === "wfh") return { present: 0, absent: 0, wfh: 1 };
   if (record.status === "leave") return { present: 0, absent: 1, wfh: 0 };
-  if (record.status === "half_day") return { present: 0, absent: 1, wfh: 0 };
-  if (record.status === "half_day_present")
+  if (record.status === "half_day" || record.status === "half_day_present")
     return { present: 0.5, absent: 0.5, wfh: 0 };
   if (record.status === "absent") return { present: 0, absent: 1, wfh: 0 };
   if (record.status === "present" || record.status === "late")

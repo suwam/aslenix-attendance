@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -306,21 +305,43 @@ function LeavesPage() {
 
   return (
     <>
-      <PageHeader title="Leave Requests" subtitle="Review and approve employee time-off requests" />
+      <div className="mb-8 flex items-start justify-between gap-4">
+        <div>
+          <div className="mb-2 text-[0.72rem] font-black uppercase tracking-[0.2em] text-slate-500">
+            ATTENDANCE
+          </div>
+          <h1 className="text-5xl font-black tracking-[-0.06em] text-slate-900 sm:text-6xl">
+            Leave Requests
+          </h1>
+          <p className="mt-3 text-xl text-slate-500">
+            Review and approve employee time-off requests
+          </p>
+        </div>
 
-      <div className="grid gap-3 mb-5 md:grid-cols-4">
+        <div className="inline-flex max-w-md items-center gap-3 rounded-2xl border border-[#6d3c3d] bg-[#563234] px-4 py-3 text-sm text-[#f8eaea] shadow-[0_10px_20px_rgba(86,50,52,0.18)]">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#f3d2d3] text-[#5d2d2f]">
+            <AlertTriangle size={15} />
+          </div>
+          <div className="leading-tight">
+            <span className="font-semibold">Insufficient leave balance</span>
+            <span className="block text-[#f0c6c6]">(Required: 15, Available: 4)</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-6 grid gap-3 md:grid-cols-4">
         {TABS.map((t) => (
           <button
             key={t.k}
             onClick={() => setTab(t.k)}
-            className={`group rounded-3xl border border-border p-4 text-left transition-all ${
+            className={`group rounded-[1.75rem] border p-4 text-left transition-all ${
               tab === t.k
-                ? "bg-card shadow-[0_16px_40px_-24px_rgba(255,255,255,0.6)]"
-                : "bg-transparent hover:border-border"
+                ? "border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.06)]"
+                : "border-slate-200 bg-[#f3f5f8] text-slate-600 hover:border-slate-300"
             }`}
           >
-            <div className="text-sm font-semibold text-foreground">{t.label}</div>
-            <div className="mt-1 text-xs text-muted-foreground">{summary[t.k]} requests</div>
+            <div className="text-[1.05rem] font-semibold text-slate-700">{t.label}</div>
+            <div className="mt-2 text-sm text-slate-500">{summary[t.k]} requests</div>
           </button>
         ))}
       </div>
@@ -336,21 +357,20 @@ function LeavesPage() {
       ) : (
         <div className="space-y-4">
           {filteredRows.map((r) => (
-            <GlassCard key={r.id} className="p-6">
-              <div className="grid gap-4 lg:grid-cols-[1.35fr_0.85fr]">
-                <div className="min-w-0 space-y-4">
+            <GlassCard key={r.id} className="border border-slate-200 bg-[#ebf3fb] p-5 shadow-none md:p-6">
+              <div className="grid gap-5 lg:grid-cols-[1.5fr_0.75fr]">
+                <div className="min-w-0 space-y-5">
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-3 min-w-0">
                       {r.profile?.avatar_url ? (
                         <img
                           src={r.profile.avatar_url}
-                          className="h-14 w-14 rounded-2xl object-cover"
+                          className="h-14 w-14 rounded-full border-2 border-slate-200 object-cover shadow-sm"
                           alt={r.profile?.full_name || "Avatar"}
                         />
                       ) : (
                         <div
-                          className="h-14 w-14 rounded-2xl flex items-center justify-center text-lg font-semibold text-foreground"
-                          style={{ background: "var(--gradient-brand)" }}
+                          className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-slate-200 bg-[#232a38] text-lg font-bold text-white shadow-sm"
                         >
                           {r.profile?.full_name
                             ?.split(" ")
@@ -361,56 +381,55 @@ function LeavesPage() {
                         </div>
                       )}
                       <div className="min-w-0">
-                        <div className="text-lg font-semibold truncate">
+                        <div className="text-[1.05rem] font-semibold text-slate-800 truncate sm:text-[1.35rem]">
                           {r.profile?.full_name || "Unknown"}
                         </div>
-                        <div className="text-sm text-muted-foreground truncate">
-                          {r.profile?.department || "No department"} ·{" "}
-                          {r.profile?.email || "No email"}
+                        <div className="text-sm text-slate-500 truncate">
+                          {r.profile?.department || "Development"} · {r.profile?.email || "No email"}
                         </div>
                       </div>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
                       {r.status === "pending" && r.conflicts && r.conflicts.length > 0 && (
-                        <span className="rounded-full bg-destructive/15 border border-destructive/30 text-destructive px-3 py-1 text-[11px] font-bold uppercase animate-pulse flex items-center gap-1">
-                          <AlertTriangle size={12} />
-                          Attendance Conflict
+                        <span className="rounded-full border border-destructive/30 bg-destructive/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.1em] text-destructive">
+                          <span className="inline-flex items-center gap-1">
+                            <AlertTriangle size={12} />
+                            Attendance conflict
+                          </span>
                         </span>
                       )}
-                      <span
-                        className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase ${statusPill(r.status)}`}
-                      >
+                      <span className="inline-flex rounded-full bg-[#f5dd9c] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#8b5a1c]">
                         {r.status.replace(/_/g, " ")}
                       </span>
-                      <span className="rounded-full border border-border bg-card px-3 py-1 text-[11px] uppercase text-muted-foreground">
+                      <span className="inline-flex rounded-full border border-slate-200 bg-white/70 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">
                         {formatBsDate(r.created_at)}
                       </span>
                     </div>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-3xl bg-card p-4">
-                      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                    <div className="rounded-[1.5rem] bg-white/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+                      <div className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
                         Leave type
                       </div>
-                      <div className="mt-2 text-sm font-semibold">
+                      <div className="mt-2 text-[1.12rem] font-semibold text-slate-800">
                         {formatLeaveType(r.leave_type)}
                       </div>
                     </div>
-                    <div className="rounded-3xl bg-card p-4">
-                      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                    <div className="rounded-[1.5rem] bg-white/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+                      <div className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
                         Dates
                       </div>
-                      <div className="mt-2 text-sm font-semibold">
+                      <div className="mt-2 text-[1.12rem] font-semibold text-slate-800">
                         {formatNepaliDate(r.start_date, "DD MMM")} → {formatBsDate(r.end_date)}
                       </div>
                     </div>
-                    <div className="rounded-3xl bg-card p-4">
-                      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                    <div className="rounded-[1.5rem] bg-white/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+                      <div className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
                         Duration
                       </div>
-                      <div className="mt-2 text-sm font-semibold">
+                      <div className="mt-2 text-[1.12rem] font-semibold text-slate-800">
                         {r.is_half_day
                           ? `Half Day ${r.half_day_session ? `(${r.half_day_session === "morning" ? "Morning" : "Afternoon"})` : ""}`
                           : `${r.duration} day${r.duration === 1 ? "" : "s"}`}
@@ -419,34 +438,32 @@ function LeavesPage() {
                   </div>
 
                   {r.reason && (
-                    <div className="rounded-3xl bg-card p-4 text-sm leading-6 text-muted-foreground">
-                      <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                    <div className="rounded-[1.5rem] bg-white/70 p-4 text-sm leading-6 text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+                      <div className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
                         Reason
                       </div>
-                      <p className="mt-2 text-base text-foreground">{r.reason}</p>
+                      <p className="mt-2 text-[1.03rem] text-slate-700">{r.reason}</p>
                     </div>
                   )}
                 </div>
 
                 <div className="space-y-4">
-                  <div className="rounded-3xl bg-card p-5">
-                    <div className="text-sm font-semibold text-foreground">Request details</div>
-                    <div className="mt-4 space-y-3 text-sm text-muted-foreground">
+                  <div className="rounded-[1.5rem] bg-white/70 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+                    <div className="text-[1.03rem] font-semibold text-slate-800">Request details</div>
+                    <div className="mt-4 space-y-3 text-sm text-slate-600">
                       <div className="flex items-center justify-between gap-3">
                         <span>Submitted</span>
-                        <span className="font-semibold text-foreground">
-                          {requestedAgo(r.created_at)}
-                        </span>
+                        <span className="font-semibold text-slate-800">{requestedAgo(r.created_at)}</span>
                       </div>
                       <div className="flex items-center justify-between gap-3">
                         <span>Requested by</span>
-                        <span className="font-semibold text-foreground">
+                        <span className="font-semibold text-slate-800">
                           {r.profile?.full_name || "Employee"}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-3">
                         <span>Approval</span>
-                        <span className="font-semibold text-foreground">
+                        <span className="font-semibold text-slate-800">
                           {r.status === "pending" ? "Waiting" : "Completed"}
                         </span>
                       </div>
@@ -454,8 +471,8 @@ function LeavesPage() {
                   </div>
 
                   {r.status === "pending" ? (
-                    <div className="rounded-3xl bg-card p-5">
-                      <div className="mb-3 text-sm font-semibold text-foreground">
+                    <div className="rounded-[1.5rem] bg-white/70 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+                      <div className="mb-3 text-[1.03rem] font-semibold text-slate-800">
                         Review controls
                       </div>
                       <Textarea
@@ -463,13 +480,14 @@ function LeavesPage() {
                         value={comments[r.id] || ""}
                         onChange={(e) => setComments((c) => ({ ...c, [r.id]: e.target.value }))}
                         rows={3}
+                        className="min-h-[100px] rounded-[1.25rem] border border-slate-200 bg-white/80 text-slate-700 placeholder:text-slate-400 shadow-none focus-visible:ring-2 focus-visible:ring-slate-300"
                       />
                       <div className="mt-4 grid gap-3 sm:grid-cols-2">
                         <Button
                           size="sm"
                           disabled={busy === r.id}
                           onClick={() => decide(r, "approved")}
-                          className="neon-button rounded-xl"
+                          className="rounded-[1rem] border-0 bg-gradient-to-r from-[#dfe3ff] via-[#d7e1ff] to-[#e7d9ff] text-slate-700 shadow-[0_10px_24px_rgba(157,166,255,0.25)] hover:brightness-105"
                         >
                           <Check size={14} className="mr-1" />
                           Approve
@@ -479,7 +497,7 @@ function LeavesPage() {
                           variant="outline"
                           disabled={busy === r.id}
                           onClick={() => decide(r, "rejected")}
-                          className="rounded-xl"
+                          className="rounded-[1rem] border border-slate-300 bg-white/70 text-slate-700 hover:bg-slate-100"
                         >
                           <X size={14} className="mr-1" />
                           Reject
@@ -487,7 +505,7 @@ function LeavesPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="rounded-3xl bg-card p-5">
+                    <div className="rounded-[1.5rem] bg-white/70 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
                       <div className="mb-3 flex items-center justify-between">
                         <div className="text-sm font-semibold text-foreground">Review summary</div>
                         {r.status === "approved" && (
