@@ -317,16 +317,6 @@ function LeavesPage() {
             Review and approve employee time-off requests
           </p>
         </div>
-
-        <div className="inline-flex max-w-md items-center gap-3 rounded-2xl border border-[#6d3c3d] bg-[#563234] px-4 py-3 text-sm text-[#f8eaea] shadow-[0_10px_20px_rgba(86,50,52,0.18)]">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#f3d2d3] text-[#5d2d2f]">
-            <AlertTriangle size={15} />
-          </div>
-          <div className="leading-tight">
-            <span className="font-semibold">Insufficient leave balance</span>
-            <span className="block text-[#f0c6c6]">(Required: 15, Available: 4)</span>
-          </div>
-        </div>
       </div>
 
       <div className="mb-6 grid gap-3 md:grid-cols-4">
