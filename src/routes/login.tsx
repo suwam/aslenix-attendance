@@ -12,7 +12,7 @@ export const Route = createFileRoute("/login")({ component: LoginPage });
 
 function LoginPage() {
   const nav = useNavigate();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -20,7 +20,26 @@ function LoginPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    const id = identifier.trim();
+    let loginEmail = id;
+    if (!id.includes("@")) {
+      const lower = id.toLowerCase();
+      if (
+        ["alenix-admin", "aslenix-admin", "admin", "alenix_admin", "aslenix_admin"].includes(lower)
+      ) {
+        loginEmail = "info.aslenix.np@gmail.com";
+      } else {
+        const { data: resolvedEmail } = await supabase.rpc("get_login_email", {
+          p_identifier: id,
+        });
+        if (resolvedEmail) {
+          loginEmail = resolvedEmail;
+        }
+      }
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
     setLoading(false);
     if (error) {
       toast.error(error.message);
@@ -45,15 +64,15 @@ function LoginPage() {
     >
       <form onSubmit={submit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="identifier">Username or Email</Label>
           <Input
-            id="email"
-            type="email"
+            id="identifier"
+            type="text"
             required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@company.com"
-            autoComplete="email"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            placeholder="Alenix-ADMIN or you@company.com"
+            autoComplete="username"
           />
         </div>
         <div className="space-y-2">
