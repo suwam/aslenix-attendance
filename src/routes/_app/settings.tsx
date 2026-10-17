@@ -5,6 +5,8 @@ import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   BadgeCheck,
   BellDot,
@@ -12,8 +14,12 @@ import {
   Check,
   ClipboardList,
   Clock3,
+  Eye,
+  EyeOff,
   IdCard,
+  KeyRound,
   Loader2,
+  Lock,
   Mail,
   Moon,
   Save,
@@ -23,6 +29,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { toast } from "sonner";
+import { changeOwnPassword } from "@/lib/password-management";
 
 export const Route = createFileRoute("/_app/settings")({ component: EmployeeSettingsPage });
 
@@ -56,6 +63,36 @@ function EmployeeSettingsPage() {
     setPreferences(saved);
     setInitial(saved);
   }, [storageKey]);
+
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword || newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters long.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("New password and confirm password do not match.");
+      return;
+    }
+
+    try {
+      setChangingPassword(true);
+      await changeOwnPassword(newPassword);
+      toast.success("Your password has been changed successfully!");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to update password.");
+    } finally {
+      setChangingPassword(false);
+    }
+  };
 
   const isDirty = useMemo(
     () => JSON.stringify(preferences) !== JSON.stringify(initial),
@@ -122,6 +159,85 @@ function EmployeeSettingsPage() {
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="grid gap-5">
+          <SettingsPanel
+            icon={Lock}
+            title="Security & Password"
+            subtitle="Change your login password anytime to keep your employee account protected."
+          >
+            <form onSubmit={handlePasswordUpdate} className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    New Password
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      type={showNewPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="At least 6 characters..."
+                      required
+                      className="h-10 pr-10 text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showNewPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Confirm New Password
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm your password..."
+                      required
+                      className="h-10 pr-10 text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1">
+                <span className="text-[11px] text-muted-foreground">
+                  Minimum 6 characters. Use letters, numbers, and symbols for high security.
+                </span>
+                <Button
+                  type="submit"
+                  disabled={changingPassword || !newPassword || newPassword.length < 6}
+                  className="neon-button h-10 rounded-xl text-xs font-semibold px-4 self-end sm:self-auto"
+                >
+                  {changingPassword ? (
+                    <>
+                      <Loader2 size={13} className="mr-1.5 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <KeyRound size={13} className="mr-1.5" />
+                      Change Password
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </SettingsPanel>
+
           <SettingsPanel
             icon={BellDot}
             title="Notification Preferences"

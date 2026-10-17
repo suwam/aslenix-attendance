@@ -1,10 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { Input } from "@/components/ui/input";
-import { Search, Mail, Phone, Briefcase, Loader2 } from "lucide-react";
+import { Search, Mail, Phone, Briefcase, Loader2, KeyRound } from "lucide-react";
 import {
   Select,
   SelectContent,

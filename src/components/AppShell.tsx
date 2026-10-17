@@ -60,6 +60,7 @@ const adminNav: NavItem[] = [
   { to: "/admin/tasks", label: "Tasks", icon: ClipboardList },
   { to: "/admin/approvals", label: "User Approvals", icon: UserCheck },
   { to: "/admin/whatsapp-settings", label: "WhatsApp Setup", icon: MessageSquare },
+  { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 const empNav: NavItem[] = [
@@ -72,6 +73,7 @@ const empNav: NavItem[] = [
   { to: "/my-leaves", label: "My Leaves", icon: Calendar },
   { to: "/tasks", label: "My Tasks", icon: ClipboardList },
   { to: "/notifications", label: "Notifications", icon: BellDot },
+  { to: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {

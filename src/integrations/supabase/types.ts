@@ -2098,6 +2098,10 @@ export type Database = {
         Args: { _reader_id: string; _reader_name?: string }
         Returns: Json
       }
+      admin_reset_user_password: {
+        Args: { p_new_password: string; p_target_user_id: string }
+        Returns: Json
+      }
       apply_admin_attendance_edit: {
         Args: {
           _attendance_id: string

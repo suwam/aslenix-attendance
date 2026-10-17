@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import {
   Building2,
   Clock3,
+  KeyRound,
   Loader2,
   MapPin,
   Navigation,
@@ -21,6 +22,7 @@ import {
   TimerReset,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AdminPasswordManagement } from "@/components/AdminPasswordManagement";
 
 export const Route = createFileRoute("/_app/admin/settings")({ component: SettingsPage });
 
@@ -29,6 +31,21 @@ function SettingsPage() {
   const [initial, setInitial] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [supportsAutoCheckout, setSupportsAutoCheckout] = useState(true);
+
+  const [activeTab, setActiveTab] = useState<"general" | "security">(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get("tab");
+      if (tabParam === "security" || tabParam === "passwords" || tabParam === "password") {
+        return "security";
+      }
+    }
+    return "general";
+  });
+
+  const initialEmpId = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("employeeId") || undefined
+    : undefined;
 
   useEffect(() => {
     supabase
@@ -92,60 +109,108 @@ function SettingsPage() {
     <>
       <PageHeader
         title="Settings"
-        subtitle="Company configuration, attendance windows, and office check-in rules"
+        subtitle={
+          activeTab === "general"
+            ? "Company configuration, attendance windows, and office check-in rules"
+            : "Reset employee passwords, update administrator credentials, and access logs"
+        }
         actions={
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              className="h-11 rounded-xl"
-              disabled={!isDirty || saving}
-              onClick={() => setS(initial)}
-            >
-              <RotateCcw size={14} className="mr-1.5" />
-              Reset
-            </Button>
-            <Button
-              onClick={save}
-              disabled={saving || !isDirty}
-              className="h-11 rounded-xl neon-button"
-            >
-              {saving ? (
-                <Loader2 size={14} className="mr-2 animate-spin" />
-              ) : (
-                <Save size={14} className="mr-2" />
-              )}
-              {saving ? "Saving..." : "Save changes"}
-            </Button>
-          </div>
+          activeTab === "general" ? (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                className="h-11 rounded-xl"
+                disabled={!isDirty || saving}
+                onClick={() => setS(initial)}
+              >
+                <RotateCcw size={14} className="mr-1.5" />
+                Reset
+              </Button>
+              <Button
+                onClick={save}
+                disabled={saving || !isDirty}
+                className="h-11 rounded-xl neon-button"
+              >
+                {saving ? (
+                  <Loader2 size={14} className="mr-2 animate-spin" />
+                ) : (
+                  <Save size={14} className="mr-2" />
+                )}
+                {saving ? "Saving..." : "Save changes"}
+              </Button>
+            </div>
+          ) : null
         }
       />
 
-      <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
-        <SettingMetric
-          icon={Building2}
-          label="Company"
-          value={s.company_name || "Not set"}
-          tone="red"
-        />
-        <SettingMetric
-          icon={Clock3}
-          label="Office hours"
-          value={`${officeStart || "--:--"} - ${officeEnd || "--:--"}`}
-          tone="blue"
-        />
-        <SettingMetric
-          icon={TimerReset}
-          label="Late after"
-          value={lateAfter || "--:--"}
-          tone="amber"
-        />
-        <SettingMetric
-          icon={Radar}
-          label="Radius"
-          value={`${s.attendance_radius_meters ?? 20}m`}
-          tone="green"
-        />
-      </section>
+      {/* Tabs Switcher */}
+      <div className="mb-6 flex border-b border-border/80 pb-3 gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab("general");
+            const url = new URL(window.location.href);
+            url.searchParams.set("tab", "general");
+            window.history.replaceState({}, "", url.toString());
+          }}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-xl transition ${
+            activeTab === "general"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          }`}
+        >
+          <Building2 size={15} />
+          Company & Attendance
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab("security");
+            const url = new URL(window.location.href);
+            url.searchParams.set("tab", "security");
+            window.history.replaceState({}, "", url.toString());
+          }}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-xl transition ${
+            activeTab === "security"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          }`}
+        >
+          <KeyRound size={15} />
+          Passwords & Access Management
+        </button>
+      </div>
+
+      {activeTab === "security" ? (
+        <AdminPasswordManagement initialEmployeeId={initialEmpId} />
+      ) : (
+        <>
+          <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
+            <SettingMetric
+              icon={Building2}
+              label="Company"
+              value={s.company_name || "Not set"}
+              tone="red"
+            />
+            <SettingMetric
+              icon={Clock3}
+              label="Office hours"
+              value={`${officeStart || "--:--"} - ${officeEnd || "--:--"}`}
+              tone="blue"
+            />
+            <SettingMetric
+              icon={TimerReset}
+              label="Late after"
+              value={lateAfter || "--:--"}
+              tone="amber"
+            />
+            <SettingMetric
+              icon={Radar}
+              label="Radius"
+              value={`${s.attendance_radius_meters ?? 20}m`}
+              tone="green"
+            />
+          </section>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="grid gap-5">
@@ -316,7 +381,9 @@ function SettingsPage() {
         </div>
       </div>
     </>
-  );
+  )}
+</>
+);
 }
 
 function SettingsSection({
