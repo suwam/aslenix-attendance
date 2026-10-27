@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useRef, useState } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import JsBarcode from "jsbarcode";
 import { AslenixLogo } from "@/components/AslenixLogo";
-import { Barcode, QrCode } from "lucide-react";
+import { Barcode, ExternalLink, QrCode } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type CodeDisplayType = "barcode" | "qr";
@@ -28,7 +28,14 @@ export function buildVerifyUrl(token: string | null) {
 
 export function buildQRPayload(p: QRProfile) {
   // QR encodes the verification URL — scanning opens the public verify page.
-  return buildVerifyUrl(p.qr_token);
+  return buildVerifyUrl(p.qr_token || p.employee_code);
+}
+
+export function buildBarcodePayload(p: QRProfile) {
+  // Barcode encodes the exact same verification link as the QR code!
+  // Uses employee_code if available for a compact, fast-scanning barcode, or qr_token
+  const identifier = p.employee_code || p.qr_token || "";
+  return buildVerifyUrl(identifier);
 }
 
 export interface EmployeeQRCardProps {
@@ -76,34 +83,40 @@ export const EmployeeQRCard = forwardRef<HTMLDivElement, EmployeeQRCardProps>(
       .join("")
       .toUpperCase();
 
-    const barcodeValue = (
-      profile.employee_code ||
-      (profile.qr_token ? `ASL-${profile.qr_token.slice(0, 6).toUpperCase()}` : "ASL-00000")
-    ).replace(/[^\x20-\x7E]/g, "").trim() || "ASL-00000";
+    const verifyUrl = buildBarcodePayload(profile);
+    const qrUrl = buildQRPayload(profile);
 
     useEffect(() => {
-      if (activeType !== "barcode" || !barcodeCanvasRef.current || typeof window === "undefined") {
+      if (activeType !== "barcode" || !barcodeCanvasRef.current || typeof window === "undefined" || !verifyUrl) {
         return;
       }
       try {
-        JsBarcode(barcodeCanvasRef.current, barcodeValue, {
+        JsBarcode(barcodeCanvasRef.current, verifyUrl, {
           format: "CODE128",
           lineColor: "#0f172a",
           background: "#ffffff",
-          width: size < 140 ? 1.4 : 1.8,
-          height: size < 140 ? 38 : 52,
-          displayValue: true,
-          text: barcodeValue,
-          font: "monospace",
-          fontOptions: "600",
-          fontSize: size < 140 ? 11 : 13,
-          textMargin: 3,
+          width: size < 140 ? 1.0 : 1.25,
+          height: size < 140 ? 38 : 50,
+          displayValue: false, // Don't crowd barcode bars with long URL text
           margin: 6,
         });
       } catch (err) {
-        console.warn("Failed to generate barcode:", err);
+        console.warn("Failed to generate barcode from URL, falling back to code:", err);
+        try {
+          JsBarcode(barcodeCanvasRef.current, profile.employee_code || "ASL-00000", {
+            format: "CODE128",
+            lineColor: "#0f172a",
+            background: "#ffffff",
+            width: size < 140 ? 1.4 : 1.8,
+            height: size < 140 ? 38 : 50,
+            displayValue: true,
+            margin: 6,
+          });
+        } catch (fallbackErr) {
+          console.error("Barcode fallback failed:", fallbackErr);
+        }
       }
-    }, [activeType, barcodeValue, size]);
+    }, [activeType, verifyUrl, profile.employee_code, size]);
 
     return (
       <div
@@ -220,10 +233,28 @@ export const EmployeeQRCard = forwardRef<HTMLDivElement, EmployeeQRCardProps>(
             </div>
 
             <div
-              className="rounded-xl bg-white p-2.5 flex items-center justify-center overflow-hidden border border-black/10 shadow-sm"
+              onClick={() => {
+                if (!disabled && verifyUrl) {
+                  window.open(verifyUrl, "_blank", "noopener,noreferrer");
+                }
+              }}
+              title="Scan with phone or click to open verification page"
+              className={cn(
+                "rounded-xl bg-white p-2.5 flex flex-col items-center justify-center overflow-hidden border border-black/10 shadow-sm cursor-pointer transition-all hover:border-primary/40 hover:shadow-md group",
+                disabled && "cursor-not-allowed opacity-60"
+              )}
               style={{ filter: disabled ? "grayscale(1) opacity(0.5)" : undefined }}
             >
               <canvas ref={barcodeCanvasRef} className="max-w-full h-auto block" />
+              <div className="mt-1.5 flex items-center justify-between w-full px-1 text-[10px]">
+                <span className="font-mono font-bold text-slate-800 tracking-wider">
+                  {profile.employee_code || "ASLENIX"}
+                </span>
+                <span className="text-primary font-medium flex items-center gap-0.5 group-hover:underline">
+                  <span>Open verify link</span>
+                  <ExternalLink className="h-2.5 w-2.5" />
+                </span>
+              </div>
             </div>
           </div>
         ) : (
@@ -241,11 +272,17 @@ export const EmployeeQRCard = forwardRef<HTMLDivElement, EmployeeQRCardProps>(
               <div className="text-[10px] text-muted-foreground truncate">{profile.email}</div>
             </div>
             <div
-              className="rounded-lg bg-[#f1f0ee] p-2 shrink-0"
+              onClick={() => {
+                if (!disabled && qrUrl) {
+                  window.open(qrUrl, "_blank", "noopener,noreferrer");
+                }
+              }}
+              title="Scan with phone or click to open verification page"
+              className="rounded-lg bg-[#f1f0ee] p-2 shrink-0 cursor-pointer transition-transform hover:scale-[1.02]"
               style={{ filter: disabled ? "grayscale(1) opacity(0.5)" : undefined }}
             >
               <QRCodeCanvas
-                value={buildQRPayload(profile)}
+                value={qrUrl}
                 size={size}
                 level="H"
                 includeMargin={false}

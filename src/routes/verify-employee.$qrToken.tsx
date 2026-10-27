@@ -51,9 +51,39 @@ function VerifyEmployeePage() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const { data: rows, error } = await supabase.rpc("verify_employee_qr", { _token: qrToken });
-      if (error) setError(error.message);
-      else setData((rows?.[0] as VerifyData) ?? null);
+      setError(null);
+      const { data: rows, error: rpcErr } = await supabase.rpc("verify_employee_qr", { _token: qrToken });
+      if (rows && rows.length > 0) {
+        setData((rows[0] as VerifyData) ?? null);
+      } else {
+        const { data: profiles, error: selectErr } = await supabase
+          .from("profiles")
+          .select("employee_code, full_name, department, position, joining_date, avatar_url, approval_status, qr_status, is_suspended, qr_generated_at")
+          .or(`employee_code.ilike.${qrToken},qr_token.eq.${qrToken}`)
+          .limit(1);
+
+        if (profiles && profiles.length > 0) {
+          const emp = profiles[0];
+          setData({
+            employee_code: emp.employee_code,
+            full_name: emp.full_name,
+            department: emp.department,
+            job_position: emp.position,
+            joining_date: emp.joining_date,
+            avatar_url: emp.avatar_url,
+            approval_status: emp.approval_status,
+            qr_status: emp.qr_status as any,
+            role: null,
+            qr_generated_at: emp.qr_generated_at,
+            is_valid:
+              emp.qr_status === "active" &&
+              emp.approval_status === "approved" &&
+              !emp.is_suspended,
+          });
+        } else {
+          setError(rpcErr ? rpcErr.message : selectErr ? selectErr.message : "Employee not found");
+        }
+      }
       setLoading(false);
     })();
   }, [qrToken]);
