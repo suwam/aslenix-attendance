@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, addDays, parseISO } from "date-fns";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { getNepaliDate, formatNepaliDate } from "@/lib/nepali-calendar";
 
 export type CanteenPeriod = {
   id: string;
@@ -49,10 +50,11 @@ export const WEEK_DAYS = ["SUN", "MON", "TUES", "WED", "THU", "FRI", "SAT"] as c
 
 export type DayInfo = {
   dayIndex: number; // 0 to 13
-  dateString: string; // YYYY-MM-DD
+  dateString: string; // YYYY-MM-DD (AD)
   dayName: (typeof WEEK_DAYS)[number];
-  dayOfMonth: string; // e.g. "25"
-  displayDate: string; // e.g. "25 Oct"
+  dayOfMonth: string; // Nepali day number e.g. "10"
+  displayDate: string; // Nepali formatted e.g. "10 Kartik"
+  nepaliDateString: string; // Nepali full date e.g. "2083/07/10"
   weekNumber: 1 | 2;
   isSaturday: boolean;
 };
@@ -65,12 +67,14 @@ export function generatePeriodDays(startDateStr: string): DayInfo[] {
     const d = addDays(start, i);
     const dayOfWeek = d.getDay(); // 0 is Sunday, 6 is Saturday
     const dayName = WEEK_DAYS[dayOfWeek];
+    const nepaliDate = getNepaliDate(d);
     days.push({
       dayIndex: i,
       dateString: format(d, "yyyy-MM-dd"),
       dayName,
-      dayOfMonth: format(d, "d"),
-      displayDate: format(d, "d MMM"),
+      dayOfMonth: String(nepaliDate.getDate()),
+      displayDate: nepaliDate.format("D MMMM"),
+      nepaliDateString: nepaliDate.format("YYYY/MM/DD"),
       weekNumber: i < 7 ? 1 : 2,
       isSaturday: dayOfWeek === 6,
     });
@@ -181,7 +185,7 @@ export function exportCanteenSheetToExcel(
             Tick ✓ when you go to eat
           </td>
           <td colspan="6" style="text-align: right;" class="date-range">
-            DATE = ${period.start_date.replaceAll("-", "/")} – ${period.end_date.replaceAll("-", "/")}
+            DATE = ${formatNepaliDate(period.start_date, "YYYY/MM/DD")} – ${formatNepaliDate(period.end_date, "YYYY/MM/DD")} BS
           </td>
         </tr>
         <tr>
@@ -192,8 +196,8 @@ export function exportCanteenSheetToExcel(
           <th rowspan="2">Total Meals</th>
         </tr>
         <tr>
-          ${week1Days.map((d) => `<th class="${d.isSaturday ? "sat-header" : ""}">${d.dayName}</th>`).join("")}
-          ${week2Days.map((d) => `<th class="${d.isSaturday ? "sat-header" : ""}">${d.dayName}</th>`).join("")}
+          ${week1Days.map((d) => `<th class="${d.isSaturday ? "sat-header" : ""}">${d.dayName}<br/><span style="font-size: 8pt; font-weight: normal;">${d.dayOfMonth}</span></th>`).join("")}
+          ${week2Days.map((d) => `<th class="${d.isSaturday ? "sat-header" : ""}">${d.dayName}<br/><span style="font-size: 8pt; font-weight: normal;">${d.dayOfMonth}</span></th>`).join("")}
         </tr>
   `;
 
@@ -234,7 +238,7 @@ export function exportCanteenSheetToExcel(
   html += `
         <tr>
           <td colspan="17" style="text-align: right; padding-top: 15px; border: none; font-size: 10pt;">
-            Office record: Prepared by: ${period.prepared_by}&nbsp;&nbsp;&nbsp;&nbsp;Verified by: ${period.verified_by || "__________________"}&nbsp;&nbsp;&nbsp;&nbsp;Date: ${period.end_date.replaceAll("-", "/")}
+            Office record: Prepared by: ${period.prepared_by}&nbsp;&nbsp;&nbsp;&nbsp;Verified by: ${period.verified_by || "__________________"}&nbsp;&nbsp;&nbsp;&nbsp;Date: ${formatNepaliDate(period.end_date, "YYYY/MM/DD")} BS
           </td>
         </tr>
       </table>
@@ -276,7 +280,7 @@ export function exportCanteenSheetToCSV(
     "",
     "",
     "",
-    `DATE = ${period.start_date} - ${period.end_date}`,
+    `DATE = ${formatNepaliDate(period.start_date, "YYYY/MM/DD")} - ${formatNepaliDate(period.end_date, "YYYY/MM/DD")} BS`,
   ]);
   rows.push([]);
 
@@ -327,7 +331,7 @@ export function exportCanteenSheetToCSV(
     "",
     "",
     "",
-    `Office record: Prepared by: ${period.prepared_by} | Verified by: ${period.verified_by || "Pending"} | Date: ${period.end_date}`,
+    `Office record: Prepared by: ${period.prepared_by} | Verified by: ${period.verified_by || "Pending"} | Date: ${formatNepaliDate(period.end_date, "YYYY/MM/DD")} BS`,
   ]);
 
   const csvContent =

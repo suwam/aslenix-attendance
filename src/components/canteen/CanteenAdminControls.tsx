@@ -49,6 +49,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { addDays, format, parseISO } from "date-fns";
+import { formatNepaliDate } from "@/lib/nepali-calendar";
+import { ADStoredBSDateInput } from "@/components/BSDateInput";
 
 type CanteenAdminControlsProps = {
   periods: CanteenPeriod[];
@@ -174,7 +176,7 @@ export function CanteenAdminControls({
       const end = addDays(start, 13);
       const startStr = format(start, "yyyy-MM-dd");
       const endStr = format(end, "yyyy-MM-dd");
-      const title = `Canteen Log Sheet (${startStr.replaceAll("-", "/")} - ${endStr.replaceAll("-", "/")})`;
+      const title = `Canteen Log Sheet (${formatNepaliDate(startStr, "YYYY/MM/DD")} - ${formatNepaliDate(endStr, "YYYY/MM/DD")} BS)`;
 
       await onCreatePeriod({
         title,
@@ -222,7 +224,7 @@ export function CanteenAdminControls({
   const handleExportPDF = async () => {
     try {
       setIsExportingPDF(true);
-      const filename = `ASLENIX_Canteen_Log_${currentPeriod?.start_date || "sheet"}.pdf`;
+      const filename = `ASLENIX_Canteen_Log_${currentPeriod?.start_date ? formatNepaliDate(currentPeriod.start_date, "YYYY_MM_DD") + "_BS" : "sheet"}.pdf`;
       await exportCanteenSheetToPDF("canteen-log-sheet", filename);
       toast.success("PDF exported successfully");
     } catch (err: any) {
@@ -234,14 +236,14 @@ export function CanteenAdminControls({
 
   const handleExportExcel = () => {
     if (!currentPeriod) return;
-    const filename = `ASLENIX_Canteen_Log_${currentPeriod.start_date}.xls`;
+    const filename = `ASLENIX_Canteen_Log_${formatNepaliDate(currentPeriod.start_date, "YYYY_MM_DD")}_BS.xls`;
     exportCanteenSheetToExcel(currentPeriod, employees, days, holidays, attendance, filename);
     toast.success("Excel log sheet downloaded");
   };
 
   const handleExportCSV = () => {
     if (!currentPeriod) return;
-    const filename = `ASLENIX_Canteen_Log_${currentPeriod.start_date}.csv`;
+    const filename = `ASLENIX_Canteen_Log_${formatNepaliDate(currentPeriod.start_date, "YYYY_MM_DD")}_BS.csv`;
     exportCanteenSheetToCSV(currentPeriod, employees, days, holidays, attendance, filename);
     toast.success("CSV log sheet downloaded");
   };
@@ -269,11 +271,15 @@ export function CanteenAdminControls({
               <SelectValue placeholder="Select Canteen Period" />
             </SelectTrigger>
             <SelectContent>
-              {periods.map((p) => (
-                <SelectItem key={p.id} value={p.id} className="text-xs">
-                  {p.title} {p.is_locked ? "🔒 (Locked)" : ""}
-                </SelectItem>
-              ))}
+              {periods.map((p) => {
+                const nepaliStart = formatNepaliDate(p.start_date, "YYYY/MM/DD");
+                const nepaliEnd = formatNepaliDate(p.end_date, "YYYY/MM/DD");
+                return (
+                  <SelectItem key={p.id} value={p.id} className="text-xs">
+                    Canteen Log ({nepaliStart} - {nepaliEnd} BS) {p.is_locked ? "🔒 (Locked)" : ""}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
 
@@ -466,17 +472,17 @@ export function CanteenAdminControls({
 
           <form onSubmit={handleCreatePeriodSubmit} className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Start Date (Sunday)</Label>
-              <Input
-                type="date"
-                required
+              <Label className="text-xs font-semibold">Start Date (Nepali BS)</Label>
+              <ADStoredBSDateInput
                 value={newStartDate}
-                onChange={(e) => setNewStartDate(e.target.value)}
-                className="rounded-xl border-border"
+                onChange={(adDate) => setNewStartDate(adDate)}
+                className="w-full"
               />
               <p className="text-[11px] text-muted-foreground">
                 End date will be automatically set to 14 days later (
-                {format(addDays(parseISO(newStartDate || format(new Date(), "yyyy-MM-dd")), 13), "yyyy/MM/dd")}).
+                {newStartDate
+                  ? `${formatNepaliDate(addDays(parseISO(newStartDate), 13), "YYYY/MM/DD")} BS (${formatNepaliDate(addDays(parseISO(newStartDate), 13), "D MMMM YYYY")})`
+                  : ""}).
               </p>
             </div>
 
@@ -777,7 +783,10 @@ export function CanteenAdminControls({
                         <td className="p-2 font-bold">
                           Week {dayObj.weekNumber} - {dayObj.dayName}
                         </td>
-                        <td className="p-2 text-muted-foreground">{dayObj.displayDate}</td>
+                        <td className="p-2 text-muted-foreground">
+                          <span className="font-semibold text-foreground">{dayObj.displayDate}</span>
+                          <span className="block text-[10px] text-muted-foreground">{dayObj.nepaliDateString} BS</span>
+                        </td>
                         <td className="p-2">
                           <Select
                             value={item.type}
@@ -870,7 +879,7 @@ export function CanteenAdminControls({
               Canteen Meals Report
             </DialogTitle>
             <p className="text-xs text-muted-foreground">
-              Period: {currentPeriod?.title}
+              Period: {currentPeriod ? `${formatNepaliDate(currentPeriod.start_date, "YYYY/MM/DD")} - ${formatNepaliDate(currentPeriod.end_date, "YYYY/MM/DD")} BS` : ""}
             </p>
           </DialogHeader>
 

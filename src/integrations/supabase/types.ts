@@ -39,6 +39,141 @@ export type Database = {
   }
   public: {
     Tables: {
+      canteen_periods: {
+        Row: {
+          id: string
+          title: string
+          start_date: string
+          end_date: string
+          is_locked: boolean
+          prepared_by: string
+          verified_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          start_date: string
+          end_date: string
+          is_locked?: boolean
+          prepared_by?: string
+          verified_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          start_date?: string
+          end_date?: string
+          is_locked?: boolean
+          prepared_by?: string
+          verified_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      canteen_employees: {
+        Row: {
+          id: string
+          serial_number: number
+          name: string
+          user_id: string | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          serial_number: number
+          name: string
+          user_id?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          serial_number?: number
+          name?: string
+          user_id?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      canteen_holidays: {
+        Row: {
+          id: string
+          period_id: string
+          day_index: number
+          date: string
+          type: string
+          label: string
+          is_enabled: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          period_id: string
+          day_index: number
+          date: string
+          type?: string
+          label?: string
+          is_enabled?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          period_id?: string
+          day_index?: number
+          date?: string
+          type?: string
+          label?: string
+          is_enabled?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
+      canteen_attendance: {
+        Row: {
+          id: string
+          period_id: string
+          employee_id: string
+          user_id: string | null
+          date: string
+          ate: boolean
+          marked_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          period_id: string
+          employee_id: string
+          user_id?: string | null
+          date: string
+          ate?: boolean
+          marked_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          period_id?: string
+          employee_id?: string
+          user_id?: string | null
+          date?: string
+          ate?: boolean
+          marked_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       activity_logs: {
         Row: {
           action: string

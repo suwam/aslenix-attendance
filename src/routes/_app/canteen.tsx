@@ -493,20 +493,22 @@ function CanteenPage() {
 
       {/* Exact Spreadsheet-Style Canteen Log Sheet */}
       {currentPeriod ? (
-        <CanteenLogSheet
-          period={currentPeriod}
-          employees={employees}
-          days={days}
-          holidays={holidays}
-          attendance={attendance}
-          onToggleAttendance={handleToggleAttendance}
-          canEditEmployee={canEditEmployee}
-          currentUserId={user?.id}
-          currentUserName={profile?.full_name}
-          isAdmin={isAdmin}
-          highlightEmployeeId={highlightEmployeeId}
-          showTotalColumn={showTotalColumn}
-        />
+        <div className="w-full min-w-0 max-w-full">
+          <CanteenLogSheet
+            period={currentPeriod}
+            employees={employees}
+            days={days}
+            holidays={holidays}
+            attendance={attendance}
+            onToggleAttendance={handleToggleAttendance}
+            canEditEmployee={canEditEmployee}
+            currentUserId={user?.id}
+            currentUserName={profile?.full_name}
+            isAdmin={isAdmin}
+            highlightEmployeeId={highlightEmployeeId}
+            showTotalColumn={showTotalColumn}
+          />
+        </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-border p-12 text-center text-muted-foreground bg-card">
           <Utensils size={36} className="mx-auto mb-2 text-muted-foreground/60" />

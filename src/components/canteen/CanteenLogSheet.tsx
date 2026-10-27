@@ -6,6 +6,7 @@ import {
   CanteenHoliday,
   DayInfo,
 } from "@/lib/canteen";
+import { formatNepaliDate } from "@/lib/nepali-calendar";
 
 type CanteenLogSheetProps = {
   period: CanteenPeriod;
@@ -37,16 +38,16 @@ export function CanteenLogSheet({
   const week1Days = days.slice(0, 7);
   const week2Days = days.slice(7, 14);
 
-  // Formatted date range e.g. "2026/10/25 – 2026/11/07"
-  const formattedDateRange = `${period.start_date.replaceAll("-", "/")} – ${period.end_date.replaceAll("-", "/")}`;
+  // Formatted date range in Nepali BS e.g. "2083/07/09 – 2083/07/22 BS"
+  const formattedDateRange = `${formatNepaliDate(period.start_date, "YYYY/MM/DD")} – ${formatNepaliDate(period.end_date, "YYYY/MM/DD")} BS`;
 
   return (
     <div
       id="canteen-log-sheet-container"
-      className="w-full overflow-x-auto bg-white p-4 sm:p-6 rounded-xl shadow-md border border-neutral-300 text-black print:p-0 print:border-none print:shadow-none"
-      style={{ minWidth: "1000px" }}
+      className="w-full max-w-full overflow-x-auto bg-white p-3 sm:p-6 rounded-xl shadow-md border border-neutral-300 text-black print:p-0 print:border-none print:shadow-none [scrollbar-width:thin] [scrollbar-color:#94a3b8_#f1f5f9] transition-all"
+      style={{ WebkitOverflowScrolling: "touch" }}
     >
-      <div id="canteen-log-sheet" className="w-full bg-white text-black p-2 print:p-0">
+      <div id="canteen-log-sheet" className="w-full min-w-[1020px] bg-white text-black p-1 sm:p-2 print:p-0 print:min-w-0">
         {/* =========================================================
             HEADER SECTION
             ========================================================= */}
@@ -152,13 +153,13 @@ export function CanteenLogSheet({
             <tr className="bg-neutral-100 font-bold border-b border-black">
               <th
                 rowSpan={2}
-                className="border border-black py-2 text-center text-xs font-black uppercase text-black"
+                className="border border-black py-2 text-center text-xs font-black uppercase text-black sticky left-0 z-20 bg-neutral-100 print:static"
               >
                 SN
               </th>
               <th
                 rowSpan={2}
-                className="border border-black px-3 py-2 text-left text-xs font-black uppercase text-black"
+                className="border border-black px-3 py-2 text-left text-xs font-black uppercase text-black sticky left-[42px] z-20 bg-neutral-100 print:static shadow-[1px_0_0_0_#000]"
               >
                 Name
               </th>
@@ -262,12 +263,28 @@ export function CanteenLogSheet({
                     style={{ height: "38px" }}
                   >
                     {/* SN */}
-                    <td className="border border-black text-center font-bold text-xs text-black">
+                    <td
+                      className={`border border-black text-center font-bold text-xs text-black sticky left-0 z-10 print:static ${
+                        isHighlighted
+                          ? "bg-amber-100"
+                          : empIdx % 2 === 1
+                            ? "bg-neutral-100"
+                            : "bg-white"
+                      }`}
+                    >
                       {emp.serial_number}
                     </td>
 
                     {/* Employee Name */}
-                    <td className="border border-black px-2.5 py-1 text-left font-medium text-xs sm:text-sm text-black truncate">
+                    <td
+                      className={`border border-black px-2.5 py-1 text-left font-medium text-xs sm:text-sm text-black truncate sticky left-[42px] z-10 print:static shadow-[1px_0_0_0_#000] ${
+                        isHighlighted
+                          ? "bg-amber-100"
+                          : empIdx % 2 === 1
+                            ? "bg-neutral-100"
+                            : "bg-white"
+                      }`}
+                    >
                       <span>{emp.name}</span>
                       {canEdit && !isAdmin && (
                         <span className="ml-1.5 inline-block text-[10px] font-semibold text-neutral-500 print:hidden">
@@ -333,7 +350,7 @@ export function CanteenLogSheet({
                           } ${d.isSaturday ? "bg-orange-50/40" : ""}`}
                           title={
                             isCellEditable
-                              ? `Click to toggle: ${emp.name} on ${d.displayDate}`
+                              ? `Click to toggle: ${emp.name} on ${d.displayDate} (${d.nepaliDateString} BS)`
                               : period.is_locked
                                 ? "Period is locked"
                                 : "Only this employee or an admin can mark attendance"
@@ -385,7 +402,7 @@ export function CanteenLogSheet({
               &nbsp;&nbsp;&nbsp;&nbsp;
               Date:{" "}
               <span className="font-bold text-neutral-800">
-                [{period.end_date.replaceAll("-", "/")}]
+                [{formatNepaliDate(period.end_date, "YYYY/MM/DD")} BS]
               </span>
             </div>
           </div>
