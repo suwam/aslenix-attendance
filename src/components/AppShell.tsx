@@ -25,6 +25,7 @@ import {
   Laptop,
   ShieldCheck,
   CreditCard,
+  ScanBarcode,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { AslenixLogo } from "@/components/AslenixLogo";
@@ -49,7 +50,7 @@ const adminNav: NavItem[] = [
   { to: "/admin/card-reader-attendance", label: "Card Reader", icon: CreditCard },
   { to: "/admin/attendance-corrections", label: "Attendance Corrections", icon: CalendarClock },
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
-  { to: "/admin/qr-ids", label: "Digital QR IDs", icon: QrCode },
+  { to: "/admin/qr-ids", label: "Digital IDs (Barcode/QR)", icon: ScanBarcode },
   { to: "/admin/employee-of-month", label: "Employee of Month", icon: Crown },
   { to: "/admin/employees", label: "Employees", icon: Users },
   { to: "/admin/leaves", label: "Leave Requests", icon: Calendar },

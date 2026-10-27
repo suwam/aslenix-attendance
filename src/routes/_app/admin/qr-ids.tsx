@@ -22,14 +22,15 @@ import {
   RefreshCw,
   Ban,
   CheckCircle2,
-  QrCode,
+  ScanBarcode,
 } from "lucide-react";
 import { EmployeeQRCard, QRProfile } from "@/components/EmployeeQRCard";
 import { toast } from "sonner";
+import { ADMIN_DEPARTMENT_FILTERS } from "@/lib/departments";
 
 export const Route = createFileRoute("/_app/admin/qr-ids")({ component: QRIdsPage });
 
-const DEPARTMENTS = ["All", "Development", "UI/UX", "AI/ML", "HR", "Marketing", "Management"];
+const DEPARTMENTS = ADMIN_DEPARTMENT_FILTERS;
 const STATUSES = ["All", "active", "inactive", "revoked"];
 
 function QRIdsPage() {
@@ -81,7 +82,7 @@ function QRIdsPage() {
 
   const regenerate = async (u: QRProfile) => {
     if (!canUseQr(u)) {
-      return toast.error("Only approved active employees can have QR IDs");
+      return toast.error("Only approved active employees can have digital IDs");
     }
 
     const token = crypto.getRandomValues(new Uint8Array(24));
@@ -93,14 +94,14 @@ function QRIdsPage() {
       .update({ qr_token: hex, qr_generated_at: new Date().toISOString(), qr_status: "active" })
       .eq("user_id", u.user_id);
     if (error) return toast.error(error.message);
-    toast.success("QR regenerated");
+    toast.success("Security token regenerated");
     load();
     setSelected(null);
   };
 
   const setQrStatus = async (u: QRProfile, newStatus: "active" | "inactive" | "revoked") => {
     if (newStatus === "active" && !canUseQr(u)) {
-      return toast.error("Only approved active employees can have active QR IDs");
+      return toast.error("Only approved active employees can have active digital IDs");
     }
 
     const { error } = await supabase
@@ -108,7 +109,7 @@ function QRIdsPage() {
       .update({ qr_status: newStatus })
       .eq("user_id", u.user_id);
     if (error) return toast.error(error.message);
-    toast.success(`QR ${newStatus}`);
+    toast.success(`ID status set to ${newStatus}`);
     load();
     setSelected((s) => (s ? { ...s, qr_status: newStatus } : s));
   };
@@ -117,8 +118,9 @@ function QRIdsPage() {
     if (!cardRef.current) return;
     const canvas = cardRef.current.querySelector("canvas") as HTMLCanvasElement | null;
     if (!canvas) return;
+    const isBarcode = canvas.width > canvas.height * 1.3;
     const link = document.createElement("a");
-    link.download = `${selected?.employee_code || "employee"}-qr.png`;
+    link.download = `${selected?.employee_code || "employee"}-${isBarcode ? "barcode" : "qr"}.png`;
     link.href = canvas.toDataURL("image/png");
     link.click();
   };
@@ -127,6 +129,7 @@ function QRIdsPage() {
     if (!selected || !cardRef.current) return;
     const canvas = cardRef.current.querySelector("canvas") as HTMLCanvasElement | null;
     if (!canvas) return;
+    const isBarcode = canvas.width > canvas.height * 1.3;
     const { default: jsPDF } = await import("jspdf");
     const pdf = new jsPDF({ unit: "mm", format: [90, 130] });
     pdf.setFillColor(255, 255, 255);
@@ -145,14 +148,30 @@ function QRIdsPage() {
     pdf.text(selected.position || "—", 45, 34, { align: "center" });
     pdf.text(selected.department || "—", 45, 39, { align: "center" });
     const dataUrl = canvas.toDataURL("image/png");
-    pdf.addImage(dataUrl, "PNG", 20, 45, 50, 50);
-    pdf.setFontSize(10);
-    pdf.text(`ID: ${selected.employee_code || "—"}`, 45, 105, { align: "center" });
-    pdf.setFontSize(8);
-    pdf.text(selected.email, 45, 112, { align: "center" });
-    pdf.setTextColor(150, 150, 170);
-    pdf.setFontSize(7);
-    pdf.text(`Status: ${selected.qr_status.toUpperCase()}`, 45, 120, { align: "center" });
+
+    if (isBarcode) {
+      const imgWidth = 70;
+      const imgHeight = Math.min(26, (canvas.height / canvas.width) * imgWidth);
+      const x = (90 - imgWidth) / 2;
+      pdf.addImage(dataUrl, "PNG", x, 50, imgWidth, imgHeight);
+      pdf.setFontSize(10);
+      pdf.text(`ID: ${selected.employee_code || "—"}`, 45, 88, { align: "center" });
+      pdf.setFontSize(8);
+      pdf.text(selected.email, 45, 96, { align: "center" });
+      pdf.setTextColor(150, 150, 170);
+      pdf.setFontSize(7);
+      pdf.text(`Status: ${selected.qr_status.toUpperCase()}`, 45, 106, { align: "center" });
+    } else {
+      pdf.addImage(dataUrl, "PNG", 20, 45, 50, 50);
+      pdf.setFontSize(10);
+      pdf.text(`ID: ${selected.employee_code || "—"}`, 45, 105, { align: "center" });
+      pdf.setFontSize(8);
+      pdf.text(selected.email, 45, 112, { align: "center" });
+      pdf.setTextColor(150, 150, 170);
+      pdf.setFontSize(7);
+      pdf.text(`Status: ${selected.qr_status.toUpperCase()}`, 45, 120, { align: "center" });
+    }
+
     pdf.save(`${selected.employee_code || "employee"}-id.pdf`);
   };
 
@@ -160,24 +179,25 @@ function QRIdsPage() {
     if (!cardRef.current) return;
     const canvas = cardRef.current.querySelector("canvas") as HTMLCanvasElement | null;
     if (!canvas || !selected) return;
+    const isBarcode = canvas.width > canvas.height * 1.3;
     const dataUrl = canvas.toDataURL("image/png");
     const w = window.open("", "_blank");
     if (!w) return;
     w.document.write(`
       <html><head><title>Print ${selected.employee_code}</title>
       <style>body{font-family:system-ui;background:#f1f0ee;color:#0F172A;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;}
-      .card{background:#ffffff;padding:24px;border-radius:16px;width:340px;border:1px solid #e2e8f0;box-shadow:0 8px 30px rgba(0,0,0,0.12);}
+      .card{background:#ffffff;padding:24px;border-radius:16px;width:340px;border:1px solid #e2e8f0;box-shadow:0 8px 30px rgba(0,0,0,0.12);text-align:center;}
       h1{font-size:18px;margin:0 0 4px;text-align:center;color:#ff2a5a;}
       .sub{font-size:10px;text-align:center;color:#aab;letter-spacing:2px;margin-bottom:16px;}
       .name{font-size:16px;text-align:center;font-weight:bold;}
       .pos{font-size:11px;color:#aab;text-align:center;margin-bottom:12px;}
-      .qr{background:#f1f0ee;padding:8px;border-radius:8px;display:flex;justify-content:center;}
-      .id{font-family:monospace;text-align:center;margin-top:12px;font-size:13px;}
-      .email{text-align:center;font-size:10px;color:#aab;}</style></head>
+      .code-container{background:#ffffff;padding:${isBarcode ? "6px" : "8px"};border-radius:8px;display:flex;justify-content:center;align-items:center;border:1px solid #e2e8f0;}
+      .id{font-family:monospace;text-align:center;margin-top:12px;font-size:13px;font-weight:bold;}
+      .email{text-align:center;font-size:10px;color:#aab;margin-top:2px;}</style></head>
       <body><div class="card"><h1>ASLENIX</h1><div class="sub">DIGITAL EMPLOYEE ID</div>
       <div class="name">${selected.full_name}</div>
       <div class="pos">${selected.position || "—"} • ${selected.department || "—"}</div>
-      <div class="qr"><img src="${dataUrl}" width="220" height="220"/></div>
+      <div class="code-container"><img src="${dataUrl}" style="${isBarcode ? "max-width:270px;width:100%;height:auto;" : "width:200px;height:200px;"}"/></div>
       <div class="id">${selected.employee_code || ""}</div>
       <div class="email">${selected.email}</div></div>
       <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),300);}</script></body></html>
@@ -188,8 +208,8 @@ function QRIdsPage() {
   return (
     <>
       <PageHeader
-        title="Digital QR IDs"
-        subtitle={`${filtered.length} employee ${filtered.length === 1 ? "card" : "cards"}`}
+        title="Digital Employee IDs"
+        subtitle={`${filtered.length} employee ${filtered.length === 1 ? "card" : "cards"} • Barcode & QR Code`}
       />
 
       <div className="flex flex-col sm:flex-row gap-3 mb-5">
@@ -237,7 +257,7 @@ function QRIdsPage() {
         </div>
       ) : filtered.length === 0 ? (
         <GlassCard className="text-center py-16 text-muted-foreground">
-          <QrCode className="mx-auto mb-3 opacity-50" /> No QR cards found.
+          <ScanBarcode className="mx-auto mb-3 opacity-50 h-8 w-8" /> No employee ID cards found.
         </GlassCard>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -256,7 +276,7 @@ function QRIdsPage() {
       <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Employee QR ID</DialogTitle>
+            <DialogTitle>Employee Digital ID Card</DialogTitle>
           </DialogHeader>
           {selected && (
             <div className="flex flex-col items-center gap-5">

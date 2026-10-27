@@ -67,7 +67,9 @@ interface ProfileItem {
   is_suspended?: boolean;
 }
 
-const DEPARTMENTS = ["All", "Development", "UI/UX", "AI/ML", "HR", "Marketing", "Management"];
+import { ADMIN_DEPARTMENT_FILTERS } from "@/lib/departments";
+
+const DEPARTMENTS = ADMIN_DEPARTMENT_FILTERS;
 
 interface AdminPasswordManagementProps {
   initialEmployeeId?: string;

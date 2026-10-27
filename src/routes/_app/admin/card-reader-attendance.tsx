@@ -655,7 +655,7 @@ function CardReaderAttendancePage() {
       <Dialog open={cameraOpen} onOpenChange={setCameraOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Scan Employee QR Code</DialogTitle>
+            <DialogTitle>Scan Employee Barcode or QR Code</DialogTitle>
           </DialogHeader>
           <div className="overflow-hidden rounded-lg">
             {cameraOpen && (

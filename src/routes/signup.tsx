@@ -14,10 +14,9 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { DEPARTMENTS, DEPARTMENT_POSITIONS } from "@/lib/departments";
 
 export const Route = createFileRoute("/signup")({ component: SignupPage });
-
-const DEPARTMENTS = ["Development", "UI/UX", "AI/ML", "HR", "Marketing", "Management"];
 
 function SignupPage() {
   const nav = useNavigate();
@@ -31,9 +30,22 @@ function SignupPage() {
     position: "",
     address: "",
   });
+  const [isCustomPosition, setIsCustomPosition] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const update = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  const availablePositions = form.department ? DEPARTMENT_POSITIONS[form.department] || [] : [];
+
+  const handleDepartmentChange = (dept: string) => {
+    update("department", dept);
+    setIsCustomPosition(false);
+    const newPositions = DEPARTMENT_POSITIONS[dept] || [];
+    // Reset position if previous position doesn't fit the new department
+    if (!newPositions.includes(form.position)) {
+      update("position", "");
+    }
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,7 +129,7 @@ function SignupPage() {
           </div>
           <div className="space-y-2">
             <Label>Department</Label>
-            <Select value={form.department} onValueChange={(v) => update("department", v)}>
+            <Select value={form.department} onValueChange={handleDepartmentChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
@@ -131,8 +143,89 @@ function SignupPage() {
             </Select>
           </div>
           <div className="space-y-2 sm:col-span-2">
-            <Label>Position</Label>
-            <Input value={form.position} onChange={(e) => update("position", e.target.value)} />
+            <div className="flex items-center justify-between">
+              <Label>Position</Label>
+              {availablePositions.length > 0 && isCustomPosition && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCustomPosition(false);
+                    update("position", availablePositions[0] || "");
+                  }}
+                  className="text-xs text-primary hover:underline cursor-pointer"
+                >
+                  Choose from list
+                </button>
+              )}
+            </div>
+
+            {availablePositions.length > 0 && !isCustomPosition ? (
+              <Select
+                value={
+                  availablePositions.includes(form.position)
+                    ? form.position
+                    : form.position
+                      ? "other"
+                      : ""
+                }
+                onValueChange={(v) => {
+                  if (v === "other") {
+                    setIsCustomPosition(true);
+                    update("position", "");
+                  } else {
+                    update("position", v);
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      form.department === "Frontend"
+                        ? "Select position (e.g. UI/UX Designer)"
+                        : "Select position"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {availablePositions.map((pos) => (
+                    <SelectItem key={pos} value={pos}>
+                      {pos}
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="other">Other (Type custom position...)</SelectItem>
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="space-y-1.5">
+                <Input
+                  placeholder={
+                    form.department === "Frontend"
+                      ? "e.g. UI/UX Designer, Frontend Developer"
+                      : "e.g. Software Engineer, Specialist"
+                  }
+                  value={form.position}
+                  onChange={(e) => update("position", e.target.value)}
+                />
+                {availablePositions.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs text-muted-foreground">
+                    <span>Common for {form.department}:</span>
+                    {availablePositions.slice(0, 4).map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => {
+                          update("position", p);
+                          setIsCustomPosition(false);
+                        }}
+                        className="rounded-full bg-secondary/80 px-2 py-0.5 text-xs font-medium text-secondary-foreground hover:bg-secondary cursor-pointer"
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label>Address</Label>

@@ -12,10 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ADMIN_DEPARTMENT_FILTERS } from "@/lib/departments";
 
 export const Route = createFileRoute("/_app/admin/employees")({ component: EmployeesPage });
 
-const DEPARTMENTS = ["All", "Development", "UI/UX", "AI/ML", "HR", "Marketing", "Management"];
+const DEPARTMENTS = ADMIN_DEPARTMENT_FILTERS;
 
 function EmployeesPage() {
   const [users, setUsers] = useState<any[]>([]);

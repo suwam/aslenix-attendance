@@ -167,7 +167,14 @@ type WeeklyReview = {
 };
 
 const chartColors = ["#21d4fd", "#8b5cf6", "#ff2d6f", "#f6c453", "#22c55e"];
-const EOM_DEPARTMENTS = ["Development", "UI/UX", "Marketing", "HR", "QA"] as const;
+const EOM_DEPARTMENTS = [
+  "Frontend",
+  "Backend",
+  "Administrator",
+  "Software Developer",
+  "Digital Marketing",
+  "HR",
+] as const;
 const DEPARTMENT_FILTERS = ["All Departments", ...EOM_DEPARTMENTS] as const;
 type DepartmentFilter = (typeof DEPARTMENT_FILTERS)[number];
 type RecognitionType = "employee_of_month" | "emerging_employee";

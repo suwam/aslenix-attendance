@@ -54,6 +54,11 @@ const ATTENDANCE_COLORS = {
 };
 
 const DEPARTMENT_COLORS = {
+  frontend: "#38bdf8",
+  backend: "#818cf8",
+  softwaredeveloper: "#f59e0b",
+  digitalmarketing: "#34d399",
+  administrator: "#ec4899",
   uiux: "#fb7185",
   hr: "#60a5fa",
   marketing: "#34d399",
@@ -1038,10 +1043,13 @@ function getDepartmentColor(name: string, index: number) {
   const key = String(name || "")
     .toLowerCase()
     .replace(/[^a-z]/g, "");
+  if (key.includes("frontend")) return DEPARTMENT_COLORS.frontend;
+  if (key.includes("backend")) return DEPARTMENT_COLORS.backend;
+  if (key.includes("admin")) return DEPARTMENT_COLORS.administrator;
+  if (key.includes("marketing")) return DEPARTMENT_COLORS.digitalmarketing;
   if (key.includes("uiux") || (key.includes("ui") && key.includes("ux")))
     return DEPARTMENT_COLORS.uiux;
   if (key === "hr" || key.includes("humanresources")) return DEPARTMENT_COLORS.hr;
-  if (key.includes("marketing")) return DEPARTMENT_COLORS.marketing;
   if (key.includes("development") || key.includes("developer") || key.includes("engineering"))
     return DEPARTMENT_COLORS.development;
   return COLORS[index % COLORS.length];
