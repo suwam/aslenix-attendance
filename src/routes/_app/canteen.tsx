@@ -13,8 +13,16 @@ import {
 import { CanteenLogSheet } from "@/components/canteen/CanteenLogSheet";
 import { CanteenAdminControls } from "@/components/canteen/CanteenAdminControls";
 import { toast } from "sonner";
-import { Loader2, Utensils } from "lucide-react";
+import { Loader2, Utensils, Sparkles } from "lucide-react";
 import { addDays, parseISO, format } from "date-fns";
+import { formatNepaliDate } from "@/lib/nepali-calendar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_app/canteen")({ component: CanteenPage });
 
@@ -111,6 +119,42 @@ function CanteenPage() {
     if (!currentPeriod) return [];
     return generatePeriodDays(currentPeriod.start_date);
   }, [currentPeriod]);
+
+  // Identify current logged-in employee (if user is an employee)
+  const currentEmployee = useMemo(() => {
+    if (!user) return null;
+    return (
+      employees.find((e) => e.user_id && e.user_id === user.id) ||
+      employees.find(
+        (e) =>
+          profile?.full_name &&
+          e.name.trim().toLowerCase() === profile.full_name.trim().toLowerCase(),
+      ) ||
+      null
+    );
+  }, [employees, user, profile]);
+
+  // Count meals for the current employee in this period
+  const currentEmployeeMeals = useMemo(() => {
+    if (!currentEmployee) return 0;
+    let count = 0;
+    days.forEach((d) => {
+      const hol = holidays[d.dayIndex];
+      if (!hol || !hol.is_enabled) {
+        if (attendance[`${currentEmployee.id}_${d.dateString}`]) {
+          count++;
+        }
+      }
+    });
+    return count;
+  }, [currentEmployee, days, holidays, attendance]);
+
+  // For employees, auto-highlight their own row
+  useEffect(() => {
+    if (!isAdmin && currentEmployee && !highlightEmployeeId) {
+      setHighlightEmployeeId(currentEmployee.id);
+    }
+  }, [isAdmin, currentEmployee, highlightEmployeeId]);
 
   // Check if current user can edit a given employee's attendance
   const canEditEmployee = useCallback(
@@ -454,7 +498,11 @@ function CanteenPage() {
     <>
       <PageHeader
         title="Canteen Attendance"
-        subtitle="Official ASLENIX Tech and Solution Canteen Log Sheet"
+        subtitle={
+          isAdmin
+            ? "Official ASLENIX Tech and Solution Canteen Attendance Sheet"
+            : "Enjoy food! • Official ASLENIX Tech and Solution Canteen Attendance"
+        }
         actions={
           <div className="flex items-center gap-2">
             <span className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
@@ -465,31 +513,93 @@ function CanteenPage() {
         }
       />
 
-      {/* Admin Controls Toolbar (Export, Periods, Employee Roster, Holidays, Reports) */}
-      <CanteenAdminControls
-        periods={periods}
-        currentPeriod={currentPeriod}
-        onSelectPeriod={handleSelectPeriod}
-        onCreatePeriod={handleCreatePeriod}
-        onToggleLockPeriod={handleToggleLockPeriod}
-        onUpdatePeriodDetails={handleUpdatePeriodDetails}
-        employees={employees}
-        onAddEmployee={handleAddEmployee}
-        onUpdateEmployee={handleUpdateEmployee}
-        onDeleteEmployee={handleDeleteEmployee}
-        onReorderEmployee={handleReorderEmployee}
-        onSyncRegisteredProfiles={handleSyncRegisteredProfiles}
-        days={days}
-        holidays={holidays}
-        onSaveHolidayConfig={handleSaveHolidayConfig}
-        attendance={attendance}
-        isAdmin={isAdmin}
-        highlightEmployeeId={highlightEmployeeId}
-        onHighlightEmployee={setHighlightEmployeeId}
-        showTotalColumn={showTotalColumn}
-        onToggleShowTotalColumn={() => setShowTotalColumn((prev) => !prev)}
-        systemProfiles={systemProfiles}
-      />
+      {/* Admin View: Full Controls Toolbar (Export, Periods, Employee Roster, Holidays, Reports) */}
+      {isAdmin ? (
+        <CanteenAdminControls
+          periods={periods}
+          currentPeriod={currentPeriod}
+          onSelectPeriod={handleSelectPeriod}
+          onCreatePeriod={handleCreatePeriod}
+          onToggleLockPeriod={handleToggleLockPeriod}
+          onUpdatePeriodDetails={handleUpdatePeriodDetails}
+          employees={employees}
+          onAddEmployee={handleAddEmployee}
+          onUpdateEmployee={handleUpdateEmployee}
+          onDeleteEmployee={handleDeleteEmployee}
+          onReorderEmployee={handleReorderEmployee}
+          onSyncRegisteredProfiles={handleSyncRegisteredProfiles}
+          days={days}
+          holidays={holidays}
+          onSaveHolidayConfig={handleSaveHolidayConfig}
+          attendance={attendance}
+          isAdmin={isAdmin}
+          highlightEmployeeId={highlightEmployeeId}
+          onHighlightEmployee={setHighlightEmployeeId}
+          showTotalColumn={showTotalColumn}
+          onToggleShowTotalColumn={() => setShowTotalColumn((prev) => !prev)}
+          systemProfiles={systemProfiles}
+        />
+      ) : (
+        /* Employee View: Admin toolbar is completely hidden. Slogan card displayed instead. */
+        <div className="mb-5 rounded-2xl border border-orange-500/20 bg-gradient-to-r from-orange-500/10 via-card to-amber-500/10 p-4 sm:p-5 shadow-sm">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/30 text-orange-500 flex items-center justify-center shrink-0 border border-orange-500/30">
+                <Utensils size={22} />
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-base sm:text-lg font-bold text-foreground">
+                    Canteen Attendance
+                  </h2>
+                  <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-orange-500/15 text-orange-600 border border-orange-500/30 tracking-wide uppercase">
+                    Enjoy food! 🍽️
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 font-medium">
+                  &ldquo;Enjoy food!&rdquo; • Click on your row in the sheet below to tick ✓ when you eat.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              {currentEmployee && (
+                <div className="flex items-center gap-2 rounded-xl bg-background/80 px-3.5 py-2 border border-border shadow-xs text-xs">
+                  <span className="text-muted-foreground">Your Meals:</span>
+                  <span className="font-extrabold text-foreground text-sm">
+                    {currentEmployeeMeals}
+                  </span>
+                  <span className="text-emerald-600 font-semibold">✓</span>
+                </div>
+              )}
+
+              {periods.length > 1 && (
+                <div className="flex items-center gap-1.5">
+                  <Select
+                    value={currentPeriod?.id || ""}
+                    onValueChange={handleSelectPeriod}
+                  >
+                    <SelectTrigger className="h-9 w-[220px] rounded-xl border-border bg-background text-xs font-medium">
+                      <SelectValue placeholder="Select Period" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {periods.map((p) => {
+                        const nepaliStart = formatNepaliDate(p.start_date, "YYYY/MM/DD");
+                        const nepaliEnd = formatNepaliDate(p.end_date, "YYYY/MM/DD");
+                        return (
+                          <SelectItem key={p.id} value={p.id} className="text-xs">
+                            {nepaliStart} - {nepaliEnd} BS
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Exact Spreadsheet-Style Canteen Log Sheet */}
       {currentPeriod ? (

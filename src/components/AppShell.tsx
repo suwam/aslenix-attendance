@@ -67,7 +67,7 @@ const adminNav: NavItem[] = [
 
 const empNav: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/canteen", label: "Canteen Log", icon: Utensils },
+  { to: "/canteen", label: "Canteen Attendance", icon: Utensils },
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/check-in", label: "Check-in", icon: Clock },
   { to: "/meetings", label: "Meetings", icon: CalendarClock },

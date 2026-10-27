@@ -73,7 +73,7 @@ export function CanteenLogSheet({
               ASLENIX TECH AND SOLUTION
             </h1>
             <p className="text-base font-bold text-neutral-800 mt-0.5">
-              (Canteen Log Sheet)
+              (Canteen Attendance Log Sheet)
             </p>
           </div>
 
@@ -106,9 +106,9 @@ export function CanteenLogSheet({
             </div>
           </div>
 
-          {/* Center: Instruction */}
+          {/* Center: Instruction & Slogan */}
           <div className="text-center font-bold text-neutral-900 tracking-wide text-sm sm:text-base">
-            Tick ✓ when you go to eat
+            Enjoy food! Tick ✓ when you go to eat
           </div>
 
           {/* Right: Date Range (Displayed in Red) */}
