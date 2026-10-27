@@ -5300,3 +5300,37 @@
 ::-webkit-scrollbar-thumb:hover {
   background: oklch(1 0 0 / 0.16);
 }
+
+/* Canteen Attendance Log Sheet Print Styles */
+@media print {
+  @page {
+    size: landscape;
+    margin: 8mm;
+  }
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  header, nav, aside, .no-print {
+    display: none !important;
+  }
+  #canteen-log-sheet-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  #canteen-log-sheet {
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: none !important;
+  }
+}
+

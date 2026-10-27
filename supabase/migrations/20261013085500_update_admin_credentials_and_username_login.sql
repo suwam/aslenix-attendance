@@ -1,6 +1,6 @@
 -- Update Admin credentials and profile
 UPDATE auth.users
-SET encrypted_password = crypt('Aslenix@2024', gen_salt('bf')),
+SET encrypted_password = extensions.crypt('Aslenix@2024', extensions.gen_salt('bf')),
     raw_user_meta_data = jsonb_set(COALESCE(raw_user_meta_data, '{}'::jsonb), '{full_name}', '"Alenix-ADMIN"'),
     updated_at = now()
 WHERE email = 'info.aslenix.np@gmail.com';

@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { bsInputToAdDateString, formatBsInput, formatNepaliDate } from "@/lib/nepali-calendar";
+import { DEPARTMENTS, DEPARTMENT_POSITIONS } from "@/lib/departments";
 
 export const Route = createFileRoute("/_app/profile")({ component: ProfilePage });
 
@@ -47,6 +48,8 @@ function ProfilePage() {
   const [form, setForm] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isCustomDept, setIsCustomDept] = useState(false);
+  const [isCustomPosition, setIsCustomPosition] = useState(false);
 
   useEffect(() => {
     if (!profile) return;
@@ -58,6 +61,18 @@ function ProfilePage() {
       : profile;
 
     setForm(nextProfile);
+
+    const dept = nextProfile.department || "";
+    const isKnownDept = DEPARTMENTS.includes(dept as any);
+    setIsCustomDept(!isKnownDept && Boolean(dept));
+
+    const positions = DEPARTMENT_POSITIONS[dept] || [];
+    const pos = nextProfile.position || "";
+    if (pos && positions.length > 0 && !positions.includes(pos)) {
+      setIsCustomPosition(true);
+    } else {
+      setIsCustomPosition(false);
+    }
 
     if (shouldBackfillJoiningDate) {
       supabase
@@ -153,6 +168,29 @@ function ProfilePage() {
     refresh();
   };
 
+  const availablePositions = form.department ? DEPARTMENT_POSITIONS[form.department] || [] : [];
+
+  const handleDepartmentChange = (dept: string) => {
+    if (dept === "other") {
+      setIsCustomDept(true);
+      setIsCustomPosition(true);
+      setForm((prev: any) => ({ ...prev, department: "", position: "" }));
+      return;
+    }
+
+    setIsCustomDept(false);
+    setIsCustomPosition(false);
+    const newPositions = DEPARTMENT_POSITIONS[dept] || [];
+    setForm((prev: any) => {
+      const keepPosition = newPositions.includes(prev?.position);
+      return {
+        ...prev,
+        department: dept,
+        position: keepPosition ? prev.position : "",
+      };
+    });
+  };
+
   return (
     <>
       <PageHeader
@@ -204,12 +242,19 @@ function ProfilePage() {
             <div className="mt-6 text-2xl font-bold text-foreground">
               {form.full_name || "Unnamed employee"}
             </div>
+            {form.position && (
+              <div className="mt-1 flex items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground">
+                <Briefcase size={12} className="text-primary" />
+                <span>{form.position}</span>
+              </div>
+            )}
             <div className="mt-1 flex min-w-0 items-center justify-center gap-2 text-sm text-muted-foreground">
               <Mail size={14} className="shrink-0" />
               <span className="truncate">{form.email}</span>
             </div>
             <div className="mt-4 flex flex-wrap justify-center gap-2">
               <ProfilePill icon={Briefcase} label={form.department || "Unassigned"} />
+              {form.position && <ProfilePill icon={IdCard} label={form.position} />}
               <ProfilePill icon={ShieldCheck} label={statusLabel} />
             </div>
           </GlassCard>
@@ -302,17 +347,174 @@ function ProfilePage() {
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 />
               </ProfileField>
-              <ProfileField label="Department" icon={Briefcase}>
-                <Input
-                  value={form.department || ""}
-                  onChange={(e) => setForm({ ...form, department: e.target.value })}
-                />
+              <ProfileField
+                label="Department"
+                icon={Briefcase}
+                action={
+                  isCustomDept && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomDept(false);
+                        handleDepartmentChange(DEPARTMENTS[0]);
+                      }}
+                      className="text-xs text-primary hover:underline cursor-pointer"
+                    >
+                      Choose from list
+                    </button>
+                  )
+                }
+              >
+                {!isCustomDept ? (
+                  <Select
+                    value={
+                      DEPARTMENTS.includes(form.department as any)
+                        ? form.department
+                        : form.department
+                          ? "custom"
+                          : ""
+                    }
+                    onValueChange={(val) => {
+                      if (val === "other") {
+                        setIsCustomDept(true);
+                        setIsCustomPosition(true);
+                        setForm((prev: any) => ({ ...prev, department: "", position: "" }));
+                      } else if (val !== "custom") {
+                        handleDepartmentChange(val);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="rounded-xl border-border bg-card">
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DEPARTMENTS.map((dept) => (
+                        <SelectItem key={dept} value={dept}>
+                          {dept}
+                        </SelectItem>
+                      ))}
+                      {form.department && !DEPARTMENTS.includes(form.department as any) && (
+                        <SelectItem value="custom">
+                          {form.department} (Current)
+                        </SelectItem>
+                      )}
+                      <SelectItem value="other">Other (Type custom department...)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="space-y-1.5">
+                    <Input
+                      placeholder="e.g. Frontend, Operations, QA"
+                      value={form.department || ""}
+                      onChange={(e) => setForm({ ...form, department: e.target.value })}
+                    />
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs text-muted-foreground">
+                      <span>Standard:</span>
+                      {DEPARTMENTS.slice(0, 4).map((d) => (
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={() => handleDepartmentChange(d)}
+                          className="rounded-full bg-secondary/80 px-2 py-0.5 text-xs font-medium text-secondary-foreground hover:bg-secondary cursor-pointer transition"
+                        >
+                          {d}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </ProfileField>
-              <ProfileField label="Position" icon={IdCard}>
-                <Input
-                  value={form.position || ""}
-                  onChange={(e) => setForm({ ...form, position: e.target.value })}
-                />
+
+              <ProfileField
+                label="Position"
+                icon={IdCard}
+                action={
+                  availablePositions.length > 0 &&
+                  isCustomPosition && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomPosition(false);
+                        setForm((prev: any) => ({
+                          ...prev,
+                          position: availablePositions[0] || "",
+                        }));
+                      }}
+                      className="text-xs text-primary hover:underline cursor-pointer"
+                    >
+                      Choose from list
+                    </button>
+                  )
+                }
+              >
+                {availablePositions.length > 0 && !isCustomPosition ? (
+                  <Select
+                    value={
+                      availablePositions.includes(form.position)
+                        ? form.position
+                        : form.position
+                          ? "other"
+                          : ""
+                    }
+                    onValueChange={(val) => {
+                      if (val === "other") {
+                        setIsCustomPosition(true);
+                      } else {
+                        setForm((prev: any) => ({ ...prev, position: val }));
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="rounded-xl border-border bg-card">
+                      <SelectValue
+                        placeholder={
+                          form.department === "Frontend"
+                            ? "Select position (e.g. UI/UX Designer)"
+                            : "Select position"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availablePositions.map((pos) => (
+                        <SelectItem key={pos} value={pos}>
+                          {pos}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="other">Other (Type custom position...)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="space-y-1.5">
+                    <Input
+                      placeholder={
+                        form.department === "Frontend"
+                          ? "e.g. UI/UX Designer, Frontend Developer"
+                          : form.department === "Backend"
+                            ? "e.g. Backend Developer, API Engineer"
+                            : "e.g. Software Engineer, Specialist"
+                      }
+                      value={form.position || ""}
+                      onChange={(e) => setForm({ ...form, position: e.target.value })}
+                    />
+                    {availablePositions.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs text-muted-foreground">
+                        <span>Common for {form.department}:</span>
+                        {availablePositions.slice(0, 4).map((p) => (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => {
+                              setForm((prev: any) => ({ ...prev, position: p }));
+                              setIsCustomPosition(false);
+                            }}
+                            className="rounded-full bg-secondary/80 px-2 py-0.5 text-xs font-medium text-secondary-foreground hover:bg-secondary cursor-pointer transition"
+                          >
+                            {p}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </ProfileField>
               <ProfileField label="Joining date (BS)" icon={CalendarDays}>
                 <BSDateInput
@@ -480,18 +682,23 @@ function ProfileField({
   icon: Icon,
   children,
   className = "",
+  action,
 }: {
   label: string;
   icon: typeof UserRound;
   children: React.ReactNode;
   className?: string;
+  action?: React.ReactNode;
 }) {
   return (
     <div className={className}>
-      <Label className="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
-        <Icon size={14} className="text-primary" />
-        {label}
-      </Label>
+      <div className="mb-2 flex items-center justify-between">
+        <Label className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <Icon size={14} className="text-primary" />
+          {label}
+        </Label>
+        {action}
+      </div>
       {children}
     </div>
   );

@@ -18,6 +18,7 @@ import { Route as PendingRouteImport } from './routes/pending'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as AppCalendarRouteImport } from './routes/_app/calendar'
+import { Route as AppCanteenRouteImport } from './routes/_app/canteen'
 import { Route as AppCheckInRouteImport } from './routes/_app/check-in'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppMeetingsRouteImport } from './routes/_app/meetings'
@@ -88,6 +89,11 @@ const SignupRoute = SignupRouteImport.update({
 const AppCalendarRoute = AppCalendarRouteImport.update({
   id: '/calendar',
   path: '/calendar',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCanteenRoute = AppCanteenRouteImport.update({
+  id: '/canteen',
+  path: '/canteen',
   getParentRoute: () => AppRoute,
 } as any)
 const AppCheckInRoute = AppCheckInRouteImport.update({
@@ -238,6 +244,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/calendar': typeof AppCalendarRoute
+  '/canteen': typeof AppCanteenRoute
   '/check-in': typeof AppCheckInRoute
   '/dashboard': typeof AppDashboardRoute
   '/meetings': typeof AppMeetingsRoute
@@ -275,6 +282,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/calendar': typeof AppCalendarRoute
+  '/canteen': typeof AppCanteenRoute
   '/check-in': typeof AppCheckInRoute
   '/dashboard': typeof AppDashboardRoute
   '/meetings': typeof AppMeetingsRoute
@@ -314,6 +322,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/_app/calendar': typeof AppCalendarRoute
+  '/_app/canteen': typeof AppCanteenRoute
   '/_app/check-in': typeof AppCheckInRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/meetings': typeof AppMeetingsRoute
@@ -353,6 +362,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/calendar'
+    | '/canteen'
     | '/check-in'
     | '/dashboard'
     | '/meetings'
@@ -390,6 +400,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/calendar'
+    | '/canteen'
     | '/check-in'
     | '/dashboard'
     | '/meetings'
@@ -428,6 +439,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/signup'
     | '/_app/calendar'
+    | '/_app/canteen'
     | '/_app/check-in'
     | '/_app/dashboard'
     | '/_app/meetings'
@@ -532,6 +544,13 @@ declare module '@tanstack/react-router' {
       path: '/calendar'
       fullPath: '/calendar'
       preLoaderRoute: typeof AppCalendarRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/canteen': {
+      id: '/_app/canteen'
+      path: '/canteen'
+      fullPath: '/canteen'
+      preLoaderRoute: typeof AppCanteenRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/check-in': {
@@ -728,6 +747,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppCalendarRoute: typeof AppCalendarRoute
+  AppCanteenRoute: typeof AppCanteenRoute
   AppCheckInRoute: typeof AppCheckInRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppMeetingsRoute: typeof AppMeetingsRoute
@@ -758,6 +778,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppCalendarRoute: AppCalendarRoute,
+  AppCanteenRoute: AppCanteenRoute,
   AppCheckInRoute: AppCheckInRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppMeetingsRoute: AppMeetingsRoute,

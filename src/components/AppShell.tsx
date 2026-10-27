@@ -25,6 +25,7 @@ import {
   Laptop,
   ShieldCheck,
   CreditCard,
+  Utensils,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { AslenixLogo } from "@/components/AslenixLogo";
@@ -45,6 +46,7 @@ type NotificationPreview = {
 
 const adminNav: NavItem[] = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/canteen", label: "Canteen Attendance", icon: Utensils },
   { to: "/admin/attendance", label: "Attendance", icon: Clock },
   { to: "/admin/card-reader-attendance", label: "Card Reader", icon: CreditCard },
   { to: "/admin/attendance-corrections", label: "Attendance Corrections", icon: CalendarClock },
@@ -65,6 +67,7 @@ const adminNav: NavItem[] = [
 
 const empNav: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/canteen", label: "Canteen Log", icon: Utensils },
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/check-in", label: "Check-in", icon: Clock },
   { to: "/meetings", label: "Meetings", icon: CalendarClock },
