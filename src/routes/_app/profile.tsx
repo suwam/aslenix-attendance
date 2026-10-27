@@ -250,7 +250,7 @@ function ProfilePage() {
               <div className="flex flex-col gap-1 w-full max-w-sm mr-auto text-left mb-4 lg:mb-0">
                 <h3 className="text-lg font-semibold text-foreground">Digital Employee ID</h3>
                 <p className="text-sm text-muted-foreground">
-                  Use this barcode or QR code for fast, contactless check-ins at the office scanner.
+                  Use this QR code for fast, contactless check-ins at the office scanner.
                 </p>
               </div>
               <EmployeeQRCard profile={form as any} />
