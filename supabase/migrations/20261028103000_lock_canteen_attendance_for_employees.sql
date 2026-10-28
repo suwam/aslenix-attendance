@@ -1,12 +1,12 @@
 -- Tighten canteen attendance RLS policies:
--- Employees can ONLY insert/tick their own attendance.
--- Once ticked, ONLY admins can update or delete/uncheck attendance.
+-- 1. Employees can ONLY insert/tick attendance for the SAME DAY (TODAY in Asia/Kathmandu).
+-- 2. Once ticked, ONLY admins can update or delete/uncheck attendance.
 
 DROP POLICY IF EXISTS "canteen_attendance_employee_update" ON public.canteen_attendance;
 DROP POLICY IF EXISTS "canteen_attendance_employee_delete" ON public.canteen_attendance;
 DROP POLICY IF EXISTS "canteen_attendance_employee_insert" ON public.canteen_attendance;
 
--- Employees can INSERT (tick) their own attendance on an unlocked period
+-- Employees can INSERT (tick) their own attendance ONLY for the current day on an unlocked period
 CREATE POLICY "canteen_attendance_employee_insert" ON public.canteen_attendance
   FOR INSERT WITH CHECK (
     auth.uid() IS NOT NULL
@@ -21,6 +21,7 @@ CREATE POLICY "canteen_attendance_employee_insert" ON public.canteen_attendance
               OR trim(lower(ce.name)) = trim(lower((SELECT full_name FROM public.profiles WHERE user_id = auth.uid())))
             )
         )
+        AND date = to_char(now() AT TIME ZONE 'Asia/Kathmandu', 'YYYY-MM-DD')
         AND EXISTS (
           SELECT 1 FROM public.canteen_periods cp
           WHERE cp.id = period_id AND cp.is_locked = false
@@ -42,4 +43,3 @@ CREATE POLICY "canteen_attendance_employee_delete" ON public.canteen_attendance
     auth.uid() IS NOT NULL
     AND public.is_admin(auth.uid())
   );
-

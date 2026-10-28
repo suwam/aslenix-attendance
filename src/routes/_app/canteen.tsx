@@ -191,6 +191,13 @@ function CanteenPage() {
       return;
     }
 
+    // Employees can only mark canteen attendance for the same day (today)
+    const todayDateString = format(new Date(), "yyyy-MM-dd");
+    if (!isAdmin && dateString !== todayDateString) {
+      toast.error("Employees can only mark canteen attendance for today. Only an admin can mark other days.");
+      return;
+    }
+
     // Employees cannot uncheck or change attendance once marked — only admin can
     if (!isAdmin && currentVal === true) {
       toast.error("Attendance is already recorded. Only an admin can change or remove it.");

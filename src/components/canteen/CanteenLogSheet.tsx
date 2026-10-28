@@ -1,5 +1,6 @@
 import React from "react";
 import { toast } from "sonner";
+import { format } from "date-fns";
 import logoMarkUrl from "@/assets/aslenix-mark.png";
 import {
   CanteenPeriod,
@@ -41,6 +42,7 @@ export function CanteenLogSheet({
 
   // Formatted date range in Nepali BS e.g. "2083/07/09 – 2083/07/22 BS"
   const formattedDateRange = `${formatNepaliDate(period.start_date, "YYYY/MM/DD")} – ${formatNepaliDate(period.end_date, "YYYY/MM/DD")} BS`;
+  const todayDateString = format(new Date(), "yyyy-MM-dd");
 
   return (
     <div
@@ -189,38 +191,60 @@ export function CanteenLogSheet({
             {/* Second Header Row */}
             <tr className="bg-neutral-50 font-bold border-b-2 border-black">
               {/* Week 1 Days */}
-              {week1Days.map((d) => (
-                <th
-                  key={d.dayIndex}
-                  className={`border border-black py-1 text-center font-bold ${
-                    d.isSaturday
-                      ? "text-[#ea580c] bg-orange-50 font-black"
-                      : "text-black"
-                  }`}
-                >
-                  <div className="text-xs uppercase leading-none">{d.dayName}</div>
-                  <div className="text-[10px] font-normal text-neutral-600 mt-0.5">
-                    {d.dayOfMonth}
-                  </div>
-                </th>
-              ))}
+              {week1Days.map((d) => {
+                const isToday = d.dateString === todayDateString;
+                return (
+                  <th
+                    key={d.dayIndex}
+                    className={`border border-black py-1 text-center font-bold ${
+                      isToday
+                        ? "bg-emerald-100 text-emerald-950 ring-2 ring-inset ring-emerald-600 print:ring-0"
+                        : d.isSaturday
+                          ? "text-[#ea580c] bg-orange-50 font-black"
+                          : "text-black"
+                    }`}
+                    title={isToday ? `Today (${d.displayDate} - ${d.nepaliDateString} BS)` : undefined}
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="text-xs uppercase leading-none">{d.dayName}</span>
+                      {isToday && (
+                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-600 print:hidden animate-pulse" />
+                      )}
+                    </div>
+                    <div className="text-[10px] font-normal text-neutral-600 mt-0.5">
+                      {d.dayOfMonth}
+                    </div>
+                  </th>
+                );
+              })}
 
               {/* Week 2 Days */}
-              {week2Days.map((d) => (
-                <th
-                  key={d.dayIndex}
-                  className={`border border-black py-1 text-center font-bold ${
-                    d.isSaturday
-                      ? "text-[#ea580c] bg-orange-50 font-black"
-                      : "text-black"
-                  }`}
-                >
-                  <div className="text-xs uppercase leading-none">{d.dayName}</div>
-                  <div className="text-[10px] font-normal text-neutral-600 mt-0.5">
-                    {d.dayOfMonth}
-                  </div>
-                </th>
-              ))}
+              {week2Days.map((d) => {
+                const isToday = d.dateString === todayDateString;
+                return (
+                  <th
+                    key={d.dayIndex}
+                    className={`border border-black py-1 text-center font-bold ${
+                      isToday
+                        ? "bg-emerald-100 text-emerald-950 ring-2 ring-inset ring-emerald-600 print:ring-0"
+                        : d.isSaturday
+                          ? "text-[#ea580c] bg-orange-50 font-black"
+                          : "text-black"
+                    }`}
+                    title={isToday ? `Today (${d.displayDate} - ${d.nepaliDateString} BS)` : undefined}
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="text-xs uppercase leading-none">{d.dayName}</span>
+                      {isToday && (
+                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-600 print:hidden animate-pulse" />
+                      )}
+                    </div>
+                    <div className="text-[10px] font-normal text-neutral-600 mt-0.5">
+                      {d.dayOfMonth}
+                    </div>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
 
@@ -334,13 +358,17 @@ export function CanteenLogSheet({
                       // Normal working day cell
                       const cellKey = `${emp.id}_${d.dateString}`;
                       const hasAte = Boolean(attendance[cellKey]);
+                      const isToday = d.dateString === todayDateString;
 
                       // Admin can edit or toggle any day as long as period isn't locked.
-                      // Employees can only TICK an unmarked day; once ticked, it cannot be changed/unchecked by employee.
+                      // Employees can ONLY TICK an unmarked day on THE SAME DAY (TODAY);
+                      // they cannot mark past or future days, and once ticked, it cannot be changed/unchecked by employee.
                       const isCellEditable = isAdmin
                         ? !period.is_locked
-                        : (canEdit && !hasAte && !period.is_locked);
+                        : (canEdit && !hasAte && !period.is_locked && isToday);
+
                       const isLockedForEmployee = !isAdmin && canEdit && hasAte;
+                      const isOtherDayForEmployee = !isAdmin && canEdit && !hasAte && !isToday;
 
                       return (
                         <td
@@ -350,23 +378,29 @@ export function CanteenLogSheet({
                               onToggleAttendance(emp.id, d.dateString, hasAte);
                             } else if (isLockedForEmployee) {
                               toast.info("Attendance already recorded. Only an admin can change or uncheck it.");
+                            } else if (isOtherDayForEmployee) {
+                              toast.error(`Employees can only mark attendance for today. Contact admin for ${d.displayDate}.`);
                             }
                           }}
                           className={`border border-black p-0 text-center select-none transition-colors ${
                             isCellEditable
-                              ? "cursor-pointer hover:bg-neutral-200/80 active:bg-neutral-300"
+                              ? "cursor-pointer bg-emerald-50/70 hover:bg-emerald-100/90 active:bg-emerald-200"
                               : isLockedForEmployee
                                 ? "cursor-not-allowed bg-emerald-50/50"
-                                : "cursor-default"
-                          } ${d.isSaturday ? "bg-orange-50/40" : ""}`}
+                                : isOtherDayForEmployee
+                                  ? "cursor-not-allowed text-neutral-300"
+                                  : "cursor-default"
+                          } ${d.isSaturday ? "bg-orange-50/40" : ""} ${isToday ? "ring-1 ring-inset ring-emerald-500/30" : ""}`}
                           title={
                             isCellEditable
-                              ? `Click to mark attendance: ${emp.name} on ${d.displayDate} (${d.nepaliDateString} BS)`
+                              ? `Click to mark today's attendance: ${emp.name} on ${d.displayDate} (${d.nepaliDateString} BS)`
                               : isLockedForEmployee
                                 ? "Attendance recorded (Locked: only an admin can change or uncheck it)"
-                                : period.is_locked
-                                  ? "Period is locked"
-                                  : "Only this employee or an admin can mark attendance"
+                                : isOtherDayForEmployee
+                                  ? `Employees can only mark attendance on the same day (Today). Only admins can mark ${d.displayDate}.`
+                                  : period.is_locked
+                                    ? "Period is locked"
+                                    : "Only this employee or an admin can mark attendance"
                           }
                         >
                           <div className="flex h-full w-full min-h-[36px] items-center justify-center">
@@ -376,6 +410,10 @@ export function CanteenLogSheet({
                                 style={{ fontFamily: "Arial, sans-serif" }}
                               >
                                 ✓
+                              </span>
+                            ) : isCellEditable ? (
+                              <span className="text-[11px] font-bold text-emerald-600/70 print:hidden">
+                                Tap
                               </span>
                             ) : null}
                           </div>
