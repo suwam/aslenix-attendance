@@ -129,25 +129,25 @@ export function CanteenLogSheet({
         >
           {/* Column widths */}
           <colgroup>
-            <col style={{ width: "42px" }} />
-            <col style={{ width: "190px" }} />
+            <col style={{ width: "44px" }} />
+            <col style={{ width: "200px" }} />
             {/* Week 1: 7 days */}
-            <col style={{ width: "52px" }} />
-            <col style={{ width: "52px" }} />
-            <col style={{ width: "52px" }} />
-            <col style={{ width: "52px" }} />
-            <col style={{ width: "52px" }} />
-            <col style={{ width: "52px" }} />
-            <col style={{ width: "56px" }} />
+            <col style={{ width: "54px" }} />
+            <col style={{ width: "54px" }} />
+            <col style={{ width: "54px" }} />
+            <col style={{ width: "54px" }} />
+            <col style={{ width: "54px" }} />
+            <col style={{ width: "54px" }} />
+            <col style={{ width: "58px" }} />
             {/* Week 2: 7 days */}
-            <col style={{ width: "52px" }} />
-            <col style={{ width: "52px" }} />
-            <col style={{ width: "52px" }} />
-            <col style={{ width: "52px" }} />
-            <col style={{ width: "52px" }} />
-            <col style={{ width: "52px" }} />
-            <col style={{ width: "56px" }} />
-            {showTotalColumn && <col style={{ width: "62px" }} />}
+            <col style={{ width: "54px" }} />
+            <col style={{ width: "54px" }} />
+            <col style={{ width: "54px" }} />
+            <col style={{ width: "54px" }} />
+            <col style={{ width: "54px" }} />
+            <col style={{ width: "54px" }} />
+            <col style={{ width: "58px" }} />
+            {showTotalColumn && <col style={{ width: "76px" }} />}
           </colgroup>
 
           {/* Header Rows */}
@@ -156,13 +156,15 @@ export function CanteenLogSheet({
             <tr className="bg-neutral-100 font-bold border-b border-black">
               <th
                 rowSpan={2}
-                className="border border-black py-2 text-center text-xs font-black uppercase text-black sticky left-0 z-20 bg-neutral-100 print:static"
+                className="border border-black py-1 px-1 text-center text-xs font-black uppercase text-black sticky left-0 z-20 bg-neutral-100 print:static align-middle select-none"
+                style={{ verticalAlign: "middle" }}
               >
                 SN
               </th>
               <th
                 rowSpan={2}
-                className="border border-black px-3 py-2 text-left text-xs font-black uppercase text-black sticky left-[42px] z-20 bg-neutral-100 print:static shadow-[1px_0_0_0_#000]"
+                className="border border-black px-3 py-1 text-left text-xs font-black uppercase text-black sticky left-[42px] z-20 bg-neutral-100 print:static shadow-[1px_0_0_0_#000] align-middle select-none"
+                style={{ verticalAlign: "middle" }}
               >
                 Name
               </th>
@@ -181,9 +183,17 @@ export function CanteenLogSheet({
               {showTotalColumn && (
                 <th
                   rowSpan={2}
-                  className="border border-black py-2 text-center text-[11px] sm:text-xs font-black uppercase tracking-tight text-black bg-neutral-100"
+                  className="border border-black px-1.5 py-1 text-center bg-neutral-100 select-none align-middle"
+                  style={{ verticalAlign: "middle" }}
                 >
-                  Total Meals
+                  <div className="flex flex-col items-center justify-center leading-tight">
+                    <span className="text-[11px] sm:text-xs font-black uppercase tracking-tight text-black leading-tight">
+                      TOTAL
+                    </span>
+                    <span className="text-[11px] sm:text-xs font-black uppercase tracking-tight text-black leading-tight mt-0.5">
+                      MEALS
+                    </span>
+                  </div>
                 </th>
               )}
             </tr>
@@ -285,7 +295,7 @@ export function CanteenLogSheet({
                           ? "bg-neutral-50/60"
                           : "bg-white"
                     }`}
-                    style={{ height: "38px" }}
+                    style={{ height: employees.length <= 10 ? "42px" : "38px" }}
                   >
                     {/* SN */}
                     <td
@@ -330,23 +340,26 @@ export function CanteenLogSheet({
                             <td
                               key={d.dayIndex}
                               rowSpan={employees.length}
-                              className="border border-black text-center p-0 align-middle bg-neutral-100 select-none"
+                              className="border border-black p-0 align-middle bg-neutral-100 select-none"
                               style={{
                                 verticalAlign: "middle",
-                                height: `${employees.length * 38}px`,
+                                textAlign: "center",
                               }}
                             >
-                              <div
-                                className="mx-auto flex items-center justify-center font-black tracking-[0.25em] text-red-600 text-xs sm:text-sm"
-                                style={{
-                                  writingMode: "vertical-rl",
-                                  transform: "rotate(180deg)",
-                                  textOrientation: "mixed",
-                                  whiteSpace: "nowrap",
-                                  fontWeight: 900,
-                                }}
-                              >
-                                {hol.label}
+                              <div className="flex h-full w-full flex-col items-center justify-center py-2 select-none">
+                                {hol.label.split(" ").map((word, wIdx) => (
+                                  <div key={wIdx} className={`flex flex-col items-center ${wIdx > 0 ? "mt-2.5" : ""}`}>
+                                    {word.split("").map((ch, cIdx) => (
+                                      <span
+                                        key={cIdx}
+                                        className="text-xs sm:text-[13px] font-black leading-none py-[1.5px] text-red-600 tracking-wider"
+                                        style={{ fontFamily: "Arial, sans-serif", fontWeight: 900 }}
+                                      >
+                                        {ch}
+                                      </span>
+                                    ))}
+                                  </div>
+                                ))}
                               </div>
                             </td>
                           );

@@ -312,9 +312,9 @@ export async function exportCanteenSheetToPDF(elementId: string, filename = "Can
     imgWidth = (canvas.width * imgHeight) / canvas.height;
   }
 
-  // Center horizontally and vertically within the landscape sheet
+  // Center horizontally, and place with a crisp official document top margin
   const x = (pageWidth - imgWidth) / 2;
-  const y = (pageHeight - imgHeight) / 2;
+  const y = imgHeight < maxHeight * 0.9 ? 10 : (pageHeight - imgHeight) / 2;
 
   pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight, undefined, "FAST");
   pdf.save(filename);
