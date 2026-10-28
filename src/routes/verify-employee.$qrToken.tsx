@@ -253,20 +253,35 @@ function ValidIdentityCard({
 
       {/* Main Employee ID Card */}
       <div className="relative w-full rounded-3xl bg-white border border-slate-200/90 p-6 overflow-hidden shadow-[0_12px_36px_rgba(15,23,42,0.06)]">
-        {/* Subtle Top Security Ribbon */}
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500" />
+        {/* Official ASLENIX Logo Gradient Ribbon */}
+        <div
+          className="absolute top-0 left-0 right-0 h-1.5"
+          style={{ background: "linear-gradient(90deg, #21d4fd, #8b5cf6 48%, #ff2d6f)" }}
+        />
+
+        {/* Brand Gradient Background Glow */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-15"
+          style={{ background: "var(--gradient-brand)" }}
+        />
 
         {/* Profile Avatar */}
         <div className="relative mx-auto flex justify-center mt-2">
-          <div className="relative p-1 rounded-full bg-slate-100 ring-1 ring-slate-200 shadow-sm">
+          <div
+            className="relative p-[3px] rounded-full shadow-xs"
+            style={{ background: "linear-gradient(135deg, #21d4fd, #8b5cf6 48%, #ff2d6f)" }}
+          >
             {data.avatar_url ? (
               <img
                 src={data.avatar_url}
                 alt={data.full_name}
-                className="h-24 w-24 sm:h-28 sm:w-28 rounded-full object-cover bg-slate-100"
+                className="h-24 w-24 sm:h-28 sm:w-28 rounded-full object-cover bg-white ring-2 ring-white"
               />
             ) : (
-              <div className="flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-full bg-slate-900 text-white font-bold text-2xl sm:text-3xl tracking-wide">
+              <div
+                className="flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-full text-slate-900 font-extrabold text-2xl sm:text-3xl tracking-wide ring-2 ring-white shadow-inner"
+                style={{ background: "var(--gradient-brand)" }}
+              >
                 {initials}
               </div>
             )}
@@ -282,10 +297,10 @@ function ValidIdentityCard({
         </div>
 
         {/* Name & Official Designation */}
-        <div className="mt-4 text-center">
+        <div className="relative mt-4 text-center">
           <h1 className="flex items-center justify-center gap-1.5 text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight text-balance">
             <span>{data.full_name}</span>
-            <BadgeCheck size={22} className="text-indigo-600 shrink-0" />
+            <BadgeCheck size={22} className="text-[#ff2d6f] shrink-0" />
           </h1>
 
           <p className="mt-1 text-sm sm:text-base font-semibold text-slate-600">
@@ -304,17 +319,17 @@ function ValidIdentityCard({
       {/* 4 Information Modules */}
       <div className="grid grid-cols-2 gap-2.5 sm:gap-3 w-full">
         <InfoModule
-          icon={<IdCard size={16} className="text-indigo-600" />}
+          icon={<IdCard size={16} className="text-[#8b5cf6]" />}
           label="Employee ID"
           value={data.employee_code || "—"}
         />
         <InfoModule
-          icon={<Briefcase size={16} className="text-purple-600" />}
+          icon={<Briefcase size={16} className="text-[#ff2d6f]" />}
           label="Role"
           value={displayRole}
         />
         <InfoModule
-          icon={<Building2 size={16} className="text-indigo-600" />}
+          icon={<Building2 size={16} className="text-[#21d4fd]" />}
           label="Department"
           value={data.department || "—"}
         />
@@ -403,8 +418,11 @@ function LoadingIdentityCard() {
   return (
     <div className="w-full bg-white rounded-3xl border border-slate-200 p-8 sm:p-10 text-center shadow-xs">
       <div className="relative mx-auto flex h-14 w-14 items-center justify-center">
-        <div className="absolute inset-0 rounded-full border-2 border-indigo-200 border-t-indigo-600 animate-spin" />
-        <ShieldCheck size={24} className="text-indigo-600" />
+        <div
+          className="absolute inset-0 rounded-full border-2 border-t-transparent animate-spin"
+          style={{ borderColor: "#8b5cf6", borderTopColor: "transparent" }}
+        />
+        <ShieldCheck size={24} className="text-[#ff2d6f]" />
       </div>
       <h3 className="mt-4 text-base font-bold text-slate-900">
         Verifying Employee Record...
