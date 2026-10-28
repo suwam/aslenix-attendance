@@ -12,7 +12,8 @@
     "generate-weekly-reports": "node scripts/generate-weekly-reports.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "gen-types": "npx supabase gen types typescript --local > src/integrations/supabase/types.ts"
+    "gen-types": "npx supabase gen types typescript --local > src/integrations/supabase/types.ts",
+    "postinstall": "node scripts/patch-html2canvas.mjs"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",

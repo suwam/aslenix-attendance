@@ -152,10 +152,37 @@ function parseOklchMatch(str: string): string {
   }
 }
 
-export function replaceOklchInString(str: string): string {
-  if (!str || !str.includes("oklch")) return str;
-  return str.replace(/oklch\([^)]+\)/gi, (match) => parseOklchMatch(match));
+function convertColorToRgba(colorStr: string): string {
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1;
+    canvas.height = 1;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (ctx) {
+      ctx.clearRect(0, 0, 1, 1);
+      ctx.fillStyle = colorStr;
+      ctx.fillRect(0, 0, 1, 1);
+      const d = ctx.getImageData(0, 0, 1, 1).data;
+      const alpha = d[3] / 255;
+      return alpha < 1 ? `rgba(${d[0]}, ${d[1]}, ${d[2]}, ${alpha})` : `rgb(${d[0]}, ${d[1]}, ${d[2]})`;
+    }
+  } catch {}
+  if (colorStr.startsWith("oklch")) {
+    return parseOklchMatch(colorStr);
+  }
+  return "rgb(0, 0, 0)";
 }
+
+const MODERN_COLOR_REGEX = /\b(?:oklch|oklab|lab|lch|color-mix|color|hwb)\((?:[^()]|\([^()]*\))*\)/gi;
+
+export function replaceModernColorsInString(str: string): string {
+  if (!str) return str;
+  if (!/(?:oklch|oklab|lab|lch|color-mix|color|hwb)/i.test(str)) return str;
+  return str.replace(MODERN_COLOR_REGEX, (match) => convertColorToRgba(match));
+}
+
+// Backward compatible alias
+export const replaceOklchInString = replaceModernColorsInString;
 
 // -------------------------------------------------------------
 // PDF EXPORT (A4 LANDSCAPE ORIENTATION)
@@ -171,18 +198,18 @@ export async function exportCanteenSheetToPDF(elementId: string, filename = "Can
     logging: false,
     windowWidth: 1400,
     onclone: (clonedDoc: Document) => {
-      // 1. Sanitize all <style> tags in the cloned document so no CSS rule contains oklch
+      // 1. Sanitize all <style> tags in the cloned document so no CSS rule contains oklch/oklab/color-mix
       clonedDoc.querySelectorAll("style").forEach((styleTag) => {
-        if (styleTag.textContent && styleTag.textContent.includes("oklch")) {
-          styleTag.textContent = replaceOklchInString(styleTag.textContent);
+        if (styleTag.textContent && /(?:oklch|oklab|lab|lch|color-mix|color)/i.test(styleTag.textContent)) {
+          styleTag.textContent = replaceModernColorsInString(styleTag.textContent);
         }
       });
 
-      // 2. Sanitize any inline style attributes containing oklch
-      clonedDoc.querySelectorAll("[style*='oklch']").forEach((element) => {
+      // 2. Sanitize any inline style attributes containing modern color functions
+      clonedDoc.querySelectorAll("*").forEach((element) => {
         const styleAttr = element.getAttribute("style");
-        if (styleAttr) {
-          element.setAttribute("style", replaceOklchInString(styleAttr));
+        if (styleAttr && /(?:oklch|oklab|lab|lch|color-mix|color)/i.test(styleAttr)) {
+          element.setAttribute("style", replaceModernColorsInString(styleAttr));
         }
       });
 
@@ -199,7 +226,7 @@ export async function exportCanteenSheetToPDF(elementId: string, filename = "Can
         (node as HTMLElement).style.display = "none";
       });
 
-      // 5. Freeze all elements inside the sheet to pure sRGB so html2canvas never encounters oklch in computed styles
+      // 5. Freeze all elements inside the sheet to pure sRGB so html2canvas never encounters modern colors in computed styles
       const clonedSheet = clonedDoc.getElementById(elementId);
       if (clonedSheet) {
         clonedSheet.style.width = "1320px";
@@ -232,15 +259,15 @@ export async function exportCanteenSheetToPDF(elementId: string, filename = "Can
             const computed = window.getComputedStyle(liveEl);
             for (const prop of colorProperties) {
               const val = computed[prop];
-              if (val && typeof val === "string" && val.includes("oklch")) {
-                elem.style[prop as any] = replaceOklchInString(val);
+              if (val && typeof val === "string" && /(?:oklch|oklab|lab|lch|color)/i.test(val)) {
+                elem.style[prop as any] = replaceModernColorsInString(val);
               }
             }
           } catch {
             // Fallback: check inline style
             const s = elem.getAttribute("style");
-            if (s && s.includes("oklch")) {
-              elem.setAttribute("style", replaceOklchInString(s));
+            if (s && /(?:oklch|oklab|lab|lch|color)/i.test(s)) {
+              elem.setAttribute("style", replaceModernColorsInString(s));
             }
           }
         });

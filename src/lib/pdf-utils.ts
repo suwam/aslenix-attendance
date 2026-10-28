@@ -6,12 +6,11 @@ import html2canvas from "html2canvas";
  * and replaces unsupported colors with RGB equivalents using the browser's native canvas API.
  */
 function sanitizeColorString(str: string): string {
-  if (!str || (!str.includes("oklch") && !str.includes("lch") && !str.includes("color(")))
+  if (!str || (!str.includes("oklch") && !str.includes("oklab") && !str.includes("lch") && !str.includes("lab") && !str.includes("color")))
     return str;
 
-  // Find all color function occurrences like oklch(...)
-  // Handles nested parenthesis if any, but computed styles usually have flat oklch(r g b / a)
-  return str.replace(/(?:oklch|lch|color)\([^)]+\)/g, (match) => {
+  // Find all color function occurrences like oklch(...), oklab(...), color-mix(...)
+  return str.replace(/\b(?:oklch|oklab|lab|lch|color-mix|color|hwb)\((?:[^()]|\([^()]*\))*\)/gi, (match) => {
     const canvas = document.createElement("canvas");
     canvas.width = 1;
     canvas.height = 1;
@@ -78,7 +77,7 @@ export async function captureSanitizedPdfPage(originalElement: HTMLElement): Pro
 
       for (const prop of stylesToCopy) {
         const val = computed.getPropertyValue(prop.replace(/([A-Z])/g, "-$1").toLowerCase());
-        if (val && (val.includes("oklch") || val.includes("lch") || val.includes("color("))) {
+        if (val && /(?:oklch|oklab|lab|lch|color)/i.test(val)) {
           const sanitized = sanitizeColorString(val);
           cl.style.setProperty(
             prop.replace(/([A-Z])/g, "-$1").toLowerCase(),
@@ -91,7 +90,7 @@ export async function captureSanitizedPdfPage(originalElement: HTMLElement): Pro
       // Also sanitize SVG attributes if present
       ["fill", "stroke"].forEach((attr) => {
         const val = orig.getAttribute(attr);
-        if (val && (val.includes("oklch") || val.includes("lch") || val.includes("color("))) {
+        if (val && /(?:oklch|oklab|lab|lch|color)/i.test(val)) {
           cl.setAttribute(attr, sanitizeColorString(val));
         }
       });
