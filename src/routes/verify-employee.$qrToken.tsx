@@ -13,9 +13,10 @@ import {
   Calendar,
   CheckCircle2,
   IdCard,
-  LockKeyhole,
+  Lock,
   Briefcase,
   Mail,
+  Check,
 } from "lucide-react";
 
 export const Route = createFileRoute("/verify-employee/$qrToken")({
@@ -121,31 +122,15 @@ function VerifyEmployeePage() {
   }, [qrToken]);
 
   return (
-    <div className="relative min-h-screen bg-[#f6f8fc] text-[#0f172a] flex flex-col justify-between p-3.5 sm:p-6 md:p-8 antialiased selection:bg-[#4f46e5] selection:text-white">
-      {/* Subtle attendance web ambient background glow */}
-      <div
-        className="pointer-events-none fixed -top-24 left-1/2 -translate-x-1/2 h-[380px] w-[500px] rounded-full bg-[radial-gradient(circle,rgba(79,70,229,0.06)_0%,rgba(196,218,255,0.18)_40%,transparent_70%)] blur-3xl"
-        aria-hidden="true"
-      />
-      <div
-        className="pointer-events-none fixed -bottom-24 left-1/2 -translate-x-1/2 h-[340px] w-[460px] rounded-full bg-[radial-gradient(circle,rgba(16,185,129,0.06)_0%,transparent_65%)] blur-3xl"
-        aria-hidden="true"
-      />
-
-      {/* Subtle modern dot-grid background */}
-      <div
-        className="pointer-events-none fixed inset-0 opacity-40 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:24px_24px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_80%)]"
-        aria-hidden="true"
-      />
-
-      <div className="relative z-10 w-full max-w-[440px] mx-auto my-auto flex flex-col items-center space-y-3.5 sm:space-y-4">
-        {/* A. Compact Brand Header matching ASLENIX attendance theme */}
-        <header className="flex items-center justify-between w-full pb-3 border-b border-slate-200/80">
+    <div className="min-h-screen bg-[#f8fafc] text-slate-900 flex flex-col justify-between p-4 sm:p-6 md:p-8 antialiased">
+      <div className="w-full max-w-[450px] mx-auto my-auto flex flex-col items-center space-y-4">
+        {/* Official Header */}
+        <header className="flex items-center justify-between w-full pb-3 border-b border-slate-200">
           <AslenixLogo size="sm" />
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white border border-slate-200/90 shadow-2xs text-[10px] font-mono font-bold tracking-wider text-indigo-700 uppercase">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>IDENTITY PASS</span>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-slate-200 text-xs font-medium text-slate-700 shadow-2xs">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Verified Identity</span>
           </div>
         </header>
 
@@ -177,22 +162,16 @@ function VerifyEmployeePage() {
           <ValidIdentityCard data={data} qrToken={qrToken} />
         )}
 
-        {/* Glossy Terms & Conditions (Positioned above the ASLENIX Secure Employee Verification footer) */}
-        <div className="relative w-full rounded-2xl p-3.5 sm:p-4 text-left text-slate-600 space-y-2 overflow-hidden backdrop-blur-xl bg-gradient-to-br from-white/90 via-white/70 to-white/85 border border-white/80 shadow-[0_8px_30px_rgba(15,23,42,0.06)] ring-1 ring-slate-900/5">
-          {/* Subtle glossy glass reflection highlight */}
-          <div
-            className="pointer-events-none absolute -top-10 -left-10 h-28 w-28 rounded-full bg-gradient-to-br from-white to-transparent opacity-70 blur-xl"
-            aria-hidden="true"
-          />
-
-          <div className="relative flex items-center justify-between">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-700">
+        {/* Glossy Terms & Conditions */}
+        <div className="relative w-full rounded-2xl p-4 text-left text-slate-600 space-y-2.5 overflow-hidden backdrop-blur-xl bg-white/75 border border-white/80 shadow-[0_8px_30px_rgba(15,23,42,0.05)] ring-1 ring-slate-900/5">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold text-slate-800 tracking-wide uppercase">
               Terms &amp; Conditions
-            </span>
-            <span className="h-1.5 w-1.5 rounded-full bg-indigo-500/60" />
+            </h3>
+            <span className="text-[10px] text-slate-400 font-medium">Official Notice</span>
           </div>
 
-          <ol className="relative list-decimal pl-3.5 space-y-1.5 text-[10px] leading-relaxed text-slate-500 font-medium">
+          <ol className="list-decimal pl-4 space-y-1.5 text-[11px] leading-relaxed text-slate-600">
             <li>
               This QR verification confirms the employee record available in the ASLENIX system but does not independently verify the identity of the person presenting it.
             </li>
@@ -205,14 +184,14 @@ function VerifyEmployeePage() {
           </ol>
         </div>
 
-        {/* F. Official Verification Footer */}
-        <footer className="text-center pt-1 pb-1 space-y-1 w-full">
-          <div className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-[0.16em] text-slate-500">
-            <LockKeyhole size={11} className="text-indigo-600 shrink-0" />
-            <span>ASLENIX SECURE EMPLOYEE VERIFICATION</span>
+        {/* Official Footer */}
+        <footer className="text-center pt-1 pb-2 space-y-1 w-full">
+          <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+            <Lock size={12} className="text-emerald-600 shrink-0" />
+            <span>Official ASLENIX Employee Verification</span>
           </div>
-          <p className="text-[10px] text-slate-400 leading-relaxed max-w-xs mx-auto">
-            Official digital verification portal &bull; ASLENIX Tech &amp; Solution
+          <p className="text-[11px] text-slate-400 leading-relaxed">
+            ASLENIX Tech &amp; Solution Pvt. Ltd. &bull; Registered Office: Kathmandu, Nepal
           </p>
         </footer>
       </div>
@@ -247,51 +226,39 @@ function ValidIdentityCard({
   const displayRole = formatRoleName(data.role, data.job_position);
 
   return (
-    <div className="w-full space-y-3.5 sm:space-y-4">
-      {/* B. Verification Hero — Clean Emerald Status Banner */}
-      <div className="w-full rounded-2xl bg-white border border-emerald-200/90 p-3 sm:p-3.5 shadow-[0_4px_20px_-4px_rgba(16,185,129,0.12)]">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-600">
-              <ShieldCheck size={16} />
+    <div className="w-full space-y-3.5">
+      {/* Verification Status Banner */}
+      <div className="w-full rounded-2xl bg-emerald-50/90 border border-emerald-200 p-3.5 shadow-xs">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-xs">
+              <ShieldCheck size={18} />
             </div>
-            <div className="flex flex-col text-left">
-              <span className="text-xs font-extrabold tracking-[0.12em] text-emerald-700 uppercase leading-none">
-                QR VERIFIED
-              </span>
-              <span className="text-[10px] font-mono text-slate-500 mt-0.5">
+            <div className="text-left">
+              <div className="text-xs font-bold text-emerald-950 uppercase tracking-wide">
+                QR Verified Employee
+              </div>
+              <div className="text-[11px] text-emerald-800 font-medium">
                 {verifiedTimeFormatted}
-              </span>
+              </div>
             </div>
           </div>
 
-          {/* Segmented Technical Verification Line */}
-          <div className="flex items-center gap-1" title="Cryptographically verified">
-            <span className="h-1.5 w-2.5 rounded-xs bg-emerald-500" />
-            <span className="h-1.5 w-2.5 rounded-xs bg-emerald-500" />
-            <span className="h-1.5 w-2.5 rounded-xs bg-emerald-500" />
-            <span className="h-1.5 w-2.5 rounded-xs bg-emerald-200" />
-          </div>
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-900 border border-emerald-200 shrink-0">
+            <Check size={12} className="text-emerald-700" />
+            Active
+          </span>
         </div>
       </div>
 
-      {/* C. Signature Employee Identity Card — White/Slate Theme with subtle brand accent */}
-      <div className="relative w-full rounded-3xl bg-white border border-slate-200/90 p-5 sm:p-6 overflow-hidden shadow-[0_12px_36px_rgba(15,23,42,0.07),0_1px_3px_rgba(15,23,42,0.04)]">
-        {/* Subtle brand gradient background wash */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.25] bg-gradient-to-b from-indigo-50/50 via-transparent to-slate-50"
-          aria-hidden="true"
-        />
+      {/* Main Employee ID Card */}
+      <div className="relative w-full rounded-3xl bg-white border border-slate-200/90 p-6 overflow-hidden shadow-[0_12px_36px_rgba(15,23,42,0.06)]">
+        {/* Subtle Top Security Ribbon */}
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500" />
 
-        {/* Technical Corner Crosshair Accents */}
-        <span className="absolute top-3 left-3 text-[10px] font-mono text-indigo-400/35 select-none">+</span>
-        <span className="absolute top-3 right-3 text-[10px] font-mono text-indigo-400/35 select-none">+</span>
-        <span className="absolute bottom-3 left-3 text-[10px] font-mono text-indigo-400/35 select-none">+</span>
-        <span className="absolute bottom-3 right-3 text-[10px] font-mono text-indigo-400/35 select-none">+</span>
-
-        {/* Avatar & Signature Indigo-Violet Orbital Ring */}
-        <div className="relative mx-auto flex justify-center">
-          <div className="relative p-[3px] rounded-full bg-gradient-to-tr from-[#4f46e5] via-[#8b5cf6] to-[#10b981] shadow-[0_0_18px_rgba(79,70,229,0.18)]">
+        {/* Profile Avatar */}
+        <div className="relative mx-auto flex justify-center mt-2">
+          <div className="relative p-1 rounded-full bg-slate-100 ring-1 ring-slate-200 shadow-sm">
             {data.avatar_url ? (
               <img
                 src={data.avatar_url}
@@ -299,15 +266,15 @@ function ValidIdentityCard({
                 className="h-24 w-24 sm:h-28 sm:w-28 rounded-full object-cover bg-slate-100"
               />
             ) : (
-              <div className="flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-full bg-gradient-to-br from-slate-900 to-indigo-950 text-white font-extrabold text-2xl sm:text-3xl tracking-wider shadow-inner">
+              <div className="flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-full bg-slate-900 text-white font-bold text-2xl sm:text-3xl tracking-wide">
                 {initials}
               </div>
             )}
 
-            {/* Verification Checkmark Badge attached to Avatar */}
+            {/* Verification Check Badge */}
             <div
               className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-white ring-3 ring-white shadow-sm"
-              title="Verified Active Member"
+              title="Verified by ASLENIX"
             >
               <CheckCircle2 size={16} strokeWidth={2.75} />
             </div>
@@ -315,99 +282,91 @@ function ValidIdentityCard({
         </div>
 
         {/* Name & Official Designation */}
-        <div className="relative mt-4 text-center">
+        <div className="mt-4 text-center">
           <h1 className="flex items-center justify-center gap-1.5 text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight text-balance">
             <span>{data.full_name}</span>
             <BadgeCheck size={22} className="text-indigo-600 shrink-0" />
           </h1>
 
-          <p className="mt-1 text-sm sm:text-base font-semibold text-indigo-600 tracking-wide">
+          <p className="mt-1 text-sm sm:text-base font-semibold text-slate-600">
             {data.job_position || "Employee"}
           </p>
 
           <div className="mt-2.5 flex items-center justify-center">
-            {/* Department Tech-Capsule */}
-            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-mono font-bold tracking-wider uppercase bg-indigo-50 text-indigo-700 border border-indigo-200/90">
-              <Building2 size={11} />
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+              <Building2 size={12} className="text-slate-500" />
               <span>{data.department || "General"}</span>
             </span>
           </div>
         </div>
       </div>
 
-      {/* D. Employee Information Grid (4 Compact Modules) */}
+      {/* 4 Information Modules */}
       <div className="grid grid-cols-2 gap-2.5 sm:gap-3 w-full">
         <InfoModule
-          icon={<IdCard size={15} className="text-indigo-600" />}
-          label="EMPLOYEE ID"
+          icon={<IdCard size={16} className="text-indigo-600" />}
+          label="Employee ID"
           value={data.employee_code || "—"}
-          mono
         />
         <InfoModule
-          icon={<Briefcase size={15} className="text-purple-600" />}
-          label="ROLE"
+          icon={<Briefcase size={16} className="text-purple-600" />}
+          label="Role"
           value={displayRole}
         />
         <InfoModule
-          icon={<Building2 size={15} className="text-indigo-600" />}
-          label="DEPARTMENT"
+          icon={<Building2 size={16} className="text-indigo-600" />}
+          label="Department"
           value={data.department || "—"}
         />
         <InfoModule
-          icon={<Calendar size={15} className="text-emerald-600" />}
-          label="JOIN DATE"
+          icon={<Calendar size={16} className="text-emerald-600" />}
+          label="Date of Joining"
           value={formattedJoinDate}
         />
       </div>
 
-      {/* E. Verification Integrity Panel */}
-      <div className="w-full rounded-2xl bg-gradient-to-br from-emerald-50/70 via-white to-teal-50/30 border border-emerald-200/90 p-4 sm:p-4.5 space-y-3 shadow-2xs">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-100 border border-emerald-200 text-emerald-700 shadow-2xs">
-              <ShieldCheck size={18} />
+      {/* Verification Details Panel */}
+      <div className="w-full rounded-2xl bg-white border border-slate-200/90 p-4 sm:p-5 space-y-3 shadow-xs">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700">
+              <ShieldCheck size={16} />
             </div>
-            <div className="text-left">
-              <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-900">
-                IDENTITY STATUS
-              </div>
-              <div className="text-xs sm:text-sm font-bold text-slate-900">
-                Verified by ASLENIX
-              </div>
-            </div>
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wide">
+              Official Record Authentication
+            </h3>
           </div>
 
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-600 text-white shadow-2xs">
-            <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-            Active
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
+            Approved Member
           </span>
         </div>
 
-        {/* Technical metadata list */}
-        <div className="pt-2.5 border-t border-emerald-100/90 space-y-1.5 text-[11px] font-mono">
+        {/* Real Metadata Rows */}
+        <div className="pt-2.5 border-t border-slate-100 space-y-2 text-xs">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-wider text-slate-500">Status</span>
-            <span className="font-semibold text-emerald-700">Validated Active Member</span>
+            <span className="text-slate-500 font-medium">Account Status</span>
+            <span className="font-semibold text-emerald-700">Active</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-wider text-slate-500">Last Verified</span>
+            <span className="text-slate-500 font-medium">Scanned Verification</span>
             <span className="font-semibold text-slate-800">{verifiedTimeFormatted}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-wider text-slate-500">Credential Issued</span>
+            <span className="text-slate-500 font-medium">Credential Issued</span>
             <span className="font-semibold text-slate-800">{issuedDateFormatted}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-wider text-slate-500">Verification Ref</span>
-            <span className="font-semibold text-indigo-700 font-mono">
+            <span className="text-slate-500 font-medium">Reference Code</span>
+            <span className="font-semibold text-slate-800">
               {data.employee_code || qrToken.slice(0, 12).toUpperCase()}
             </span>
           </div>
         </div>
 
-        {/* Security reassurance text */}
-        <p className="pt-2 text-[11px] text-slate-600 leading-relaxed border-t border-emerald-100/80 text-left">
-          This digital profile confirms the employee information associated with this verification link in the official ASLENIX system.
+        <p className="pt-2 text-xs text-slate-500 leading-relaxed border-t border-slate-100 text-left">
+          This digital profile confirms the employee information registered in the official ASLENIX Tech &amp; Solution system.
         </p>
       </div>
     </div>
@@ -418,28 +377,22 @@ function InfoModule({
   icon,
   label,
   value,
-  mono,
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
-  mono?: boolean;
 }) {
   return (
-    <div className="flex flex-col justify-between p-3 sm:p-3.5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs hover:border-indigo-300 hover:shadow-xs transition-all text-left">
+    <div className="flex flex-col justify-between p-3.5 rounded-2xl bg-white border border-slate-200 shadow-2xs hover:border-slate-300 transition-colors text-left">
       <div className="flex items-center gap-2">
-        <div className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-50 border border-indigo-100 shrink-0">
+        <div className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-50 border border-slate-100 shrink-0">
           {icon}
         </div>
-        <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500">
+        <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">
           {label}
         </span>
       </div>
-      <div
-        className={`mt-2 text-xs sm:text-sm font-bold text-slate-900 leading-snug break-words ${
-          mono ? "font-mono tracking-tight text-indigo-700" : ""
-        }`}
-      >
+      <div className="mt-2 text-sm font-bold text-slate-900 leading-snug break-words">
         {value}
       </div>
     </div>
@@ -448,18 +401,16 @@ function InfoModule({
 
 function LoadingIdentityCard() {
   return (
-    <div className="w-full bg-white rounded-3xl border border-slate-200/90 p-8 sm:p-10 text-center shadow-[0_12px_36px_rgba(15,23,42,0.08)]">
-      <div className="relative mx-auto flex h-16 w-16 items-center justify-center">
+    <div className="w-full bg-white rounded-3xl border border-slate-200 p-8 sm:p-10 text-center shadow-xs">
+      <div className="relative mx-auto flex h-14 w-14 items-center justify-center">
         <div className="absolute inset-0 rounded-full border-2 border-indigo-200 border-t-indigo-600 animate-spin" />
-        <div className="h-10 w-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
-          <ShieldCheck size={20} />
-        </div>
+        <ShieldCheck size={24} className="text-indigo-600" />
       </div>
-      <h3 className="mt-5 text-sm sm:text-base font-bold font-mono tracking-wider text-slate-900 uppercase">
-        Authenticating Digital ID
+      <h3 className="mt-4 text-base font-bold text-slate-900">
+        Verifying Employee Record...
       </h3>
       <p className="mt-1 text-xs text-slate-500">
-        Connecting to ASLENIX Digital Identity Registry…
+        Checking official ASLENIX employee directory
       </p>
     </div>
   );
@@ -492,7 +443,7 @@ function InvalidIdentityCard({
       : "bg-amber-50";
 
   return (
-    <div className={`w-full bg-white rounded-3xl border ${borderColor} p-6 sm:p-8 text-center shadow-[0_12px_36px_rgba(15,23,42,0.08)]`}>
+    <div className={`w-full bg-white rounded-3xl border ${borderColor} p-6 sm:p-8 text-center shadow-xs`}>
       {/* Status Icon */}
       <div
         className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl ${bgColor} border ${borderColor} ${accentColor}`}
@@ -501,12 +452,12 @@ function InvalidIdentityCard({
       </div>
 
       {/* Title */}
-      <h2 className="mt-4 text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
+      <h2 className="mt-4 text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
         {title}
       </h2>
 
       {name && (
-        <div className="mt-2 inline-block text-xs font-mono font-semibold text-slate-700 bg-slate-100 border border-slate-200 px-3 py-1 rounded-full">
+        <div className="mt-2 inline-block text-xs font-semibold text-slate-700 bg-slate-100 border border-slate-200 px-3 py-1 rounded-full">
           Employee: {name}
         </div>
       )}
