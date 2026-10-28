@@ -164,149 +164,133 @@ export async function exportCanteenSheetToPDF(elementId: string, filename = "Can
   const el = document.getElementById(elementId);
   if (!el) throw new Error("Sheet element not found");
 
-  // Intercept getComputedStyle to safely prevent html2canvas crashing on CSS Color 4 "oklch"
-  const originalGetComputedStyle = window.getComputedStyle;
-  const proxyCache = new WeakMap<CSSStyleDeclaration, CSSStyleDeclaration>();
-
-  window.getComputedStyle = function (elt: Element, pseudoElt?: string | null) {
-    const originalDecl = originalGetComputedStyle.call(window, elt, pseudoElt);
-    if (proxyCache.has(originalDecl)) {
-      return proxyCache.get(originalDecl)!;
-    }
-    const proxy = new Proxy(originalDecl, {
-      get(target, prop, receiver) {
-        const val = Reflect.get(target, prop, receiver);
-        if (typeof val === "string" && val.includes("oklch")) {
-          return replaceOklchInString(val);
+  const canvas = await html2canvas(el, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: "#ffffff",
+    logging: false,
+    windowWidth: 1400,
+    onclone: (clonedDoc: Document) => {
+      // 1. Sanitize all <style> tags in the cloned document so no CSS rule contains oklch
+      clonedDoc.querySelectorAll("style").forEach((styleTag) => {
+        if (styleTag.textContent && styleTag.textContent.includes("oklch")) {
+          styleTag.textContent = replaceOklchInString(styleTag.textContent);
         }
-        return typeof val === "function" ? val.bind(target) : val;
-      },
-    });
-    proxyCache.set(originalDecl, proxy);
-    return proxy;
-  };
+      });
 
-  try {
-    const canvas = await html2canvas(el, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#ffffff",
-      logging: false,
-      windowWidth: 1400,
-      onclone: (clonedDoc: Document) => {
-        // Also wrap cloned iframe's getComputedStyle if it has defaultView
-        if (clonedDoc.defaultView) {
-          const cloneGetComputedStyle = clonedDoc.defaultView.getComputedStyle;
-          const cloneProxyCache = new WeakMap<CSSStyleDeclaration, CSSStyleDeclaration>();
-          clonedDoc.defaultView.getComputedStyle = function (elt: Element, pseudoElt?: string | null) {
-            const originalDecl = cloneGetComputedStyle.call(clonedDoc.defaultView, elt, pseudoElt);
-            if (cloneProxyCache.has(originalDecl)) {
-              return cloneProxyCache.get(originalDecl)!;
+      // 2. Sanitize any inline style attributes containing oklch
+      clonedDoc.querySelectorAll("[style*='oklch']").forEach((element) => {
+        const styleAttr = element.getAttribute("style");
+        if (styleAttr) {
+          element.setAttribute("style", replaceOklchInString(styleAttr));
+        }
+      });
+
+      // 3. Ensure document and body background are pure sRGB white (prevents html2canvas root background error)
+      clonedDoc.documentElement.style.backgroundColor = "#ffffff";
+      clonedDoc.documentElement.style.color = "#000000";
+      if (clonedDoc.body) {
+        clonedDoc.body.style.backgroundColor = "#ffffff";
+        clonedDoc.body.style.color = "#000000";
+      }
+
+      // 4. Hide interactive touch prompts ("Tap" buttons, "(You)" badges) for official print/PDF export
+      clonedDoc.querySelectorAll(".print\\:hidden").forEach((node) => {
+        (node as HTMLElement).style.display = "none";
+      });
+
+      // 5. Freeze all elements inside the sheet to pure sRGB so html2canvas never encounters oklch in computed styles
+      const clonedSheet = clonedDoc.getElementById(elementId);
+      if (clonedSheet) {
+        clonedSheet.style.width = "1320px";
+        clonedSheet.style.minWidth = "1320px";
+        clonedSheet.style.maxWidth = "1320px";
+        clonedSheet.style.overflow = "visible";
+        clonedSheet.style.backgroundColor = "#ffffff";
+        clonedSheet.style.color = "#000000";
+        clonedSheet.style.padding = "16px";
+        clonedSheet.style.boxSizing = "border-box";
+
+        const colorProperties = [
+          "backgroundColor",
+          "color",
+          "borderTopColor",
+          "borderRightColor",
+          "borderBottomColor",
+          "borderLeftColor",
+          "outlineColor",
+          "boxShadow",
+          "textShadow",
+        ] as const;
+
+        const allSheetElements = clonedSheet.querySelectorAll("*");
+        allSheetElements.forEach((node) => {
+          const elem = node as HTMLElement;
+          try {
+            // Read computed style safely from the live element in window
+            const liveEl = document.getElementById(elem.id) || elem;
+            const computed = window.getComputedStyle(liveEl);
+            for (const prop of colorProperties) {
+              const val = computed[prop];
+              if (val && typeof val === "string" && val.includes("oklch")) {
+                elem.style[prop as any] = replaceOklchInString(val);
+              }
             }
-            const proxy = new Proxy(originalDecl, {
-              get(target, prop, receiver) {
-                const val = Reflect.get(target, prop, receiver);
-                if (typeof val === "string" && val.includes("oklch")) {
-                  return replaceOklchInString(val);
-                }
-                return typeof val === "function" ? val.bind(target) : val;
-              },
-            });
-            cloneProxyCache.set(originalDecl, proxy);
-            return proxy;
-          };
-        }
-
-        // Replace all oklch in cloned document's <style> tags
-        clonedDoc.querySelectorAll("style").forEach((styleTag) => {
-          if (styleTag.textContent && styleTag.textContent.includes("oklch")) {
-            styleTag.textContent = replaceOklchInString(styleTag.textContent);
+          } catch {
+            // Fallback: check inline style
+            const s = elem.getAttribute("style");
+            if (s && s.includes("oklch")) {
+              elem.setAttribute("style", replaceOklchInString(s));
+            }
           }
         });
+      }
 
-        // Replace any inline oklch declarations on elements
-        clonedDoc.querySelectorAll("[style*='oklch']").forEach((element) => {
-          const styleAttr = element.getAttribute("style");
-          if (styleAttr) {
-            element.setAttribute("style", replaceOklchInString(styleAttr));
-          }
-        });
+      const clonedContainer = clonedDoc.getElementById("canteen-log-sheet-container");
+      if (clonedContainer) {
+        clonedContainer.style.width = "1320px";
+        clonedContainer.style.minWidth = "1320px";
+        clonedContainer.style.maxWidth = "1320px";
+        clonedContainer.style.overflow = "visible";
+        clonedContainer.style.padding = "0";
+        clonedContainer.style.margin = "0";
+        clonedContainer.style.border = "none";
+        clonedContainer.style.boxShadow = "none";
+        clonedContainer.style.backgroundColor = "#ffffff";
+      }
+    },
+  });
 
-        // Ensure background is pure clean white
-        clonedDoc.documentElement.style.backgroundColor = "#ffffff";
-        clonedDoc.documentElement.style.color = "#000000";
-        if (clonedDoc.body) {
-          clonedDoc.body.style.backgroundColor = "#ffffff";
-          clonedDoc.body.style.color = "#000000";
-        }
+  const imgData = canvas.toDataURL("image/png");
 
-        // Hide interactive touch prompts ("Tap" buttons, "(You)" badges) for official print/PDF export
-        clonedDoc.querySelectorAll(".print\\:hidden").forEach((node) => {
-          (node as HTMLElement).style.display = "none";
-        });
+  // Standard A4 Landscape is 297mm (width) x 210mm (height)
+  const pdf = new jsPDF({
+    orientation: "landscape",
+    unit: "mm",
+    format: "a4",
+  });
 
-        // Format sheet to full wide landscape layout (1320px) so all 17+ columns fit with crisp padding
-        const clonedSheet = clonedDoc.getElementById(elementId);
-        if (clonedSheet) {
-          clonedSheet.style.width = "1320px";
-          clonedSheet.style.minWidth = "1320px";
-          clonedSheet.style.maxWidth = "1320px";
-          clonedSheet.style.overflow = "visible";
-          clonedSheet.style.backgroundColor = "#ffffff";
-          clonedSheet.style.color = "#000000";
-          clonedSheet.style.padding = "16px";
-          clonedSheet.style.boxSizing = "border-box";
-        }
+  const pageWidth = pdf.internal.pageSize.getWidth(); // 297 mm
+  const pageHeight = pdf.internal.pageSize.getHeight(); // 210 mm
+  const margin = 8; // 8 mm margin on each side
+  const maxWidth = pageWidth - margin * 2; // 281 mm printable width
+  const maxHeight = pageHeight - margin * 2; // 194 mm printable height
 
-        const clonedContainer = clonedDoc.getElementById("canteen-log-sheet-container");
-        if (clonedContainer) {
-          clonedContainer.style.width = "1320px";
-          clonedContainer.style.minWidth = "1320px";
-          clonedContainer.style.maxWidth = "1320px";
-          clonedContainer.style.overflow = "visible";
-          clonedContainer.style.padding = "0";
-          clonedContainer.style.margin = "0";
-          clonedContainer.style.border = "none";
-          clonedContainer.style.boxShadow = "none";
-          clonedContainer.style.backgroundColor = "#ffffff";
-        }
-      },
-    });
+  let imgWidth = maxWidth;
+  let imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-    const imgData = canvas.toDataURL("image/png");
-
-    // Standard A4 Landscape is 297mm (width) x 210mm (height)
-    const pdf = new jsPDF({
-      orientation: "landscape",
-      unit: "mm",
-      format: "a4",
-    });
-
-    const pageWidth = pdf.internal.pageSize.getWidth(); // 297 mm
-    const pageHeight = pdf.internal.pageSize.getHeight(); // 210 mm
-    const margin = 8; // 8 mm margin on each side
-    const maxWidth = pageWidth - margin * 2; // 281 mm printable width
-    const maxHeight = pageHeight - margin * 2; // 194 mm printable height
-
-    let imgWidth = maxWidth;
-    let imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-    // If height exceeds printable area, scale proportionally to fit cleanly on single A4 landscape page
-    if (imgHeight > maxHeight) {
-      imgHeight = maxHeight;
-      imgWidth = (canvas.width * imgHeight) / canvas.height;
-    }
-
-    // Center horizontally and vertically within the landscape sheet
-    const x = (pageWidth - imgWidth) / 2;
-    const y = (pageHeight - imgHeight) / 2;
-
-    pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight, undefined, "FAST");
-    pdf.save(filename);
-  } finally {
-    // Restore original getComputedStyle
-    window.getComputedStyle = originalGetComputedStyle;
+  // If height exceeds printable area, scale proportionally to fit cleanly on single A4 landscape page
+  if (imgHeight > maxHeight) {
+    imgHeight = maxHeight;
+    imgWidth = (canvas.width * imgHeight) / canvas.height;
   }
+
+  // Center horizontally and vertically within the landscape sheet
+  const x = (pageWidth - imgWidth) / 2;
+  const y = (pageHeight - imgHeight) / 2;
+
+  pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight, undefined, "FAST");
+  pdf.save(filename);
 }
 
 // -------------------------------------------------------------
