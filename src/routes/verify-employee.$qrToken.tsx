@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AslenixLogo } from "@/components/AslenixLogo";
 import { formatNepaliDate } from "@/lib/nepali-calendar";
+import { format } from "date-fns";
 import {
   ShieldCheck,
   ShieldAlert,
@@ -516,23 +517,22 @@ function formatRoleName(role?: string | null, position?: string | null): string 
 }
 
 function formatVerificationTimestamp(date: Date): string {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  }).format(date);
+  try {
+    const nepaliDate = formatNepaliDate(date, "DD MMMM YYYY");
+    const timeStr = format(date, "hh:mm a");
+    return `${nepaliDate} BS • ${timeStr}`;
+  } catch (e) {
+    return format(date, "yyyy-MM-dd hh:mm a");
+  }
 }
 
 function formatCredentialDate(value: string | Date | null): string {
   if (!value) return "Verified in System";
-  const date = typeof value === "string" ? new Date(value) : value;
-  if (Number.isNaN(date.getTime())) return "Verified in System";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(date);
+  try {
+    const date = typeof value === "string" ? new Date(value) : value;
+    if (Number.isNaN(date.getTime())) return "Verified in System";
+    return `${formatNepaliDate(date, "DD MMMM YYYY")} BS`;
+  } catch (e) {
+    return "Verified in System";
+  }
 }
