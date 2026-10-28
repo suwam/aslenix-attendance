@@ -84,47 +84,229 @@ export function generatePeriodDays(startDateStr: string): DayInfo[] {
 }
 
 // -------------------------------------------------------------
-// PDF EXPORT
+// OKLCH -> sRGB CONVERTER & CSS SANITIZER FOR HTML2CANVAS
+// -------------------------------------------------------------
+function oklchToRgb(l: number, c: number, h: number, a = 1): string {
+  const hr = (h * Math.PI) / 180;
+  const a_ = c * Math.cos(hr);
+  const b_ = c * Math.sin(hr);
+
+  const l_ = l + 0.3963377774 * a_ + 0.2158037573 * b_;
+  const m_ = l - 0.1055613458 * a_ - 0.0638541728 * b_;
+  const s_ = l - 0.0894841775 * a_ - 1.291485548 * b_;
+
+  const L = l_ * l_ * l_;
+  const M = m_ * m_ * m_;
+  const S = s_ * s_ * s_;
+
+  const r = +4.0767416621 * L - 3.3077115913 * M + 0.2309699292 * S;
+  const g = -1.2684380046 * L + 2.6097574011 * M - 0.3413193965 * S;
+  const b = -0.0041960863 * L - 0.7034186147 * M + 1.707614701 * S;
+
+  const toSRGB = (val: number) => {
+    const clamped = Math.max(0, Math.min(1, val));
+    return clamped <= 0.0031308
+      ? 12.92 * clamped
+      : 1.055 * Math.pow(clamped, 1 / 2.4) - 0.055;
+  };
+
+  const R = Math.round(toSRGB(r) * 255);
+  const G = Math.round(toSRGB(g) * 255);
+  const B = Math.round(toSRGB(b) * 255);
+
+  return a < 1 ? `rgba(${R}, ${G}, ${B}, ${a})` : `rgb(${R}, ${G}, ${B})`;
+}
+
+function parseOklchMatch(str: string): string {
+  try {
+    const inner = str.replace(/^oklch\(/i, "").replace(/\)$/, "").trim();
+    const [colorPart, alphaPart] = inner.split("/");
+    const parts = colorPart.trim().split(/\s*,\s*|\s+/);
+    if (parts.length < 3) return "rgb(0, 0, 0)";
+
+    let l = parseFloat(parts[0]);
+    if (parts[0].includes("%")) l = l / 100;
+    if (isNaN(l)) l = 0;
+
+    let c = parseFloat(parts[1]);
+    if (parts[1].includes("%")) c = (c / 100) * 0.4;
+    if (isNaN(c)) c = 0;
+
+    const hStr = parts[2].toLowerCase();
+    let h = parseFloat(hStr);
+    if (hStr.includes("rad")) h = h * (180 / Math.PI);
+    else if (hStr.includes("turn")) h = h * 360;
+    if (isNaN(h)) h = 0;
+
+    let a = 1;
+    if (alphaPart) {
+      const aVal = alphaPart.trim();
+      a = parseFloat(aVal);
+      if (aVal.includes("%")) a = a / 100;
+      if (isNaN(a)) a = 1;
+    }
+
+    return oklchToRgb(l, c, h, a);
+  } catch {
+    return "rgb(0, 0, 0)";
+  }
+}
+
+export function replaceOklchInString(str: string): string {
+  if (!str || !str.includes("oklch")) return str;
+  return str.replace(/oklch\([^)]+\)/gi, (match) => parseOklchMatch(match));
+}
+
+// -------------------------------------------------------------
+// PDF EXPORT (A4 LANDSCAPE ORIENTATION)
 // -------------------------------------------------------------
 export async function exportCanteenSheetToPDF(elementId: string, filename = "Canteen_Log_Sheet.pdf") {
   const el = document.getElementById(elementId);
   if (!el) throw new Error("Sheet element not found");
 
-  const canvas = await html2canvas(el, {
-    scale: 2,
-    useCORS: true,
-    backgroundColor: "#ffffff",
-    logging: false,
-    windowWidth: 1280,
-  });
+  // Intercept getComputedStyle to safely prevent html2canvas crashing on CSS Color 4 "oklch"
+  const originalGetComputedStyle = window.getComputedStyle;
+  const proxyCache = new WeakMap<CSSStyleDeclaration, CSSStyleDeclaration>();
 
-  const imgData = canvas.toDataURL("image/png");
-  // A4 Landscape is 297mm x 210mm
-  const pdf = new jsPDF({
-    orientation: "landscape",
-    unit: "mm",
-    format: "a4",
-  });
+  window.getComputedStyle = function (elt: Element, pseudoElt?: string | null) {
+    const originalDecl = originalGetComputedStyle.call(window, elt, pseudoElt);
+    if (proxyCache.has(originalDecl)) {
+      return proxyCache.get(originalDecl)!;
+    }
+    const proxy = new Proxy(originalDecl, {
+      get(target, prop, receiver) {
+        const val = Reflect.get(target, prop, receiver);
+        if (typeof val === "string" && val.includes("oklch")) {
+          return replaceOklchInString(val);
+        }
+        return typeof val === "function" ? val.bind(target) : val;
+      },
+    });
+    proxyCache.set(originalDecl, proxy);
+    return proxy;
+  };
 
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-  const margin = 6;
-  const maxWidth = pageWidth - margin * 2;
-  const maxHeight = pageHeight - margin * 2;
+  try {
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      logging: false,
+      windowWidth: 1400,
+      onclone: (clonedDoc: Document) => {
+        // Also wrap cloned iframe's getComputedStyle if it has defaultView
+        if (clonedDoc.defaultView) {
+          const cloneGetComputedStyle = clonedDoc.defaultView.getComputedStyle;
+          const cloneProxyCache = new WeakMap<CSSStyleDeclaration, CSSStyleDeclaration>();
+          clonedDoc.defaultView.getComputedStyle = function (elt: Element, pseudoElt?: string | null) {
+            const originalDecl = cloneGetComputedStyle.call(clonedDoc.defaultView, elt, pseudoElt);
+            if (cloneProxyCache.has(originalDecl)) {
+              return cloneProxyCache.get(originalDecl)!;
+            }
+            const proxy = new Proxy(originalDecl, {
+              get(target, prop, receiver) {
+                const val = Reflect.get(target, prop, receiver);
+                if (typeof val === "string" && val.includes("oklch")) {
+                  return replaceOklchInString(val);
+                }
+                return typeof val === "function" ? val.bind(target) : val;
+              },
+            });
+            cloneProxyCache.set(originalDecl, proxy);
+            return proxy;
+          };
+        }
 
-  let imgWidth = maxWidth;
-  let imgHeight = (canvas.height * imgWidth) / canvas.width;
+        // Replace all oklch in cloned document's <style> tags
+        clonedDoc.querySelectorAll("style").forEach((styleTag) => {
+          if (styleTag.textContent && styleTag.textContent.includes("oklch")) {
+            styleTag.textContent = replaceOklchInString(styleTag.textContent);
+          }
+        });
 
-  if (imgHeight > maxHeight) {
-    imgHeight = maxHeight;
-    imgWidth = (canvas.width * imgHeight) / canvas.height;
+        // Replace any inline oklch declarations on elements
+        clonedDoc.querySelectorAll("[style*='oklch']").forEach((element) => {
+          const styleAttr = element.getAttribute("style");
+          if (styleAttr) {
+            element.setAttribute("style", replaceOklchInString(styleAttr));
+          }
+        });
+
+        // Ensure background is pure clean white
+        clonedDoc.documentElement.style.backgroundColor = "#ffffff";
+        clonedDoc.documentElement.style.color = "#000000";
+        if (clonedDoc.body) {
+          clonedDoc.body.style.backgroundColor = "#ffffff";
+          clonedDoc.body.style.color = "#000000";
+        }
+
+        // Hide interactive touch prompts ("Tap" buttons, "(You)" badges) for official print/PDF export
+        clonedDoc.querySelectorAll(".print\\:hidden").forEach((node) => {
+          (node as HTMLElement).style.display = "none";
+        });
+
+        // Format sheet to full wide landscape layout (1320px) so all 17+ columns fit with crisp padding
+        const clonedSheet = clonedDoc.getElementById(elementId);
+        if (clonedSheet) {
+          clonedSheet.style.width = "1320px";
+          clonedSheet.style.minWidth = "1320px";
+          clonedSheet.style.maxWidth = "1320px";
+          clonedSheet.style.overflow = "visible";
+          clonedSheet.style.backgroundColor = "#ffffff";
+          clonedSheet.style.color = "#000000";
+          clonedSheet.style.padding = "16px";
+          clonedSheet.style.boxSizing = "border-box";
+        }
+
+        const clonedContainer = clonedDoc.getElementById("canteen-log-sheet-container");
+        if (clonedContainer) {
+          clonedContainer.style.width = "1320px";
+          clonedContainer.style.minWidth = "1320px";
+          clonedContainer.style.maxWidth = "1320px";
+          clonedContainer.style.overflow = "visible";
+          clonedContainer.style.padding = "0";
+          clonedContainer.style.margin = "0";
+          clonedContainer.style.border = "none";
+          clonedContainer.style.boxShadow = "none";
+          clonedContainer.style.backgroundColor = "#ffffff";
+        }
+      },
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+
+    // Standard A4 Landscape is 297mm (width) x 210mm (height)
+    const pdf = new jsPDF({
+      orientation: "landscape",
+      unit: "mm",
+      format: "a4",
+    });
+
+    const pageWidth = pdf.internal.pageSize.getWidth(); // 297 mm
+    const pageHeight = pdf.internal.pageSize.getHeight(); // 210 mm
+    const margin = 8; // 8 mm margin on each side
+    const maxWidth = pageWidth - margin * 2; // 281 mm printable width
+    const maxHeight = pageHeight - margin * 2; // 194 mm printable height
+
+    let imgWidth = maxWidth;
+    let imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    // If height exceeds printable area, scale proportionally to fit cleanly on single A4 landscape page
+    if (imgHeight > maxHeight) {
+      imgHeight = maxHeight;
+      imgWidth = (canvas.width * imgHeight) / canvas.height;
+    }
+
+    // Center horizontally and vertically within the landscape sheet
+    const x = (pageWidth - imgWidth) / 2;
+    const y = (pageHeight - imgHeight) / 2;
+
+    pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight, undefined, "FAST");
+    pdf.save(filename);
+  } finally {
+    // Restore original getComputedStyle
+    window.getComputedStyle = originalGetComputedStyle;
   }
-
-  const x = (pageWidth - imgWidth) / 2;
-  const y = (pageHeight - imgHeight) / 2;
-
-  pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
-  pdf.save(filename);
 }
 
 // -------------------------------------------------------------

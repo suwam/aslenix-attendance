@@ -272,7 +272,7 @@
   .kanban-board-list {
     min-height: 0;
     overflow: visible;
-    scrollbar-color: oklch(0.6 0.25 260 / 0.45) oklch(1 0 0 / 0.06);
+    scrollbar-color: rgba(79, 70, 229, 0.45) rgba(255, 255, 255, 0.06);
     scrollbar-width: thin;
   }
 
@@ -3778,7 +3778,7 @@
     min-width: 20px;
     justify-content: center;
     border-radius: 999px;
-    background: oklch(1 0 0 / 0.08);
+    background: rgba(255, 255, 255, 0.08);
     padding: 2px 6px;
     font-size: 10px;
   }
@@ -3982,7 +3982,7 @@
     height: 5px;
     overflow: hidden;
     border-radius: 999px;
-    background: oklch(1 0 0 / 0.08);
+    background: rgba(255, 255, 255, 0.08);
   }
   .admin-achievement-score-track div {
     height: 100%;
@@ -5294,11 +5294,11 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: oklch(1 0 0 / 0.08);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 8px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(1 0 0 / 0.16);
+  background: rgba(255, 255, 255, 0.16);
 }
 
 /* Canteen Attendance Log Sheet Print Styles */
@@ -5311,7 +5311,7 @@
     background: #ffffff !important;
     color: #000000 !important;
   }
-  header, nav, aside, .no-print {
+  header, nav, aside, .no-print, [data-sonner-toaster] {
     display: none !important;
   }
   #canteen-log-sheet-container {
