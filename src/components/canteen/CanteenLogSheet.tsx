@@ -1,4 +1,5 @@
 import React from "react";
+import { toast } from "sonner";
 import logoMarkUrl from "@/assets/aslenix-mark.png";
 import {
   CanteenPeriod,
@@ -333,7 +334,13 @@ export function CanteenLogSheet({
                       // Normal working day cell
                       const cellKey = `${emp.id}_${d.dateString}`;
                       const hasAte = Boolean(attendance[cellKey]);
-                      const isCellEditable = canEdit && !period.is_locked;
+
+                      // Admin can edit or toggle any day as long as period isn't locked.
+                      // Employees can only TICK an unmarked day; once ticked, it cannot be changed/unchecked by employee.
+                      const isCellEditable = isAdmin
+                        ? !period.is_locked
+                        : (canEdit && !hasAte && !period.is_locked);
+                      const isLockedForEmployee = !isAdmin && canEdit && hasAte;
 
                       return (
                         <td
@@ -341,19 +348,25 @@ export function CanteenLogSheet({
                           onClick={() => {
                             if (isCellEditable) {
                               onToggleAttendance(emp.id, d.dateString, hasAte);
+                            } else if (isLockedForEmployee) {
+                              toast.info("Attendance already recorded. Only an admin can change or uncheck it.");
                             }
                           }}
                           className={`border border-black p-0 text-center select-none transition-colors ${
                             isCellEditable
                               ? "cursor-pointer hover:bg-neutral-200/80 active:bg-neutral-300"
-                              : "cursor-default"
+                              : isLockedForEmployee
+                                ? "cursor-not-allowed bg-emerald-50/50"
+                                : "cursor-default"
                           } ${d.isSaturday ? "bg-orange-50/40" : ""}`}
                           title={
                             isCellEditable
-                              ? `Click to toggle: ${emp.name} on ${d.displayDate} (${d.nepaliDateString} BS)`
-                              : period.is_locked
-                                ? "Period is locked"
-                                : "Only this employee or an admin can mark attendance"
+                              ? `Click to mark attendance: ${emp.name} on ${d.displayDate} (${d.nepaliDateString} BS)`
+                              : isLockedForEmployee
+                                ? "Attendance recorded (Locked: only an admin can change or uncheck it)"
+                                : period.is_locked
+                                  ? "Period is locked"
+                                  : "Only this employee or an admin can mark attendance"
                           }
                         >
                           <div className="flex h-full w-full min-h-[36px] items-center justify-center">

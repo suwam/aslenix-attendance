@@ -125,11 +125,12 @@ function CanteenPage() {
     if (!user) return null;
     return (
       employees.find((e) => e.user_id && e.user_id === user.id) ||
-      employees.find(
-        (e) =>
-          profile?.full_name &&
-          e.name.trim().toLowerCase() === profile.full_name.trim().toLowerCase(),
-      ) ||
+      employees.find((e) => {
+        if (!profile?.full_name) return false;
+        const empClean = e.name.trim().toLowerCase().replace(/sh/g, "s");
+        const profClean = profile.full_name.trim().toLowerCase().replace(/sh/g, "s");
+        return empClean === profClean;
+      }) ||
       null
     );
   }, [employees, user, profile]);
@@ -165,9 +166,11 @@ function CanteenPage() {
       // Link by user_id
       if (emp.user_id && emp.user_id === user.id) return true;
 
-      // Link by full name match
-      if (profile?.full_name && emp.name.trim().toLowerCase() === profile.full_name.trim().toLowerCase()) {
-        return true;
+      // Link by full name match (with trimming and transliteration tolerance)
+      if (profile?.full_name) {
+        const empClean = emp.name.trim().toLowerCase().replace(/sh/g, "s");
+        const profClean = profile.full_name.trim().toLowerCase().replace(/sh/g, "s");
+        if (empClean === profClean) return true;
       }
 
       return false;
@@ -185,6 +188,12 @@ function CanteenPage() {
 
     if (currentPeriod.is_locked && !isAdmin) {
       toast.error("This canteen period is locked for edits.");
+      return;
+    }
+
+    // Employees cannot uncheck or change attendance once marked — only admin can
+    if (!isAdmin && currentVal === true) {
+      toast.error("Attendance is already recorded. Only an admin can change or remove it.");
       return;
     }
 
@@ -334,12 +343,21 @@ function CanteenPage() {
 
   // Employee Roster Management
   const handleAddEmployee = async (name: string, serialNumber: number, userId?: string | null) => {
+    let resolvedUserId = userId;
+    if (!resolvedUserId) {
+      const cleanTarget = name.trim().toLowerCase().replace(/sh/g, "s");
+      const matched = systemProfiles.find(
+        (p) => p.full_name.trim().toLowerCase().replace(/sh/g, "s") === cleanTarget,
+      );
+      if (matched) resolvedUserId = matched.user_id;
+    }
+
     const { data: newEmp, error } = await supabase
       .from("canteen_employees")
       .insert({
-        name,
+        name: name.trim(),
         serial_number: serialNumber,
-        user_id: userId || null,
+        user_id: resolvedUserId || null,
         is_active: true,
       })
       .select()
@@ -352,17 +370,31 @@ function CanteenPage() {
     );
   };
 
-  const handleUpdateEmployee = async (id: string, name: string, serialNumber: number) => {
+  const handleUpdateEmployee = async (id: string, name: string, serialNumber: number, userId?: string | null) => {
+    let resolvedUserId = userId;
+    if (resolvedUserId === undefined) {
+      const cleanTarget = name.trim().toLowerCase().replace(/sh/g, "s");
+      const matched = systemProfiles.find(
+        (p) => p.full_name.trim().toLowerCase().replace(/sh/g, "s") === cleanTarget,
+      );
+      if (matched) resolvedUserId = matched.user_id;
+    }
+
+    const payload: any = { name: name.trim(), serial_number: serialNumber };
+    if (resolvedUserId !== undefined) {
+      payload.user_id = resolvedUserId;
+    }
+
     const { error } = await supabase
       .from("canteen_employees")
-      .update({ name, serial_number: serialNumber })
+      .update(payload)
       .eq("id", id);
 
     if (error) throw error;
 
     setEmployees((prev) =>
       prev
-        .map((e) => (e.id === id ? { ...e, name, serial_number: serialNumber } : e))
+        .map((e) => (e.id === id ? { ...e, ...payload } : e))
         .sort((a, b) => a.serial_number - b.serial_number),
     );
   };
