@@ -177,23 +177,22 @@ function VerifyEmployeePage() {
           <ValidIdentityCard data={data} qrToken={qrToken} />
         )}
 
-        {/* F. Official Verification Footer */}
-        <footer className="text-center pt-2 pb-1 space-y-1 w-full">
-          <div className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-[0.16em] text-slate-500">
-            <LockKeyhole size={11} className="text-indigo-600 shrink-0" />
-            <span>ASLENIX SECURE EMPLOYEE VERIFICATION</span>
-          </div>
-          <p className="text-[10px] text-slate-400 leading-relaxed max-w-xs mx-auto">
-            Official digital verification portal &bull; ASLENIX Tech &amp; Solution
-          </p>
-        </footer>
+        {/* Glossy Terms & Conditions (Positioned above the ASLENIX Secure Employee Verification footer) */}
+        <div className="relative w-full rounded-2xl p-3.5 sm:p-4 text-left text-slate-600 space-y-2 overflow-hidden backdrop-blur-xl bg-gradient-to-br from-white/90 via-white/70 to-white/85 border border-white/80 shadow-[0_8px_30px_rgba(15,23,42,0.06)] ring-1 ring-slate-900/5">
+          {/* Subtle glossy glass reflection highlight */}
+          <div
+            className="pointer-events-none absolute -top-10 -left-10 h-28 w-28 rounded-full bg-gradient-to-br from-white to-transparent opacity-70 blur-xl"
+            aria-hidden="true"
+          />
 
-        {/* Terms & Conditions */}
-        <div className="w-full rounded-2xl bg-white/80 border border-slate-200/80 p-3 sm:p-3.5 text-left text-slate-500 shadow-2xs space-y-1.5">
-          <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-600">
-            Terms &amp; Conditions
+          <div className="relative flex items-center justify-between">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-700">
+              Terms &amp; Conditions
+            </span>
+            <span className="h-1.5 w-1.5 rounded-full bg-indigo-500/60" />
           </div>
-          <ol className="list-decimal pl-3.5 space-y-1 text-[10px] leading-relaxed text-slate-500">
+
+          <ol className="relative list-decimal pl-3.5 space-y-1.5 text-[10px] leading-relaxed text-slate-500 font-medium">
             <li>
               This QR verification confirms the employee record available in the ASLENIX system but does not independently verify the identity of the person presenting it.
             </li>
@@ -205,6 +204,17 @@ function VerifyEmployeePage() {
             </li>
           </ol>
         </div>
+
+        {/* F. Official Verification Footer */}
+        <footer className="text-center pt-1 pb-1 space-y-1 w-full">
+          <div className="inline-flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-[0.16em] text-slate-500">
+            <LockKeyhole size={11} className="text-indigo-600 shrink-0" />
+            <span>ASLENIX SECURE EMPLOYEE VERIFICATION</span>
+          </div>
+          <p className="text-[10px] text-slate-400 leading-relaxed max-w-xs mx-auto">
+            Official digital verification portal &bull; ASLENIX Tech &amp; Solution
+          </p>
+        </footer>
       </div>
     </div>
   );
@@ -315,16 +325,11 @@ function ValidIdentityCard({
             {data.job_position || "Employee"}
           </p>
 
-          <div className="mt-2.5 flex items-center justify-center gap-2 flex-wrap">
+          <div className="mt-2.5 flex items-center justify-center">
             {/* Department Tech-Capsule */}
             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-mono font-bold tracking-wider uppercase bg-indigo-50 text-indigo-700 border border-indigo-200/90">
               <Building2 size={11} />
               <span>{data.department || "General"}</span>
-            </span>
-
-            {/* Technical ID Pill */}
-            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-mono font-bold tracking-wider uppercase bg-slate-100 text-slate-700 border border-slate-200/90">
-              <span>ID // {data.employee_code || "—"}</span>
             </span>
           </div>
         </div>
@@ -394,8 +399,8 @@ function ValidIdentityCard({
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[10px] uppercase tracking-wider text-slate-500">Verification Ref</span>
-            <span className="font-semibold text-indigo-700">
-              {data.employee_code ? `ASL-ID // ${data.employee_code}` : `ASL-ID // ${qrToken.slice(0, 10).toUpperCase()}`}
+            <span className="font-semibold text-indigo-700 font-mono">
+              {data.employee_code || qrToken.slice(0, 12).toUpperCase()}
             </span>
           </div>
         </div>
