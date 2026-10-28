@@ -187,6 +187,24 @@ function VerifyEmployeePage() {
             Official digital verification portal &bull; ASLENIX Tech &amp; Solution
           </p>
         </footer>
+
+        {/* Terms & Conditions */}
+        <div className="w-full rounded-2xl bg-white/80 border border-slate-200/80 p-3 sm:p-3.5 text-left text-slate-500 shadow-2xs space-y-1.5">
+          <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-600">
+            Terms &amp; Conditions
+          </div>
+          <ol className="list-decimal pl-3.5 space-y-1 text-[10px] leading-relaxed text-slate-500">
+            <li>
+              This QR verification confirms the employee record available in the ASLENIX system but does not independently verify the identity of the person presenting it.
+            </li>
+            <li>
+              This page must be used only for legitimate employee verification purposes. Unauthorized use or misuse of employee information is prohibited.
+            </li>
+            <li>
+              ASLENIX Tech &amp; Solution reserves the right to update its verification service and terms when necessary.
+            </li>
+          </ol>
+        </div>
       </div>
     </div>
   );
