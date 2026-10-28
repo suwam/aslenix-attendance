@@ -97,13 +97,15 @@ function EmployeesPage() {
   const handleSaveRole = async () => {
     if (!editingUser) return;
     setSavingEdit(true);
-    const { error } = await supabase
+    const { data: updatedProfile, error } = await supabase
       .from("profiles")
       .update({
         department: editDept,
         position: editPosition,
       })
-      .eq("id", editingUser.id);
+      .eq("id", editingUser.id)
+      .select()
+      .maybeSingle();
     setSavingEdit(false);
     if (error) {
       toast.error(error.message);
@@ -113,7 +115,7 @@ function EmployeesPage() {
     setUsers((prev) =>
       prev.map((item) =>
         item.id === editingUser.id
-          ? { ...item, department: editDept, position: editPosition }
+          ? { ...item, ...(updatedProfile || { department: editDept, position: editPosition }) }
           : item,
       ),
     );

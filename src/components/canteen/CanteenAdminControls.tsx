@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   CanteenPeriod,
   CanteenEmployee,
   CanteenHoliday,
   DayInfo,
+  generatePeriodDays,
   exportCanteenSheetToPDF,
   exportCanteenSheetToExcel,
   exportCanteenSheetToCSV,
@@ -62,7 +63,11 @@ type CanteenAdminControlsProps = {
     endDate: string;
     preparedBy: string;
     verifiedBy: string;
-    holidayDayIndex: number;
+    holidays?: {
+      dayIndex: number;
+      type: "holiday" | "weekly_off";
+      label: string;
+    }[];
   }) => Promise<void>;
   onToggleLockPeriod: () => Promise<void>;
   onUpdatePeriodDetails: (preparedBy: string, verifiedBy: string) => Promise<void>;
@@ -119,8 +124,21 @@ export function CanteenAdminControls({
   const [newStartDate, setNewStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [newPreparedBy, setNewPreparedBy] = useState("Suwam Subedi");
   const [newVerifiedBy, setNewVerifiedBy] = useState("");
-  const [newHolidayDayIndex, setNewHolidayDayIndex] = useState(3); // Wednesday Week 1
+  // Selected holidays: map of dayIndex -> label. Empty by default: NO default holiday!
+  const [newSelectedHolidays, setNewSelectedHolidays] = useState<Record<number, string>>({});
+  const [saturdaysWeeklyOff, setSaturdaysWeeklyOff] = useState(true);
   const [isCreatingPeriod, setIsCreatingPeriod] = useState(false);
+
+  // Preview 14 days dynamically for the chosen start date
+  const newPeriodDays = useMemo(() => {
+    try {
+      const start = parseISO(newStartDate);
+      if (isNaN(start.getTime())) return [];
+      return generatePeriodDays(newStartDate);
+    } catch {
+      return [];
+    }
+  }, [newStartDate]);
 
   // Add/Edit Employee Form
   const [empName, setEmpName] = useState("");
@@ -178,16 +196,47 @@ export function CanteenAdminControls({
       const endStr = format(end, "yyyy-MM-dd");
       const title = `Canteen Log Sheet (${formatNepaliDate(startStr, "YYYY/MM/DD")} - ${formatNepaliDate(endStr, "YYYY/MM/DD")} BS)`;
 
+      const holidayRows: { dayIndex: number; type: "holiday" | "weekly_off"; label: string }[] = [];
+
+      // Add admin-selected public holidays
+      Object.entries(newSelectedHolidays).forEach(([dayIdxStr, label]) => {
+        const dayIdx = Number(dayIdxStr);
+        holidayRows.push({
+          dayIndex: dayIdx,
+          type: "holiday",
+          label: (label && label.trim()) || "HOLIDAY",
+        });
+      });
+
+      // Add Saturday weekly offs if enabled
+      if (saturdaysWeeklyOff) {
+        if (!newSelectedHolidays[6]) {
+          holidayRows.push({
+            dayIndex: 6,
+            type: "weekly_off",
+            label: "WEEKLY OFF",
+          });
+        }
+        if (!newSelectedHolidays[13]) {
+          holidayRows.push({
+            dayIndex: 13,
+            type: "weekly_off",
+            label: "WEEKLY OFF",
+          });
+        }
+      }
+
       await onCreatePeriod({
         title,
         startDate: startStr,
         endDate: endStr,
         preparedBy: newPreparedBy,
         verifiedBy: newVerifiedBy,
-        holidayDayIndex: newHolidayDayIndex,
+        holidays: holidayRows,
       });
 
       setNewPeriodOpen(false);
+      setNewSelectedHolidays({});
       toast.success("New 2-week canteen period created");
     } catch (err: any) {
       toast.error(err.message || "Failed to create period");
@@ -462,12 +511,15 @@ export function CanteenAdminControls({
           DIALOG: CREATE NEW 2-WEEK PERIOD
           ========================================================= */}
       <Dialog open={newPeriodOpen} onOpenChange={setNewPeriodOpen}>
-        <DialogContent className="max-w-md rounded-2xl border-border bg-card">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border-border bg-card">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-lg font-bold">
               <CalendarDays size={18} className="text-primary" />
               Create New Canteen Attendance Period
             </DialogTitle>
+            <p className="text-xs text-muted-foreground">
+              Configure 14-day attendance dates and select holidays (if any).
+            </p>
           </DialogHeader>
 
           <form onSubmit={handleCreatePeriodSubmit} className="space-y-4 py-2">
@@ -486,23 +538,177 @@ export function CanteenAdminControls({
               </p>
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Week 1 Holiday Day</Label>
-              <Select
-                value={String(newHolidayDayIndex)}
-                onValueChange={(val) => setNewHolidayDayIndex(Number(val))}
-              >
-                <SelectTrigger className="rounded-xl border-border">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">Day 2 - Monday</SelectItem>
-                  <SelectItem value="2">Day 3 - Tuesday</SelectItem>
-                  <SelectItem value="3">Day 4 - Wednesday (Default)</SelectItem>
-                  <SelectItem value="4">Day 5 - Thursday</SelectItem>
-                  <SelectItem value="5">Day 6 - Friday</SelectItem>
-                </SelectContent>
-              </Select>
+            {/* Enhanced Holiday Selection (No default holiday - Admin chooses) */}
+            <div className="space-y-2.5 rounded-xl border border-border bg-muted/30 p-3.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <CalendarCheck size={15} className="text-red-500" />
+                  <Label className="text-xs font-bold text-foreground">
+                    Public Holidays (Admin Selection)
+                  </Label>
+                </div>
+                <span className="text-[11px] font-medium text-muted-foreground">
+                  {Object.keys(newSelectedHolidays).length === 0
+                    ? "No holiday chosen (Working days)"
+                    : `${Object.keys(newSelectedHolidays).length} holiday(s) active`}
+                </span>
+              </div>
+
+              <p className="text-[11px] text-muted-foreground leading-tight">
+                No default holiday. Admin can choose which day(s) are holidays or keep as normal working days.
+              </p>
+
+              {/* Quick Dropdown: Select / Toggle Holiday */}
+              <div className="space-y-1 pt-1">
+                <Label className="text-[11px] font-semibold text-muted-foreground">
+                  Quick Select Day:
+                </Label>
+                <Select
+                  value="quick_select_default"
+                  onValueChange={(val) => {
+                    if (val === "none") {
+                      setNewSelectedHolidays({});
+                    } else if (val !== "quick_select_default") {
+                      const dayIdx = Number(val);
+                      setNewSelectedHolidays((prev) => {
+                        const copy = { ...prev };
+                        if (copy[dayIdx]) {
+                          delete copy[dayIdx];
+                        } else {
+                          copy[dayIdx] = "HOLIDAY";
+                        }
+                        return copy;
+                      });
+                    }
+                  }}
+                >
+                  <SelectTrigger className="h-9 rounded-xl border-border bg-background text-xs">
+                    <SelectValue placeholder="Choose a holiday or click days below..." />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-64">
+                    <SelectItem value="none" className="text-xs font-semibold text-emerald-600">
+                      ✓ None (No Public Holiday)
+                    </SelectItem>
+                    {newPeriodDays.map((d) => {
+                      const isSel = Boolean(newSelectedHolidays[d.dayIndex]);
+                      return (
+                        <SelectItem key={d.dayIndex} value={String(d.dayIndex)} className="text-xs">
+                          {isSel ? "✓ " : ""}
+                          {d.weekNumber === 1 ? "Week 1" : "Week 2"} - {d.dayName} ({d.displayDate})
+                          {isSel ? " [Selected Holiday]" : ""}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Interactive 14-Day Calendar Selector */}
+              <div className="space-y-2 pt-2">
+                <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground">
+                  <span>Click any day to toggle Holiday:</span>
+                  {Object.keys(newSelectedHolidays).length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setNewSelectedHolidays({})}
+                      className="text-xs text-red-500 hover:underline font-bold"
+                    >
+                      Clear Holidays
+                    </button>
+                  )}
+                </div>
+
+                {/* Week 1 Grid */}
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Week 1</span>
+                  <div className="grid grid-cols-7 gap-1 mt-1">
+                    {newPeriodDays.slice(0, 7).map((d) => {
+                      const isHol = Boolean(newSelectedHolidays[d.dayIndex]);
+                      const isSat = d.isSaturday && saturdaysWeeklyOff;
+                      return (
+                        <button
+                          key={d.dayIndex}
+                          type="button"
+                          onClick={() => {
+                            setNewSelectedHolidays((prev) => {
+                              const copy = { ...prev };
+                              if (copy[d.dayIndex]) delete copy[d.dayIndex];
+                              else copy[d.dayIndex] = "HOLIDAY";
+                              return copy;
+                            });
+                          }}
+                          className={`flex flex-col items-center justify-center p-1.5 rounded-xl border text-center transition cursor-pointer ${
+                            isHol
+                              ? "border-red-500 bg-red-500/15 text-red-600 font-black shadow-xs ring-2 ring-red-500/20"
+                              : isSat
+                                ? "border-orange-500/30 bg-orange-500/10 text-orange-600 font-semibold"
+                                : "border-border bg-background hover:border-primary/40 text-foreground"
+                          }`}
+                          title={`Click to toggle holiday for ${d.dayName} (${d.displayDate})`}
+                        >
+                          <span className="text-[9px] font-bold uppercase">{d.dayName}</span>
+                          <span className="text-xs font-black mt-0.5">{d.dayOfMonth}</span>
+                          <span className="text-[8px] font-bold mt-0.5 uppercase tracking-tighter">
+                            {isHol ? "HOLIDAY" : isSat ? "OFF" : "Work"}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Week 2 Grid */}
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Week 2</span>
+                  <div className="grid grid-cols-7 gap-1 mt-1">
+                    {newPeriodDays.slice(7, 14).map((d) => {
+                      const isHol = Boolean(newSelectedHolidays[d.dayIndex]);
+                      const isSat = d.isSaturday && saturdaysWeeklyOff;
+                      return (
+                        <button
+                          key={d.dayIndex}
+                          type="button"
+                          onClick={() => {
+                            setNewSelectedHolidays((prev) => {
+                              const copy = { ...prev };
+                              if (copy[d.dayIndex]) delete copy[d.dayIndex];
+                              else copy[d.dayIndex] = "HOLIDAY";
+                              return copy;
+                            });
+                          }}
+                          className={`flex flex-col items-center justify-center p-1.5 rounded-xl border text-center transition cursor-pointer ${
+                            isHol
+                              ? "border-red-500 bg-red-500/15 text-red-600 font-black shadow-xs ring-2 ring-red-500/20"
+                              : isSat
+                                ? "border-orange-500/30 bg-orange-500/10 text-orange-600 font-semibold"
+                                : "border-border bg-background hover:border-primary/40 text-foreground"
+                          }`}
+                          title={`Click to toggle holiday for ${d.dayName} (${d.displayDate})`}
+                        >
+                          <span className="text-[9px] font-bold uppercase">{d.dayName}</span>
+                          <span className="text-xs font-black mt-0.5">{d.dayOfMonth}</span>
+                          <span className="text-[8px] font-bold mt-0.5 uppercase tracking-tighter">
+                            {isHol ? "HOLIDAY" : isSat ? "OFF" : "Work"}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Saturday Weekly Off toggle */}
+                <div className="pt-2 border-t border-border mt-2 flex items-center justify-between">
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={saturdaysWeeklyOff}
+                      onChange={(e) => setSaturdaysWeeklyOff(e.target.checked)}
+                      className="rounded border-border text-orange-500 focus:ring-orange-500 h-3.5 w-3.5"
+                    />
+                    <span>Include Saturday Weekly Offs (Day 7 &amp; Day 14)</span>
+                  </label>
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">

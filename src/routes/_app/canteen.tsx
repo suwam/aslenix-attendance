@@ -250,7 +250,11 @@ function CanteenPage() {
     endDate: string;
     preparedBy: string;
     verifiedBy: string;
-    holidayDayIndex: number;
+    holidays?: {
+      dayIndex: number;
+      type: "holiday" | "weekly_off";
+      label: string;
+    }[];
   }) => {
     // 1. Insert Period
     const { data: newPeriod, error: pErr } = await supabase
@@ -270,39 +274,20 @@ function CanteenPage() {
 
     const start = parseISO(data.startDate);
 
-    // 2. Insert Standard Holidays:
-    // - Holiday on chosen day index (default day 3 / Wednesday)
-    // - Week 1 Saturday Weekly Off (day 6)
-    // - Week 2 Saturday Weekly Off (day 13)
-    const holidaysToInsert = [
-      {
+    // 2. Insert Holidays configured by Admin (if any)
+    if (data.holidays && data.holidays.length > 0) {
+      const rows = data.holidays.map((h) => ({
         period_id: newPeriod.id,
-        day_index: data.holidayDayIndex,
-        date: format(addDays(start, data.holidayDayIndex), "yyyy-MM-dd"),
-        type: "holiday",
-        label: "HOLIDAY",
+        day_index: h.dayIndex,
+        date: format(addDays(start, h.dayIndex), "yyyy-MM-dd"),
+        type: h.type,
+        label: h.label,
         is_enabled: true,
-      },
-      {
-        period_id: newPeriod.id,
-        day_index: 6,
-        date: format(addDays(start, 6), "yyyy-MM-dd"),
-        type: "weekly_off",
-        label: "WEEKLY OFF",
-        is_enabled: true,
-      },
-      {
-        period_id: newPeriod.id,
-        day_index: 13,
-        date: format(addDays(start, 13), "yyyy-MM-dd"),
-        type: "weekly_off",
-        label: "WEEKLY OFF",
-        is_enabled: true,
-      },
-    ];
+      }));
 
-    const { error: hErr } = await supabase.from("canteen_holidays").insert(holidaysToInsert);
-    if (hErr) console.error("Error creating default holidays:", hErr);
+      const { error: hErr } = await supabase.from("canteen_holidays").insert(rows);
+      if (hErr) console.error("Error creating period holidays:", hErr);
+    }
 
     // Update state
     setPeriods((prev) => [newPeriod as CanteenPeriod, ...prev]);

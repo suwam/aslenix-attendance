@@ -49,6 +49,7 @@ function SignupPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.department) return toast.error("Please select a department");
     if (form.password.length < 6) return toast.error("Password must be at least 6 characters");
     if (form.password !== form.confirm) return toast.error("Passwords don't match");
 
@@ -128,7 +129,7 @@ function SignupPage() {
             <Input value={form.phone} onChange={(e) => update("phone", e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label>Department</Label>
+            <Label>Department *</Label>
             <Select value={form.department} onValueChange={handleDepartmentChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Select" />
