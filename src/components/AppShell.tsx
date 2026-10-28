@@ -1,5 +1,5 @@
 import { ReactNode, useState } from "react";
-import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { Link, useRouterState, useNavigate, useRouter } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   UserCheck,
@@ -82,6 +82,7 @@ const empNav: NavItem[] = [
 export function AppShell({ children }: { children: ReactNode }) {
   const { isAdmin, profile, signOut } = useAuth();
   const nav = useNavigate();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const [messageUnread, setMessageUnread] = useState(0);
@@ -131,6 +132,53 @@ export function AppShell({ children }: { children: ReactNode }) {
     window.addEventListener("notifications:changed", refreshNotifications);
     window.addEventListener("messages:changed", refreshMessages);
 
+    // Global device open / resume / unlock / online synchronization
+    let lastResumeTime = Date.now();
+    const handleGlobalResume = (reason: string) => {
+      const now = Date.now();
+      if (now - lastResumeTime < 1500) return;
+      lastResumeTime = now;
+
+      // Reconnect / ensure fresh Supabase session
+      supabase.auth.getSession().catch(() => {});
+
+      // Refresh shell badges
+      refreshNotifications();
+      refreshMessages();
+
+      // Invalidate router matches so any loaders refresh
+      try {
+        router.invalidate();
+      } catch (err) {
+        // Safe fallback
+      }
+
+      // Notify all active views (canteen, dashboard, attendance, etc.)
+      window.dispatchEvent(
+        new CustomEvent("app:resumed", { detail: { reason, timestamp: now } }),
+      );
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") {
+        handleGlobalResume("visibilitychange");
+      }
+    };
+    const onPageShow = (e: PageTransitionEvent) => {
+      handleGlobalResume(e.persisted ? "pageshow-persisted" : "pageshow");
+    };
+    const onFocus = () => {
+      handleGlobalResume("focus");
+    };
+    const onOnline = () => {
+      handleGlobalResume("online");
+    };
+
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pageshow", onPageShow);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("online", onOnline);
+
     const ch = supabase
       .channel("notif-" + profile.user_id)
       .on(
@@ -159,10 +207,14 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => {
       window.removeEventListener("notifications:changed", refreshNotifications);
       window.removeEventListener("messages:changed", refreshMessages);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pageshow", onPageShow);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("online", onOnline);
       supabase.removeChannel(ch);
       supabase.removeChannel(chatCh);
     };
-  }, [isAdmin, profile]);
+  }, [isAdmin, profile, router]);
 
   const markNotificationRead = async (id: string) => {
     setRecentNotifications((current) =>

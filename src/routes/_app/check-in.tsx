@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { formatNepaliDate } from "@/lib/nepali-calendar";
 import { isWeeklyOffDate, WEEKLY_OFF_LABEL } from "@/lib/weekly-off";
+import { useAppResume } from "@/lib/use-app-resume";
 
 export const Route = createFileRoute("/_app/check-in")({ component: CheckInPage });
 
@@ -85,6 +86,9 @@ function CheckInPage() {
   useEffect(() => {
     load();
   }, [user]);
+
+  // Auto-reload check-in state when device resumes or app is opened
+  useAppResume(load, { pollIntervalMs: 20000 });
 
 
 

@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useAppResume } from "@/lib/use-app-resume";
 import { PageHeader } from "@/components/PageHeader";
 import { getWeeklyReviewCyclesForNepaliMonth } from "@/lib/nepali-calendar";
 import { motion } from "framer-motion";
@@ -414,6 +415,9 @@ function EmployeeDashboard() {
   useEffect(() => {
     load();
   }, [user]);
+
+  // Auto-reload dashboard whenever device is opened/unlocked or resumed from background
+  useAppResume(load, { pollIntervalMs: 30000 });
 
   useEffect(() => {
     if (!user) return;

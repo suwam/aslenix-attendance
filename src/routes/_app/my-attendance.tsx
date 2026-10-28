@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/PageHeader";
@@ -29,6 +29,7 @@ import { CalendarDays, Edit3, History, Info, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { isWeeklyOffDate, WEEKLY_OFF_LABEL } from "@/lib/weekly-off";
 import { toast } from "sonner";
+import { useAppResume } from "@/lib/use-app-resume";
 
 export const Route = createFileRoute("/_app/my-attendance")({ component: MyAttendance });
 
@@ -112,7 +113,7 @@ function MyAttendance() {
     };
   }, [attendance, isWeeklyOff]);
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
     if (!user) return;
     setLoading(true);
     Promise.all([
@@ -133,6 +134,13 @@ function MyAttendance() {
       setLoading(false);
     });
   }, [user, date]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Auto-reload on resume when opening device
+  useAppResume(loadData, { pollIntervalMs: 30000 });
 
   const openRequest = () => {
     if (!attendance) return toast.error("Select a day with an attendance record");

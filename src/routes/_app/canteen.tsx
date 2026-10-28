@@ -13,9 +13,10 @@ import {
 import { CanteenLogSheet } from "@/components/canteen/CanteenLogSheet";
 import { CanteenAdminControls } from "@/components/canteen/CanteenAdminControls";
 import { toast } from "sonner";
-import { Loader2, Utensils, Sparkles } from "lucide-react";
+import { Loader2, Utensils, Sparkles, RotateCw } from "lucide-react";
 import { addDays, parseISO, format } from "date-fns";
 import { formatNepaliDate } from "@/lib/nepali-calendar";
+import { useAppResume } from "@/lib/use-app-resume";
 import {
   Select,
   SelectContent,
@@ -30,6 +31,7 @@ function CanteenPage() {
   const { profile, user, isAdmin } = useAuth();
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [periods, setPeriods] = useState<CanteenPeriod[]>([]);
   const [currentPeriod, setCurrentPeriod] = useState<CanteenPeriod | null>(null);
   const [employees, setEmployees] = useState<CanteenEmployee[]>([]);
@@ -42,45 +44,18 @@ function CanteenPage() {
   const [highlightEmployeeId, setHighlightEmployeeId] = useState<string | null>(null);
   const [showTotalColumn, setShowTotalColumn] = useState<boolean>(true);
 
-  // Load all initial canteen data
-  const loadInitialData = useCallback(async () => {
-    try {
-      setLoading(true);
-
-      // 1. Fetch periods, employees, and profiles
-      const [periodsRes, employeesRes, profilesRes] = await Promise.all([
-        supabase.from("canteen_periods").select("*").order("start_date", { ascending: false }),
-        supabase.from("canteen_employees").select("*").eq("is_active", true).order("serial_number", { ascending: true }),
-        supabase.from("profiles").select("user_id, full_name, email").eq("approval_status", "approved"),
-      ]);
-
-      if (periodsRes.error) throw periodsRes.error;
-      if (employeesRes.error) throw employeesRes.error;
-
-      const loadedPeriods = (periodsRes.data ?? []) as CanteenPeriod[];
-      const loadedEmployees = (employeesRes.data ?? []) as CanteenEmployee[];
-      setPeriods(loadedPeriods);
-      setEmployees(loadedEmployees);
-      setSystemProfiles((profilesRes.data ?? []) as any);
-
-      // Select active period or first period
-      const active = loadedPeriods.find((p) => !p.is_locked) || loadedPeriods[0] || null;
-      setCurrentPeriod(active);
-
-      if (active) {
-        await loadPeriodData(active.id);
-      }
-    } catch (err: any) {
-      console.error("Error loading canteen initial data:", err);
-      toast.error(err.message || "Failed to load canteen records");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Keep a stable ref to currentPeriod to avoid stale closures in realtime handlers & resume callbacks
+  const currentPeriodRef = React.useRef<CanteenPeriod | null>(null);
+  useEffect(() => {
+    currentPeriodRef.current = currentPeriod;
+  }, [currentPeriod]);
 
   // Load period specific holidays and attendance
-  const loadPeriodData = async (periodId: string) => {
+  const loadPeriodData = useCallback(async (periodId: string, silent = false) => {
     try {
+      if (!silent) setLoading(true);
+      else setRefreshing(true);
+
       const [holidaysRes, attendanceRes] = await Promise.all([
         supabase.from("canteen_holidays").select("*").eq("period_id", periodId),
         supabase.from("canteen_attendance").select("*").eq("period_id", periodId),
@@ -106,13 +81,122 @@ function CanteenPage() {
       setAttendance(attMap);
     } catch (err: any) {
       console.error("Error loading period data:", err);
-      toast.error("Failed to load attendance records for this period");
+      if (!silent) toast.error("Failed to load attendance records for this period");
+    } finally {
+      if (!silent) setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
+  // Load all initial canteen data (with silent mode for background/resume re-syncs)
+  const loadInitialData = useCallback(async (silent = false) => {
+    try {
+      if (!silent) setLoading(true);
+      else setRefreshing(true);
+
+      // 1. Fetch periods, employees, and profiles
+      const [periodsRes, employeesRes, profilesRes] = await Promise.all([
+        supabase.from("canteen_periods").select("*").order("start_date", { ascending: false }),
+        supabase.from("canteen_employees").select("*").eq("is_active", true).order("serial_number", { ascending: true }),
+        supabase.from("profiles").select("user_id, full_name, email").eq("approval_status", "approved"),
+      ]);
+
+      if (periodsRes.error) throw periodsRes.error;
+      if (employeesRes.error) throw employeesRes.error;
+
+      const loadedPeriods = (periodsRes.data ?? []) as CanteenPeriod[];
+      const loadedEmployees = (employeesRes.data ?? []) as CanteenEmployee[];
+      setPeriods(loadedPeriods);
+      setEmployees(loadedEmployees);
+      setSystemProfiles((profilesRes.data ?? []) as any);
+
+      // Select active period or preserve currently selected period
+      const currentId = currentPeriodRef.current?.id;
+      const active =
+        (currentId ? loadedPeriods.find((p) => p.id === currentId) : null) ||
+        loadedPeriods.find((p) => !p.is_locked) ||
+        loadedPeriods[0] ||
+        null;
+
+      setCurrentPeriod(active);
+
+      if (active) {
+        await loadPeriodData(active.id, silent);
+      }
+    } catch (err: any) {
+      console.error("Error loading canteen initial data:", err);
+      if (!silent) toast.error(err.message || "Failed to load canteen records");
+    } finally {
+      if (!silent) setLoading(false);
+      setRefreshing(false);
+    }
+  }, [loadPeriodData]);
+
+  // Initial mount load
   useEffect(() => {
-    loadInitialData();
+    loadInitialData(false);
   }, [loadInitialData]);
+
+  // Auto-reload on resume (unlock mobile phone, switch apps, return to browser tab, online reconnect)
+  // Plus active 12-second background fallback sync across all open devices
+  useAppResume(
+    () => {
+      loadInitialData(true);
+    },
+    {
+      throttleMs: 1500,
+      pollIntervalMs: 12000,
+    },
+  );
+
+  // Supabase Realtime synchronization across all devices
+  useEffect(() => {
+    const channel = supabase
+      .channel("canteen-live-channel")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "canteen_attendance" },
+        (payload: any) => {
+          const changedPeriodId = payload.new?.period_id || payload.old?.period_id;
+          if (!currentPeriodRef.current || changedPeriodId === currentPeriodRef.current.id) {
+            if (currentPeriodRef.current) {
+              loadPeriodData(currentPeriodRef.current.id, true);
+            }
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "canteen_periods" },
+        () => {
+          loadInitialData(true);
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "canteen_employees" },
+        () => {
+          loadInitialData(true);
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "canteen_holidays" },
+        (payload: any) => {
+          const changedPeriodId = payload.new?.period_id || payload.old?.period_id;
+          if (!currentPeriodRef.current || changedPeriodId === currentPeriodRef.current.id) {
+            if (currentPeriodRef.current) {
+              loadPeriodData(currentPeriodRef.current.id, true);
+            }
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadInitialData, loadPeriodData]);
 
   // Generate 14 days for the current period
   const days: DayInfo[] = useMemo(() => {
@@ -529,6 +613,25 @@ function CanteenPage() {
         }
         actions={
           <div className="flex items-center gap-2">
+            <span
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-semibold border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+              title="Realtime sync active across all devices"
+            >
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Live Sync</span>
+            </span>
+
+            <button
+              type="button"
+              onClick={() => loadInitialData(true)}
+              disabled={refreshing}
+              title="Reload latest canteen records"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border bg-card text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-60 cursor-pointer shadow-xs"
+            >
+              <RotateCw size={13} className={refreshing ? "animate-spin text-primary" : ""} />
+              <span>{refreshing ? "Syncing..." : "Reload"}</span>
+            </button>
+
             <span className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
               <Utensils size={13} className="text-primary" />
               {isAdmin ? "Admin View" : "Employee View"}

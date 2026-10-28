@@ -40,6 +40,7 @@ import {
 import { format } from "date-fns";
 import { isWeeklyOffDate } from "@/lib/weekly-off";
 import { toast } from "sonner";
+import { useAppResume } from "@/lib/use-app-resume";
 
 export const Route = createFileRoute("/_app/admin/attendance")({ component: AttendancePage });
 
@@ -169,6 +170,9 @@ function AttendancePage() {
   useEffect(() => {
     load();
   }, [date]);
+
+  // Auto-reload on resume when opening device
+  useAppResume(load, { pollIntervalMs: 25000 });
 
   const stats = useMemo(() => {
     const total = rows.length;
