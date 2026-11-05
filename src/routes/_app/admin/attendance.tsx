@@ -52,6 +52,7 @@ import {
   fetchAllEmployeeShiftMap,
   formatTime12Hour,
   getShiftExpectedHours,
+  parseTimeString,
 } from "@/lib/attendance-engine";
 
 export const Route = createFileRoute("/_app/admin/attendance")({ component: AttendancePage });
@@ -497,98 +498,150 @@ function AttendancePage() {
             <Loader2 className="animate-spin text-primary" />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
-                  <th className="p-4">Employee</th>
-                  <th className="p-4">Department</th>
-                  <th className="p-4">Assigned Shift</th>
-                  <th className="p-4">Scheduled In</th>
-                  <th className="p-4">Actual In</th>
-                  <th className="p-4">Scheduled Out</th>
-                  <th className="p-4">Actual Out</th>
-                  <th className="p-4">Late / Early</th>
-                  <th className="p-4">Hours</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4">Actions</th>
+          <>
+            <div className="flex flex-col gap-1 border-b border-border/60 px-4 py-3 text-xs sm:flex-row sm:items-center sm:justify-between">
+              <span className="font-semibold text-foreground">Daily attendance details</span>
+              <span className="text-muted-foreground">
+                Swipe horizontally for all columns · Late status starts after grace; minutes count
+                from the scheduled start.
+              </span>
+            </div>
+            <div className="overflow-x-auto">
+            <table aria-label="Daily employee attendance" className="w-full min-w-[1450px] table-fixed text-sm">
+              <thead className="bg-card/95">
+                <tr className="border-b border-border text-left text-[11px] uppercase tracking-wider text-muted-foreground">
+                  <th className="w-[250px] p-4">Employee</th>
+                  <th className="w-[150px] p-4">Department</th>
+                  <th className="w-[220px] p-4">Shift / Schedule</th>
+                  <th className="w-[110px] p-4">Scheduled In</th>
+                  <th className="w-[110px] p-4">Actual In</th>
+                  <th className="w-[110px] p-4">Scheduled Out</th>
+                  <th className="w-[110px] p-4">Actual Out</th>
+                  <th className="w-[135px] p-4">Late / Early</th>
+                  <th className="w-[90px] p-4">Hours</th>
+                  <th className="w-[130px] p-4">Status</th>
+                  <th className="w-[190px] p-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((r) => (
-                  <tr key={r.id} className="border-b border-border/40 hover:bg-muted/20">
+                  <tr
+                    key={r.id}
+                    className="border-b border-border/40 transition-colors hover:bg-primary/[0.035]"
+                  >
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         {r.avatar_url ? (
-                          <img src={r.avatar_url} className="h-9 w-9 rounded-full object-cover" />
+                          <img
+                            src={r.avatar_url}
+                            alt=""
+                            className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-background"
+                          />
                         ) : (
                           <div
-                            className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold text-foreground"
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-foreground ring-2 ring-background"
                             style={{ background: "var(--gradient-brand)" }}
                           >
                             {initials(r.full_name)}
                           </div>
                         )}
                         <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2 font-medium">
-                            <span>{r.full_name}</span>
+                          <div className="flex items-center gap-2 font-semibold text-foreground">
+                            <span className="truncate">{r.full_name}</span>
                             {r.attendance?.is_edited && <EditedBadge />}
                           </div>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             {r.employee_id && (
-                              <span className="font-mono text-[10px] bg-muted/60 px-1.5 py-0.5 rounded">
+                              <span className="shrink-0 rounded bg-muted/60 px-1.5 py-0.5 font-mono text-[10px]">
                                 {r.employee_id}
                               </span>
                             )}
-                            <span className="truncate">{r.email}</span>
+                            <span className="truncate" title={r.email}>{r.email}</span>
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="p-4 text-muted-foreground">{r.department || "-"}</td>
+                    <td className="p-4 text-sm text-muted-foreground">
+                      <span className="line-clamp-2" title={r.department || undefined}>
+                        {r.department || "—"}
+                      </span>
+                    </td>
                     <td className="p-4">
                       {r.assigned_shift ? (
-                        <div className="flex flex-col">
-                          <span className="inline-flex w-fit items-center gap-1 rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-                            <Timer size={11} /> {r.assigned_shift.name}
+                        <div className="min-w-0">
+                          <span
+                            className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary"
+                            title={r.attendance?.shift_name_snapshot || r.assigned_shift.name}
+                          >
+                            <Timer size={12} className="shrink-0" />
+                            <span className="truncate">
+                              {r.attendance?.shift_name_snapshot || r.assigned_shift.name}
+                            </span>
                           </span>
-                          <span className="mt-1 text-[11px] text-muted-foreground">
-                            {formatTime12Hour(r.assigned_shift.start_time)} – {formatTime12Hour(r.assigned_shift.end_time)} ({r.assigned_shift.grace_period_mins}m grace)
+                          <span className="mt-1.5 block whitespace-nowrap text-[11px] text-muted-foreground">
+                            {formatTime12Hour(
+                              r.attendance?.scheduled_check_in || r.assigned_shift.start_time,
+                            )}{" "}
+                            –{" "}
+                            {formatTime12Hour(
+                              r.attendance?.scheduled_check_out || r.assigned_shift.end_time,
+                            )}
+                          </span>
+                          <span className="mt-0.5 block text-[10px] text-muted-foreground/80">
+                            {!r.attendance?.shift_id ||
+                            r.attendance.shift_id === r.assigned_shift.id
+                              ? `${r.assigned_shift.grace_period_mins}m grace`
+                              : "Schedule recorded at check-in"}
                           </span>
                         </div>
                       ) : (
                         <span className="text-muted-foreground text-xs">—</span>
                       )}
                     </td>
-                    <td className="p-4 tabular-nums text-xs">
-                      {r.assigned_shift ? formatTime12Hour(r.assigned_shift.start_time) : "—"}
+                    <td className="whitespace-nowrap p-4 text-xs tabular-nums text-muted-foreground">
+                      {r.attendance?.scheduled_check_in
+                        ? formatTime12Hour(r.attendance.scheduled_check_in)
+                        : r.assigned_shift
+                          ? formatTime12Hour(r.assigned_shift.start_time)
+                          : "—"}
                     </td>
-                    <td className="p-4 tabular-nums font-semibold">
+                    <td className="whitespace-nowrap p-4 font-semibold tabular-nums text-foreground">
                       {formatTime(r.attendance?.check_in_time)}
                     </td>
-                    <td className="p-4 tabular-nums text-xs">
-                      {r.assigned_shift ? formatTime12Hour(r.assigned_shift.end_time) : "—"}
+                    <td className="whitespace-nowrap p-4 text-xs tabular-nums text-muted-foreground">
+                      {r.attendance?.scheduled_check_out
+                        ? formatTime12Hour(r.attendance.scheduled_check_out)
+                        : r.assigned_shift
+                          ? formatTime12Hour(r.assigned_shift.end_time)
+                          : "—"}
                     </td>
-                    <td className="p-4 tabular-nums font-semibold">
+                    <td className="whitespace-nowrap p-4 font-semibold tabular-nums text-foreground">
                       {formatTime(r.attendance?.check_out_time)}
                     </td>
                     <td className="p-4 text-xs tabular-nums">
                       {r.attendance?.is_late && (
-                        <div className="font-semibold text-warning">
-                          +{r.attendance.late_minutes ?? "Late"}m late
+                        <div
+                          className="font-semibold text-warning"
+                          title="Lateness is measured from the scheduled shift start. The grace period only determines when the status becomes late."
+                        >
+                          {getDisplayedLateLabel(r.attendance, r.assigned_shift)}
                         </div>
                       )}
                       {r.attendance?.is_early_checkout && (
                         <div className="font-semibold text-warning">
-                          -{r.attendance.early_checkout_minutes ?? "Early"}m early
+                          {(r.attendance.early_checkout_minutes ?? 0) > 0
+                            ? `-${r.attendance.early_checkout_minutes}m early`
+                            : "Early checkout"}
                         </div>
                       )}
-                      {!r.attendance?.is_late && !r.attendance?.is_early_checkout && r.attendance?.check_in_time && (
-                        <div className="text-success font-medium">On schedule</div>
-                      )}
+                      {!r.attendance?.is_late &&
+                        !r.attendance?.is_early_checkout &&
+                        r.attendance?.check_in_time && (
+                          <div className="font-medium text-success">On schedule</div>
+                        )}
                       {!r.attendance?.check_in_time && <span className="text-muted-foreground">—</span>}
                     </td>
-                    <td className="p-4 tabular-nums">
+                    <td className="whitespace-nowrap p-4 font-medium tabular-nums">
                       {r.attendance?.work_hours ? formatWorkHours(r.attendance.work_hours) : "-"}
                     </td>
                     <td className="p-4">
@@ -600,7 +653,7 @@ function AttendancePage() {
                       />
                     </td>
                     <td className="p-4">
-                      <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex items-center gap-2 whitespace-nowrap">
                         {isAdmin && (
                           <Button
                             size="icon"
@@ -639,7 +692,8 @@ function AttendancePage() {
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          </>
         )}
       </GlassCard>
 
@@ -1071,6 +1125,33 @@ function fromDateTimeInput(value: string) {
 
 function formatTime(value?: string | null) {
   return value ? format(new Date(value), "HH:mm") : "-";
+}
+
+const kathmanduClockFormatter = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Asia/Kathmandu",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+function getDisplayedLateLabel(attendance: AttendanceRecord, shift?: Shift) {
+  const savedMinutes = attendance.late_minutes ?? 0;
+  if (savedMinutes > 0) return `+${savedMinutes}m late`;
+
+  const scheduledTime = attendance.scheduled_check_in || shift?.start_time;
+  if (!attendance.check_in_time || !scheduledTime) return "Late";
+
+  const checkInDate = new Date(attendance.check_in_time);
+  if (Number.isNaN(checkInDate.getTime())) return "Late";
+
+  const parts = kathmanduClockFormatter.formatToParts(checkInDate);
+  const hour = Number(parts.find((part) => part.type === "hour")?.value);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return "Late";
+
+  const scheduled = parseTimeString(scheduledTime);
+  const minutesAfterStart = hour * 60 + minute - (scheduled.hour * 60 + scheduled.minute);
+  return minutesAfterStart > 0 ? `+${minutesAfterStart}m late` : "Late";
 }
 
 function formatSnapshotValue(key: string, value: unknown) {
