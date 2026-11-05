@@ -47,7 +47,6 @@ import { toast } from "sonner";
 import { useAppResume } from "@/lib/use-app-resume";
 import {
   Shift,
-  DEFAULT_MORNING_SHIFT,
   fetchAllShifts,
   fetchAllEmployeeShiftMap,
   formatTime12Hour,
@@ -165,47 +164,54 @@ function AttendancePage() {
 
   const load = async () => {
     setLoading(true);
-    const [
-      { data: att },
-      { data: profs },
-      { data: roleRows },
-      correctionsResult,
-      shiftsList,
-      shiftMap,
-    ] = await Promise.all([
-      supabase.from("attendance").select("*").eq("date", date),
-      supabase.from("profiles").select("*"),
-      supabase
-        .from("user_roles")
-        .select("user_id, role")
-        .in("role", ["admin", "super_admin", "hr_manager"]),
-      supabase.rpc("get_admin_attendance_correction_requests"),
-      fetchAllShifts(),
-      fetchAllEmployeeShiftMap(date),
-    ]);
-    if (correctionsResult.error)
-      toast.error(`Unable to load correction requests: ${correctionsResult.error.message}`);
-    setShifts(shiftsList);
-    const attendanceRecords = (att ?? []) as AttendanceRecord[];
-    const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
-    const employeeProfiles = buildHistoricalEmployeeRows(
-      (profs ?? []) as EmployeeRow[],
-      attendanceRecords,
-      adminUserIds,
-    );
-    const map = new Map(attendanceRecords.map((a) => [a.user_id, a]));
-    const merged = employeeProfiles.map((p) => ({
-      ...p,
-      attendance: map.get(p.user_id),
-      assigned_shift: shiftMap.get(p.user_id) || DEFAULT_MORNING_SHIFT,
-    }));
-    setRows(merged);
-    setCorrectionRequests(
-      ((correctionsResult.data ?? []) as CorrectionRequest[]).filter(
-        (request) => request.status === "pending" && request.attendance_date === date,
-      ),
-    );
-    setLoading(false);
+    try {
+      const [
+        { data: att },
+        { data: profs },
+        { data: roleRows },
+        correctionsResult,
+        shiftsList,
+        shiftMap,
+      ] = await Promise.all([
+        supabase.from("attendance").select("*").eq("date", date),
+        supabase.from("profiles").select("*"),
+        supabase
+          .from("user_roles")
+          .select("user_id, role")
+          .in("role", ["admin", "super_admin", "hr_manager"]),
+        supabase.rpc("get_admin_attendance_correction_requests"),
+        fetchAllShifts(),
+        fetchAllEmployeeShiftMap(date),
+      ]);
+      if (correctionsResult.error)
+        toast.error(`Unable to load correction requests: ${correctionsResult.error.message}`);
+      setShifts(shiftsList);
+      const attendanceRecords = (att ?? []) as AttendanceRecord[];
+      const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
+      const employeeProfiles = buildHistoricalEmployeeRows(
+        (profs ?? []) as EmployeeRow[],
+        attendanceRecords,
+        adminUserIds,
+      );
+      const map = new Map(attendanceRecords.map((a) => [a.user_id, a]));
+      const merged = employeeProfiles.map((p) => ({
+        ...p,
+        attendance: map.get(p.user_id),
+        assigned_shift: shiftMap.get(p.user_id),
+      }));
+      setRows(merged);
+      setCorrectionRequests(
+        ((correctionsResult.data ?? []) as CorrectionRequest[]).filter(
+          (request) => request.status === "pending" && request.attendance_date === date,
+        ),
+      );
+    } catch (error) {
+      console.error("Failed to load attendance data:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to load attendance data");
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -567,29 +573,34 @@ function AttendancePage() {
                       </span>
                     </td>
                     <td className="p-4">
-                      {r.assigned_shift ? (
+                      {r.assigned_shift ||
+                      r.attendance?.shift_name_snapshot ||
+                      r.attendance?.scheduled_check_in ? (
                         <div className="min-w-0">
                           <span
                             className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary"
-                            title={r.attendance?.shift_name_snapshot || r.assigned_shift.name}
+                            title={r.assigned_shift?.name || r.attendance?.shift_name_snapshot || "Recorded shift"}
                           >
                             <Timer size={12} className="shrink-0" />
                             <span className="truncate">
-                              {r.attendance?.shift_name_snapshot || r.assigned_shift.name}
+                              {r.assigned_shift?.name ||
+                                r.attendance?.shift_name_snapshot ||
+                                "Recorded shift"}
                             </span>
                           </span>
                           <span className="mt-1.5 block whitespace-nowrap text-[11px] text-muted-foreground">
                             {formatTime12Hour(
-                              r.attendance?.scheduled_check_in || r.assigned_shift.start_time,
+                              r.assigned_shift?.start_time ||
+                                r.attendance?.scheduled_check_in,
                             )}{" "}
                             –{" "}
                             {formatTime12Hour(
-                              r.attendance?.scheduled_check_out || r.assigned_shift.end_time,
+                              r.assigned_shift?.end_time ||
+                                r.attendance?.scheduled_check_out,
                             )}
                           </span>
                           <span className="mt-0.5 block text-[10px] text-muted-foreground/80">
-                            {!r.attendance?.shift_id ||
-                            r.attendance.shift_id === r.assigned_shift.id
+                            {r.assigned_shift
                               ? `${r.assigned_shift.grace_period_mins}m grace`
                               : "Schedule recorded at check-in"}
                           </span>
@@ -599,20 +610,20 @@ function AttendancePage() {
                       )}
                     </td>
                     <td className="whitespace-nowrap p-4 text-xs tabular-nums text-muted-foreground">
-                      {r.attendance?.scheduled_check_in
-                        ? formatTime12Hour(r.attendance.scheduled_check_in)
-                        : r.assigned_shift
-                          ? formatTime12Hour(r.assigned_shift.start_time)
+                      {r.assigned_shift?.start_time || r.attendance?.scheduled_check_in
+                        ? formatTime12Hour(
+                            r.assigned_shift?.start_time || r.attendance?.scheduled_check_in,
+                          )
                           : "—"}
                     </td>
                     <td className="whitespace-nowrap p-4 font-semibold tabular-nums text-foreground">
                       {formatTime(r.attendance?.check_in_time)}
                     </td>
                     <td className="whitespace-nowrap p-4 text-xs tabular-nums text-muted-foreground">
-                      {r.attendance?.scheduled_check_out
-                        ? formatTime12Hour(r.attendance.scheduled_check_out)
-                        : r.assigned_shift
-                          ? formatTime12Hour(r.assigned_shift.end_time)
+                      {r.assigned_shift?.end_time || r.attendance?.scheduled_check_out
+                        ? formatTime12Hour(
+                            r.assigned_shift?.end_time || r.attendance?.scheduled_check_out,
+                          )
                           : "—"}
                     </td>
                     <td className="whitespace-nowrap p-4 font-semibold tabular-nums text-foreground">

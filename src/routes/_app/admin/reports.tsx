@@ -424,7 +424,13 @@ function ReportsPage() {
   };
 
   useEffect(() => {
-    run();
+    run().catch((error) => {
+      console.error("Failed to load attendance report:", error);
+      setRows([]);
+      setWorkingDaySummary(EMPTY_WORKING_DAY_SUMMARY);
+      toast.error(error instanceof Error ? error.message : "Failed to load attendance report");
+      setLoading(false);
+    });
   }, [
     period,
     monthlyMode,

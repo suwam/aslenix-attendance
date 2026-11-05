@@ -329,41 +329,39 @@ export async function fetchAllEmployeeShiftMap(
   targetDate: string = format(new Date(), "yyyy-MM-dd"),
 ): Promise<Map<string, Shift>> {
   const map = new Map<string, Shift>();
+  const [shiftsRes, assignmentsRes] = await Promise.all([
+    supabase.from("shifts").select("*"),
+    supabase
+      .from("employee_shift_assignments")
+      .select("user_id, shift_id, effective_from, effective_to, status, is_temporary, created_at")
+      .in("status", ["active", "temporary"])
+      .lte("effective_from", targetDate)
+      .order("is_temporary", { ascending: false })
+      .order("effective_from", { ascending: false })
+      .order("created_at", { ascending: false }),
+  ]);
 
-  try {
-    const [shiftsRes, assignmentsRes] = await Promise.all([
-      supabase.from("shifts").select("*").eq("is_active", true),
-      supabase
-        .from("employee_shift_assignments")
-        .select("*, shift:shifts(*)")
-        .in("status", ["active", "temporary"])
-        .lte("effective_from", targetDate)
-        .order("is_temporary", { ascending: false })
-        .order("effective_from", { ascending: false }),
-    ]);
-
-    const allShifts = (shiftsRes.data ?? []) as Shift[];
-    const defaultShift =
-      allShifts.find((s) => s.is_default) ||
-      allShifts.find((s) => s.code === "SHIFT_A") ||
-      DEFAULT_MORNING_SHIFT;
-
-    const assignments = assignmentsRes.data ?? [];
-    assignments.forEach((a: any) => {
-      if (!map.has(a.user_id)) {
-        if (!a.effective_to || a.effective_to >= targetDate) {
-          if (a.shift) {
-            map.set(a.user_id, a.shift as Shift);
-          }
-        }
-      }
-    });
-
-    return map;
-  } catch (err) {
-    console.error("Error fetching shift map:", err);
-    return map;
+  if (shiftsRes.error) {
+    throw new Error(`Unable to load shifts: ${shiftsRes.error.message}`);
   }
+  if (assignmentsRes.error) {
+    throw new Error(`Unable to load employee shift assignments: ${assignmentsRes.error.message}`);
+  }
+
+  const shiftsById = new Map(
+    ((shiftsRes.data ?? []) as Shift[]).map((shift) => [shift.id, shift]),
+  );
+  (assignmentsRes.data ?? []).forEach((assignment) => {
+    if (map.has(assignment.user_id)) return;
+    if (assignment.effective_to && assignment.effective_to < targetDate) return;
+
+    const shift = shiftsById.get(assignment.shift_id);
+    if (shift) {
+      map.set(assignment.user_id, shift);
+    }
+  });
+
+  return map;
 }
 
 /**
