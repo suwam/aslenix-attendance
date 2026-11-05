@@ -21,7 +21,7 @@ CREATE POLICY "canteen_attendance_employee_insert" ON public.canteen_attendance
               OR trim(lower(ce.name)) = trim(lower((SELECT full_name FROM public.profiles WHERE user_id = auth.uid())))
             )
         )
-        AND date = to_char(now() AT TIME ZONE 'Asia/Kathmandu', 'YYYY-MM-DD')
+        AND date = (now() AT TIME ZONE 'Asia/Kathmandu')::date
         AND EXISTS (
           SELECT 1 FROM public.canteen_periods cp
           WHERE cp.id = period_id AND cp.is_locked = false
