@@ -534,7 +534,7 @@ function EmployeesPage() {
                       <>
                         <div className="text-foreground font-medium">{sel.name}</div>
                         <div>Reporting: {formatTime12Hour(sel.start_time)} · Closing: {formatTime12Hour(sel.end_time)}</div>
-                        <div>Grace period: {sel.grace_period_mins} mins · Late after: {formatTime12Hour(new Date(`2000-01-01T${sel.start_time}`).getTime() + sel.grace_period_mins * 60000)}</div>
+                        <div>Grace period: {sel.grace_period_mins} mins · Late after: {formatTime12Hour(new Date(new Date(`2000-01-01T${sel.start_time}`).getTime() + sel.grace_period_mins * 60000))}</div>
                       </>
                     );
                   })()}

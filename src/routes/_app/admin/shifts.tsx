@@ -776,3 +776,4 @@ function ShiftManagementPage() {
     </>
   );
 }
+

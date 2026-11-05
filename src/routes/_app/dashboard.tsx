@@ -245,7 +245,7 @@ function EmployeeDashboard() {
     ]);
 
     setToday(t);
-    setAssignedShift(userShift);
+    setAssignedShift(userShift.shift);
     setAttendanceHistory(historyRows ?? []);
     setMonthAward(awardResult.error ? null : awardResult.data);
     setLatestImprovement(null);
@@ -509,12 +509,12 @@ function EmployeeDashboard() {
         check_in_longitude: location.longitude,
         check_in_accuracy_meters: location.accuracy,
         status: evalResult.status,
-        is_late: evalResult.isLate,
+        is_late: evalResult.is_late,
         shift_id: assignedShift.id,
         shift_name_snapshot: assignedShift.name,
         scheduled_check_in: assignedShift.start_time,
         scheduled_check_out: assignedShift.end_time,
-        late_minutes: evalResult.lateMinutes,
+        late_minutes: evalResult.late_minutes,
       })
       .select()
       .maybeSingle();
@@ -523,8 +523,8 @@ function EmployeeDashboard() {
     setToday(insertedToday);
     load();
     toast.success(
-      evalResult.isLate
-        ? `Checked in (${evalResult.lateMinutes}m late for ${assignedShift.name})`
+      evalResult.is_late
+        ? `Checked in (${evalResult.late_minutes}m late for ${assignedShift.name})`
         : `Checked in on time for ${assignedShift.name}`,
     );
   };
@@ -551,11 +551,11 @@ function EmployeeDashboard() {
         check_out_latitude: location.latitude,
         check_out_longitude: location.longitude,
         check_out_accuracy_meters: location.accuracy,
-        is_early_checkout: evalResult.isEarlyCheckout,
-        early_checkout_minutes: evalResult.earlyCheckoutMinutes,
-        work_hours: evalResult.workHours,
-        total_working_minutes: evalResult.totalWorkingMinutes,
-        overtime_minutes: evalResult.overtimeMinutes,
+        is_early_checkout: evalResult.is_early_checkout,
+        early_checkout_minutes: evalResult.early_checkout_minutes,
+        work_hours: evalResult.work_hours,
+        total_working_minutes: evalResult.total_working_minutes,
+        overtime_minutes: evalResult.overtime_minutes,
       })
       .eq("id", today.id)
       .select()
@@ -565,9 +565,9 @@ function EmployeeDashboard() {
     setToday(updatedToday);
     load();
     toast.success(
-      evalResult.isEarlyCheckout
-        ? `Checked out early (${evalResult.earlyCheckoutMinutes}m before closing)`
-        : `Checked out - ${formatWorkHours(evalResult.workHours)} worked`,
+      evalResult.is_early_checkout
+        ? `Checked out early (${evalResult.early_checkout_minutes}m before closing)`
+        : `Checked out - ${formatWorkHours(evalResult.work_hours)} worked`,
     );
   };
 

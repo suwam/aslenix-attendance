@@ -142,7 +142,7 @@ function MyAttendance() {
     ]).then(([attendanceResult, requestResult, shift]) => {
       setRows(attendanceResult.data ?? []);
       setRequests(requestResult.data ?? []);
-      setAssignedShift(shift);
+      setAssignedShift(shift.shift);
       setLoading(false);
     });
   }, [user, date]);

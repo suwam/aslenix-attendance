@@ -140,7 +140,7 @@ function CheckInPage() {
     if (historyError) toast.error(historyError.message);
     setToday((todayRow as AttendanceRow | null) ?? null);
     setHistory((historyRows ?? []) as AttendanceRow[]);
-    setAssignedShift(shift);
+    setAssignedShift(shift.shift);
     setLoading(false);
   };
 
@@ -184,12 +184,12 @@ function CheckInPage() {
         check_in_longitude: location.longitude,
         check_in_accuracy_meters: location.accuracy,
         status: evalResult.status,
-        is_late: evalResult.isLate,
+        is_late: evalResult.is_late,
         shift_id: assignedShift.id,
         shift_name_snapshot: assignedShift.name,
         scheduled_check_in: assignedShift.start_time,
         scheduled_check_out: assignedShift.end_time,
-        late_minutes: evalResult.lateMinutes,
+        late_minutes: evalResult.late_minutes,
       })
       .select()
       .maybeSingle();
@@ -198,8 +198,8 @@ function CheckInPage() {
     if (error || !insertedToday) return toast.error(error?.message ?? "Unable to check in");
     setToday(insertedToday as AttendanceRow);
     await load();
-    if (evalResult.isLate) {
-      toast.warning(`Checked in (${evalResult.lateMinutes}m late for ${assignedShift.name})\nWhatsApp notification: Queued`);
+    if (evalResult.is_late) {
+      toast.warning(`Checked in (${evalResult.late_minutes}m late for ${assignedShift.name})\nWhatsApp notification: Queued`);
     } else {
       toast.success(`Checked in on time for ${assignedShift.name}!\nWhatsApp notification: Queued`);
     }
@@ -228,11 +228,11 @@ function CheckInPage() {
         check_out_latitude: location.latitude,
         check_out_longitude: location.longitude,
         check_out_accuracy_meters: location.accuracy,
-        is_early_checkout: evalResult.isEarlyCheckout,
-        early_checkout_minutes: evalResult.earlyCheckoutMinutes,
-        work_hours: evalResult.workHours,
-        total_working_minutes: evalResult.totalWorkingMinutes,
-        overtime_minutes: evalResult.overtimeMinutes,
+        is_early_checkout: evalResult.is_early_checkout,
+        early_checkout_minutes: evalResult.early_checkout_minutes,
+        work_hours: evalResult.work_hours,
+        total_working_minutes: evalResult.total_working_minutes,
+        overtime_minutes: evalResult.overtime_minutes,
       })
       .eq("id", today.id)
       .select()
@@ -242,12 +242,12 @@ function CheckInPage() {
     if (error || !updatedToday) return toast.error(error?.message ?? "Unable to check out");
     setToday(updatedToday as AttendanceRow);
     await load();
-    if (evalResult.isEarlyCheckout) {
-      toast.warning(`Checked out early (${evalResult.earlyCheckoutMinutes}m before scheduled ${formatTime12Hour(assignedShift.end_time)})\nWhatsApp notification: Queued`);
-    } else if (evalResult.overtimeMinutes > 0) {
-      toast.success(`Checked out (${evalResult.overtimeMinutes}m overtime) · ${formatWorkHours(evalResult.workHours)} worked\nWhatsApp notification: Queued`);
+    if (evalResult.is_early_checkout) {
+      toast.warning(`Checked out early (${evalResult.early_checkout_minutes}m before scheduled ${formatTime12Hour(assignedShift.end_time)})\nWhatsApp notification: Queued`);
+    } else if (evalResult.overtime_minutes > 0) {
+      toast.success(`Checked out (${evalResult.overtime_minutes}m overtime) · ${formatWorkHours(evalResult.work_hours)} worked\nWhatsApp notification: Queued`);
     } else {
-      toast.success(`Checked out · ${formatWorkHours(evalResult.workHours)} worked\nWhatsApp notification: Queued`);
+      toast.success(`Checked out · ${formatWorkHours(evalResult.work_hours)} worked\nWhatsApp notification: Queued`);
     }
   };
 
