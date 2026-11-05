@@ -718,65 +718,97 @@ function ShiftManagementPage() {
 
       {/* VIEW ASSIGNED EMPLOYEES MODAL */}
       <Dialog open={staffModalOpen} onOpenChange={setStaffModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Users size={18} className="text-primary" />
-              <span>Employees Assigned to {selectedShiftForStaff?.name}</span>
+        <DialogContent className="flex max-h-[85vh] max-w-2xl flex-col overflow-hidden rounded-2xl border-border/70 bg-background/95 p-0 shadow-2xl backdrop-blur-xl">
+          <DialogHeader className="border-b border-border/60 bg-muted/20 px-6 pb-4 pt-6 pr-12 text-left">
+            <DialogTitle className="flex items-center gap-3 text-base">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
+                <Users size={17} />
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate">
+                  Employees Assigned to {selectedShiftForStaff?.name}
+                </span>
+                <span className="mt-1 block text-xs font-normal text-muted-foreground">
+                  {formatTime12Hour(selectedShiftForStaff?.start_time)} –{" "}
+                  {formatTime12Hour(selectedShiftForStaff?.end_time)} ·{" "}
+                  {getShiftExpectedHours(selectedShiftForStaff)} hrs
+                </span>
+              </span>
+              <Badge variant="secondary" className="ml-auto shrink-0 tabular-nums">
+                {filteredStaff.length}
+              </Badge>
             </DialogTitle>
-            <DialogDescription>
-              Reporting at {formatTime12Hour(selectedShiftForStaff?.start_time)} · Closing at{" "}
-              {formatTime12Hour(selectedShiftForStaff?.end_time)} ({getShiftExpectedHours(selectedShiftForStaff)} hrs)
+            <DialogDescription className="sr-only">
+              Search and view employees assigned to this shift.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="my-2">
+          <div className="flex min-h-0 flex-1 flex-col gap-3 px-6 py-4">
             <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Search
+                size={15}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
               <Input
-                placeholder="Search assigned employees by name, email, department..."
+                placeholder="Search by name, email, department, or employee ID..."
                 value={staffSearch}
                 onChange={(e) => setStaffSearch(e.target.value)}
-                className="pl-8 text-xs"
+                className="h-10 rounded-xl border-border/70 bg-background/70 pl-9 text-sm shadow-sm transition-colors focus-visible:border-primary/50"
               />
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+              {filteredStaff.length === 0 ? (
+                <div className="flex min-h-40 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border/70 bg-muted/20 px-4 text-center">
+                  <Users size={22} className="text-muted-foreground/60" />
+                  <p className="text-sm font-medium text-foreground">No employees found</p>
+                  <p className="text-xs text-muted-foreground">
+                    {staffSearch
+                      ? "Try another search term."
+                      : "There are no employees assigned to this shift yet."}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredStaff.map((emp) => (
+                    <div
+                      key={emp.user_id}
+                      className="group flex items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/60 p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-primary/[0.03] hover:shadow-sm"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-foreground">
+                          <span>{emp.full_name}</span>
+                          {emp.employee_code && (
+                            <span className="rounded-md bg-muted/80 px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">
+                              {emp.employee_code}
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-1 truncate text-xs text-muted-foreground">
+                          {emp.department || "No Department"} · {emp.position || "Employee"}
+                        </div>
+                      </div>
+
+                      <Badge
+                        variant="outline"
+                        className="shrink-0 gap-1.5 border-emerald-500/20 bg-emerald-500/10 text-[10px] text-emerald-700 dark:text-emerald-400"
+                      >
+                        <span className="size-1.5 rounded-full bg-emerald-500" />
+                        Active
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-            {filteredStaff.length === 0 ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">
-                No employees assigned to this shift.
-              </p>
-            ) : (
-              filteredStaff.map((emp) => (
-                <div
-                  key={emp.user_id}
-                  className="flex items-center justify-between p-3 rounded-lg border border-border/60 bg-card/60 hover:bg-muted/20 text-xs"
-                >
-                  <div>
-                    <div className="font-semibold text-foreground flex items-center gap-2">
-                      <span>{emp.full_name}</span>
-                      {emp.employee_code && (
-                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                          {emp.employee_code}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">
-                      {emp.department || "No Department"} · {emp.position || "Employee"}
-                    </div>
-                  </div>
-
-                  <Badge variant="outline" className="text-[10px] bg-primary/10 text-primary border-primary/20">
-                    Active
-                  </Badge>
-                </div>
-              ))
-            )}
-          </div>
-
-          <DialogFooter className="pt-3 border-t border-border/60">
-            <Button variant="outline" onClick={() => setStaffModalOpen(false)}>
+          <DialogFooter className="border-t border-border/60 bg-muted/10 px-6 py-4">
+            <Button
+              variant="outline"
+              className="rounded-lg"
+              onClick={() => setStaffModalOpen(false)}
+            >
               Close
             </Button>
           </DialogFooter>
