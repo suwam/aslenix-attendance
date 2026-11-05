@@ -76,6 +76,16 @@ import { isMissingSupabaseTableError } from "@/lib/supabase-errors";
 import { formatWorkHours } from "@/lib/work-hours";
 import { formatNepaliDate, getCurrentNepaliMonthRange } from "@/lib/nepali-calendar";
 import { isWeeklyOffDate, WEEKLY_OFF_LABEL } from "@/lib/weekly-off";
+import {
+  Shift,
+  DEFAULT_MORNING_SHIFT,
+  fetchEmployeeAssignedShift,
+  evaluateCheckIn,
+  evaluateCheckOut,
+  formatTime12Hour,
+  getShiftExpectedHours,
+  isAttendanceCutoffPassed,
+} from "@/lib/attendance-engine";
 
 export const Route = createFileRoute("/_app/dashboard")({ component: EmployeeDashboard });
 
@@ -148,6 +158,7 @@ const MOODS = [
 function EmployeeDashboard() {
   const { user, profile, isAdmin, isTeamLead } = useAuth();
   const [today, setToday] = useState<any>(null);
+  const [assignedShift, setAssignedShift] = useState<Shift>(DEFAULT_MORNING_SHIFT);
   const [monthStats, setMonthStats] = useState({ present: 0, late: 0, leave: 0, hours: 0 });
   const [taskStats, setTaskStats] = useState({
     total: 0,
@@ -176,6 +187,7 @@ function EmployeeDashboard() {
 
   const todayDate = format(new Date(), "yyyy-MM-dd");
   const isWeeklyOff = isWeeklyOffDate(todayDate);
+  const isCutoffPassed = isAttendanceCutoffPassed(new Date(nowTick));
   const firstName = profile?.full_name?.split(" ")[0] || "Suwam";
   const nepaliMonth = getCurrentNepaliMonthRange();
   const nepaliToday = formatNepaliDate(new Date());
@@ -195,6 +207,7 @@ function EmployeeDashboard() {
       improvementResult,
       moodResult,
       feedbackResult,
+      userShift,
     ] = await Promise.all([
       supabase
         .from("attendance")
@@ -228,9 +241,11 @@ function EmployeeDashboard() {
         .gte("log_date", historyStart)
         .order("log_date", { ascending: false }),
       Promise.resolve({ data: null, error: null }),
+      fetchEmployeeAssignedShift(user.id, todayDate),
     ]);
 
     setToday(t);
+    setAssignedShift(userShift);
     setAttendanceHistory(historyRows ?? []);
     setMonthAward(awardResult.error ? null : awardResult.data);
     setLatestImprovement(null);
@@ -466,6 +481,11 @@ function EmployeeDashboard() {
   const checkIn = async () => {
     if (!user) return;
     if (isWeeklyOff) return toast.info("Saturday is a weekly off. Attendance is not required.");
+    if (!isAdmin && isAttendanceCutoffPassed()) {
+      return toast.error(
+        "Attendance after 2:00 PM Nepal time is prohibited. Check-in is closed for today.",
+      );
+    }
     setBusy(true);
     let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
     try {
@@ -474,17 +494,11 @@ function EmployeeDashboard() {
       setBusy(false);
       return toast.error(error instanceof Error ? error.message : "Unable to verify location");
     }
-    const { data: settings } = await supabase
-      .from("settings")
-      .select("late_after_time")
-      .limit(1)
-      .maybeSingle();
+
     const now = new Date();
-    const lateTime = settings?.late_after_time || "09:15:00";
-    const [lh, lm] = lateTime.split(":").map(Number);
-    const lateBoundary = new Date();
-    lateBoundary.setHours(lh, lm, 0, 0);
-    const isLate = now > lateBoundary;
+    // Evaluate check-in against the employee's assigned shift
+    const evalResult = evaluateCheckIn(now, todayDate, assignedShift);
+
     const { data: insertedToday, error } = await supabase
       .from("attendance")
       .insert({
@@ -494,8 +508,13 @@ function EmployeeDashboard() {
         check_in_latitude: location.latitude,
         check_in_longitude: location.longitude,
         check_in_accuracy_meters: location.accuracy,
-        status: isLate ? "late" : "present",
-        is_late: isLate,
+        status: evalResult.status,
+        is_late: evalResult.isLate,
+        shift_id: assignedShift.id,
+        shift_name_snapshot: assignedShift.name,
+        scheduled_check_in: assignedShift.start_time,
+        scheduled_check_out: assignedShift.end_time,
+        late_minutes: evalResult.lateMinutes,
       })
       .select()
       .maybeSingle();
@@ -503,7 +522,11 @@ function EmployeeDashboard() {
     if (error || !insertedToday) return toast.error(error?.message ?? "Unable to check in");
     setToday(insertedToday);
     load();
-    toast.success(isLate ? "Checked in (late)" : "Checked in");
+    toast.success(
+      evalResult.isLate
+        ? `Checked in (${evalResult.lateMinutes}m late for ${assignedShift.name})`
+        : `Checked in on time for ${assignedShift.name}`,
+    );
   };
 
   const checkOut = async () => {
@@ -516,15 +539,11 @@ function EmployeeDashboard() {
       setBusy(false);
       return toast.error(error instanceof Error ? error.message : "Unable to verify location");
     }
+
     const now = new Date();
-    const { data: settings } = await supabase
-      .from("settings")
-      .select("office_end_time")
-      .limit(1)
-      .maybeSingle();
-    const isEarlyCheckout = isBeforeOfficeEnd(now, settings?.office_end_time);
-    const inT = new Date(today.check_in_time);
-    const hours = Math.round(((now.getTime() - inT.getTime()) / 3600000) * 100) / 100;
+    // Evaluate check-out against the employee's assigned shift
+    const evalResult = evaluateCheckOut(today.check_in_time, now, todayDate, assignedShift);
+
     const { data: updatedToday, error } = await supabase
       .from("attendance")
       .update({
@@ -532,8 +551,11 @@ function EmployeeDashboard() {
         check_out_latitude: location.latitude,
         check_out_longitude: location.longitude,
         check_out_accuracy_meters: location.accuracy,
-        is_early_checkout: isEarlyCheckout,
-        work_hours: hours,
+        is_early_checkout: evalResult.isEarlyCheckout,
+        early_checkout_minutes: evalResult.earlyCheckoutMinutes,
+        work_hours: evalResult.workHours,
+        total_working_minutes: evalResult.totalWorkingMinutes,
+        overtime_minutes: evalResult.overtimeMinutes,
       })
       .eq("id", today.id)
       .select()
@@ -542,13 +564,19 @@ function EmployeeDashboard() {
     if (error || !updatedToday) return toast.error(error?.message ?? "Unable to check out");
     setToday(updatedToday);
     load();
-    toast.success(`Checked out - ${formatWorkHours(hours)} worked`);
+    toast.success(
+      evalResult.isEarlyCheckout
+        ? `Checked out early (${evalResult.earlyCheckoutMinutes}m before closing)`
+        : `Checked out - ${formatWorkHours(evalResult.workHours)} worked`,
+    );
   };
 
   const status = isWeeklyOff
     ? WEEKLY_OFF_LABEL
     : !today
-      ? "Not checked in"
+      ? isCutoffPassed && !isAdmin
+        ? "Check-in closed after 2:00 PM"
+        : "Not checked in"
       : today.check_out_time
         ? "Day completed"
         : "Working";
@@ -557,7 +585,8 @@ function EmployeeDashboard() {
     () => calculateWeeklyWorkedHours(attendanceHistory, today, workedHours),
     [attendanceHistory, today, workedHours],
   );
-  const workProgress = Math.min(100, Math.round((workedHours / 8) * 100));
+  const expectedDailyHours = getShiftExpectedHours(assignedShift);
+  const workProgress = Math.min(100, Math.round((workedHours / expectedDailyHours) * 100));
   const attendanceStreak = calculateAttendanceStreak(attendanceHistory, today);
   const weeklyProgress = calculateWeeklyProgress(attendanceHistory, today);
   const todayMeetings = meetings
@@ -811,8 +840,13 @@ function EmployeeDashboard() {
                 <ShieldCheck size={22} />
               </div>
               <div className="min-w-0">
-                <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#64748B]">
-                  Attendance
+                <div className="flex items-center gap-2">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#64748B]">
+                    Attendance
+                  </div>
+                  <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary">
+                    {assignedShift.name} ({formatTime12Hour(assignedShift.start_time)} – {formatTime12Hour(assignedShift.end_time)})
+                  </span>
                 </div>
                 <div className="mt-1 text-lg font-bold leading-tight text-[#0F172A]">
                   Quick check-in
@@ -824,7 +858,7 @@ function EmployeeDashboard() {
             <div className="grid gap-3 sm:grid-cols-2">
               <Button
                 onClick={checkIn}
-                disabled={busy || isWeeklyOff || Boolean(today)}
+                disabled={busy || isWeeklyOff || Boolean(today) || (isCutoffPassed && !isAdmin)}
                 className="h-12 rounded-[14px] bg-gradient-to-r from-[#C4DAFF] to-[#E5CCFF] hover:from-[#B1CDFA] hover:to-[#D8B4FE] text-sm font-bold text-[#0F172A] shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
               >
                 <LogIn size={16} className="mr-2" /> Check In
@@ -1205,7 +1239,12 @@ function EmployeeDashboard() {
             <article className="employee-panel employee-attendance-panel">
               <div className="employee-panel-heading">
                 <div>
-                  <span>Today's Attendance</span>
+                  <div className="flex items-center gap-2">
+                    <span>Today's Attendance</span>
+                    <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-bold text-primary">
+                      {assignedShift.name} ({formatTime12Hour(assignedShift.start_time)} – {formatTime12Hour(assignedShift.end_time)})
+                    </span>
+                  </div>
                   <h2>{status}</h2>
                 </div>
                 <StatusDot status={status} />
@@ -1220,7 +1259,7 @@ function EmployeeDashboard() {
                 <div className="employee-action-row employee-action-row-top">
                   <Button
                     onClick={checkIn}
-                    disabled={busy || isWeeklyOff || Boolean(today)}
+                    disabled={busy || isWeeklyOff || Boolean(today) || (isCutoffPassed && !isAdmin)}
                     className="neon-button h-12 rounded-xl"
                   >
                     <LogIn size={17} className="mr-2" />

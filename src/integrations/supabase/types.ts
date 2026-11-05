@@ -39,6 +39,107 @@ export type Database = {
   }
   public: {
     Tables: {
+      shifts: {
+        Row: {
+          id: string
+          code: string
+          name: string
+          start_time: string
+          end_time: string
+          grace_period_mins: number
+          checkout_grace_period_mins: number
+          break_duration_mins: number
+          working_days: string[]
+          description: string | null
+          is_active: boolean
+          is_default: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          code: string
+          name: string
+          start_time: string
+          end_time?: string
+          grace_period_mins?: number
+          checkout_grace_period_mins?: number
+          break_duration_mins?: number
+          working_days?: string[]
+          description?: string | null
+          is_active?: boolean
+          is_default?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          code?: string
+          name?: string
+          start_time?: string
+          end_time?: string
+          grace_period_mins?: number
+          checkout_grace_period_mins?: number
+          break_duration_mins?: number
+          working_days?: string[]
+          description?: string | null
+          is_active?: boolean
+          is_default?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      employee_shift_assignments: {
+        Row: {
+          id: string
+          user_id: string
+          shift_id: string
+          effective_from: string
+          effective_to: string | null
+          assigned_by: string | null
+          status: string
+          is_temporary: boolean
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          shift_id: string
+          effective_from?: string
+          effective_to?: string | null
+          assigned_by?: string | null
+          status?: string
+          is_temporary?: boolean
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          shift_id?: string
+          effective_from?: string
+          effective_to?: string | null
+          assigned_by?: string | null
+          status?: string
+          is_temporary?: boolean
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_shift_assignments_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       canteen_periods: {
         Row: {
           id: string
@@ -216,13 +317,21 @@ export type Database = {
           created_by_admin_id: string | null
           date: string
           deleted_at: string | null
+          early_checkout_minutes: number
           id: string
           is_early_checkout: boolean
           is_edited: boolean
           is_late: boolean
+          late_minutes: number
+          overtime_minutes: number
           reader_id: string | null
           remarks: string | null
+          scheduled_check_in: string | null
+          scheduled_check_out: string | null
+          shift_id: string | null
+          shift_name_snapshot: string | null
           status: Database["public"]["Enums"]["attendance_status"]
+          total_working_minutes: number
           updated_at: string
           user_id: string
           work_hours: number | null
@@ -245,13 +354,21 @@ export type Database = {
           created_by_admin_id?: string | null
           date: string
           deleted_at?: string | null
+          early_checkout_minutes?: number
           id?: string
           is_early_checkout?: boolean
           is_edited?: boolean
           is_late?: boolean
+          late_minutes?: number
+          overtime_minutes?: number
           reader_id?: string | null
           remarks?: string | null
+          scheduled_check_in?: string | null
+          scheduled_check_out?: string | null
+          shift_id?: string | null
+          shift_name_snapshot?: string | null
           status?: Database["public"]["Enums"]["attendance_status"]
+          total_working_minutes?: number
           updated_at?: string
           user_id: string
           work_hours?: number | null
@@ -274,13 +391,21 @@ export type Database = {
           created_by_admin_id?: string | null
           date?: string
           deleted_at?: string | null
+          early_checkout_minutes?: number
           id?: string
           is_early_checkout?: boolean
           is_edited?: boolean
           is_late?: boolean
+          late_minutes?: number
+          overtime_minutes?: number
           reader_id?: string | null
           remarks?: string | null
+          scheduled_check_in?: string | null
+          scheduled_check_out?: string | null
+          shift_id?: string | null
+          shift_name_snapshot?: string | null
           status?: Database["public"]["Enums"]["attendance_status"]
+          total_working_minutes?: number
           updated_at?: string
           user_id?: string
           work_hours?: number | null

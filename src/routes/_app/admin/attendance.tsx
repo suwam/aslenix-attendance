@@ -36,11 +36,23 @@ import {
   Edit3,
   ShieldCheck,
   UserRound,
+  Timer,
+  Users,
+  Briefcase,
+  AlertCircle,
 } from "lucide-react";
 import { format } from "date-fns";
 import { isWeeklyOffDate } from "@/lib/weekly-off";
 import { toast } from "sonner";
 import { useAppResume } from "@/lib/use-app-resume";
+import {
+  Shift,
+  DEFAULT_MORNING_SHIFT,
+  fetchAllShifts,
+  fetchAllEmployeeShiftMap,
+  formatTime12Hour,
+  getShiftExpectedHours,
+} from "@/lib/attendance-engine";
 
 export const Route = createFileRoute("/_app/admin/attendance")({ component: AttendancePage });
 
@@ -58,6 +70,14 @@ type AttendanceRecord = {
   is_late: boolean;
   is_early_checkout: boolean;
   is_edited?: boolean;
+  shift_id?: string | null;
+  shift_name_snapshot?: string | null;
+  scheduled_check_in?: string | null;
+  scheduled_check_out?: string | null;
+  late_minutes?: number | null;
+  early_checkout_minutes?: number | null;
+  total_working_minutes?: number | null;
+  overtime_minutes?: number | null;
   check_in_latitude?: number | null;
   check_in_longitude?: number | null;
   check_in_accuracy_meters?: number | null;
@@ -72,10 +92,13 @@ type EmployeeRow = {
   full_name: string;
   email: string;
   department: string | null;
+  designation?: string | null;
+  employee_id?: string | null;
   avatar_url: string | null;
   approval_status?: string | null;
   is_suspended?: boolean | null;
   attendance?: AttendanceRecord;
+  assigned_shift?: Shift;
 };
 
 type AuditLog = {
@@ -117,6 +140,10 @@ function AttendancePage() {
   const [bsDate, setBsDate] = useState(formatBsInput());
   const date = bsInputToAdDateString(bsDate) ?? format(new Date(), "yyyy-MM-dd");
   const [rows, setRows] = useState<EmployeeRow[]>([]);
+  const [shifts, setShifts] = useState<Shift[]>([]);
+  const [shiftFilter, setShiftFilter] = useState("all");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<EmployeeRow | null>(null);
@@ -137,18 +164,27 @@ function AttendancePage() {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: att }, { data: profs }, { data: roleRows }, correctionsResult] =
-      await Promise.all([
-        supabase.from("attendance").select("*").eq("date", date),
-        supabase.from("profiles").select("*"),
-        supabase
-          .from("user_roles")
-          .select("user_id, role")
-          .in("role", ["admin", "super_admin", "hr_manager"]),
-        supabase.rpc("get_admin_attendance_correction_requests"),
-      ]);
+    const [
+      { data: att },
+      { data: profs },
+      { data: roleRows },
+      correctionsResult,
+      shiftsList,
+      shiftMap,
+    ] = await Promise.all([
+      supabase.from("attendance").select("*").eq("date", date),
+      supabase.from("profiles").select("*"),
+      supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", ["admin", "super_admin", "hr_manager"]),
+      supabase.rpc("get_admin_attendance_correction_requests"),
+      fetchAllShifts(),
+      fetchAllEmployeeShiftMap(date),
+    ]);
     if (correctionsResult.error)
       toast.error(`Unable to load correction requests: ${correctionsResult.error.message}`);
+    setShifts(shiftsList);
     const attendanceRecords = (att ?? []) as AttendanceRecord[];
     const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
     const employeeProfiles = buildHistoricalEmployeeRows(
@@ -157,7 +193,11 @@ function AttendancePage() {
       adminUserIds,
     );
     const map = new Map(attendanceRecords.map((a) => [a.user_id, a]));
-    const merged = employeeProfiles.map((p) => ({ ...p, attendance: map.get(p.user_id) }));
+    const merged = employeeProfiles.map((p) => ({
+      ...p,
+      attendance: map.get(p.user_id),
+      assigned_shift: shiftMap.get(p.user_id) || DEFAULT_MORNING_SHIFT,
+    }));
     setRows(merged);
     setCorrectionRequests(
       ((correctionsResult.data ?? []) as CorrectionRequest[]).filter(
@@ -174,20 +214,62 @@ function AttendancePage() {
   // Auto-reload on resume when opening device
   useAppResume(load, { pollIntervalMs: 25000 });
 
+  const departments = useMemo(() => {
+    const set = new Set<string>();
+    rows.forEach((r) => {
+      if (r.department) set.add(r.department);
+    });
+    return Array.from(set).sort();
+  }, [rows]);
+
   const stats = useMemo(() => {
     const total = rows.length;
     const present = rows.filter(
       (r) => r.attendance && ["present", "wfh", "late"].includes(r.attendance.status),
     ).length;
     const late = rows.filter((r) => r.attendance?.is_late).length;
-    const absent = rows.filter((r) => !r.attendance).length;
-    const wfh = rows.filter((r) => r.attendance?.status === "wfh").length;
-    return { total, present, late, absent, wfh };
+    const absent = rows.filter((r) => !r.attendance || r.attendance.status === "absent").length;
+    const onLeave = rows.filter((r) => r.attendance?.status === "leave").length;
+    const early = rows.filter((r) => r.attendance?.is_early_checkout).length;
+    const workingNow = rows.filter(
+      (r) => r.attendance?.check_in_time && !r.attendance?.check_out_time,
+    ).length;
+    return { total, present, late, absent, onLeave, early, workingNow };
   }, [rows]);
 
-  const filtered = rows.filter(
-    (r) => !search || r.full_name?.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filtered = rows.filter((r) => {
+    if (search) {
+      const q = search.toLowerCase();
+      const match =
+        r.full_name?.toLowerCase().includes(q) ||
+        r.email?.toLowerCase().includes(q) ||
+        r.department?.toLowerCase().includes(q) ||
+        (r.employee_id && r.employee_id.toLowerCase().includes(q));
+      if (!match) return false;
+    }
+    if (shiftFilter !== "all" && r.assigned_shift?.id !== shiftFilter) {
+      return false;
+    }
+    if (departmentFilter !== "all" && r.department !== departmentFilter) {
+      return false;
+    }
+    if (statusFilter !== "all") {
+      if (statusFilter === "present") {
+        if (!r.attendance || r.attendance.status !== "present") return false;
+      } else if (statusFilter === "late") {
+        if (!r.attendance?.is_late) return false;
+      } else if (statusFilter === "absent") {
+        if (r.attendance && r.attendance.status !== "absent") return false;
+      } else if (statusFilter === "early") {
+        if (!r.attendance?.is_early_checkout) return false;
+      } else if (statusFilter === "working") {
+        if (!r.attendance?.check_in_time || r.attendance?.check_out_time) return false;
+      } else if (statusFilter === "leave") {
+        if (r.attendance?.status !== "leave") return false;
+      }
+    }
+    return true;
+  });
 
   const startEdit = (row: EmployeeRow, request?: CorrectionRequest) => {
     if (!row.attendance) return toast.error("No attendance record exists for this date");
@@ -251,35 +333,102 @@ function AttendancePage() {
     <>
       <PageHeader title="Attendance" subtitle="Daily attendance overview and correction history" />
 
-      <div className="mb-5 flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
-        <div className="grid flex-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Total employees" value={stats.total} />
-          <StatCard label="Present" value={stats.present} tone="text-success" />
-          <StatCard label="Late" value={stats.late} tone="text-warning" />
-          <StatCard label="Absent" value={stats.absent} tone="text-destructive" />
-        </div>
+      {/* 7 Summary Cards */}
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+        <StatCard label="Total Staff" value={stats.total} />
+        <StatCard label="Present" value={stats.present} tone="text-success" />
+        <StatCard label="Late" value={stats.late} tone="text-warning" />
+        <StatCard label="Absent" value={stats.absent} tone="text-destructive" />
+        <StatCard label="On Leave" value={stats.onLeave} tone="text-primary" />
+        <StatCard label="Early Left" value={stats.early} tone="text-warning" />
+        <StatCard label="Working Now" value={stats.workingNow} tone="text-cyan-400" />
+      </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="sm:w-52">
+      {/* Filter and Search Controls */}
+      <GlassCard className="mb-5 p-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div>
             <BSDateInput value={bsDate} onChange={setBsDate} />
-            <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              BS date
+            <div className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              BS Date
             </div>
           </div>
-          <div className="relative max-w-md flex-1">
+
+          <div>
+            <Select value={shiftFilter} onValueChange={setShiftFilter}>
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder="All Shifts" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Shifts</SelectItem>
+                {shifts.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name} ({formatTime12Hour(s.start_time)} – {formatTime12Hour(s.end_time)})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Filter by Shift
+            </div>
+          </div>
+
+          <div>
+            <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder="All Departments" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Departments</SelectItem>
+                {departments.map((d) => (
+                  <SelectItem key={d} value={d}>
+                    {d}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Department
+            </div>
+          </div>
+
+          <div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="present">Present (On-time)</SelectItem>
+                <SelectItem value="late">Late Arrival</SelectItem>
+                <SelectItem value="working">Currently Working</SelectItem>
+                <SelectItem value="early">Early Checkout</SelectItem>
+                <SelectItem value="leave">On Leave</SelectItem>
+                <SelectItem value="absent">Absent</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Status
+            </div>
+          </div>
+
+          <div className="relative">
             <Search
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              size={15}
+              className="absolute left-3 top-3 text-muted-foreground"
             />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search employee..."
-              className="pl-9"
+              className="h-10 pl-9"
             />
+            <div className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Search Staff ({filtered.length} matched)
+            </div>
           </div>
         </div>
-      </div>
+      </GlassCard>
 
       {correctionRequests.length > 0 && (
         <GlassCard className="mb-5">
@@ -354,10 +503,12 @@ function AttendancePage() {
                 <tr className="border-b border-border text-left text-xs uppercase tracking-wider text-muted-foreground">
                   <th className="p-4">Employee</th>
                   <th className="p-4">Department</th>
-                  <th className="p-4">Check-in</th>
-                  <th className="p-4">Check-out</th>
-                  <th className="p-4">Work location</th>
-                  <th className="p-4">Map</th>
+                  <th className="p-4">Assigned Shift</th>
+                  <th className="p-4">Scheduled In</th>
+                  <th className="p-4">Actual In</th>
+                  <th className="p-4">Scheduled Out</th>
+                  <th className="p-4">Actual Out</th>
+                  <th className="p-4">Late / Early</th>
                   <th className="p-4">Hours</th>
                   <th className="p-4">Status</th>
                   <th className="p-4">Actions</th>
@@ -383,23 +534,59 @@ function AttendancePage() {
                             <span>{r.full_name}</span>
                             {r.attendance?.is_edited && <EditedBadge />}
                           </div>
-                          <div className="truncate text-xs text-muted-foreground">{r.email}</div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            {r.employee_id && (
+                              <span className="font-mono text-[10px] bg-muted/60 px-1.5 py-0.5 rounded">
+                                {r.employee_id}
+                              </span>
+                            )}
+                            <span className="truncate">{r.email}</span>
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td className="p-4 text-muted-foreground">{r.department || "-"}</td>
-                    <td className="p-4 tabular-nums">{formatTime(r.attendance?.check_in_time)}</td>
-                    <td className="p-4 tabular-nums">{formatTime(r.attendance?.check_out_time)}</td>
-                    <td className="p-4">{r.attendance?.work_location || "-"}</td>
                     <td className="p-4">
-                      <AttendanceLocationLinks
-                        checkInLatitude={r.attendance?.check_in_latitude}
-                        checkInLongitude={r.attendance?.check_in_longitude}
-                        checkInAccuracyMeters={r.attendance?.check_in_accuracy_meters}
-                        checkOutLatitude={r.attendance?.check_out_latitude}
-                        checkOutLongitude={r.attendance?.check_out_longitude}
-                        checkOutAccuracyMeters={r.attendance?.check_out_accuracy_meters}
-                      />
+                      {r.assigned_shift ? (
+                        <div className="flex flex-col">
+                          <span className="inline-flex w-fit items-center gap-1 rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                            <Timer size={11} /> {r.assigned_shift.name}
+                          </span>
+                          <span className="mt-1 text-[11px] text-muted-foreground">
+                            {formatTime12Hour(r.assigned_shift.start_time)} – {formatTime12Hour(r.assigned_shift.end_time)} ({r.assigned_shift.grace_period_mins}m grace)
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">—</span>
+                      )}
+                    </td>
+                    <td className="p-4 tabular-nums text-xs">
+                      {r.assigned_shift ? formatTime12Hour(r.assigned_shift.start_time) : "—"}
+                    </td>
+                    <td className="p-4 tabular-nums font-semibold">
+                      {formatTime(r.attendance?.check_in_time)}
+                    </td>
+                    <td className="p-4 tabular-nums text-xs">
+                      {r.assigned_shift ? formatTime12Hour(r.assigned_shift.end_time) : "—"}
+                    </td>
+                    <td className="p-4 tabular-nums font-semibold">
+                      {formatTime(r.attendance?.check_out_time)}
+                    </td>
+                    <td className="p-4 text-xs tabular-nums">
+                      {r.attendance?.is_late && (
+                        <div className="font-semibold text-warning">
+                          +{r.attendance.late_minutes ?? "Late"}m late
+                        </div>
+                      )}
+                      {r.attendance?.is_early_checkout && (
+                        <div className="font-semibold text-warning">
+                          -{r.attendance.early_checkout_minutes ?? "Early"}m early
+                        </div>
+                      )}
+                      {!r.attendance?.is_late && !r.attendance?.is_early_checkout && r.attendance?.check_in_time && (
+                        <div className="text-success font-medium">On schedule</div>
+                      )}
+                      {!r.attendance?.check_in_time && <span className="text-muted-foreground">—</span>}
                     </td>
                     <td className="p-4 tabular-nums">
                       {r.attendance?.work_hours ? formatWorkHours(r.attendance.work_hours) : "-"}
@@ -413,17 +600,17 @@ function AttendancePage() {
                       />
                     </td>
                     <td className="p-4">
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         {isAdmin && (
                           <Button
                             size="icon"
                             disabled={!r.attendance}
                             onClick={() => startEdit(r)}
-                            className="neon-button h-9 w-9 rounded-lg"
+                            className="neon-button h-8 w-8 rounded-lg"
                             title="Edit attendance"
                             aria-label={`Edit attendance for ${r.full_name}`}
                           >
-                            <Edit3 size={15} />
+                            <Edit3 size={14} />
                           </Button>
                         )}
                         <Button
@@ -431,10 +618,21 @@ function AttendancePage() {
                           variant="outline"
                           disabled={!r.attendance}
                           onClick={() => loadHistory(r)}
+                          className="h-8 px-2.5 text-xs"
                         >
-                          <History size={14} className="mr-1" />
+                          <History size={13} className="mr-1" />
                           History
                         </Button>
+                        {r.attendance && (
+                          <AttendanceLocationLinks
+                            checkInLatitude={r.attendance?.check_in_latitude}
+                            checkInLongitude={r.attendance?.check_in_longitude}
+                            checkInAccuracyMeters={r.attendance?.check_in_accuracy_meters}
+                            checkOutLatitude={r.attendance?.check_out_latitude}
+                            checkOutLongitude={r.attendance?.check_out_longitude}
+                            checkOutAccuracyMeters={r.attendance?.check_out_accuracy_meters}
+                          />
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -492,6 +690,18 @@ function AttendancePage() {
                     <div className="truncate text-xs text-muted-foreground">{editing?.email}</div>
                   </div>
                 </div>
+
+                {editing?.assigned_shift && (
+                  <div className="mt-3 rounded-lg border border-primary/20 bg-primary/10 p-2.5 text-xs">
+                    <div className="font-semibold text-primary flex items-center gap-1.5">
+                      <Timer size={13} /> Assigned Shift: {editing.assigned_shift.name}
+                    </div>
+                    <div className="text-muted-foreground mt-0.5">
+                      Schedule: {formatTime12Hour(editing.assigned_shift.start_time)} – {formatTime12Hour(editing.assigned_shift.end_time)} · Grace: {editing.assigned_shift.grace_period_mins}m
+                    </div>
+                  </div>
+                )}
+
                 <div className="mt-4 grid gap-2">
                   <EditSnapshot
                     icon={<Clock3 size={15} />}

@@ -26,6 +26,7 @@ import {
   ShieldCheck,
   CreditCard,
   Utensils,
+  Timer,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { AslenixLogo } from "@/components/AslenixLogo";
@@ -54,6 +55,7 @@ const adminNav: NavItem[] = [
   { to: "/admin/qr-ids", label: "Digital QR IDs", icon: QrCode },
   { to: "/admin/employee-of-month", label: "Employee of Month", icon: Crown },
   { to: "/admin/employees", label: "Employees", icon: Users },
+  { to: "/admin/shifts", label: "Shift Management", icon: Timer },
   { to: "/admin/leaves", label: "Leave Requests", icon: Calendar },
   { to: "/admin/meetings", label: "Meetings", icon: CalendarClock },
   { to: "/messages", label: "Messages", icon: MessageSquare },

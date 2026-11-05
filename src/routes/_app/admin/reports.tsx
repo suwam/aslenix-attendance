@@ -29,6 +29,14 @@ import {
 import { isWeeklyOffDate } from "@/lib/weekly-off";
 import { cn } from "@/lib/utils";
 import logoMarkUrl from "@/assets/aslenix-mark.png";
+import {
+  Shift,
+  DEFAULT_MORNING_SHIFT,
+  fetchAllShifts,
+  fetchAllEmployeeShiftMap,
+  formatTime12Hour,
+  getShiftExpectedHours,
+} from "@/lib/attendance-engine";
 
 export const Route = createFileRoute("/_app/admin/reports")({ component: ReportsPage });
 
@@ -78,6 +86,12 @@ function ReportsPage() {
   const [monthlyMode, setMonthlyMode] = useState<MonthlyMode>("full");
   const [bsDate, setBsDate] = useState(formatBsInput());
   const [bsMonth, setBsMonth] = useState(formatBsMonthInput());
+  const [shifts, setShifts] = useState<Shift[]>([]);
+  const [shiftFilter, setShiftFilter] = useState("all");
+
+  useEffect(() => {
+    fetchAllShifts().then(setShifts);
+  }, []);
 
   const initialBoundaries = useMemo(() => getBsMonthBoundaries(bsMonth), []);
   const [bsStartDate, setBsStartDate] = useState(initialBoundaries.startBs);
@@ -151,7 +165,7 @@ function ReportsPage() {
       return;
     }
     setWorkingDaySummary(EMPTY_WORKING_DAY_SUMMARY);
-    const [attendanceResult, profilesResult, roleResult] = await Promise.all([
+    const [attendanceResult, profilesResult, roleResult, shiftMap] = await Promise.all([
       supabase.from("attendance").select("*").eq("date", date).order("date", { ascending: false }),
       supabase
         .from("profiles")
@@ -161,6 +175,7 @@ function ReportsPage() {
         .from("user_roles")
         .select("user_id, role")
         .in("role", ["admin", "super_admin", "hr_manager"]),
+      fetchAllEmployeeShiftMap(date),
     ]);
 
     const queryError = attendanceResult.error ?? profilesResult.error ?? roleResult.error;
@@ -183,27 +198,30 @@ function ReportsPage() {
     const merged = employeeProfiles.map((profile) => ({
       ...profile,
       attendance: attendanceByUser.get(profile.user_id) ?? null,
+      assigned_shift: shiftMap.get(profile.user_id) || DEFAULT_MORNING_SHIFT,
     }));
     setRows(
-      statusFilter === "all"
-        ? merged
-        : merged.filter((row) => {
-            if (statusFilter === "weekly_off") return isWeeklyOff && !row.attendance;
-            if (statusFilter === "absent")
-              return (
-                row.attendance?.status === "absent" ||
-                (!isFutureDate && !isWeeklyOff && !row.attendance)
-              );
-            if (statusFilter === "late") return row.attendance?.is_late;
-            if (statusFilter === "early_checkout") return row.attendance?.is_early_checkout;
-            return row.attendance?.status === statusFilter;
-          }),
+      merged.filter((row) => {
+        if (shiftFilter !== "all" && row.assigned_shift?.id !== shiftFilter) {
+          return false;
+        }
+        if (statusFilter === "all") return true;
+        if (statusFilter === "weekly_off") return isWeeklyOff && !row.attendance;
+        if (statusFilter === "absent")
+          return (
+            row.attendance?.status === "absent" ||
+            (!isFutureDate && !isWeeklyOff && !row.attendance)
+          );
+        if (statusFilter === "late") return row.attendance?.is_late;
+        if (statusFilter === "early_checkout") return row.attendance?.is_early_checkout;
+        return row.attendance?.status === statusFilter;
+      }),
     );
     setLoading(false);
   };
 
   const runAggregateReport = async (startDate: string, endDate: string) => {
-    const [attendanceResult, profilesResult, roleResult, holidayResult] = await Promise.all([
+    const [attendanceResult, profilesResult, roleResult, holidayResult, shiftMap] = await Promise.all([
       supabase
         .from("attendance")
         .select("*")
@@ -226,6 +244,7 @@ function ReportsPage() {
         .eq("is_active", true)
         .gte("date", startDate)
         .lte("date", endDate),
+      fetchAllEmployeeShiftMap(endDate),
     ]);
 
     const queryError =
@@ -347,8 +366,29 @@ function ReportsPage() {
           ? Math.min(Math.round(((presentDays + wfhDays) / requiredWorkingDays) * 1000) / 10, 100)
           : 0;
 
+      const assigned_shift = shiftMap.get(profile.user_id) || DEFAULT_MORNING_SHIFT;
+      const expectedDailyHours = getShiftExpectedHours(assigned_shift);
+      const expectedHours = Math.round(requiredWorkingDays * expectedDailyHours * 10) / 10;
+      const totalLateMinutes = workingRecords.reduce(
+        (sum, record) => sum + (record.late_minutes || (record.is_late ? 15 : 0)),
+        0,
+      );
+      const totalEarlyCheckoutMinutes = workingRecords.reduce(
+        (sum, record) => sum + (record.early_checkout_minutes || 0),
+        0,
+      );
+      const totalOvertimeHours = workingRecords.reduce(
+        (sum, record) => sum + (record.overtime_minutes ? record.overtime_minutes / 60 : 0),
+        0,
+      );
+
       return {
         ...profile,
+        assigned_shift,
+        expectedHours,
+        totalLateMinutes,
+        totalEarlyCheckoutMinutes,
+        totalOvertimeHours,
         records,
         presentDays,
         absentDays,
@@ -368,17 +408,18 @@ function ReportsPage() {
     });
 
     setRows(
-      statusFilter === "all"
-        ? merged
-        : merged.filter((row) => {
-            if (statusFilter === "absent") return row.absentDays > 0;
-            if (statusFilter === "late") return row.lateDays > 0;
-            if (statusFilter === "early_checkout") return row.earlyCheckoutDays > 0;
-            if (statusFilter === "wfh") return row.wfhDays > 0;
-            if (statusFilter === "present") return row.presentDays > 0;
-            if (statusFilter === "weekly_off") return false;
-            return false;
-          }),
+      merged.filter((row) => {
+        if (shiftFilter !== "all" && row.assigned_shift?.id !== shiftFilter) {
+          return false;
+        }
+        if (statusFilter === "all") return true;
+        if (statusFilter === "absent") return row.absentDays > 0;
+        if (statusFilter === "late") return row.lateDays > 0;
+        if (statusFilter === "early_checkout") return row.earlyCheckoutDays > 0;
+        if (statusFilter === "wfh") return row.wfhDays > 0;
+        if (statusFilter === "present") return row.presentDays > 0;
+        return true;
+      }),
     );
   };
 
@@ -395,6 +436,7 @@ function ReportsPage() {
     rangeStartAd,
     rangeEndAd,
     statusFilter,
+    shiftFilter,
   ]);
 
   const exportCSV = () => {
@@ -407,6 +449,7 @@ function ReportsPage() {
       "Employee",
       "Email",
       "Department",
+      "Assigned Shift",
       "Check-in",
       "Check-out",
       "Work location",
@@ -423,6 +466,7 @@ function ReportsPage() {
         row.full_name || "",
         row.email || "",
         row.department || "",
+        row.assigned_shift?.name || "Shift A – Morning Shift",
         attendance?.check_in_time ? format(new Date(attendance.check_in_time), "HH:mm") : "",
         attendance?.check_out_time ? format(new Date(attendance.check_out_time), "HH:mm") : "",
         attendance?.work_location || "",
@@ -451,6 +495,7 @@ function ReportsPage() {
       "Employee",
       "Email",
       "Department",
+      "Assigned Shift",
       "Calendar days",
       "Weekly holidays",
       "Public holidays",
@@ -462,8 +507,11 @@ function ReportsPage() {
       "Early checkout days",
       "WFH days",
       "Attendance %",
-      "Edited days",
+      "Expected hours",
       "Total hours",
+      "Total late mins",
+      "Total early checkout mins",
+      "Total overtime hours",
     ];
     const lines = rows.map((row) =>
       [
@@ -472,6 +520,7 @@ function ReportsPage() {
         row.full_name || "",
         row.email || "",
         row.department || "",
+        row.assigned_shift?.name || "Shift A – Morning Shift",
         workingDaySummary.calendarDays,
         workingDaySummary.weeklyHolidays,
         workingDaySummary.publicHolidays,
@@ -483,8 +532,11 @@ function ReportsPage() {
         row.earlyCheckoutDays,
         row.wfhDays,
         `${row.attendancePercentage}%`,
-        row.editedDays,
+        `${row.expectedHours || 0}h`,
         formatWorkHours(row.totalHours),
+        row.totalLateMinutes || 0,
+        row.totalEarlyCheckoutMinutes || 0,
+        row.totalOvertimeHours ? row.totalOvertimeHours.toFixed(1) : "0.0",
       ]
         .map((x) => `"${String(x).replace(/"/g, '""')}"`)
         .join(","),
@@ -652,8 +704,8 @@ function ReportsPage() {
           className={cn(
             "grid grid-cols-1 gap-3",
             isCustomRange
-              ? "sm:grid-cols-2 lg:grid-cols-5"
-              : "sm:grid-cols-2 lg:grid-cols-4",
+              ? "sm:grid-cols-2 lg:grid-cols-6"
+              : "sm:grid-cols-2 lg:grid-cols-5",
           )}
         >
           <div>
@@ -805,6 +857,23 @@ function ReportsPage() {
           )}
 
           <div>
+            <label className="text-xs text-muted-foreground">Shift</label>
+            <Select value={shiftFilter} onValueChange={setShiftFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Shifts" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Shifts</SelectItem>
+                {shifts.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
             <label className="text-xs text-muted-foreground">Status</label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger>
@@ -870,6 +939,7 @@ function ReportsPage() {
                   <th className="p-3">Date</th>
                   <th className="p-3">Employee</th>
                   <th className="p-3">Department</th>
+                  <th className="p-3">Shift</th>
                   <th className="p-3">In</th>
                   <th className="p-3">Out</th>
                   <th className="p-3">Location</th>
@@ -885,6 +955,11 @@ function ReportsPage() {
                       <td className="p-3">{formatNepaliDate(date, "ddd DD, MMMM YYYY")} BS</td>
                       <td className="p-3 font-medium">{row.full_name || "—"}</td>
                       <td className="p-3 text-muted-foreground">{row.department || "—"}</td>
+                      <td className="p-3">
+                        <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                          {row.assigned_shift?.name || "Shift A – Morning Shift"}
+                        </span>
+                      </td>
                       <td className="p-3 tabular-nums">
                         {attendance?.check_in_time
                           ? format(new Date(attendance.check_in_time), "HH:mm")
@@ -1446,6 +1521,7 @@ function AggregateReportTable({
             </th>
             <th className="p-3">Employee</th>
             <th className="p-3">Department</th>
+            <th className="p-3">Assigned Shift</th>
             <th className="p-3">Present</th>
             <th className="p-3">Absent</th>
             <th className="p-3">Late</th>
@@ -1470,6 +1546,11 @@ function AggregateReportTable({
                   </td>
                   <td className="p-3 font-medium">{row.full_name || "—"}</td>
                   <td className="p-3 text-muted-foreground">{row.department || "—"}</td>
+                  <td className="p-3">
+                    <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                      {row.assigned_shift?.name || "Shift A – Morning Shift"}
+                    </span>
+                  </td>
                   <td className="p-3 tabular-nums">{row.presentDays}</td>
                   <td className="p-3 tabular-nums">{row.absentDays}</td>
                   <td className="p-3 tabular-nums">{row.lateDays}</td>
@@ -1477,7 +1558,12 @@ function AggregateReportTable({
                   <td className="p-3 tabular-nums">{row.wfhDays}</td>
                   <td className="p-3 tabular-nums">{row.totalWorkingDays ?? summary.workingDays}</td>
                   <td className="p-3 tabular-nums">{row.attendancePercentage}%</td>
-                  <td className="p-3 tabular-nums">{formatWorkHours(row.totalHours)}</td>
+                  <td className="p-3 tabular-nums">
+                    <div className="font-semibold">{formatWorkHours(row.totalHours)}</div>
+                    {row.expectedHours > 0 && (
+                      <div className="text-[10px] text-muted-foreground">target: {row.expectedHours}h</div>
+                    )}
+                  </td>
                   <td className="p-3">
                     <Button
                       type="button"
@@ -1492,7 +1578,7 @@ function AggregateReportTable({
                 </tr>
                 {expanded && (
                   <tr className="border-b border-border/40 bg-muted/20">
-                    <td colSpan={12} className="p-4">
+                    <td colSpan={13} className="p-4">
                       <AttendanceDayBreakdown days={row.dayDetails ?? []} />
                     </td>
                   </tr>

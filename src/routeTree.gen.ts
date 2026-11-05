@@ -43,6 +43,7 @@ import { Route as AppAdminNotificationsRouteImport } from './routes/_app/admin/n
 import { Route as AppAdminQrIdsRouteImport } from './routes/_app/admin/qr-ids'
 import { Route as AppAdminReportsRouteImport } from './routes/_app/admin/reports'
 import { Route as AppAdminSettingsRouteImport } from './routes/_app/admin/settings'
+import { Route as AppAdminShiftsRouteImport } from './routes/_app/admin/shifts'
 import { Route as AppAdminTasksRouteImport } from './routes/_app/admin/tasks'
 import { Route as AppAdminWhatsappHistoryRouteImport } from './routes/_app/admin/whatsapp-history'
 import { Route as AppAdminWhatsappSettingsRouteImport } from './routes/_app/admin/whatsapp-settings'
@@ -218,6 +219,11 @@ const AppAdminSettingsRoute = AppAdminSettingsRouteImport.update({
   path: '/admin/settings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminShiftsRoute = AppAdminShiftsRouteImport.update({
+  id: '/admin/shifts',
+  path: '/admin/shifts',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminTasksRoute = AppAdminTasksRouteImport.update({
   id: '/admin/tasks',
   path: '/admin/tasks',
@@ -268,6 +274,7 @@ export interface FileRoutesByFullPath {
   '/admin/qr-ids': typeof AppAdminQrIdsRoute
   '/admin/reports': typeof AppAdminReportsRoute
   '/admin/settings': typeof AppAdminSettingsRoute
+  '/admin/shifts': typeof AppAdminShiftsRoute
   '/admin/tasks': typeof AppAdminTasksRoute
   '/admin/whatsapp-history': typeof AppAdminWhatsappHistoryRoute
   '/admin/whatsapp-settings': typeof AppAdminWhatsappSettingsRoute
@@ -306,6 +313,7 @@ export interface FileRoutesByTo {
   '/admin/qr-ids': typeof AppAdminQrIdsRoute
   '/admin/reports': typeof AppAdminReportsRoute
   '/admin/settings': typeof AppAdminSettingsRoute
+  '/admin/shifts': typeof AppAdminShiftsRoute
   '/admin/tasks': typeof AppAdminTasksRoute
   '/admin/whatsapp-history': typeof AppAdminWhatsappHistoryRoute
   '/admin/whatsapp-settings': typeof AppAdminWhatsappSettingsRoute
@@ -346,6 +354,7 @@ export interface FileRoutesById {
   '/_app/admin/qr-ids': typeof AppAdminQrIdsRoute
   '/_app/admin/reports': typeof AppAdminReportsRoute
   '/_app/admin/settings': typeof AppAdminSettingsRoute
+  '/_app/admin/shifts': typeof AppAdminShiftsRoute
   '/_app/admin/tasks': typeof AppAdminTasksRoute
   '/_app/admin/whatsapp-history': typeof AppAdminWhatsappHistoryRoute
   '/_app/admin/whatsapp-settings': typeof AppAdminWhatsappSettingsRoute
@@ -386,6 +395,7 @@ export interface FileRouteTypes {
     | '/admin/qr-ids'
     | '/admin/reports'
     | '/admin/settings'
+    | '/admin/shifts'
     | '/admin/tasks'
     | '/admin/whatsapp-history'
     | '/admin/whatsapp-settings'
@@ -424,6 +434,7 @@ export interface FileRouteTypes {
     | '/admin/qr-ids'
     | '/admin/reports'
     | '/admin/settings'
+    | '/admin/shifts'
     | '/admin/tasks'
     | '/admin/whatsapp-history'
     | '/admin/whatsapp-settings'
@@ -463,6 +474,7 @@ export interface FileRouteTypes {
     | '/_app/admin/qr-ids'
     | '/_app/admin/reports'
     | '/_app/admin/settings'
+    | '/_app/admin/shifts'
     | '/_app/admin/tasks'
     | '/_app/admin/whatsapp-history'
     | '/_app/admin/whatsapp-settings'
@@ -721,6 +733,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminSettingsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin/shifts': {
+      id: '/_app/admin/shifts'
+      path: '/admin/shifts'
+      fullPath: '/admin/shifts'
+      preLoaderRoute: typeof AppAdminShiftsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/admin/tasks': {
       id: '/_app/admin/tasks'
       path: '/admin/tasks'
@@ -770,6 +789,7 @@ interface AppRouteChildren {
   AppAdminQrIdsRoute: typeof AppAdminQrIdsRoute
   AppAdminReportsRoute: typeof AppAdminReportsRoute
   AppAdminSettingsRoute: typeof AppAdminSettingsRoute
+  AppAdminShiftsRoute: typeof AppAdminShiftsRoute
   AppAdminTasksRoute: typeof AppAdminTasksRoute
   AppAdminWhatsappHistoryRoute: typeof AppAdminWhatsappHistoryRoute
   AppAdminWhatsappSettingsRoute: typeof AppAdminWhatsappSettingsRoute
@@ -801,6 +821,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminQrIdsRoute: AppAdminQrIdsRoute,
   AppAdminReportsRoute: AppAdminReportsRoute,
   AppAdminSettingsRoute: AppAdminSettingsRoute,
+  AppAdminShiftsRoute: AppAdminShiftsRoute,
   AppAdminTasksRoute: AppAdminTasksRoute,
   AppAdminWhatsappHistoryRoute: AppAdminWhatsappHistoryRoute,
   AppAdminWhatsappSettingsRoute: AppAdminWhatsappSettingsRoute,

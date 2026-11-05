@@ -25,11 +25,17 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { formatWorkHours } from "@/lib/work-hours";
 import { bsInputToAdDateString, formatBsInput, formatNepaliDate } from "@/lib/nepali-calendar";
-import { CalendarDays, Edit3, History, Info, Loader2 } from "lucide-react";
+import { CalendarDays, Edit3, History, Info, Loader2, Timer } from "lucide-react";
 import { format } from "date-fns";
 import { isWeeklyOffDate, WEEKLY_OFF_LABEL } from "@/lib/weekly-off";
 import { toast } from "sonner";
 import { useAppResume } from "@/lib/use-app-resume";
+import {
+  Shift,
+  DEFAULT_MORNING_SHIFT,
+  fetchEmployeeAssignedShift,
+  formatTime12Hour,
+} from "@/lib/attendance-engine";
 
 export const Route = createFileRoute("/_app/my-attendance")({ component: MyAttendance });
 
@@ -61,6 +67,7 @@ function MyAttendance() {
   const [bsDate, setBsDate] = useState(formatBsInput());
   const date = bsInputToAdDateString(bsDate) ?? format(new Date(), "yyyy-MM-dd");
   const [rows, setRows] = useState<any[]>([]);
+  const [assignedShift, setAssignedShift] = useState<Shift>(DEFAULT_MORNING_SHIFT);
   const [loading, setLoading] = useState(true);
   const [requestOpen, setRequestOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -87,6 +94,7 @@ function MyAttendance() {
         checkIn: "—",
         checkOut: "—",
         hours: "—",
+        shift: assignedShift.name,
       };
     }
 
@@ -97,6 +105,7 @@ function MyAttendance() {
         checkIn: "—",
         checkOut: "—",
         hours: "—",
+        shift: assignedShift.name,
       };
     }
 
@@ -110,8 +119,9 @@ function MyAttendance() {
         ? format(new Date(attendance.check_out_time), "HH:mm")
         : "—",
       hours: attendance.work_hours ? formatWorkHours(attendance.work_hours) : "—",
+      shift: attendance.shift_name_snapshot || assignedShift.name,
     };
-  }, [attendance, isWeeklyOff]);
+  }, [attendance, isWeeklyOff, assignedShift]);
 
   const loadData = useCallback(() => {
     if (!user) return;
@@ -128,9 +138,11 @@ function MyAttendance() {
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false }),
-    ]).then(([attendanceResult, requestResult]) => {
+      fetchEmployeeAssignedShift(user.id, date),
+    ]).then(([attendanceResult, requestResult, shift]) => {
       setRows(attendanceResult.data ?? []);
       setRequests(requestResult.data ?? []);
+      setAssignedShift(shift);
       setLoading(false);
     });
   }, [user, date]);
@@ -244,7 +256,16 @@ function MyAttendance() {
         </div>
       </div>
 
-      <div className="grid gap-3 mb-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 mb-5 sm:grid-cols-2 xl:grid-cols-5">
+        <GlassCard className="p-4">
+          <div className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Assigned Shift</div>
+          <div className="mt-2 flex items-center gap-1.5 font-semibold text-primary">
+            <Timer size={15} /> {summary.shift}
+          </div>
+          <div className="text-[11px] text-muted-foreground mt-0.5">
+            {formatTime12Hour(assignedShift.start_time)} – {formatTime12Hour(assignedShift.end_time)} ({assignedShift.grace_period_mins}m grace)
+          </div>
+        </GlassCard>
         <GlassCard className="p-4">
           <div className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Status</div>
           <div className="mt-3">
@@ -288,8 +309,11 @@ function MyAttendance() {
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground border-b border-border">
                   <th className="p-4">Date</th>
+                  <th className="p-4">Shift</th>
+                  <th className="p-4">Scheduled</th>
                   <th className="p-4">Check-in</th>
                   <th className="p-4">Check-out</th>
+                  <th className="p-4">Late / Early</th>
                   <th className="p-4">Location</th>
                   <th className="p-4">Hours</th>
                   <th className="p-4">Status</th>
@@ -299,20 +323,40 @@ function MyAttendance() {
                 {rows.map((r) => (
                   <tr key={r.id} className="border-b border-border/40 hover:bg-muted/20">
                     <td className="p-4">{formatNepaliDate(r.date, "ddd DD, MMMM YYYY")} BS</td>
-                    <td className="p-4 tabular-nums">
+                    <td className="p-4">
+                      <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+                        <Timer size={11} /> {r.shift_name_snapshot || assignedShift.name}
+                      </span>
+                    </td>
+                    <td className="p-4 text-xs tabular-nums text-muted-foreground">
+                      {r.scheduled_check_in ? formatTime12Hour(r.scheduled_check_in) : formatTime12Hour(assignedShift.start_time)} – {r.scheduled_check_out ? formatTime12Hour(r.scheduled_check_out) : formatTime12Hour(assignedShift.end_time)}
+                    </td>
+                    <td className="p-4 tabular-nums font-semibold">
                       {r.check_in_time ? format(new Date(r.check_in_time), "HH:mm") : "—"}
                     </td>
-                    <td className="p-4 tabular-nums">
+                    <td className="p-4 tabular-nums font-semibold">
                       {r.check_out_time ? format(new Date(r.check_out_time), "HH:mm") : "—"}
+                    </td>
+                    <td className="p-4 text-xs tabular-nums">
+                      {r.is_late && (
+                        <span className="font-semibold text-warning">+{r.late_minutes ?? "Late"}m late</span>
+                      )}
+                      {r.is_early_checkout && (
+                        <span className="font-semibold text-warning">-{r.early_checkout_minutes ?? "Early"}m early</span>
+                      )}
+                      {!r.is_late && !r.is_early_checkout && r.check_in_time && (
+                        <span className="text-success font-medium">On schedule</span>
+                      )}
+                      {!r.check_in_time && <span className="text-muted-foreground">—</span>}
                     </td>
                     <td className="p-4">
                       <AttendanceLocationLinks
                         checkInLatitude={r.check_in_latitude}
                         checkInLongitude={r.check_in_longitude}
                         checkInAccuracyMeters={r.check_in_accuracy_meters}
-                        checkOutLatitude={r.check_out_latitude}
-                        checkOutLongitude={r.check_out_longitude}
-                        checkOutAccuracyMeters={r.check_out_accuracy_meters}
+                        checkOutLatitude={r.attendance?.check_out_latitude}
+                        checkOutLongitude={r.attendance?.check_out_longitude}
+                        checkOutAccuracyMeters={r.attendance?.check_out_accuracy_meters}
                       />
                     </td>
                     <td className="p-4 tabular-nums">

@@ -35,12 +35,28 @@ import {
   FileText,
   AlertTriangle,
   Fingerprint,
+  Timer,
+  CheckCircle2,
+  AlertCircle,
+  ArrowRight,
+  Briefcase,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { formatNepaliDate } from "@/lib/nepali-calendar";
 import { isWeeklyOffDate, WEEKLY_OFF_LABEL } from "@/lib/weekly-off";
 import { useAppResume } from "@/lib/use-app-resume";
+import {
+  Shift,
+  DEFAULT_MORNING_SHIFT,
+  fetchEmployeeAssignedShift,
+  evaluateCheckIn,
+  evaluateCheckOut,
+  formatTime12Hour,
+  getShiftExpectedHours,
+  isAttendanceCutoffPassed,
+} from "@/lib/attendance-engine";
 
 export const Route = createFileRoute("/_app/check-in")({ component: CheckInPage });
 
@@ -54,6 +70,14 @@ type AttendanceRow = {
   work_hours: number | null;
   is_late: boolean;
   is_early_checkout: boolean;
+  shift_id?: string | null;
+  shift_name_snapshot?: string | null;
+  scheduled_check_in?: string | null;
+  scheduled_check_out?: string | null;
+  late_minutes?: number | null;
+  early_checkout_minutes?: number | null;
+  total_working_minutes?: number | null;
+  overtime_minutes?: number | null;
 };
 
 function CheckInPage() {
@@ -61,19 +85,19 @@ function CheckInPage() {
   const nav = useNavigate();
   const [today, setToday] = useState<AttendanceRow | null>(null);
   const [history, setHistory] = useState<AttendanceRow[]>([]);
+  const [assignedShift, setAssignedShift] = useState<Shift>(DEFAULT_MORNING_SHIFT);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const todayDate = format(new Date(), "yyyy-MM-dd");
   const isWeeklyOff = isWeeklyOffDate(todayDate);
 
-  // Strict 2:00 PM (14:00) attendance cutoff: after 2 PM, check-in is prohibited
-  const isAfter2PM = () => new Date().getHours() >= 14;
-  const [isPastCutoff, setIsPastCutoff] = useState(() => isAfter2PM());
+  // Attendance closes at 2:00 PM Nepal time.
+  const [isPastCutoff, setIsPastCutoff] = useState(() => isAttendanceCutoffPassed());
   const [showProhibitedDialog, setShowProhibitedDialog] = useState(false);
   const [hasAutoOpened, setHasAutoOpened] = useState(false);
 
   useEffect(() => {
-    const updateTime = () => setIsPastCutoff(isAfter2PM());
+    const updateTime = () => setIsPastCutoff(isAttendanceCutoffPassed());
     updateTime();
     const interval = setInterval(updateTime, 10000);
     return () => clearInterval(interval);
@@ -91,27 +115,32 @@ function CheckInPage() {
     if (!user) return;
     setLoading(true);
     const historyStart = format(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000), "yyyy-MM-dd");
-    const [{ data: todayRow, error: todayError }, { data: historyRows, error: historyError }] =
-      await Promise.all([
-        supabase
-          .from("attendance")
-          .select("*")
-          .eq("user_id", user.id)
-          .eq("date", todayDate)
-          .maybeSingle(),
-        supabase
-          .from("attendance")
-          .select("*")
-          .eq("user_id", user.id)
-          .gte("date", historyStart)
-          .lte("date", todayDate)
-          .order("date", { ascending: false }),
-      ]);
+    const [
+      { data: todayRow, error: todayError },
+      { data: historyRows, error: historyError },
+      shift,
+    ] = await Promise.all([
+      supabase
+        .from("attendance")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("date", todayDate)
+        .maybeSingle(),
+      supabase
+        .from("attendance")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("date", historyStart)
+        .lte("date", todayDate)
+        .order("date", { ascending: false }),
+      fetchEmployeeAssignedShift(user.id, todayDate),
+    ]);
 
     if (todayError) toast.error(todayError.message);
     if (historyError) toast.error(historyError.message);
     setToday((todayRow as AttendanceRow | null) ?? null);
     setHistory((historyRows ?? []) as AttendanceRow[]);
+    setAssignedShift(shift);
     setLoading(false);
   };
 
@@ -122,21 +151,16 @@ function CheckInPage() {
   // Auto-reload check-in state when device resumes or app is opened
   useAppResume(load, { pollIntervalMs: 20000 });
 
-
-
   const checkIn = async () => {
     if (!user) return;
     if (isWeeklyOff) return toast.info("Saturday is a weekly off. Attendance is not required.");
 
-    // Strict 2:00 PM (14:00) cutoff: attendance after 2 PM is prohibited
-    if (!isAdmin && isAfter2PM()) {
+    if (!isAdmin && isAttendanceCutoffPassed()) {
       setShowProhibitedDialog(true);
       return toast.error("Attendance after 2:00 PM is prohibited. Check-in is closed for today.");
     }
 
     setBusy(true);
-
-
 
     let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
     try {
@@ -146,17 +170,10 @@ function CheckInPage() {
       return toast.error(error instanceof Error ? error.message : "Unable to verify location");
     }
 
-    const { data: settings } = await supabase
-      .from("settings")
-      .select("late_after_time")
-      .limit(1)
-      .maybeSingle();
     const now = new Date();
-    const lateTime = settings?.late_after_time || "09:15:00";
-    const [lateHour, lateMinute] = lateTime.split(":").map(Number);
-    const lateBoundary = new Date();
-    lateBoundary.setHours(lateHour || 9, lateMinute || 15, 0, 0);
-    const isLate = now > lateBoundary;
+    // Evaluate check-in against the employee's individually assigned shift
+    const evalResult = evaluateCheckIn(now, todayDate, assignedShift);
+
     const { data: insertedToday, error } = await supabase
       .from("attendance")
       .insert({
@@ -166,8 +183,13 @@ function CheckInPage() {
         check_in_latitude: location.latitude,
         check_in_longitude: location.longitude,
         check_in_accuracy_meters: location.accuracy,
-        status: isLate ? "late" : "present",
-        is_late: isLate,
+        status: evalResult.status,
+        is_late: evalResult.isLate,
+        shift_id: assignedShift.id,
+        shift_name_snapshot: assignedShift.name,
+        scheduled_check_in: assignedShift.start_time,
+        scheduled_check_out: assignedShift.end_time,
+        late_minutes: evalResult.lateMinutes,
       })
       .select()
       .maybeSingle();
@@ -176,14 +198,16 @@ function CheckInPage() {
     if (error || !insertedToday) return toast.error(error?.message ?? "Unable to check in");
     setToday(insertedToday as AttendanceRow);
     await load();
-    toast.success(isLate ? "Checked in (late)\nWhatsApp notification: Queued" : "Checked in\nWhatsApp notification: Queued");
+    if (evalResult.isLate) {
+      toast.warning(`Checked in (${evalResult.lateMinutes}m late for ${assignedShift.name})\nWhatsApp notification: Queued`);
+    } else {
+      toast.success(`Checked in on time for ${assignedShift.name}!\nWhatsApp notification: Queued`);
+    }
   };
 
   const checkOut = async () => {
     if (!user || !today) return;
     setBusy(true);
-
-
 
     let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
     try {
@@ -194,14 +218,9 @@ function CheckInPage() {
     }
 
     const now = new Date();
-    const { data: settings } = await supabase
-      .from("settings")
-      .select("office_end_time")
-      .limit(1)
-      .maybeSingle();
-    const isEarlyCheckout = isBeforeOfficeEnd(now, settings?.office_end_time);
-    const checkedInAt = new Date(today.check_in_time || now);
-    const hours = Math.round(((now.getTime() - checkedInAt.getTime()) / 3600000) * 100) / 100;
+    // Evaluate check-out against the employee's individually assigned shift
+    const evalResult = evaluateCheckOut(today.check_in_time, now, todayDate, assignedShift);
+
     const { data: updatedToday, error } = await supabase
       .from("attendance")
       .update({
@@ -209,8 +228,11 @@ function CheckInPage() {
         check_out_latitude: location.latitude,
         check_out_longitude: location.longitude,
         check_out_accuracy_meters: location.accuracy,
-        is_early_checkout: isEarlyCheckout,
-        work_hours: hours,
+        is_early_checkout: evalResult.isEarlyCheckout,
+        early_checkout_minutes: evalResult.earlyCheckoutMinutes,
+        work_hours: evalResult.workHours,
+        total_working_minutes: evalResult.totalWorkingMinutes,
+        overtime_minutes: evalResult.overtimeMinutes,
       })
       .eq("id", today.id)
       .select()
@@ -220,7 +242,13 @@ function CheckInPage() {
     if (error || !updatedToday) return toast.error(error?.message ?? "Unable to check out");
     setToday(updatedToday as AttendanceRow);
     await load();
-    toast.success(isEarlyCheckout ? "Checked out early\nWhatsApp notification: Queued" : "Checked out\nWhatsApp notification: Queued");
+    if (evalResult.isEarlyCheckout) {
+      toast.warning(`Checked out early (${evalResult.earlyCheckoutMinutes}m before scheduled ${formatTime12Hour(assignedShift.end_time)})\nWhatsApp notification: Queued`);
+    } else if (evalResult.overtimeMinutes > 0) {
+      toast.success(`Checked out (${evalResult.overtimeMinutes}m overtime) · ${formatWorkHours(evalResult.workHours)} worked\nWhatsApp notification: Queued`);
+    } else {
+      toast.success(`Checked out · ${formatWorkHours(evalResult.workHours)} worked\nWhatsApp notification: Queued`);
+    }
   };
 
   const lastSevenDays = buildLastSevenDays(history);
@@ -283,113 +311,261 @@ function CheckInPage() {
                       Saturday is weekly off for everyone. No attendance is required today.
                     </div>
                   </div>
-                ) : !today ? (
-                  isPastCutoff && !isAdmin ? (
-                    <div className="space-y-5 py-4 text-center">
-                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-destructive/40 bg-destructive/15 text-destructive shadow-[0_0_34px_rgba(239,68,68,.3)]">
-                        <ShieldAlert size={30} />
-                      </div>
-                      <div>
-                        <div className="inline-flex items-center gap-1.5 rounded-full border border-destructive/30 bg-destructive/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-destructive mb-2">
-                          <Lock size={12} /> Cutoff 02:00 PM · Attendance Prohibited
+                ) : (
+                  <div className="space-y-6">
+                    {/* Shift & Schedule Header Pill */}
+                    <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 backdrop-blur-sm">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                            <Timer size={20} />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Assigned Shift</span>
+                              <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-bold text-primary">
+                                {assignedShift.id}
+                              </span>
+                            </div>
+                            <div className="text-base font-bold text-foreground">{assignedShift.name}</div>
+                          </div>
                         </div>
-                        <div className="text-2xl font-bold text-foreground">Attendance Closed</div>
-                        <div className="mt-1.5 max-w-md mx-auto text-sm text-muted-foreground leading-relaxed">
-                          Daily attendance check-in after <span className="font-semibold text-foreground">02:00 PM</span> is strictly prohibited by company policy. New check-ins are not permitted for today.
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                        <Button
-                          variant="destructive"
-                          onClick={async () => {
-                            await signOut();
-                            nav({ to: "/login" });
-                          }}
-                          className="h-11 rounded-xl px-6 text-sm font-semibold gap-1.5 shadow-md shadow-destructive/20"
-                        >
-                          <LogOut size={16} /> Log out
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => setShowProhibitedDialog(true)}
-                          className="h-11 rounded-xl px-5 text-sm font-semibold border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
-                        >
-                          <ShieldAlert size={16} className="mr-1.5 text-destructive" /> View Policy Notice
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          onClick={() => nav({ to: "/my-attendance" })}
-                          className="h-11 rounded-xl px-4 text-sm text-muted-foreground hover:text-foreground"
-                        >
-                          <FileText size={16} className="mr-1.5" /> Request Correction
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-5 py-4 text-center">
-                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-foreground shadow-[0_0_34px_rgba(125,92,255,.38)]">
-                        <LogIn size={28} />
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold text-foreground">Ready to start?</div>
-                        <div className="mt-1 text-sm text-muted-foreground">
-                          Mark your attendance when you arrive at the office.
+
+                        <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                          <div className="rounded-xl border border-border bg-card/60 px-3 py-1.5">
+                            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Reporting</div>
+                            <div className="font-semibold text-foreground">{formatTime12Hour(assignedShift.start_time)}</div>
+                          </div>
+                          <div className="rounded-xl border border-border bg-card/60 px-3 py-1.5">
+                            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Closing</div>
+                            <div className="font-semibold text-foreground">{formatTime12Hour(assignedShift.end_time)}</div>
+                          </div>
+                          <div className="rounded-xl border border-border bg-card/60 px-3 py-1.5">
+                            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Grace</div>
+                            <div className="font-semibold text-foreground">{assignedShift.grace_period_mins}m</div>
+                          </div>
                         </div>
                       </div>
-                      <Button
-                        onClick={checkIn}
-                        disabled={busy}
-                        className="neon-button h-12 rounded-xl px-8 text-base"
-                      >
-                        {busy ? (
-                          <Loader2 size={18} className="mr-2 animate-spin" />
-                        ) : (
-                          <LogIn size={18} className="mr-2" />
-                        )}
-                        Check in now
-                      </Button>
                     </div>
-                  )
-                ) : !today.check_out_time ? (
-                  <div className="space-y-6 py-4 text-center">
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-success/30 bg-success/10 text-success shadow-[0_0_34px_rgba(34,197,94,.18)]">
-                      <ShieldCheck size={28} />
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-foreground">You are checked in</div>
-                      <div className="mt-2 text-sm text-muted-foreground">
-                        Started at{" "}
-                        <span className="font-semibold text-foreground">
-                          {formatTime(today.check_in_time)}
+
+                    {/* Visual Attendance Timeline */}
+                    <div className="rounded-2xl border border-border/80 bg-card/50 p-4 sm:p-5">
+                      <div className="mb-4 flex items-center justify-between text-xs">
+                        <span className="font-semibold uppercase tracking-wider text-muted-foreground">
+                          Attendance Timeline
+                        </span>
+                        <span className="text-muted-foreground">
+                          Target: {getShiftExpectedHours(assignedShift)}h duration
                         </span>
                       </div>
-                    </div>
-                    <Button
-                      onClick={checkOut}
-                      disabled={busy}
-                      variant="outline"
-                      className="h-12 rounded-xl px-8 text-base"
-                    >
-                      {busy ? (
-                        <Loader2 size={18} className="mr-2 animate-spin" />
-                      ) : (
-                        <LogOut size={18} className="mr-2" />
-                      )}
-                      Check out
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-5 py-4 text-center">
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-success/30 bg-success/10 text-success shadow-[0_0_34px_rgba(34,197,94,.18)]">
-                      <CalendarCheck2 size={28} />
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-success">Day completed</div>
-                      <div className="mt-2 text-sm text-muted-foreground">
-                        {formatTime(today.check_in_time)} to {formatTime(today.check_out_time)} ·{" "}
-                        {formatWorkHours(today.work_hours)}
+
+                      <div className="relative grid grid-cols-2 gap-4 sm:grid-cols-4">
+                        {/* Timeline Step 1: Scheduled In */}
+                        <div className="relative flex flex-col items-center rounded-xl border border-border/60 bg-card/80 p-3 text-center">
+                          <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                            <Clock3 size={15} />
+                          </div>
+                          <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Scheduled In</div>
+                          <div className="mt-0.5 text-sm font-bold text-foreground">{formatTime12Hour(assignedShift.start_time)}</div>
+                          <div className="mt-1 text-[11px] text-muted-foreground">Reporting time</div>
+                        </div>
+
+                        {/* Timeline Step 2: Actual In */}
+                        <div className={`relative flex flex-col items-center rounded-xl border p-3 text-center ${
+                          !today?.check_in_time
+                            ? "border-border/60 bg-card/40 opacity-70"
+                            : today.is_late
+                              ? "border-warning/40 bg-warning/10"
+                              : "border-success/40 bg-success/10"
+                        }`}>
+                          <div className={`mb-2 flex h-8 w-8 items-center justify-center rounded-full ${
+                            !today?.check_in_time
+                              ? "bg-muted text-muted-foreground"
+                              : today.is_late
+                                ? "bg-warning/20 text-warning"
+                                : "bg-success/20 text-success"
+                          }`}>
+                            <LogIn size={15} />
+                          </div>
+                          <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Actual In</div>
+                          <div className="mt-0.5 text-sm font-bold text-foreground">
+                            {today?.check_in_time ? format(new Date(today.check_in_time), "hh:mm a") : "—"}
+                          </div>
+                          <div className="mt-1 text-[11px]">
+                            {!today?.check_in_time ? (
+                              <span className="text-muted-foreground">Pending</span>
+                            ) : today.is_late ? (
+                              <span className="font-semibold text-warning">+{today.late_minutes ?? "Late"}m Late</span>
+                            ) : (
+                              <span className="font-semibold text-success">On Time</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Timeline Step 3: Scheduled Out */}
+                        <div className="relative flex flex-col items-center rounded-xl border border-border/60 bg-card/80 p-3 text-center">
+                          <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                            <Clock3 size={15} />
+                          </div>
+                          <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Scheduled Out</div>
+                          <div className="mt-0.5 text-sm font-bold text-foreground">{formatTime12Hour(assignedShift.end_time)}</div>
+                          <div className="mt-1 text-[11px] text-muted-foreground">Office closing</div>
+                        </div>
+
+                        {/* Timeline Step 4: Actual Out */}
+                        <div className={`relative flex flex-col items-center rounded-xl border p-3 text-center ${
+                          !today?.check_out_time
+                            ? "border-border/60 bg-card/40 opacity-70"
+                            : today.is_early_checkout
+                              ? "border-warning/40 bg-warning/10"
+                              : "border-success/40 bg-success/10"
+                        }`}>
+                          <div className={`mb-2 flex h-8 w-8 items-center justify-center rounded-full ${
+                            !today?.check_out_time
+                              ? "bg-muted text-muted-foreground"
+                              : today.is_early_checkout
+                                ? "bg-warning/20 text-warning"
+                                : "bg-success/20 text-success"
+                          }`}>
+                            <LogOut size={15} />
+                          </div>
+                          <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Actual Out</div>
+                          <div className="mt-0.5 text-sm font-bold text-foreground">
+                            {today?.check_out_time ? format(new Date(today.check_out_time), "hh:mm a") : "—"}
+                          </div>
+                          <div className="mt-1 text-[11px]">
+                            {!today?.check_out_time ? (
+                              <span className="text-muted-foreground">Pending</span>
+                            ) : today.is_early_checkout ? (
+                              <span className="font-semibold text-warning">-{today.early_checkout_minutes ?? "Early"}m Early</span>
+                            ) : (
+                              <span className="font-semibold text-success">Completed</span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
+
+                    {/* Action Controls */}
+                    {!today ? (
+                      isPastCutoff && !isAdmin ? (
+                        <div className="space-y-5 py-4 text-center">
+                          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-destructive/40 bg-destructive/15 text-destructive shadow-[0_0_34px_rgba(239,68,68,.3)]">
+                            <ShieldAlert size={30} />
+                          </div>
+                          <div>
+                            <div className="inline-flex items-center gap-1.5 rounded-full border border-destructive/30 bg-destructive/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-destructive mb-2">
+                              <Lock size={12} /> Cutoff 02:00 PM · Attendance Prohibited
+                            </div>
+                            <div className="text-2xl font-bold text-foreground">Attendance Closed</div>
+                            <div className="mt-1.5 max-w-md mx-auto text-sm text-muted-foreground leading-relaxed">
+                              Daily attendance check-in after <span className="font-semibold text-foreground">02:00 PM</span> is strictly prohibited by company policy. New check-ins are not permitted for today.
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                            <Button
+                              variant="destructive"
+                              onClick={async () => {
+                                await signOut();
+                                nav({ to: "/login" });
+                              }}
+                              className="h-11 rounded-xl px-6 text-sm font-semibold gap-1.5 shadow-md shadow-destructive/20"
+                            >
+                              <LogOut size={16} /> Log out
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setShowProhibitedDialog(true)}
+                              className="h-11 rounded-xl px-5 text-sm font-semibold border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              <ShieldAlert size={16} className="mr-1.5 text-destructive" /> View Policy Notice
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              onClick={() => nav({ to: "/my-attendance" })}
+                              className="h-11 rounded-xl px-4 text-sm text-muted-foreground hover:text-foreground"
+                            >
+                              <FileText size={16} className="mr-1.5" /> Request Correction
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-5 py-4 text-center">
+                          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-foreground shadow-[0_0_34px_rgba(125,92,255,.38)]">
+                            <LogIn size={28} />
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold text-foreground">Ready to start?</div>
+                            <div className="mt-1 text-sm text-muted-foreground">
+                              Mark your attendance for <span className="font-semibold text-foreground">{assignedShift.name}</span> (Reporting: {formatTime12Hour(assignedShift.start_time)}).
+                            </div>
+                          </div>
+                          <Button
+                            onClick={checkIn}
+                            disabled={busy}
+                            className="neon-button h-12 rounded-xl px-8 text-base"
+                          >
+                            {busy ? (
+                              <Loader2 size={18} className="mr-2 animate-spin" />
+                            ) : (
+                              <LogIn size={18} className="mr-2" />
+                            )}
+                            Check in now
+                          </Button>
+                        </div>
+                      )
+                    ) : !today.check_out_time ? (
+                      <div className="space-y-6 py-4 text-center">
+                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-success/30 bg-success/10 text-success shadow-[0_0_34px_rgba(34,197,94,.18)]">
+                          <ShieldCheck size={28} />
+                        </div>
+                        <div>
+                          <div className="text-2xl font-bold text-foreground">You are checked in</div>
+                          <div className="mt-2 text-sm text-muted-foreground">
+                            Started at{" "}
+                            <span className="font-semibold text-foreground">
+                              {formatTime(today.check_in_time)}
+                            </span>
+                            {today.is_late && (
+                              <span className="ml-2 font-semibold text-warning">
+                                ({today.late_minutes ?? "Late"}m late for {assignedShift.name})
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          onClick={checkOut}
+                          disabled={busy}
+                          variant="outline"
+                          className="h-12 rounded-xl px-8 text-base"
+                        >
+                          {busy ? (
+                            <Loader2 size={18} className="mr-2 animate-spin" />
+                          ) : (
+                            <LogOut size={18} className="mr-2" />
+                          )}
+                          Check out
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-5 py-4 text-center">
+                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-success/30 bg-success/10 text-success shadow-[0_0_34px_rgba(34,197,94,.18)]">
+                          <CalendarCheck2 size={28} />
+                        </div>
+                        <div>
+                          <div className="text-2xl font-bold text-success">Day completed</div>
+                          <div className="mt-2 text-sm text-muted-foreground">
+                            {formatTime(today.check_in_time)} to {formatTime(today.check_out_time)} ·{" "}
+                            <span className="font-semibold text-foreground">{formatWorkHours(today.work_hours)}</span>
+                          </div>
+                          {today.is_early_checkout && (
+                            <div className="mt-1 text-xs text-warning">
+                              Early checkout: {today.early_checkout_minutes ?? "Early"} mins before scheduled {formatTime12Hour(assignedShift.end_time)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
