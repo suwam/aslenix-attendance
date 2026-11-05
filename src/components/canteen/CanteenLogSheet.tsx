@@ -372,15 +372,18 @@ export function CanteenLogSheet({
                       const cellKey = `${emp.id}_${d.dateString}`;
                       const hasAte = Boolean(attendance[cellKey]);
                       const isToday = d.dateString === todayDateString;
+                      const isNowAfter2PM = new Date().getHours() >= 14;
+                      const isAfterCutoffToday = isToday && isNowAfter2PM;
 
                       // Admin can edit or toggle any day as long as period isn't locked.
-                      // Employees can ONLY TICK an unmarked day on THE SAME DAY (TODAY);
+                      // Employees can ONLY TICK an unmarked day on THE SAME DAY (TODAY) BEFORE 2:00 PM;
                       // they cannot mark past or future days, and once ticked, it cannot be changed/unchecked by employee.
                       const isCellEditable = isAdmin
                         ? !period.is_locked
-                        : (canEdit && !hasAte && !period.is_locked && isToday);
+                        : (canEdit && !hasAte && !period.is_locked && isToday && !isNowAfter2PM);
 
                       const isLockedForEmployee = !isAdmin && canEdit && hasAte;
+                      const isCutoffForEmployee = !isAdmin && canEdit && !hasAte && isAfterCutoffToday;
                       const isOtherDayForEmployee = !isAdmin && canEdit && !hasAte && !isToday;
 
                       return (
@@ -389,6 +392,8 @@ export function CanteenLogSheet({
                           onClick={() => {
                             if (isCellEditable) {
                               onToggleAttendance(emp.id, d.dateString, hasAte);
+                            } else if (isCutoffForEmployee) {
+                              toast.error("Canteen attendance after 2:00 PM is prohibited. Lunch hours have closed.");
                             } else if (isLockedForEmployee) {
                               toast.info("Attendance already recorded. Only an admin can change or uncheck it.");
                             } else if (isOtherDayForEmployee) {
@@ -400,20 +405,24 @@ export function CanteenLogSheet({
                               ? "cursor-pointer bg-emerald-50/70 hover:bg-emerald-100/90 active:bg-emerald-200"
                               : isLockedForEmployee
                                 ? "cursor-not-allowed bg-emerald-50/50"
-                                : isOtherDayForEmployee
-                                  ? "cursor-not-allowed text-neutral-300"
-                                  : "cursor-default"
+                                : isCutoffForEmployee
+                                  ? "cursor-not-allowed bg-rose-50/40 text-rose-400"
+                                  : isOtherDayForEmployee
+                                    ? "cursor-not-allowed text-neutral-300"
+                                    : "cursor-default"
                           } ${d.isSaturday ? "bg-orange-50/40" : ""} ${isToday ? "ring-1 ring-inset ring-emerald-500/30" : ""}`}
                           title={
                             isCellEditable
                               ? `Click to mark today's attendance: ${emp.name} on ${d.displayDate} (${d.nepaliDateString} BS)`
-                              : isLockedForEmployee
-                                ? "Attendance recorded (Locked: only an admin can change or uncheck it)"
-                                : isOtherDayForEmployee
-                                  ? `Employees can only mark attendance on the same day (Today). Only admins can mark ${d.displayDate}.`
-                                  : period.is_locked
-                                    ? "Period is locked"
-                                    : "Only this employee or an admin can mark attendance"
+                              : isCutoffForEmployee
+                                ? "Canteen meal attendance after 2:00 PM is prohibited. Lunch hours have closed."
+                                : isLockedForEmployee
+                                  ? "Attendance recorded (Locked: only an admin can change or uncheck it)"
+                                  : isOtherDayForEmployee
+                                    ? `Employees can only mark attendance on the same day (Today). Only admins can mark ${d.displayDate}.`
+                                    : period.is_locked
+                                      ? "Period is locked"
+                                      : "Only this employee or an admin can mark attendance"
                           }
                         >
                           <div className="flex h-full w-full min-h-[36px] items-center justify-center">
@@ -427,6 +436,10 @@ export function CanteenLogSheet({
                             ) : isCellEditable ? (
                               <span className="text-[11px] font-bold text-emerald-600/70 print:hidden">
                                 Tap
+                              </span>
+                            ) : isCutoffForEmployee ? (
+                              <span className="text-[10px] font-bold text-rose-500/80 print:hidden">
+                                Closed
                               </span>
                             ) : null}
                           </div>

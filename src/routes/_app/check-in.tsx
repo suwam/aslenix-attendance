@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -6,6 +6,14 @@ import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
 import { LiveClock } from "@/components/LiveClock";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   getVerifiedAttendanceLocation,
   preloadAttendanceLocationSettings,
@@ -22,6 +30,10 @@ import {
   ShieldCheck,
   TimerReset,
   ShieldX,
+  ShieldAlert,
+  Lock,
+  FileText,
+  AlertTriangle,
   Fingerprint,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -45,7 +57,8 @@ type AttendanceRow = {
 };
 
 function CheckInPage() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
+  const nav = useNavigate();
   const [today, setToday] = useState<AttendanceRow | null>(null);
   const [history, setHistory] = useState<AttendanceRow[]>([]);
   const [busy, setBusy] = useState(false);
@@ -53,7 +66,26 @@ function CheckInPage() {
   const todayDate = format(new Date(), "yyyy-MM-dd");
   const isWeeklyOff = isWeeklyOffDate(todayDate);
 
+  // Strict 2:00 PM (14:00) attendance cutoff: after 2 PM, check-in is prohibited
+  const isAfter2PM = () => new Date().getHours() >= 14;
+  const [isPastCutoff, setIsPastCutoff] = useState(() => isAfter2PM());
+  const [showProhibitedDialog, setShowProhibitedDialog] = useState(false);
+  const [hasAutoOpened, setHasAutoOpened] = useState(false);
 
+  useEffect(() => {
+    const updateTime = () => setIsPastCutoff(isAfter2PM());
+    updateTime();
+    const interval = setInterval(updateTime, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Automatically pop up the prohibited/lockout modal when viewing after 2:00 PM without check-in
+  useEffect(() => {
+    if (!loading && !today && !isWeeklyOff && isPastCutoff && !isAdmin && !hasAutoOpened) {
+      setShowProhibitedDialog(true);
+      setHasAutoOpened(true);
+    }
+  }, [loading, today, isWeeklyOff, isPastCutoff, isAdmin, hasAutoOpened]);
 
   const load = async () => {
     if (!user) return;
@@ -95,6 +127,13 @@ function CheckInPage() {
   const checkIn = async () => {
     if (!user) return;
     if (isWeeklyOff) return toast.info("Saturday is a weekly off. Attendance is not required.");
+
+    // Strict 2:00 PM (14:00) cutoff: attendance after 2 PM is prohibited
+    if (!isAdmin && isAfter2PM()) {
+      setShowProhibitedDialog(true);
+      return toast.error("Attendance after 2:00 PM is prohibited. Check-in is closed for today.");
+    }
+
     setBusy(true);
 
 
@@ -245,29 +284,72 @@ function CheckInPage() {
                     </div>
                   </div>
                 ) : !today ? (
-                  <div className="space-y-5 py-4 text-center">
-                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-foreground shadow-[0_0_34px_rgba(125,92,255,.38)]">
-                      <LogIn size={28} />
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-foreground">Ready to start?</div>
-                      <div className="mt-1 text-sm text-muted-foreground">
-                        Mark your attendance when you arrive at the office.
+                  isPastCutoff && !isAdmin ? (
+                    <div className="space-y-5 py-4 text-center">
+                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-destructive/40 bg-destructive/15 text-destructive shadow-[0_0_34px_rgba(239,68,68,.3)]">
+                        <ShieldAlert size={30} />
+                      </div>
+                      <div>
+                        <div className="inline-flex items-center gap-1.5 rounded-full border border-destructive/30 bg-destructive/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-destructive mb-2">
+                          <Lock size={12} /> Cutoff 02:00 PM · Attendance Prohibited
+                        </div>
+                        <div className="text-2xl font-bold text-foreground">Attendance Closed</div>
+                        <div className="mt-1.5 max-w-md mx-auto text-sm text-muted-foreground leading-relaxed">
+                          Daily attendance check-in after <span className="font-semibold text-foreground">02:00 PM</span> is strictly prohibited by company policy. New check-ins are not permitted for today.
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                        <Button
+                          variant="destructive"
+                          onClick={async () => {
+                            await signOut();
+                            nav({ to: "/login" });
+                          }}
+                          className="h-11 rounded-xl px-6 text-sm font-semibold gap-1.5 shadow-md shadow-destructive/20"
+                        >
+                          <LogOut size={16} /> Log out
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowProhibitedDialog(true)}
+                          className="h-11 rounded-xl px-5 text-sm font-semibold border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <ShieldAlert size={16} className="mr-1.5 text-destructive" /> View Policy Notice
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={() => nav({ to: "/my-attendance" })}
+                          className="h-11 rounded-xl px-4 text-sm text-muted-foreground hover:text-foreground"
+                        >
+                          <FileText size={16} className="mr-1.5" /> Request Correction
+                        </Button>
                       </div>
                     </div>
-                    <Button
-                      onClick={checkIn}
-                      disabled={busy}
-                      className="neon-button h-12 rounded-xl px-8 text-base"
-                    >
-                      {busy ? (
-                        <Loader2 size={18} className="mr-2 animate-spin" />
-                      ) : (
-                        <LogIn size={18} className="mr-2" />
-                      )}
-                      Check in now
-                    </Button>
-                  </div>
+                  ) : (
+                    <div className="space-y-5 py-4 text-center">
+                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-foreground shadow-[0_0_34px_rgba(125,92,255,.38)]">
+                        <LogIn size={28} />
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-foreground">Ready to start?</div>
+                        <div className="mt-1 text-sm text-muted-foreground">
+                          Mark your attendance when you arrive at the office.
+                        </div>
+                      </div>
+                      <Button
+                        onClick={checkIn}
+                        disabled={busy}
+                        className="neon-button h-12 rounded-xl px-8 text-base"
+                      >
+                        {busy ? (
+                          <Loader2 size={18} className="mr-2 animate-spin" />
+                        ) : (
+                          <LogIn size={18} className="mr-2" />
+                        )}
+                        Check in now
+                      </Button>
+                    </div>
+                  )
                 ) : !today.check_out_time ? (
                   <div className="space-y-6 py-4 text-center">
                     <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-success/30 bg-success/10 text-success shadow-[0_0_34px_rgba(34,197,94,.18)]">
@@ -345,6 +427,74 @@ function CheckInPage() {
           )}
         </GlassCard>
       </div>
+
+      {/* Pop-up dialog notifying employees that attendance after 2:00 PM is prohibited */}
+      <Dialog open={showProhibitedDialog} onOpenChange={setShowProhibitedDialog}>
+        <DialogContent className="max-w-md border-destructive/30 bg-background/95 backdrop-blur-xl sm:rounded-2xl">
+          <DialogHeader className="text-left space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-destructive/30 bg-destructive/15 text-destructive shadow-[0_0_24px_rgba(239,68,68,0.25)]">
+                <ShieldAlert size={26} />
+              </div>
+              <div>
+                <span className="inline-block rounded-full bg-destructive/15 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-destructive border border-destructive/25 mb-1">
+                  Access Prohibited
+                </span>
+                <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
+                  Attendance Closed After 2:00 PM
+                </DialogTitle>
+              </div>
+            </div>
+            <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
+              Daily office attendance check-in after <span className="font-bold text-foreground">02:00 PM (14:00)</span> is strictly prohibited by company policy. The check-in window for today has closed.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 rounded-xl border border-border bg-card/60 p-4 text-xs text-muted-foreground">
+            <div className="flex items-center justify-between border-b border-border/60 pb-2">
+              <span className="font-medium text-foreground">Official Cutoff Time</span>
+              <span className="font-bold text-destructive">02:00 PM (14:00)</span>
+            </div>
+            <div className="flex items-center justify-between border-b border-border/60 pb-2">
+              <span className="font-medium text-foreground">Today's Check-in Status</span>
+              <span className="font-bold text-destructive">Prohibited / Closed</span>
+            </div>
+            <div className="pt-1 text-[11px] leading-relaxed text-muted-foreground">
+              If you worked today or had an unavoidable delay, please submit an <span className="font-semibold text-foreground">Attendance Correction</span> request for Admin/HR review and approval.
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                await signOut();
+                nav({ to: "/login" });
+              }}
+              className="w-full sm:w-auto font-semibold gap-1.5 shadow-md shadow-destructive/20"
+            >
+              <LogOut size={15} /> Log out
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowProhibitedDialog(false);
+                nav({ to: "/my-attendance" });
+              }}
+              className="w-full sm:w-auto gap-1.5"
+            >
+              <FileText size={15} /> Request Correction
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setShowProhibitedDialog(false)}
+              className="w-full sm:w-auto"
+            >
+              Dismiss
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

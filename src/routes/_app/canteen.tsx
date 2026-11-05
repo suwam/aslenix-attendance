@@ -1,8 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/PageHeader";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   CanteenPeriod,
   CanteenEmployee,
@@ -13,7 +22,7 @@ import {
 import { CanteenLogSheet } from "@/components/canteen/CanteenLogSheet";
 import { CanteenAdminControls } from "@/components/canteen/CanteenAdminControls";
 import { toast } from "sonner";
-import { Loader2, Utensils, Sparkles, RotateCw } from "lucide-react";
+import { Loader2, Utensils, Sparkles, RotateCw, ShieldAlert, LogOut } from "lucide-react";
 import { addDays, parseISO, format } from "date-fns";
 import { formatNepaliDate } from "@/lib/nepali-calendar";
 import { useAppResume } from "@/lib/use-app-resume";
@@ -28,7 +37,8 @@ import {
 export const Route = createFileRoute("/_app/canteen")({ component: CanteenPage });
 
 function CanteenPage() {
-  const { profile, user, isAdmin } = useAuth();
+  const { profile, user, isAdmin, signOut } = useAuth();
+  const nav = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -43,6 +53,7 @@ function CanteenPage() {
 
   const [highlightEmployeeId, setHighlightEmployeeId] = useState<string | null>(null);
   const [showTotalColumn, setShowTotalColumn] = useState<boolean>(true);
+  const [showCanteenCutoffDialog, setShowCanteenCutoffDialog] = useState<boolean>(false);
 
   // Keep a stable ref to currentPeriod to avoid stale closures in realtime handlers & resume callbacks
   const currentPeriodRef = React.useRef<CanteenPeriod | null>(null);
@@ -279,6 +290,14 @@ function CanteenPage() {
     const todayDateString = format(new Date(), "yyyy-MM-dd");
     if (!isAdmin && dateString !== todayDateString) {
       toast.error("Employees can only mark canteen attendance for today. Only an admin can mark other days.");
+      return;
+    }
+
+    // Strict 2:00 PM (14:00) cutoff: canteen attendance after 2:00 PM is prohibited
+    const now = new Date();
+    if (!isAdmin && now.getHours() >= 14) {
+      toast.error("Canteen meal attendance after 2:00 PM is prohibited. Lunch hours have closed.");
+      setShowCanteenCutoffDialog(true);
       return;
     }
 
@@ -755,6 +774,64 @@ function CanteenPage() {
           </p>
         </div>
       )}
+
+      {/* Pop-up dialog notifying employees that canteen attendance after 2:00 PM is prohibited */}
+      <Dialog open={showCanteenCutoffDialog} onOpenChange={setShowCanteenCutoffDialog}>
+        <DialogContent className="max-w-md border-destructive/30 bg-background/95 backdrop-blur-xl sm:rounded-2xl">
+          <DialogHeader className="text-left space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-destructive/30 bg-destructive/15 text-destructive shadow-[0_0_24px_rgba(239,68,68,0.25)]">
+                <ShieldAlert size={26} />
+              </div>
+              <div>
+                <span className="inline-block rounded-full bg-destructive/15 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-destructive border border-destructive/25 mb-1">
+                  Lunch Hours Closed
+                </span>
+                <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
+                  Canteen Attendance Closed After 2:00 PM
+                </DialogTitle>
+              </div>
+            </div>
+            <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
+              Canteen meal attendance after <span className="font-bold text-foreground">02:00 PM (14:00)</span> is strictly prohibited. Official lunch hours have ended for today.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 rounded-xl border border-border bg-card/60 p-4 text-xs text-muted-foreground">
+            <div className="flex items-center justify-between border-b border-border/60 pb-2">
+              <span className="font-medium text-foreground">Canteen Cutoff Time</span>
+              <span className="font-bold text-destructive">02:00 PM (14:00)</span>
+            </div>
+            <div className="flex items-center justify-between border-b border-border/60 pb-2">
+              <span className="font-medium text-foreground">Canteen Status</span>
+              <span className="font-bold text-destructive">Closed</span>
+            </div>
+            <div className="pt-1 text-[11px] leading-relaxed text-muted-foreground">
+              If you had lunch today but were unable to mark it before 02:00 PM, please contact your administrator to record it manually.
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                await signOut();
+                nav({ to: "/login" });
+              }}
+              className="w-full sm:w-auto font-semibold gap-1.5 shadow-md shadow-destructive/20"
+            >
+              <LogOut size={15} /> Log out
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setShowCanteenCutoffDialog(false)}
+              className="w-full sm:w-auto"
+            >
+              Dismiss
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

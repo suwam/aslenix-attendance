@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Fragment, forwardRef, useEffect, useRef, useState } from "react";
+import { Fragment, forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/PageHeader";
 import { GlassCard } from "@/components/GlassCard";
@@ -27,11 +27,29 @@ import {
   formatNepaliDate,
 } from "@/lib/nepali-calendar";
 import { isWeeklyOffDate } from "@/lib/weekly-off";
+import { cn } from "@/lib/utils";
 import logoMarkUrl from "@/assets/aslenix-mark.png";
 
 export const Route = createFileRoute("/_app/admin/reports")({ component: ReportsPage });
 
-type ReportPeriod = "daily" | "weekly" | "monthly";
+type ReportPeriod = "daily" | "weekly" | "monthly" | "custom";
+type MonthlyMode = "full" | "range";
+
+function getBsMonthBoundaries(value: string) {
+  const match = /^(\d{4})-(\d{2})$/.exec(value);
+  if (!match) {
+    const today = formatBsInput();
+    return { startBs: today, endBs: today };
+  }
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  const startBs = `${year}-${String(monthIndex + 1).padStart(2, "0")}-01`;
+  const range = bsMonthInputToAdRange(value);
+  const endBs = range?.endAd
+    ? formatBsInput(range.endAd)
+    : `${year}-${String(monthIndex + 1).padStart(2, "0")}-30`;
+  return { startBs, endBs };
+}
 
 type WorkingDaySummary = {
   calendarDays: number;
@@ -57,8 +75,17 @@ const EMPTY_WORKING_DAY_SUMMARY: WorkingDaySummary = {
 
 function ReportsPage() {
   const [period, setPeriod] = useState<ReportPeriod>("daily");
+  const [monthlyMode, setMonthlyMode] = useState<MonthlyMode>("full");
   const [bsDate, setBsDate] = useState(formatBsInput());
   const [bsMonth, setBsMonth] = useState(formatBsMonthInput());
+
+  const initialBoundaries = useMemo(() => getBsMonthBoundaries(bsMonth), []);
+  const [bsStartDate, setBsStartDate] = useState(initialBoundaries.startBs);
+  const [bsEndDate, setBsEndDate] = useState(initialBoundaries.endBs);
+
+  const isCustomRange = period === "custom" || (period === "monthly" && monthlyMode === "range");
+  const isMonthlyFull = period === "monthly" && monthlyMode === "full";
+
   const date = bsInputToAdDateString(bsDate) ?? format(new Date(), "yyyy-MM-dd");
   const monthRange = bsMonthInputToAdRange(bsMonth);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -76,11 +103,31 @@ function ReportsPage() {
     "yyyy-MM-dd",
   );
   const weekEnd = format(addDays(new Date(`${weekStart}T00:00:00`), 5), "yyyy-MM-dd");
+
+  const customStartAd = bsInputToAdDateString(bsStartDate) ?? date;
+  const customEndAd = bsInputToAdDateString(bsEndDate) ?? customStartAd;
+  const [rangeStartAd, rangeEndAd] =
+    customStartAd <= customEndAd ? [customStartAd, customEndAd] : [customEndAd, customStartAd];
+  const [rangeStartBs, rangeEndBs] =
+    customStartAd <= customEndAd ? [bsStartDate, bsEndDate] : [bsEndDate, bsStartDate];
+
   const monthStart = monthRange?.startAd ?? date;
   const monthEnd = monthRange?.endAd ?? date;
-  const aggregateStart = period === "monthly" ? monthStart : weekStart;
-  const aggregateEnd = period === "monthly" ? monthEnd : weekEnd;
-  const aggregateLabel = period === "monthly" ? monthRange?.label || bsMonth : "Week";
+  const aggregateStart = isCustomRange
+    ? rangeStartAd
+    : period === "monthly"
+      ? monthStart
+      : weekStart;
+  const aggregateEnd = isCustomRange
+    ? rangeEndAd
+    : period === "monthly"
+      ? monthEnd
+      : weekEnd;
+  const aggregateLabel = isCustomRange
+    ? `${rangeStartBs} – ${rangeEndBs}`
+    : period === "monthly"
+      ? monthRange?.label || bsMonth
+      : "Week";
 
   const run = async () => {
     setLoading(true);
@@ -90,7 +137,16 @@ function ReportsPage() {
       return;
     }
     if (period === "monthly") {
-      await runAggregateReport(monthStart, monthEnd);
+      if (monthlyMode === "range") {
+        await runAggregateReport(rangeStartAd, rangeEndAd);
+      } else {
+        await runAggregateReport(monthStart, monthEnd);
+      }
+      setLoading(false);
+      return;
+    }
+    if (period === "custom") {
+      await runAggregateReport(rangeStartAd, rangeEndAd);
       setLoading(false);
       return;
     }
@@ -328,10 +384,21 @@ function ReportsPage() {
 
   useEffect(() => {
     run();
-  }, [period, date, weekStart, weekEnd, monthStart, monthEnd, statusFilter]);
+  }, [
+    period,
+    monthlyMode,
+    date,
+    weekStart,
+    weekEnd,
+    monthStart,
+    monthEnd,
+    rangeStartAd,
+    rangeEndAd,
+    statusFilter,
+  ]);
 
   const exportCSV = () => {
-    if (period === "weekly" || period === "monthly") {
+    if (period === "weekly" || period === "monthly" || period === "custom") {
       exportAggregateCSV();
       return;
     }
@@ -379,8 +446,8 @@ function ReportsPage() {
 
   const exportAggregateCSV = () => {
     const header = [
-      period === "monthly" ? "Month start" : "Week start",
-      period === "monthly" ? "Month end" : "Week end",
+      isMonthlyFull ? "Month start" : "Period start",
+      isMonthlyFull ? "Month end" : "Period end",
       "Employee",
       "Email",
       "Department",
@@ -426,7 +493,12 @@ function ReportsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `aslenix-attendance-${period}-${aggregateStart}-to-${aggregateEnd}.csv`;
+    const dateSlug = isMonthlyFull
+      ? String(monthRange?.label || bsMonth).replace(/\s+/g, "-")
+      : isCustomRange
+        ? `${rangeStartBs}-to-${rangeEndBs}`
+        : `${aggregateStart}-to-${aggregateEnd}`;
+    a.download = `aslenix-attendance-${period}-${dateSlug}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -463,8 +535,13 @@ function ReportsPage() {
         heightLeft -= 297;
       }
 
-      const dateLabel =
-        period === "monthly" ? monthRange?.label || bsMonth : period === "weekly" ? weekStart : date;
+      const dateLabel = isMonthlyFull
+        ? monthRange?.label || bsMonth
+        : period === "weekly"
+          ? weekStart
+          : period === "daily"
+            ? date
+            : `${rangeStartBs}-to-${rangeEndBs}`;
       pdf.save(`aslenix-attendance-${period}-${String(dateLabel).replace(/\s+/g, "-")}.pdf`);
       toast.success("PDF saved");
     } catch (error: any) {
@@ -541,11 +618,13 @@ function ReportsPage() {
         <div className="text-center mt-8 mb-4">
           <h2 className="text-xl font-bold uppercase underline underline-offset-4 decoration-2">
             ATTENDANCE OF{" "}
-            {period === "monthly"
+            {isMonthlyFull
               ? monthRange?.label || bsMonth
               : period === "weekly"
                 ? `${formatNepaliDate(weekStart, "DD MMMM")} - ${formatNepaliDate(weekEnd, "DD MMMM YYYY")} BS`
-                : bsDate}
+                : period === "daily"
+                  ? bsDate
+                  : `${formatNepaliDate(aggregateStart, "DD MMMM")} - ${formatNepaliDate(aggregateEnd, "DD MMMM YYYY")} BS`}
           </h2>
         </div>
       </div>
@@ -555,6 +634,7 @@ function ReportsPage() {
           ref={pdfExportRef}
           rows={rows}
           period={period}
+          isMonthlyFull={isMonthlyFull}
           bsDate={bsDate}
           date={date}
           startDate={aggregateStart}
@@ -568,7 +648,14 @@ function ReportsPage() {
       </div>
 
       <GlassCard className="mb-5 print:hidden">
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+        <div
+          className={cn(
+            "grid grid-cols-1 gap-3",
+            isCustomRange
+              ? "sm:grid-cols-2 lg:grid-cols-5"
+              : "sm:grid-cols-2 lg:grid-cols-4",
+          )}
+        >
           <div>
             <label className="text-xs text-muted-foreground">Report type</label>
             <Select value={period} onValueChange={(value) => setPeriod(value as ReportPeriod)}>
@@ -579,35 +666,144 @@ function ReportsPage() {
                 <SelectItem value="daily">Daily report</SelectItem>
                 <SelectItem value="weekly">Weekly report</SelectItem>
                 <SelectItem value="monthly">Monthly report</SelectItem>
+                <SelectItem value="custom">Custom date range</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">
-              {period === "monthly"
-                ? "Month (BS)"
-                : period === "weekly"
-                  ? "Week date (BS)"
-                  : "Date (BS)"}
-            </label>
-            {period === "monthly" ? (
-              <BSMonthInput value={bsMonth} onChange={setBsMonth} />
-            ) : (
-              <BSDateInput value={bsDate} onChange={setBsDate} />
-            )}
-            {period === "weekly" && (
-              <div className="mt-1 text-xs text-muted-foreground">
-                {formatNepaliDate(weekStart, "DD MMMM")} -{" "}
-                {formatNepaliDate(weekEnd, "DD MMMM YYYY")} BS
-              </div>
-            )}
+
             {period === "monthly" && (
-              <div className="mt-1 text-xs text-muted-foreground">
-                {monthRange?.label || bsMonth} BS · {formatNepaliDate(monthStart, "DD MMMM")} -{" "}
-                {formatNepaliDate(monthEnd, "DD MMMM YYYY")} BS
+              <div className="mt-2 inline-flex w-full rounded-lg border border-border/80 p-0.5 bg-muted/30">
+                <button
+                  type="button"
+                  onClick={() => setMonthlyMode("full")}
+                  className={cn(
+                    "flex-1 text-[11px] py-1 rounded font-semibold transition-all",
+                    monthlyMode === "full"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  Full Month
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMonthlyMode("range")}
+                  className={cn(
+                    "flex-1 text-[11px] py-1 rounded font-semibold transition-all",
+                    monthlyMode === "range"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  Select Dates
+                </button>
               </div>
             )}
           </div>
+
+          {isCustomRange ? (
+            <>
+              <div>
+                <label className="text-xs text-muted-foreground">From Date (BS)</label>
+                <BSDateInput value={bsStartDate} onChange={setBsStartDate} />
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {formatNepaliDate(rangeStartAd, "ddd DD, MMMM YYYY")} BS
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-muted-foreground">To Date (BS)</label>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const b = getBsMonthBoundaries(bsMonth);
+                        setBsStartDate(b.startBs);
+                        setBsEndDate(b.endBs);
+                      }}
+                      className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                      title="Set to full month"
+                    >
+                      Full
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const match = /^(\d{4})-(\d{2})/.exec(bsStartDate || bsMonth);
+                        if (match) {
+                          setBsStartDate(`${match[1]}-${match[2]}-01`);
+                          setBsEndDate(`${match[1]}-${match[2]}-15`);
+                        }
+                      }}
+                      className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                      title="First 15 days"
+                    >
+                      1–15
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const match = /^(\d{4})-(\d{2})/.exec(bsStartDate || bsMonth);
+                        const b = getBsMonthBoundaries(match ? `${match[1]}-${match[2]}` : bsMonth);
+                        if (match) {
+                          setBsStartDate(`${match[1]}-${match[2]}-16`);
+                          setBsEndDate(b.endBs);
+                        }
+                      }}
+                      className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                      title="16th to end of month"
+                    >
+                      16–End
+                    </button>
+                  </div>
+                </div>
+                <BSDateInput value={bsEndDate} onChange={setBsEndDate} />
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {formatNepaliDate(rangeEndAd, "ddd DD, MMMM YYYY")} BS
+                </div>
+              </div>
+            </>
+          ) : (
+            <div>
+              <label className="text-xs text-muted-foreground">
+                {period === "monthly"
+                  ? "Month (BS)"
+                  : period === "weekly"
+                    ? "Week date (BS)"
+                    : "Date (BS)"}
+              </label>
+              {period === "monthly" ? (
+                <BSMonthInput
+                  value={bsMonth}
+                  onChange={(val) => {
+                    setBsMonth(val);
+                    const b = getBsMonthBoundaries(val);
+                    setBsStartDate(b.startBs);
+                    setBsEndDate(b.endBs);
+                  }}
+                />
+              ) : (
+                <BSDateInput value={bsDate} onChange={setBsDate} />
+              )}
+              {period === "weekly" && (
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {formatNepaliDate(weekStart, "DD MMMM")} -{" "}
+                  {formatNepaliDate(weekEnd, "DD MMMM YYYY")} BS
+                </div>
+              )}
+              {period === "monthly" && (
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {monthRange?.label || bsMonth} BS · {formatNepaliDate(monthStart, "DD MMMM")} -{" "}
+                  {formatNepaliDate(monthEnd, "DD MMMM YYYY")} BS
+                </div>
+              )}
+              {period === "daily" && (
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {formatNepaliDate(date, "ddd DD, MMMM YYYY")} BS
+                </div>
+              )}
+            </div>
+          )}
+
           <div>
             <label className="text-xs text-muted-foreground">Status</label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -633,7 +829,9 @@ function ReportsPage() {
         </div>
       </GlassCard>
 
-      {period === "monthly" && <WorkingDaySummaryCard summary={workingDaySummary} />}
+      {(period === "monthly" || period === "custom") && (
+        <WorkingDaySummaryCard summary={workingDaySummary} />
+      )}
 
       <GlassCard className="p-0 overflow-hidden print:p-0 print:border-none print:bg-transparent print:shadow-none print:backdrop-blur-none">
         {loading ? (
@@ -643,15 +841,25 @@ function ReportsPage() {
         ) : rows.length === 0 ? (
           <div className="text-center py-16 text-muted-foreground">
             No records for this{" "}
-            {period === "monthly" ? "month" : period === "weekly" ? "week" : "day"}.
+            {period === "monthly"
+              ? monthlyMode === "range"
+                ? "date range"
+                : "month"
+              : period === "custom"
+                ? "date range"
+                : period === "weekly"
+                  ? "week"
+                  : "day"}
+            .
           </div>
-        ) : period === "weekly" || period === "monthly" ? (
+        ) : period === "weekly" || period === "monthly" || period === "custom" ? (
           <AggregateReportTable
             rows={rows}
             startDate={aggregateStart}
             endDate={aggregateEnd}
             label={aggregateLabel}
             period={period}
+            isMonthlyFull={isMonthlyFull}
             summary={workingDaySummary}
           />
         ) : (
@@ -849,6 +1057,7 @@ function normalizeDateOnly(value?: string | null) {
 type PrintableReportProps = {
   rows: any[];
   period: ReportPeriod;
+  isMonthlyFull: boolean;
   bsDate: string;
   date: string;
   startDate: string;
@@ -864,6 +1073,7 @@ const PrintableReport = forwardRef<HTMLDivElement, PrintableReportProps>(functio
   {
     rows,
     period,
+    isMonthlyFull,
     bsDate,
     date,
     startDate,
@@ -877,11 +1087,13 @@ const PrintableReport = forwardRef<HTMLDivElement, PrintableReportProps>(functio
   ref,
 ) {
   const title =
-    period === "monthly"
+    isMonthlyFull
       ? monthLabel
       : period === "weekly"
         ? `${formatNepaliDate(startDate, "DD MMMM")} - ${formatNepaliDate(endDate, "DD MMMM YYYY")} BS`
-        : bsDate;
+        : period === "daily"
+          ? bsDate
+          : `${formatNepaliDate(startDate, "DD MMMM")} - ${formatNepaliDate(endDate, "DD MMMM YYYY")} BS`;
 
   return (
     <div
@@ -980,7 +1192,7 @@ const PrintableReport = forwardRef<HTMLDivElement, PrintableReportProps>(functio
         </h2>
       </div>
 
-      {period === "monthly" && (
+      {(period === "monthly" || period === "custom") && (
         <div
           style={{
             display: "grid",
@@ -1021,10 +1233,11 @@ const PrintableReport = forwardRef<HTMLDivElement, PrintableReportProps>(functio
         </div>
       )}
 
-      {period === "weekly" || period === "monthly" ? (
+      {period === "weekly" || period === "monthly" || period === "custom" ? (
         <PrintableAggregateTable
           rows={rows}
           period={period}
+          isMonthlyFull={isMonthlyFull}
           startDate={startDate}
           endDate={endDate}
           label={label}
@@ -1121,6 +1334,7 @@ function PrintableDailyTable({
 function PrintableAggregateTable({
   rows,
   period,
+  isMonthlyFull,
   startDate,
   endDate,
   label,
@@ -1128,6 +1342,7 @@ function PrintableAggregateTable({
 }: {
   rows: any[];
   period: ReportPeriod;
+  isMonthlyFull: boolean;
   startDate: string;
   endDate: string;
   label: string;
@@ -1137,7 +1352,9 @@ function PrintableAggregateTable({
     <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
       <thead>
         <tr>
-          <th style={{ ...pdfThStyle, width: "15%" }}>{period === "monthly" ? "Month" : "Week"}</th>
+          <th style={{ ...pdfThStyle, width: "15%" }}>
+            {isMonthlyFull ? "Month" : period === "weekly" ? "Week" : "Period"}
+          </th>
           <th style={{ ...pdfThStyle, width: "14%" }}>Employee</th>
           <th style={{ ...pdfThStyle, width: "10%" }}>Department</th>
           <th style={{ ...pdfThStyle, width: "7%" }}>Present</th>
@@ -1154,7 +1371,7 @@ function PrintableAggregateTable({
         {rows.map((row) => (
           <tr key={row.user_id}>
             <td style={pdfTdStyle}>
-              {period === "monthly"
+              {isMonthlyFull
                 ? `${label} BS`
                 : `${formatNepaliDate(startDate, "DD MMMM")} - ${formatNepaliDate(endDate, "DD MMMM YYYY")} BS`}
             </td>
@@ -1206,6 +1423,7 @@ function AggregateReportTable({
   endDate,
   label,
   period,
+  isMonthlyFull,
   summary,
 }: {
   rows: any[];
@@ -1213,6 +1431,7 @@ function AggregateReportTable({
   endDate: string;
   label: string;
   period: ReportPeriod;
+  isMonthlyFull: boolean;
   summary: WorkingDaySummary;
 }) {
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
@@ -1222,7 +1441,9 @@ function AggregateReportTable({
       <table className="w-full text-sm">
         <thead>
           <tr className="text-left text-xs uppercase tracking-wider text-muted-foreground border-b border-border">
-            <th className="p-3">{period === "monthly" ? "Month" : "Week"}</th>
+            <th className="p-3">
+              {isMonthlyFull ? "Month" : period === "weekly" ? "Week" : "Period"}
+            </th>
             <th className="p-3">Employee</th>
             <th className="p-3">Department</th>
             <th className="p-3">Present</th>
@@ -1243,7 +1464,7 @@ function AggregateReportTable({
               <Fragment key={row.user_id}>
                 <tr className="border-b border-border/40 hover:bg-muted/20">
                   <td className="p-3">
-                    {period === "monthly"
+                    {isMonthlyFull
                       ? `${label} BS`
                       : `${formatNepaliDate(startDate, "DD MMMM")} - ${formatNepaliDate(endDate, "DD MMMM YYYY")} BS`}
                   </td>
