@@ -34,6 +34,7 @@ import {
   Search,
 } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
 import {
   Shift,
   DEFAULT_MORNING_SHIFT,
@@ -93,6 +94,7 @@ function ShiftManagementPage() {
   const [loading, setLoading] = useState(true);
   const [employeeCounts, setEmployeeCounts] = useState<Record<string, number>>({});
   const [allEmployees, setAllEmployees] = useState<any[]>([]);
+  const [employeeShiftIdsByUser, setEmployeeShiftIdsByUser] = useState<Record<string, string>>({});
 
   // Dialog states
   const [modalOpen, setModalOpen] = useState(false);
@@ -112,8 +114,9 @@ function ShiftManagementPage() {
         fetchAllShifts(),
         supabase
           .from("employee_shift_assignments")
-          .select("shift_id, user_id, status, effective_to")
-          .in("status", ["active", "temporary"]),
+          .select("shift_id, user_id, status, effective_from, effective_to")
+          .in("status", ["active", "temporary"])
+          .order("effective_from", { ascending: false }),
         supabase
           .from("profiles")
           .select("user_id, full_name, email, department, position, employee_code")
@@ -124,27 +127,26 @@ function ShiftManagementPage() {
       setShifts(shiftsData);
       setAllEmployees(profilesRes.data ?? []);
 
-      // Calculate active employee counts per shift
-      const counts: Record<string, number> = {};
-      const activeAssignments = (assignmentsRes.data ?? []).filter(
-        (a: any) => !a.effective_to || a.effective_to >= new Date().toISOString().slice(0, 10),
+      // Map each approved employee to their current shift or the default shift.
+      const today = format(new Date(), "yyyy-MM-dd");
+      const currentAssignments = (assignmentsRes.data ?? []).filter(
+        (a: any) => a.effective_from <= today && (!a.effective_to || a.effective_to >= today),
       );
-
-      activeAssignments.forEach((a: any) => {
-        counts[a.shift_id] = (counts[a.shift_id] || 0) + 1;
-      });
-
-      // Default count for shift A if not assigned
-      const assignedUserIds = new Set(activeAssignments.map((a: any) => a.user_id));
-      const unassignedCount = (profilesRes.data ?? []).filter(
-        (p: any) => !assignedUserIds.has(p.user_id),
-      ).length;
-
-      const morningShift = shiftsData.find((s) => s.code === "SHIFT_A");
-      if (morningShift && unassignedCount > 0) {
-        counts[morningShift.id] = (counts[morningShift.id] || 0) + unassignedCount;
+      const defaultShift =
+        shiftsData.find((shift) => shift.is_default) ||
+        shiftsData.find((shift) => shift.code === "SHIFT_A");
+      const shiftIdsByUser: Record<string, string> = {};
+      const counts: Record<string, number> = {};
+      for (const employee of profilesRes.data ?? []) {
+        const assignment = currentAssignments.find((a: any) => a.user_id === employee.user_id);
+        const shiftId = assignment?.shift_id ?? defaultShift?.id;
+        if (shiftId) {
+          shiftIdsByUser[employee.user_id] = shiftId;
+          counts[shiftId] = (counts[shiftId] || 0) + 1;
+        }
       }
 
+      setEmployeeShiftIdsByUser(shiftIdsByUser);
       setEmployeeCounts(counts);
     } catch (err: any) {
       toast.error(err.message || "Failed to load shift configurations");
@@ -265,6 +267,18 @@ function ShiftManagementPage() {
     const hour12 = finalHour % 12 || 12;
     return `After ${String(hour12).padStart(2, "0")}:${String(finalMinute).padStart(2, "0")} ${ampm}`;
   };
+
+  const filteredStaff = allEmployees.filter((employee) => {
+    if (employeeShiftIdsByUser[employee.user_id] !== selectedShiftForStaff?.id) return false;
+    const search = staffSearch.toLowerCase();
+    return (
+      !search ||
+      employee.full_name?.toLowerCase().includes(search) ||
+      employee.email?.toLowerCase().includes(search) ||
+      employee.department?.toLowerCase().includes(search) ||
+      employee.employee_code?.toLowerCase().includes(search)
+    );
+  });
 
   return (
     <>
@@ -729,18 +743,12 @@ function ShiftManagementPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-            {allEmployees
-              .filter((emp) => {
-                const s = staffSearch.toLowerCase();
-                return (
-                  !staffSearch ||
-                  emp.full_name?.toLowerCase().includes(s) ||
-                  emp.email?.toLowerCase().includes(s) ||
-                  emp.department?.toLowerCase().includes(s) ||
-                  emp.employee_code?.toLowerCase().includes(s)
-                );
-              })
-              .map((emp) => (
+            {filteredStaff.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                No employees assigned to this shift.
+              </p>
+            ) : (
+              filteredStaff.map((emp) => (
                 <div
                   key={emp.user_id}
                   className="flex items-center justify-between p-3 rounded-lg border border-border/60 bg-card/60 hover:bg-muted/20 text-xs"
@@ -763,7 +771,8 @@ function ShiftManagementPage() {
                     Active
                   </Badge>
                 </div>
-              ))}
+              ))
+            )}
           </div>
 
           <DialogFooter className="pt-3 border-t border-border/60">
@@ -776,4 +785,3 @@ function ShiftManagementPage() {
     </>
   );
 }
-
