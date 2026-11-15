@@ -166,7 +166,7 @@ function NotifPage() {
         </GlassCard>
       ) : (
         <div className="max-h-[calc(100dvh-18rem)] overflow-y-auto pr-2 [scrollbar-color:rgba(103,232,249,0.35)_rgba(255,255,255,0.06)] [scrollbar-width:thin]">
-          <ul className="relative space-y-3 before:absolute before:left-[1.18rem] before:top-4 before:h-[calc(100%-2rem)] before:w-px before:bg-gradient-to-b before:from-cyan-300/30 before:via-[#f1f0ee]/10 before:to-transparent">
+          <ul className="relative space-y-3 before:absolute before:left-[1.18rem] before:top-4 before:h-[calc(100%-2rem)] before:w-px before:bg-border/70">
             {rows.map((n) => (
               <NotificationTimelineItem
                 key={n.id}
@@ -303,15 +303,15 @@ function NotificationTimelineItem({
 
   return (
     <li
-      className={`group relative flex gap-4 rounded-xl border p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:bg-card ${
+      className={`group relative flex gap-4 rounded-xl border p-3 transition-all duration-200 hover:border-primary/25 hover:bg-muted/40 hover:shadow-sm ${
         !notification.is_read
-          ? "border-border bg-card shadow-[0_0_30px_rgba(103,232,249,0.08),inset_0_1px_0_rgba(255,255,255,0.08)]"
-          : "border-border bg-card opacity-80"
+          ? "border-primary/20 bg-white shadow-xs"
+          : "border-border bg-card"
       }`}
     >
       <div className="relative z-10 flex shrink-0 flex-col items-center">
         <div
-          className="flex h-10 w-10 items-center justify-center rounded-xl border shadow-[0_0_18px_currentColor]"
+          className="flex h-10 w-10 items-center justify-center rounded-xl border bg-white shadow-xs"
           style={{ color: meta.color, backgroundColor: meta.bg, borderColor: `${meta.color}42` }}
           aria-hidden="true"
         >
@@ -341,7 +341,7 @@ function NotificationTimelineItem({
                 </span>
               )}
             </div>
-            <h2 className="truncate text-sm font-bold text-muted-foreground">
+            <h2 className="truncate text-sm font-bold text-foreground">
               {notification.title}
             </h2>
             <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
@@ -406,7 +406,7 @@ function NotificationDetailDialog({
               <DialogHeader className="text-left">
                 <div className="mb-4 flex items-start gap-3">
                   <div
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border shadow-[0_0_22px_currentColor]"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border bg-white shadow-sm"
                     style={{
                       color: meta.color,
                       backgroundColor: meta.bg,

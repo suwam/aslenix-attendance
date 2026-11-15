@@ -374,8 +374,8 @@ function EmployeeDashboard() {
   const checkIn = async () => {
     if (!user) return;
     if (isWeeklyOff) return toast.info("Saturday is a weekly off. Attendance is not required.");
-    if (!isAdmin && isAttendanceCutoffPassed()) {
-      return toast.error("Attendance after 2:00 PM Nepal time is prohibited. Check-in is closed for today.");
+    if (isAttendanceCutoffPassed()) {
+      return;
     }
     setBusy(true);
     let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
@@ -475,7 +475,7 @@ function EmployeeDashboard() {
       };
     }
     if (!today) {
-      if (isCutoffPassed && !isAdmin) {
+      if (isCutoffPassed) {
         return {
           label: "Closed (Past 2:00 PM)",
           dotClass: "bg-destructive",
@@ -507,7 +507,7 @@ function EmployeeDashboard() {
       dotClass: "bg-emerald-500 animate-pulse",
       badgeClass: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
     };
-  }, [isWeeklyOff, today, isCutoffPassed, isAdmin]);
+  }, [isWeeklyOff, today, isCutoffPassed]);
 
   // Combined upcoming activities prioritized by today and urgency
   const upcomingActivities = useMemo(() => {
@@ -737,7 +737,7 @@ function EmployeeDashboard() {
             )}
             <Button
               onClick={checkIn}
-              disabled={busy || isWeeklyOff || Boolean(today) || (isCutoffPassed && !isAdmin)}
+              disabled={busy || isWeeklyOff || Boolean(today) || isCutoffPassed}
               className="neon-button flex-1 xl:flex-initial h-9 sm:h-10 rounded-xl px-5 font-bold text-xs sm:text-sm shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               <LogIn size={15} className="mr-1.5" /> Check In

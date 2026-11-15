@@ -94,7 +94,6 @@ function CheckInPage() {
   // Attendance closes at 2:00 PM Nepal time.
   const [isPastCutoff, setIsPastCutoff] = useState(() => isAttendanceCutoffPassed());
   const [showProhibitedDialog, setShowProhibitedDialog] = useState(false);
-  const [hasAutoOpened, setHasAutoOpened] = useState(false);
 
   useEffect(() => {
     const updateTime = () => setIsPastCutoff(isAttendanceCutoffPassed());
@@ -102,14 +101,6 @@ function CheckInPage() {
     const interval = setInterval(updateTime, 10000);
     return () => clearInterval(interval);
   }, []);
-
-  // Automatically pop up the prohibited/lockout modal when viewing after 2:00 PM without check-in
-  useEffect(() => {
-    if (!loading && !today && !isWeeklyOff && isPastCutoff && !isAdmin && !hasAutoOpened) {
-      setShowProhibitedDialog(true);
-      setHasAutoOpened(true);
-    }
-  }, [loading, today, isWeeklyOff, isPastCutoff, isAdmin, hasAutoOpened]);
 
   const load = async () => {
     if (!user) return;
@@ -155,9 +146,8 @@ function CheckInPage() {
     if (!user) return;
     if (isWeeklyOff) return toast.info("Saturday is a weekly off. Attendance is not required.");
 
-    if (!isAdmin && isAttendanceCutoffPassed()) {
-      setShowProhibitedDialog(true);
-      return toast.error("Attendance after 2:00 PM is prohibited. Check-in is closed for today.");
+    if (isAttendanceCutoffPassed()) {
+      return;
     }
 
     setBusy(true);
@@ -275,9 +265,8 @@ function CheckInPage() {
       <PageHeader title="Check-in" subtitle="Daily attendance" />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(380px,.95fr)]">
         <div className="space-y-6">
-          <GlassCard glow="red" className="overflow-hidden p-0">
+          <GlassCard tone="blue" className="overflow-hidden border-border p-0 shadow-sm">
             <div className="relative p-6 sm:p-8">
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_25%_10%,rgba(255,45,111,.16),transparent_30%),radial-gradient(circle_at_78%_15%,rgba(33,212,253,.12),transparent_30%)]" />
               <div className="relative">
                 <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
@@ -287,7 +276,7 @@ function CheckInPage() {
                     </div>
                     <LiveClock />
                   </div>
-                  <div className="rounded-2xl border border-border bg-card px-4 py-3 text-right">
+                  <div className="rounded-xl border border-border bg-white px-4 py-3 text-right shadow-xs">
                     <div className="text-xs uppercase tracking-wider text-muted-foreground">
                       Today
                     </div>
@@ -314,10 +303,10 @@ function CheckInPage() {
                 ) : (
                   <div className="space-y-6">
                     {/* Shift & Schedule Header Pill */}
-                    <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 backdrop-blur-sm">
+                    <div className="rounded-xl border border-border bg-white/80 p-4">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
                             <Timer size={20} />
                           </div>
                           <div>
@@ -332,15 +321,15 @@ function CheckInPage() {
                         </div>
 
                         <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                          <div className="rounded-xl border border-border bg-card/60 px-3 py-1.5">
+                          <div className="rounded-lg border border-border bg-white px-3 py-1.5">
                             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Reporting</div>
                             <div className="font-semibold text-foreground">{formatTime12Hour(assignedShift.start_time)}</div>
                           </div>
-                          <div className="rounded-xl border border-border bg-card/60 px-3 py-1.5">
+                          <div className="rounded-lg border border-border bg-white px-3 py-1.5">
                             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Closing</div>
                             <div className="font-semibold text-foreground">{formatTime12Hour(assignedShift.end_time)}</div>
                           </div>
-                          <div className="rounded-xl border border-border bg-card/60 px-3 py-1.5">
+                          <div className="rounded-lg border border-border bg-white px-3 py-1.5">
                             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Grace</div>
                             <div className="font-semibold text-foreground">{assignedShift.grace_period_mins}m</div>
                           </div>
@@ -349,7 +338,7 @@ function CheckInPage() {
                     </div>
 
                     {/* Visual Attendance Timeline */}
-                    <div className="rounded-2xl border border-border/80 bg-card/50 p-4 sm:p-5">
+                    <div className="rounded-xl border border-border bg-white/80 p-4 sm:p-5">
                       <div className="mb-4 flex items-center justify-between text-xs">
                         <span className="font-semibold uppercase tracking-wider text-muted-foreground">
                           Attendance Timeline
@@ -361,7 +350,7 @@ function CheckInPage() {
 
                       <div className="relative grid grid-cols-2 gap-4 sm:grid-cols-4">
                         {/* Timeline Step 1: Scheduled In */}
-                        <div className="relative flex flex-col items-center rounded-xl border border-border/60 bg-card/80 p-3 text-center">
+                        <div className="relative flex flex-col items-center rounded-xl border border-border bg-white p-3 text-center">
                           <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                             <Clock3 size={15} />
                           </div>
@@ -373,7 +362,7 @@ function CheckInPage() {
                         {/* Timeline Step 2: Actual In */}
                         <div className={`relative flex flex-col items-center rounded-xl border p-3 text-center ${
                           !today?.check_in_time
-                            ? "border-border/60 bg-card/40 opacity-70"
+                            ? "border-border bg-white opacity-70"
                             : today.is_late
                               ? "border-warning/40 bg-warning/10"
                               : "border-success/40 bg-success/10"
@@ -403,7 +392,7 @@ function CheckInPage() {
                         </div>
 
                         {/* Timeline Step 3: Scheduled Out */}
-                        <div className="relative flex flex-col items-center rounded-xl border border-border/60 bg-card/80 p-3 text-center">
+                        <div className="relative flex flex-col items-center rounded-xl border border-border bg-white p-3 text-center">
                           <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
                             <Clock3 size={15} />
                           </div>
@@ -415,7 +404,7 @@ function CheckInPage() {
                         {/* Timeline Step 4: Actual Out */}
                         <div className={`relative flex flex-col items-center rounded-xl border p-3 text-center ${
                           !today?.check_out_time
-                            ? "border-border/60 bg-card/40 opacity-70"
+                            ? "border-border bg-white opacity-70"
                             : today.is_early_checkout
                               ? "border-warning/40 bg-warning/10"
                               : "border-success/40 bg-success/10"
@@ -448,7 +437,7 @@ function CheckInPage() {
 
                     {/* Action Controls */}
                     {!today ? (
-                      isPastCutoff && !isAdmin ? (
+                      false && isPastCutoff ? (
                         <div className="space-y-5 py-4 text-center">
                           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-destructive/40 bg-destructive/15 text-destructive shadow-[0_0_34px_rgba(239,68,68,.3)]">
                             <ShieldAlert size={30} />
@@ -491,7 +480,7 @@ function CheckInPage() {
                         </div>
                       ) : (
                         <div className="space-y-5 py-4 text-center">
-                          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-foreground shadow-[0_0_34px_rgba(125,92,255,.38)]">
+                          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary shadow-sm">
                             <LogIn size={28} />
                           </div>
                           <div>
@@ -502,8 +491,8 @@ function CheckInPage() {
                           </div>
                           <Button
                             onClick={checkIn}
-                            disabled={busy}
-                            className="neon-button h-12 rounded-xl px-8 text-base"
+                            disabled={busy || isPastCutoff}
+                            className="h-12 rounded-xl bg-primary px-8 text-base font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
                           >
                             {busy ? (
                               <Loader2 size={18} className="mr-2 animate-spin" />
@@ -516,7 +505,7 @@ function CheckInPage() {
                       )
                     ) : !today.check_out_time ? (
                       <div className="space-y-6 py-4 text-center">
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-success/30 bg-success/10 text-success shadow-[0_0_34px_rgba(34,197,94,.18)]">
+                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-success/30 bg-success/10 text-success shadow-sm">
                           <ShieldCheck size={28} />
                         </div>
                         <div>
@@ -549,7 +538,7 @@ function CheckInPage() {
                       </div>
                     ) : (
                       <div className="space-y-5 py-4 text-center">
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-success/30 bg-success/10 text-success shadow-[0_0_34px_rgba(34,197,94,.18)]">
+                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-success/30 bg-success/10 text-success shadow-sm">
                           <CalendarCheck2 size={28} />
                         </div>
                         <div>
@@ -579,13 +568,13 @@ function CheckInPage() {
           </section>
         </div>
 
-        <GlassCard className="h-fit">
+        <GlassCard tone="mint" className="h-fit border-border shadow-sm">
           <div className="mb-5 flex items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-bold text-foreground">Past 7 days</h2>
               <p className="text-sm text-muted-foreground">Check-in, checkout, and worked hours</p>
             </div>
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-card text-primary">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
               <TimerReset size={20} />
             </div>
           </div>
@@ -685,8 +674,8 @@ function CheckInMetric({
   icon: typeof CalendarCheck2;
 }) {
   return (
-    <GlassCard className="flex items-center gap-3 p-4">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 text-foreground shadow-[0_0_22px_rgba(125,92,255,.3)]">
+    <GlassCard tone="blue" className="flex items-center gap-3 border-border p-4 shadow-xs">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
         <Icon size={18} />
       </div>
       <div className="min-w-0">

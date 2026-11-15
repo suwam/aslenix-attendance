@@ -459,7 +459,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                         }`}
                       >
                         <div className="flex items-start gap-3">
-                          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-cyan-300/25 bg-cyan-300/10 text-cyan-200 shadow-[0_0_18px_rgba(103,232,249,0.18)]">
+                          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary shadow-xs">
                             <BellDot size={16} />
                             {!item.is_read && (
                               <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border border-background bg-cyan-300" />
