@@ -37,9 +37,9 @@ function LoginPage() {
   // 3D Avatar state management
   const [avatarState, setAvatarState] = useState<AvatarAnimationState>("peek");
 
-  // Entrance choreography: Starts peeking behind the card, then smoothly emerges and waves
+  // Entrance choreography: Starts peeking behind the card, then smoothly emerges, waves, and guides the user
   useEffect(() => {
-    // Initial state is "peek" (avatar hidden behind card with head and hand peeking out)
+    // 1. Initial state is "peek" (avatar hidden behind card with head and hand peeking out)
     const entranceTimer = setTimeout(() => {
       setAvatarState("entrance");
     }, 1100);
@@ -48,13 +48,20 @@ function LoginPage() {
       setAvatarState("wave");
     }, 1800);
 
+    const guidanceTimer = setTimeout(() => {
+      setAvatarState("guidance");
+    }, 4500);
+
     const idleTimer = setTimeout(() => {
-      setAvatarState((prev) => (prev === "wave" || prev === "entrance" ? "idle" : prev));
-    }, 4800);
+      setAvatarState((prev) =>
+        prev === "wave" || prev === "entrance" || prev === "guidance" ? "idle" : prev
+      );
+    }, 7000);
 
     return () => {
       clearTimeout(entranceTimer);
       clearTimeout(waveTimer);
+      clearTimeout(guidanceTimer);
       clearTimeout(idleTimer);
     };
   }, []);
@@ -272,7 +279,7 @@ function LoginPage() {
       {/* =========================================================
           RIGHT PANEL: 3D Welcome Avatar & Login Card Stage
           ========================================================= */}
-      <div className="w-full lg:w-[54%] xl:w-[52%] min-h-screen flex items-center justify-center p-4 sm:p-8 lg:p-12 relative overflow-hidden">
+      <div className="w-full lg:w-[54%] xl:w-[52%] min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8 xl:p-12 relative overflow-hidden bg-slate-50/60 dark:bg-background">
         {/* Soft Ambient Background Glow Orbs */}
         <div
           aria-hidden
@@ -286,11 +293,11 @@ function LoginPage() {
         />
 
         {/* Combined Stage: 3D Avatar (Behind) + Login Card (Foreground) */}
-        <div className="relative flex items-center justify-center w-full max-w-xl mx-auto">
+        <div className="relative flex items-center justify-center w-full max-w-md lg:max-w-xl xl:max-w-2xl mx-auto lg:-translate-x-8 xl:-translate-x-12">
           {/* =======================================================
               3D WELCOME AVATAR (Layer Z-10: Sits behind the card)
               ======================================================= */}
-          <div className="absolute -top-12 -right-8 sm:-right-24 md:-right-36 lg:-right-44 xl:-right-52 w-[380px] sm:w-[480px] h-[480px] sm:h-[580px] z-10 pointer-events-none">
+          <div className="hidden md:block absolute top-1/2 -translate-y-1/2 -right-6 sm:-right-8 md:-right-10 lg:-right-14 xl:-right-20 w-[330px] lg:w-[370px] xl:w-[410px] h-[470px] lg:h-[510px] xl:h-[550px] z-10 pointer-events-none">
             <WelcomeAvatar3D
               state={avatarState}
               showPassword={show}
@@ -302,9 +309,9 @@ function LoginPage() {
               LOGIN CARD (Layer Z-20: Sits in front of the avatar)
               ======================================================= */}
           <ThreeDTiltCard
-            maxTilt={6}
+            maxTilt={5}
             scale={1.01}
-            glareOpacity={0.14}
+            glareOpacity={0.12}
             className="relative z-20 w-full max-w-md rounded-3xl p-7 sm:p-9 bg-card/95 border border-border/80 shadow-2xl backdrop-blur-xl"
           >
             {/* Mobile Brand Logo */}
