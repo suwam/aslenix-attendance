@@ -569,11 +569,11 @@ function EmployeeDashboard() {
   }, [meetings, holidays, notifications, activityFilter, todayDate]);
 
   return (
-    <div className="space-y-4 max-w-[1440px] mx-auto text-foreground pb-12 sm:pb-6">
+    <div className="aslenix-dashboard space-y-4 max-w-[1440px] mx-auto text-foreground pb-12 sm:pb-6">
       {/* ========================================================================= */}
       {/* ROW 1: Welcome Header with Integrated Compact Employee Profile Summary   */}
       {/* ========================================================================= */}
-      <header className="glass glass-strong rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs">
+      <header className="glass glass-strong aslenix-dashboard-card card-tone-blue rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-start sm:items-center gap-3.5 min-w-0">
             {/* Employee Avatar */}
@@ -667,7 +667,7 @@ function EmployeeDashboard() {
       {/* ========================================================================= */}
       {/* ROW 2: Full-width Today's Attendance Panel                                */}
       {/* ========================================================================= */}
-      <section className="glass rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs">
+      <section className="glass aslenix-dashboard-card card-tone-mint rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           {/* Status & Shift Information */}
           <div className="flex items-start sm:items-center gap-3.5 min-w-[270px]">
@@ -863,7 +863,7 @@ function EmployeeDashboard() {
       {/* ========================================================================= */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Left Column (60%): My Tasks */}
-        <div className="lg:col-span-7 glass rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between bg-card/90">
+        <div className="lg:col-span-7 glass aslenix-dashboard-card card-tone-rose rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-2">
               <div className="flex items-center gap-2.5">
@@ -972,7 +972,7 @@ function EmployeeDashboard() {
         </div>
 
         {/* Right Column (40%): Today's Schedule and Upcoming Activities */}
-        <div className="lg:col-span-5 glass rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between bg-card/90">
+        <div className="lg:col-span-5 glass aslenix-dashboard-card card-tone-blue rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-2">
               <div className="flex items-center gap-2.5">
@@ -1088,7 +1088,7 @@ function EmployeeDashboard() {
       {/* ========================================================================= */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Left Column (60%): Leave Request Status */}
-        <div className="lg:col-span-7 glass rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between bg-card/90">
+        <div className="lg:col-span-7 glass aslenix-dashboard-card card-tone-amber rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-2">
               <div className="flex items-center gap-2.5">
@@ -1170,7 +1170,7 @@ function EmployeeDashboard() {
         </div>
 
         {/* Right Column (40%): Recent Notifications */}
-        <div className="lg:col-span-5 glass rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between bg-card/90">
+        <div className="lg:col-span-5 glass aslenix-dashboard-card card-tone-cyan rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-2">
               <div className="flex items-center gap-2.5">
@@ -1233,7 +1233,7 @@ function EmployeeDashboard() {
       {/* ========================================================================= */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Left Column (60%): Recent Attendance History */}
-        <div className="lg:col-span-7 glass rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between bg-card/90">
+        <div className="lg:col-span-7 glass aslenix-dashboard-card card-tone-lavender rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-2">
               <div className="flex items-center gap-2.5">
@@ -1313,7 +1313,7 @@ function EmployeeDashboard() {
         </div>
 
         {/* Right Column (40%): Employee Quick Actions */}
-        <div className="lg:col-span-5 glass rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between bg-card/90">
+        <div className="lg:col-span-5 glass aslenix-dashboard-card card-tone-mint rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-3">
               <div className="flex items-center gap-2.5">

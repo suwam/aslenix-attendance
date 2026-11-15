@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useRef, useState } from "react";
 import { Link, useRouterState, useNavigate, useRouter } from "@tanstack/react-router";
 import {
   LayoutDashboard,
@@ -27,6 +27,7 @@ import {
   CreditCard,
   Utensils,
   Timer,
+  CheckCheck,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { AslenixLogo } from "@/components/AslenixLogo";
@@ -99,6 +100,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [unread, setUnread] = useState(0);
   const [messageUnread, setMessageUnread] = useState(0);
   const [recentNotifications, setRecentNotifications] = useState<NotificationPreview[]>([]);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const notificationCloseTimer = useRef<number | null>(null);
 
   const items = isAdmin ? adminNav : empNav;
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
@@ -237,6 +240,32 @@ export function AppShell({ children }: { children: ReactNode }) {
     window.dispatchEvent(new Event("notifications:changed"));
   };
 
+  const markAllNotificationsRead = async () => {
+    if (!profile || unread === 0) return;
+
+    setRecentNotifications((current) => current.map((item) => ({ ...item, is_read: true })));
+    setUnread(0);
+    await supabase
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("user_id", profile.user_id)
+      .eq("is_read", false);
+    window.dispatchEvent(new Event("notifications:changed"));
+  };
+
+  const keepNotificationsOpen = () => {
+    if (notificationCloseTimer.current !== null) {
+      window.clearTimeout(notificationCloseTimer.current);
+      notificationCloseTimer.current = null;
+    }
+    setNotificationsOpen(true);
+  };
+
+  const closeNotificationsAfterHover = () => {
+    if (notificationCloseTimer.current !== null) window.clearTimeout(notificationCloseTimer.current);
+    notificationCloseTimer.current = window.setTimeout(() => setNotificationsOpen(false), 160);
+  };
+
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
@@ -364,12 +393,14 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
           <div className="flex-1" />
-          <Popover>
+          <Popover open={notificationsOpen} onOpenChange={setNotificationsOpen}>
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="relative p-2 rounded-lg hover:bg-muted"
+                className="relative rounded-lg p-2 transition-colors hover:bg-muted focus-visible:bg-muted"
                 aria-label="Open notifications"
+                onMouseEnter={keepNotificationsOpen}
+                onMouseLeave={closeNotificationsAfterHover}
               >
                 <Bell size={18} />
                 {unread > 0 && (
@@ -384,7 +415,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             </PopoverTrigger>
             <PopoverContent
               align="end"
-              className="w-[calc(100vw-2rem)] max-w-sm overflow-hidden rounded-2xl border-border bg-background/95 p-0 shadow-[0_24px_70px_rgba(0,0,0,0.45)]"
+              onMouseEnter={keepNotificationsOpen}
+              onMouseLeave={closeNotificationsAfterHover}
+              className="w-[calc(100vw-2rem)] max-w-sm overflow-hidden rounded-2xl border border-border bg-popover p-0 text-popover-foreground shadow-[0_24px_70px_rgba(0,0,0,0.28)]"
             >
               <div className="border-b border-border bg-card px-4 py-3">
                 <div className="flex items-center justify-between gap-3">
@@ -396,9 +429,21 @@ export function AppShell({ children }: { children: ReactNode }) {
                         : "You're all caught up"}
                     </div>
                   </div>
-                  <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-cyan-100">
-                    Live
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {unread > 0 && (
+                      <button
+                        type="button"
+                        onClick={markAllNotificationsRead}
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-bold text-primary transition-colors hover:bg-primary/10 hover:text-primary focus-visible:bg-primary/10"
+                      >
+                        <CheckCheck size={14} />
+                        Mark all read
+                      </button>
+                    )}
+                    <span className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-cyan-700 dark:text-cyan-100">
+                      Live
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="max-h-80 overflow-y-auto p-2 [scrollbar-color:rgba(103,232,249,0.35)_rgba(255,255,255,0.06)] [scrollbar-width:thin]">
@@ -407,10 +452,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                     {recentNotifications.map((item) => (
                       <div
                         key={item.id}
-                        className={`rounded-xl border p-3 transition-colors ${
+                        className={`group rounded-xl border p-3 transition-all hover:-translate-y-px hover:border-primary/40 hover:bg-muted/70 hover:shadow-sm ${
                           item.is_read
-                            ? "border-border bg-card opacity-75"
-                            : "border-border bg-card shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                            ? "border-border bg-card"
+                            : "border-primary/25 bg-primary/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                         }`}
                       >
                         <div className="flex items-start gap-3">
@@ -422,7 +467,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between gap-2">
-                              <div className="truncate text-sm font-bold text-muted-foreground">
+                              <div className="truncate text-sm font-bold text-foreground">
                                 {item.title}
                               </div>
                               <time className="shrink-0 text-[10px] font-semibold text-muted-foreground">
@@ -431,14 +476,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                                 })}
                               </time>
                             </div>
-                            <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
+                            <p className="mt-1 line-clamp-2 text-xs leading-5 text-foreground/75">
                               {item.message}
                             </p>
                             {!item.is_read && (
                               <button
                                 type="button"
                                 onClick={() => markNotificationRead(item.id)}
-                                className="mt-2 rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-semibold text-muted-foreground transition-colors hover:border-border hover:bg-card hover:text-foreground"
+                                className="mt-2 inline-flex rounded-full border border-primary/30 bg-background px-2.5 py-1 text-[11px] font-semibold text-primary transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground focus-visible:border-primary focus-visible:bg-primary focus-visible:text-primary-foreground"
                               >
                                 Mark Read
                               </button>
