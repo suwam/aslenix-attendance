@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AslenixLogo } from "@/components/AslenixLogo";
-import { WelcomeAvatar3D, AvatarAnimationState } from "@/components/avatar/WelcomeAvatar3D";
+import type { AvatarAnimationState } from "@/components/avatar/WelcomeAvatar3D";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,12 @@ import {
 
 export const Route = createFileRoute("/login")({ component: LoginPage });
 
+// Keep the form bundle small: the WebGL renderer and model load after the form is usable.
+const WelcomeAvatar3D = lazy(async () => {
+  const module = await import("@/components/avatar/WelcomeAvatar3D");
+  return { default: module.WelcomeAvatar3D };
+});
+
 function LoginPage() {
   const nav = useNavigate();
   const [identifier, setIdentifier] = useState("");
@@ -23,6 +29,7 @@ function LoginPage() {
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
   const [capsLockActive, setCapsLockActive] = useState(false);
+  const [showAvatar, setShowAvatar] = useState(false);
 
   // 3D Avatar state management
   const [avatarState, setAvatarState] = useState<AvatarAnimationState>("peek");
@@ -91,6 +98,12 @@ function LoginPage() {
       clearTimeout(guidanceTimer);
       clearTimeout(idleTimer);
     };
+  }, []);
+
+  useEffect(() => {
+    // The avatar is decorative. Deferring it protects first input and paint performance.
+    const timer = window.setTimeout(() => setShowAvatar(true), 450);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const checkCapsLock = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -212,21 +225,19 @@ function LoginPage() {
         ["super_admin", "admin", "hr_manager"].includes(x)
       );
 
-      setTimeout(() => {
-        if (p?.approval_status === "pending") {
-          nav({ to: "/pending" });
-        } else if (
-          p?.is_suspended ||
-          p?.approval_status === "rejected" ||
-          p?.approval_status === "suspended"
-        ) {
-          nav({ to: "/account-locked" });
-        } else if (isAdminUser) {
-          nav({ to: "/admin" });
-        } else {
-          nav({ to: "/dashboard" });
-        }
-      }, 900);
+      if (p?.approval_status === "pending") {
+        nav({ to: "/pending" });
+      } else if (
+        p?.is_suspended ||
+        p?.approval_status === "rejected" ||
+        p?.approval_status === "suspended"
+      ) {
+        nav({ to: "/account-locked" });
+      } else if (isAdminUser) {
+        nav({ to: "/admin" });
+      } else {
+        nav({ to: "/dashboard" });
+      }
     } catch (err: any) {
       console.error("Login unexpected error:", err);
       setAvatarState("error");
@@ -259,10 +270,11 @@ function LoginPage() {
             3D HUMAN RECEPTIONIST AVATAR (Layer Z-10: Sits behind card)
             ======================================================= */}
         <div className="hidden md:block absolute -top-8 -right-28 lg:-right-36 xl:-right-44 w-[360px] lg:w-[400px] xl:w-[440px] h-[480px] z-10 pointer-events-none">
-          <WelcomeAvatar3D
-            state={avatarState}
-            showPassword={show}
-          />
+          {showAvatar && (
+            <Suspense fallback={null}>
+              <WelcomeAvatar3D state={avatarState} showPassword={show} />
+            </Suspense>
+          )}
         </div>
 
         {/* This lives in the stage layer instead of the canvas layer so the card can

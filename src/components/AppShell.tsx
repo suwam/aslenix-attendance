@@ -240,9 +240,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
-  const handleSignOut = async () => {
-    await signOut();
+  const handleSignOut = () => {
+    setLogoutDialogOpen(false);
     nav({ to: "/login" });
+    // Do not hold the next paint on the remote session-revocation request.
+    // The auth context still completes the secure Supabase sign-out in the background.
+    void signOut().catch((error) => console.error("Sign-out request failed:", error));
   };
 
   const isMessagesPage = currentPath === "/messages";
