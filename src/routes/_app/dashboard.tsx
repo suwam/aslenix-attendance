@@ -3,20 +3,20 @@ import { useEffect, useMemo, useState } from "react";
 import { useAppResume } from "@/lib/use-app-resume";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { LiveClock } from "@/components/LiveClock";
 import { Button } from "@/components/ui/button";
 import { getVerifiedAttendanceLocation } from "@/lib/attendance-location";
 import {
   ArrowRight,
   Bell,
   Calendar,
+  CalendarCheck,
   CheckCheck,
-  CheckCircle2,
   Clock,
+  ExternalLink,
+  FileText,
   LogIn,
   LogOut,
   ShieldCheck,
-  UserCheck,
   Video,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -52,6 +52,15 @@ type CalendarHoliday = {
   title: string;
   bsDate: string;
   adDate?: string;
+};
+
+type ActivityItem = {
+  id: string;
+  type: "meeting" | "holiday" | "announcement";
+  title: string;
+  timeLabel: string;
+  subLabel?: string;
+  actionUrl?: string;
 };
 
 const DEFAULT_HOLIDAYS: CalendarHoliday[] = [
@@ -98,7 +107,7 @@ function EmployeeDashboard() {
   const [meetings, setMeetings] = useState<any[]>([]);
   const [holidays, setHolidays] = useState<CalendarHoliday[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [activeActivityTab, setActiveActivityTab] = useState<"meetings" | "holidays" | "announcements">("meetings");
+  const [activityFilter, setActivityFilter] = useState<"all" | "meetings" | "holidays">("all");
   const [nowTick, setNowTick] = useState(Date.now());
   const [busy, setBusy] = useState(false);
 
@@ -382,114 +391,194 @@ function EmployeeDashboard() {
   const workedHours = liveWorkedHours(today, nowTick);
   const expectedDailyHours = getShiftExpectedHours(assignedShift);
 
-  const statusText = useMemo(() => {
-    if (isWeeklyOff) return WEEKLY_OFF_LABEL;
-    if (!today) {
-      return isCutoffPassed && !isAdmin ? "Check-in closed (after 2:00 PM)" : "Not checked in";
+  const statusConfig = useMemo(() => {
+    if (isWeeklyOff) {
+      return {
+        label: WEEKLY_OFF_LABEL,
+        dotClass: "bg-purple-500",
+        badgeClass: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800",
+      };
     }
-    if (today.check_out_time) return "Day completed";
-    if (today.is_late) return "Working · Late Arrival";
-    return "Working · On Time";
+    if (!today) {
+      if (isCutoffPassed && !isAdmin) {
+        return {
+          label: "Closed (Past 2:00 PM)",
+          dotClass: "bg-rose-500",
+          badgeClass: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800",
+        };
+      }
+      return {
+        label: "Not Checked In",
+        dotClass: "bg-slate-400",
+        badgeClass: "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
+      };
+    }
+    if (today.check_out_time) {
+      return {
+        label: today.is_early_checkout ? "Completed · Early Left" : "Day Completed",
+        dotClass: "bg-blue-500",
+        badgeClass: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800",
+      };
+    }
+    if (today.is_late) {
+      return {
+        label: "Working · Late Arrival",
+        dotClass: "bg-amber-500 animate-pulse",
+        badgeClass: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800",
+      };
+    }
+    return {
+      label: "Working · On Time",
+      dotClass: "bg-emerald-500 animate-pulse",
+      badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800",
+    };
   }, [isWeeklyOff, today, isCutoffPassed, isAdmin]);
 
+  // Combined upcoming activities
+  const upcomingActivities = useMemo<ActivityItem[]>(() => {
+    const list: ActivityItem[] = [];
+
+    // Meetings
+    if (activityFilter === "all" || activityFilter === "meetings") {
+      meetings.slice(0, 3).forEach((m) => {
+        list.push({
+          id: `meeting-${m.id}`,
+          type: "meeting",
+          title: m.title,
+          timeLabel: format(new Date(m.meeting_time), "EEE, MMM d · h:mm a"),
+          subLabel: m.location || undefined,
+          actionUrl: m.meeting_link || undefined,
+        });
+      });
+    }
+
+    // Holidays
+    if (activityFilter === "all" || activityFilter === "holidays") {
+      holidays.slice(0, 2).forEach((h) => {
+        list.push({
+          id: `holiday-${h.id}`,
+          type: "holiday",
+          title: h.title,
+          timeLabel: `${h.bsDate} BS`,
+        });
+      });
+    }
+
+    // Company notifications (if filter is "all" and space allows)
+    if (activityFilter === "all" && list.length < 3) {
+      notifications.slice(0, 3 - list.length).forEach((n) => {
+        list.push({
+          id: `notif-${n.id}`,
+          type: "announcement",
+          title: n.title,
+          timeLabel: format(new Date(n.created_at), "MMM d, yyyy"),
+          subLabel: n.message,
+        });
+      });
+    }
+
+    return list;
+  }, [meetings, holidays, notifications, activityFilter]);
+
   return (
-    <div className="space-y-4 sm:space-y-5">
-      {/* A. Welcome Header */}
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-4 max-w-[1440px] mx-auto text-[#172033] dark:text-foreground">
+      {/* 2. Compact & Elegant Enterprise Header */}
+      <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#E2E8F0] dark:border-border/60 pb-3.5">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-              {greeting}, {firstName} 👋
-            </h1>
-          </div>
-          <p className="mt-0.5 text-xs sm:text-sm text-muted-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#172033] dark:text-foreground">
+            {greeting}, {firstName}
+          </h1>
+          <p className="mt-0.5 text-xs sm:text-sm text-[#64748B] dark:text-muted-foreground">
             {profile?.position ? `${profile.position} · ` : ""}
-            {profile?.department || "ASLENIX"} · {nepaliToday} BS ({format(new Date(), "EEE, MMM d")})
+            {profile?.department || "ASLENIX Tech & Solution"} · {format(new Date(), "EEEE, MMMM d, yyyy")} ({nepaliToday} BS)
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 rounded-xl border border-border/70 bg-card/60 px-3 py-1.5 backdrop-blur-sm shadow-xs">
-            <LiveClock className="text-xs sm:text-sm font-semibold tabular-nums text-foreground" />
-          </div>
           <Link
             to="/my-attendance"
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-border/70 bg-card/60 px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#E2E8F0] dark:border-border/70 bg-white dark:bg-card px-3.5 py-1.5 text-xs font-medium text-[#172033] dark:text-foreground shadow-xs hover:bg-[#F8FAFC] dark:hover:bg-muted hover:border-[#CBD5E1] transition-colors"
           >
-            My Attendance <ArrowRight size={13} />
+            <Clock size={13} className="text-[#64748B] dark:text-muted-foreground" />
+            <span>My Attendance</span>
+            <ArrowRight size={12} className="text-[#94A3B8]" />
           </Link>
         </div>
       </header>
 
-      {/* B. Today's Attendance Card */}
-      <section className="rounded-2xl border border-border/70 bg-card/60 p-4 sm:p-5 backdrop-blur-sm shadow-xs">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          {/* Shift info and current status */}
-          <div className="flex items-start sm:items-center gap-3.5">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <ShieldCheck size={22} />
+      {/* 3. Today's Attendance - Single Horizontal Enterprise Section */}
+      <section className="bg-white dark:bg-card rounded-xl border border-[#E2E8F0] dark:border-border/70 p-4 sm:p-5 shadow-xs">
+        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+          {/* Status & Shift Information */}
+          <div className="flex items-start sm:items-center gap-3.5 min-w-[260px]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[#EEF2FF] text-[#4F46E5] dark:bg-primary/10 dark:text-primary">
+              <ShieldCheck size={20} />
             </div>
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Today's Attendance
+              <div className="flex items-center gap-2">
+                <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border", statusConfig.badgeClass)}>
+                  <span className={cn("h-1.5 w-1.5 rounded-full", statusConfig.dotClass)} />
+                  {statusConfig.label}
                 </span>
-                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                  {assignedShift.name} ({formatTime12Hour(assignedShift.start_time)} – {formatTime12Hour(assignedShift.end_time)})
-                </span>
-                {today?.is_late && (
-                  <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-semibold text-warning">
-                    Late ({today.late_minutes ?? 0}m)
-                  </span>
-                )}
-                {today?.is_early_checkout && (
-                  <span className="rounded-full bg-warning/15 px-2 py-0.5 text-[11px] font-semibold text-warning">
-                    Early Departure
+                {today?.late_minutes > 0 && today?.is_late && (
+                  <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                    +{today.late_minutes}m
                   </span>
                 )}
               </div>
-              <div className="mt-1 flex items-center gap-2">
-                <span className="text-sm sm:text-base font-bold text-foreground">{statusText}</span>
-                <span className="text-xs text-muted-foreground">· Grace: {assignedShift.grace_period_mins}m</span>
+              <div className="mt-1 text-xs text-[#64748B] dark:text-muted-foreground truncate">
+                <strong className="text-[#172033] dark:text-foreground font-semibold">{assignedShift.name}</strong> ·{" "}
+                {formatTime12Hour(assignedShift.start_time)} – {formatTime12Hour(assignedShift.end_time)} (Grace: {assignedShift.grace_period_mins}m)
               </div>
             </div>
           </div>
 
-          {/* Times and hours overview */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-4 rounded-xl border border-border/50 bg-background/50 p-2.5 sm:px-4 sm:py-2">
+          {/* Attendance Times & Total Hours Overview */}
+          <div className="grid grid-cols-3 gap-3 sm:gap-6 border-y xl:border-y-0 xl:border-x border-[#E2E8F0] dark:border-border/60 py-3 xl:py-0 xl:px-6">
             <div>
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Check In</div>
-              <div className="mt-0.5 text-xs sm:text-sm font-bold text-foreground tabular-nums">
-                {today?.check_in_time ? formatTime12Hour(today.check_in_time) : "--:--"}
+              <div className="text-[11px] font-medium text-[#64748B] dark:text-muted-foreground">Check In</div>
+              <div className="mt-0.5 text-sm sm:text-base font-semibold text-[#172033] dark:text-foreground tabular-nums">
+                {today?.check_in_time ? formatTime12Hour(today.check_in_time) : "—"}
+              </div>
+              <div className="text-[10px] text-[#94A3B8] dark:text-muted-foreground">
+                Sched: {formatTime12Hour(assignedShift.start_time)}
               </div>
             </div>
-            <div className="border-x border-border/40 px-2 sm:px-4">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Check Out</div>
-              <div className="mt-0.5 text-xs sm:text-sm font-bold text-foreground tabular-nums">
-                {today?.check_out_time ? formatTime12Hour(today.check_out_time) : today ? "Working" : "--:--"}
+
+            <div className="border-x xl:border-x-0 border-[#E2E8F0] dark:border-border/60 px-3 xl:px-0">
+              <div className="text-[11px] font-medium text-[#64748B] dark:text-muted-foreground">Check Out</div>
+              <div className="mt-0.5 text-sm sm:text-base font-semibold text-[#172033] dark:text-foreground tabular-nums">
+                {today?.check_out_time ? formatTime12Hour(today.check_out_time) : today ? (
+                  <span className="text-[#4F46E5] dark:text-primary font-medium">Working</span>
+                ) : "—"}
+              </div>
+              <div className="text-[10px] text-[#94A3B8] dark:text-muted-foreground">
+                Sched: {formatTime12Hour(assignedShift.end_time)}
               </div>
             </div>
+
             <div>
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Working Hours</div>
-              <div className="mt-0.5 text-xs sm:text-sm font-bold text-foreground tabular-nums">
-                {workedHours ? formatWorkHours(workedHours) : "0h"}
-                <span className="text-[10px] sm:text-[11px] font-normal text-muted-foreground"> / {expectedDailyHours}h</span>
+              <div className="text-[11px] font-medium text-[#64748B] dark:text-muted-foreground">Working Hours</div>
+              <div className="mt-0.5 text-sm sm:text-base font-semibold text-[#172033] dark:text-foreground tabular-nums">
+                {workedHours ? formatWorkHours(workedHours) : "0h 0m"}
+              </div>
+              <div className="text-[10px] text-[#94A3B8] dark:text-muted-foreground">
+                {expectedDailyHours}h expected
               </div>
             </div>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Primary & Secondary Action Buttons */}
+          <div className="flex items-center gap-2.5 shrink-0">
             {isAdmin && (
-              <span className="hidden xl:inline text-xs font-medium text-muted-foreground italic mr-1">
+              <span className="hidden 2xl:inline text-xs font-medium text-[#64748B] dark:text-muted-foreground italic mr-1">
                 Admin mode
               </span>
             )}
             <Button
               onClick={checkIn}
               disabled={busy || isWeeklyOff || Boolean(today) || (isCutoffPassed && !isAdmin)}
-              size="sm"
-              className="h-9 sm:h-10 rounded-xl px-4 font-semibold shadow-xs"
+              className="h-9 sm:h-10 rounded-[10px] bg-[#172554] hover:bg-[#1E293B] text-white font-medium px-4 text-xs sm:text-sm shadow-xs transition-colors"
             >
               <LogIn size={15} className="mr-1.5" /> Check In
             </Button>
@@ -497,8 +586,7 @@ function EmployeeDashboard() {
               onClick={checkOut}
               disabled={busy || !today || Boolean(today?.check_out_time)}
               variant="outline"
-              size="sm"
-              className="h-9 sm:h-10 rounded-xl px-4 font-semibold"
+              className="h-9 sm:h-10 rounded-[10px] border-[#E2E8F0] dark:border-border/70 bg-white dark:bg-card text-[#172033] dark:text-foreground hover:bg-[#F8FAFC] dark:hover:bg-muted font-medium px-4 text-xs sm:text-sm shadow-xs transition-colors"
             >
               <LogOut size={15} className="mr-1.5" /> Check Out
             </Button>
@@ -506,126 +594,134 @@ function EmployeeDashboard() {
         </div>
       </section>
 
-      {/* C. Quick Statistics (4 compact cards) */}
-      <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      {/* 4. Statistics Section (4 Consistent Enterprise Cards) */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Present Days */}
-        <div className="rounded-2xl border border-border/70 bg-card/60 p-4 backdrop-blur-sm shadow-xs flex items-center justify-between">
-          <div>
-            <div className="text-xs font-medium text-muted-foreground">Present Days</div>
-            <div className="mt-1 text-xl sm:text-2xl font-bold text-foreground tabular-nums">
-              {monthStats.present} <span className="text-xs font-normal text-muted-foreground">days</span>
-            </div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">{nepaliMonth.label} BS</div>
+        <div className="bg-white dark:bg-card rounded-xl border border-[#E2E8F0] dark:border-border/70 p-4 shadow-xs flex flex-col justify-between h-[102px]">
+          <div className="flex items-center justify-between text-[#64748B] dark:text-muted-foreground">
+            <span className="text-xs font-medium">Present Days</span>
+            <CalendarCheck size={16} className="text-[#64748B] dark:text-muted-foreground" />
           </div>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
-            <UserCheck size={20} />
+          <div>
+            <div className="text-2xl font-bold text-[#172033] dark:text-foreground tracking-tight tabular-nums">
+              {monthStats.present} <span className="text-xs font-normal text-[#64748B] dark:text-muted-foreground">days</span>
+            </div>
+            <p className="text-[11px] text-[#64748B] dark:text-muted-foreground truncate mt-0.5">
+              {nepaliMonth.label} BS · {monthStats.late > 0 ? `${monthStats.late} late arrival${monthStats.late > 1 ? "s" : ""}` : "On-time record"}
+            </p>
           </div>
         </div>
 
         {/* Pending Tasks */}
-        <div className="rounded-2xl border border-border/70 bg-card/60 p-4 backdrop-blur-sm shadow-xs flex items-center justify-between">
+        <div className="bg-white dark:bg-card rounded-xl border border-[#E2E8F0] dark:border-border/70 p-4 shadow-xs flex flex-col justify-between h-[102px]">
+          <div className="flex items-center justify-between text-[#64748B] dark:text-muted-foreground">
+            <span className="text-xs font-medium">Pending Tasks</span>
+            <Clock size={16} className="text-[#64748B] dark:text-muted-foreground" />
+          </div>
           <div>
-            <div className="text-xs font-medium text-muted-foreground">Pending Tasks</div>
-            <div className="mt-1 text-xl sm:text-2xl font-bold text-foreground tabular-nums">
+            <div className="text-2xl font-bold text-[#172033] dark:text-foreground tracking-tight tabular-nums">
               {taskStats.pending}
             </div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">
+            <p className="text-[11px] text-[#64748B] dark:text-muted-foreground truncate mt-0.5">
               {taskStats.overdue > 0 ? (
-                <span className="text-destructive font-medium">{taskStats.overdue} overdue</span>
+                <span className="text-[#DC2626] font-medium">{taskStats.overdue} overdue</span>
               ) : (
-                "In progress / review"
+                "All tasks on schedule"
               )}
-            </div>
-          </div>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
-            <Clock size={20} />
+            </p>
           </div>
         </div>
 
         {/* Completed Tasks */}
-        <div className="rounded-2xl border border-border/70 bg-card/60 p-4 backdrop-blur-sm shadow-xs flex items-center justify-between">
-          <div>
-            <div className="text-xs font-medium text-muted-foreground">Completed Tasks</div>
-            <div className="mt-1 text-xl sm:text-2xl font-bold text-foreground tabular-nums">
-              {taskStats.completed} <span className="text-xs font-normal text-muted-foreground">/ {taskStats.total}</span>
-            </div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">
-              {taskStats.total ? Math.round((taskStats.completed / taskStats.total) * 100) : 0}% completion
-            </div>
+        <div className="bg-white dark:bg-card rounded-xl border border-[#E2E8F0] dark:border-border/70 p-4 shadow-xs flex flex-col justify-between h-[102px]">
+          <div className="flex items-center justify-between text-[#64748B] dark:text-muted-foreground">
+            <span className="text-xs font-medium">Completed Tasks</span>
+            <CheckCheck size={16} className="text-[#64748B] dark:text-muted-foreground" />
           </div>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
-            <CheckCheck size={20} />
+          <div>
+            <div className="text-2xl font-bold text-[#172033] dark:text-foreground tracking-tight tabular-nums">
+              {taskStats.completed} <span className="text-xs font-normal text-[#64748B] dark:text-muted-foreground">/ {taskStats.total}</span>
+            </div>
+            <p className="text-[11px] text-[#64748B] dark:text-muted-foreground truncate mt-0.5">
+              {taskStats.total ? Math.round((taskStats.completed / taskStats.total) * 100) : 0}% completion rate
+            </p>
           </div>
         </div>
 
         {/* Available Leave Balance */}
-        <div className="rounded-2xl border border-border/70 bg-card/60 p-4 backdrop-blur-sm shadow-xs flex items-center justify-between">
-          <div>
-            <div className="text-xs font-medium text-muted-foreground">Available Leave</div>
-            <div className="mt-1 text-xl sm:text-2xl font-bold text-foreground tabular-nums">
-              {availableLeaveDays} <span className="text-xs font-normal text-muted-foreground">days</span>
-            </div>
-            <Link to="/my-leaves" className="text-[11px] text-primary hover:underline mt-0.5 inline-block">
-              Apply leave →
-            </Link>
+        <div className="bg-white dark:bg-card rounded-xl border border-[#E2E8F0] dark:border-border/70 p-4 shadow-xs flex flex-col justify-between h-[102px]">
+          <div className="flex items-center justify-between text-[#64748B] dark:text-muted-foreground">
+            <span className="text-xs font-medium">Available Leave</span>
+            <FileText size={16} className="text-[#64748B] dark:text-muted-foreground" />
           </div>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500">
-            <Calendar size={20} />
+          <div>
+            <div className="text-2xl font-bold text-[#172033] dark:text-foreground tracking-tight tabular-nums">
+              {availableLeaveDays} <span className="text-xs font-normal text-[#64748B] dark:text-muted-foreground">days</span>
+            </div>
+            <div className="flex items-center justify-between mt-0.5">
+              <span className="text-[11px] text-[#64748B] dark:text-muted-foreground">Annual remaining</span>
+              <Link to="/my-leaves" className="text-[11px] font-semibold text-[#4F46E5] hover:underline">
+                Apply →
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* D & E. Two-column Grid: My Tasks & Upcoming Activities */}
-      <section className="grid gap-4 lg:grid-cols-2">
-        {/* D. My Tasks Card */}
-        <div className="rounded-2xl border border-border/70 bg-card/60 p-4 sm:p-5 backdrop-blur-sm shadow-xs flex flex-col justify-between">
+      {/* 5. Two-column Enterprise Layout: My Tasks (60%) & Upcoming Activities (40%) */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        {/* Left Column (60%): My Tasks */}
+        <div className="lg:col-span-7 bg-white dark:bg-card rounded-xl border border-[#E2E8F0] dark:border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-3.5">
-              <div>
-                <h2 className="text-sm sm:text-base font-bold text-foreground">My Tasks</h2>
-                <p className="text-xs text-muted-foreground">Latest active tasks assigned to you</p>
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] dark:border-border/60 pb-3 mb-2">
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-[#172033] dark:text-foreground">My Tasks</h2>
+                <span className="rounded-md bg-[#F1F5F9] dark:bg-muted px-2 py-0.5 text-[11px] font-medium text-[#64748B] dark:text-muted-foreground">
+                  {focusTasks.length} active
+                </span>
               </div>
               <Link
                 to="/tasks"
-                className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                className="text-xs font-semibold text-[#4F46E5] dark:text-primary hover:underline inline-flex items-center gap-1"
               >
-                View All <ArrowRight size={13} />
+                <span>View all tasks</span>
+                <ArrowRight size={12} />
               </Link>
             </div>
 
-            <div className="space-y-2">
+            <div className="divide-y divide-[#F1F5F9] dark:divide-border/40">
               {focusTasks.length > 0 ? (
                 focusTasks.map((task) => {
                   const isOverdue = task.deadline && new Date(task.deadline).getTime() < Date.now();
                   return (
                     <div
                       key={task.id}
-                      className="group flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-background/50 p-2.5 sm:p-3 hover:border-primary/40 transition-colors"
+                      className="py-3 first:pt-1 last:pb-1 flex items-center justify-between gap-3 group"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <h3 className="truncate text-xs sm:text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                          <h3 className="text-xs sm:text-sm font-semibold text-[#172033] dark:text-foreground group-hover:text-[#4F46E5] transition-colors truncate">
                             {task.title}
                           </h3>
                           {task.priority && (
                             <span
                               className={cn(
-                                "rounded px-1.5 py-0.5 text-[9px] font-bold uppercase",
+                                "rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider shrink-0 border",
                                 task.priority === "high"
-                                  ? "bg-destructive/15 text-destructive"
+                                  ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
                                   : task.priority === "medium"
-                                    ? "bg-amber-500/15 text-amber-500"
-                                    : "bg-muted text-muted-foreground",
+                                    ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
+                                    : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
                               )}
                             >
                               {task.priority}
                             </span>
                           )}
                         </div>
-                        <div className="mt-1 flex items-center gap-3 text-[11px] text-muted-foreground">
+                        <div className="mt-1 flex items-center gap-3 text-xs text-[#64748B] dark:text-muted-foreground">
                           {task.deadline ? (
-                            <span className={cn("flex items-center gap-1", isOverdue ? "text-destructive font-medium" : "")}>
-                              <Clock size={11} />
+                            <span className={cn("inline-flex items-center gap-1", isOverdue ? "text-rose-600 dark:text-rose-400 font-medium" : "")}>
+                              <Clock size={12} />
                               {isOverdue ? "Overdue: " : "Deadline: "}
                               {format(new Date(task.deadline), "MMM d, yyyy")}
                             </span>
@@ -634,175 +730,121 @@ function EmployeeDashboard() {
                           )}
                         </div>
                       </div>
-                      <span
-                        className={cn(
-                          "rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize shrink-0",
-                          task.status === "in_progress"
-                            ? "bg-blue-500/15 text-blue-500"
-                            : task.status === "review"
-                              ? "bg-purple-500/15 text-purple-500"
-                              : "bg-muted text-muted-foreground",
-                        )}
-                      >
-                        {task.status ? task.status.replace("_", " ") : "Pending"}
-                      </span>
+                      <div className="shrink-0">
+                        <span
+                          className={cn(
+                            "rounded-md px-2 py-0.5 text-[11px] font-medium capitalize border",
+                            task.status === "in_progress"
+                              ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800"
+                              : task.status === "review"
+                                ? "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800"
+                                : "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
+                          )}
+                        >
+                          {task.status ? task.status.replace("_", " ") : "Pending"}
+                        </span>
+                      </div>
                     </div>
                   );
                 })
               ) : (
-                <div className="flex flex-col items-center justify-center py-7 text-center text-muted-foreground">
-                  <CheckCircle2 size={24} className="text-emerald-500 mb-1.5 opacity-80" />
-                  <p className="text-xs font-medium text-foreground">All caught up!</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">No pending tasks currently in your queue.</p>
+                <div className="py-6 text-center text-xs text-[#64748B] dark:text-muted-foreground">
+                  No active pending tasks assigned to you right now.
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* E. Upcoming Activities Card */}
-        <div className="rounded-2xl border border-border/70 bg-card/60 p-4 sm:p-5 backdrop-blur-sm shadow-xs flex flex-col justify-between">
+        {/* Right Column (40%): Upcoming Activities */}
+        <div className="lg:col-span-5 bg-white dark:bg-card rounded-xl border border-[#E2E8F0] dark:border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3.5">
-              <div>
-                <h2 className="text-sm sm:text-base font-bold text-foreground">Upcoming Activities</h2>
-                <p className="text-xs text-muted-foreground">Meetings, holidays, and updates</p>
+            <div className="flex items-center justify-between border-b border-[#E2E8F0] dark:border-border/60 pb-3 mb-2">
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-[#172033] dark:text-foreground">Upcoming Activities</h2>
               </div>
-
-              {/* Activity tabs */}
-              <div className="flex items-center gap-1 rounded-xl border border-border/50 bg-background/60 p-0.5 text-[11px]">
+              <div className="flex items-center gap-1 text-[11px] font-medium text-[#64748B] dark:text-muted-foreground">
                 <button
                   type="button"
-                  onClick={() => setActiveActivityTab("meetings")}
+                  onClick={() => setActivityFilter("all")}
                   className={cn(
-                    "rounded-lg px-2.5 py-1 font-medium transition-colors",
-                    activeActivityTab === "meetings"
-                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
-                      : "text-muted-foreground hover:text-foreground",
+                    "px-2 py-0.5 rounded transition-colors",
+                    activityFilter === "all" ? "bg-[#F1F5F9] dark:bg-muted text-[#172033] dark:text-foreground font-semibold" : "hover:text-[#172033]",
                   )}
                 >
-                  Meetings ({meetings.length})
+                  All
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveActivityTab("holidays")}
+                  onClick={() => setActivityFilter("meetings")}
                   className={cn(
-                    "rounded-lg px-2.5 py-1 font-medium transition-colors",
-                    activeActivityTab === "holidays"
-                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
-                      : "text-muted-foreground hover:text-foreground",
+                    "px-2 py-0.5 rounded transition-colors",
+                    activityFilter === "meetings" ? "bg-[#F1F5F9] dark:bg-muted text-[#172033] dark:text-foreground font-semibold" : "hover:text-[#172033]",
                   )}
                 >
-                  Holidays ({holidays.length})
+                  Meetings
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveActivityTab("announcements")}
+                  onClick={() => setActivityFilter("holidays")}
                   className={cn(
-                    "rounded-lg px-2.5 py-1 font-medium transition-colors",
-                    activeActivityTab === "announcements"
-                      ? "bg-primary text-primary-foreground font-semibold shadow-xs"
-                      : "text-muted-foreground hover:text-foreground",
+                    "px-2 py-0.5 rounded transition-colors",
+                    activityFilter === "holidays" ? "bg-[#F1F5F9] dark:bg-muted text-[#172033] dark:text-foreground font-semibold" : "hover:text-[#172033]",
                   )}
                 >
-                  Updates ({notifications.length})
+                  Holidays
                 </button>
               </div>
             </div>
 
-            <div className="space-y-2">
-              {activeActivityTab === "meetings" && (
-                meetings.length > 0 ? (
-                  meetings.slice(0, 3).map((meeting) => (
-                    <div
-                      key={meeting.id}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-background/50 p-2.5 sm:p-3"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <Video size={13} className="text-primary shrink-0" />
-                          <h3 className="truncate text-xs sm:text-sm font-semibold text-foreground">{meeting.title}</h3>
-                        </div>
-                        <div className="mt-1 text-[11px] text-muted-foreground flex items-center gap-1.5">
-                          <Clock size={11} />
-                          <span>{format(new Date(meeting.meeting_time), "EEE, MMM d · hh:mm a")}</span>
-                          {meeting.location && <span>· {meeting.location}</span>}
-                        </div>
-                      </div>
-                      {meeting.meeting_link && (
-                        <a
-                          href={meeting.meeting_link}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="rounded-lg bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors shrink-0"
+            <div className="divide-y divide-[#F1F5F9] dark:divide-border/40">
+              {upcomingActivities.length > 0 ? (
+                upcomingActivities.map((item) => (
+                  <div
+                    key={item.id}
+                    className="py-2.5 first:pt-1 last:pb-1 flex items-center justify-between gap-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={cn(
+                            "rounded px-1.5 py-0.2 text-[10px] font-semibold uppercase tracking-wider shrink-0 border",
+                            item.type === "meeting"
+                              ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800"
+                              : item.type === "holiday"
+                                ? "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800"
+                                : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800",
+                          )}
                         >
-                          Join
-                        </a>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-7 text-center text-muted-foreground">
-                    <Video size={22} className="mb-1.5 opacity-40" />
-                    <p className="text-xs">No upcoming meetings scheduled.</p>
-                  </div>
-                )
-              )}
-
-              {activeActivityTab === "holidays" && (
-                holidays.length > 0 ? (
-                  holidays.slice(0, 3).map((holiday) => (
-                    <div
-                      key={holiday.id}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-background/50 p-2.5 sm:p-3"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar size={13} className="text-purple-500 shrink-0" />
-                          <h3 className="truncate text-xs sm:text-sm font-semibold text-foreground">{holiday.title}</h3>
-                        </div>
-                        <div className="mt-1 text-[11px] text-muted-foreground">
-                          <span>{holiday.bsDate} BS</span>
-                        </div>
+                          {item.type}
+                        </span>
+                        <h3 className="truncate text-xs sm:text-sm font-medium text-[#172033] dark:text-foreground">
+                          {item.title}
+                        </h3>
                       </div>
-                      <span className="rounded-full bg-purple-500/10 px-2 py-0.5 text-[10px] font-semibold text-purple-500 shrink-0">
-                        Holiday
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-7 text-center text-muted-foreground">
-                    <Calendar size={22} className="mb-1.5 opacity-40" />
-                    <p className="text-xs">No upcoming company holidays.</p>
-                  </div>
-                )
-              )}
-
-              {activeActivityTab === "announcements" && (
-                notifications.length > 0 ? (
-                  notifications.slice(0, 3).map((n) => (
-                    <div
-                      key={n.id}
-                      className="flex items-start justify-between gap-3 rounded-xl border border-border/50 bg-background/50 p-2.5 sm:p-3"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <Bell size={13} className="text-amber-500 shrink-0" />
-                          <h3 className="truncate text-xs sm:text-sm font-semibold text-foreground">{n.title}</h3>
-                        </div>
-                        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{n.message}</p>
+                      <div className="mt-0.5 text-[11px] text-[#64748B] dark:text-muted-foreground flex items-center gap-1.5">
+                        <Clock size={11} className="shrink-0" />
+                        <span>{item.timeLabel}</span>
+                        {item.subLabel && <span className="truncate">· {item.subLabel}</span>}
                       </div>
-                      <span className="text-[10px] text-muted-foreground shrink-0 tabular-nums">
-                        {format(new Date(n.created_at), "MMM d")}
-                      </span>
                     </div>
-                  ))
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-7 text-center text-muted-foreground">
-                    <Bell size={22} className="mb-1.5 opacity-40" />
-                    <p className="text-xs">No recent announcements.</p>
+                    {item.actionUrl && (
+                      <a
+                        href={item.actionUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 rounded-[8px] bg-[#EEF2FF] dark:bg-primary/10 px-2 py-1 text-[11px] font-semibold text-[#4F46E5] dark:text-primary hover:bg-[#E0E7FF] transition-colors shrink-0"
+                      >
+                        <span>Join</span>
+                        <ExternalLink size={11} />
+                      </a>
+                    )}
                   </div>
-                )
+                ))
+              ) : (
+                <div className="py-6 text-center text-xs text-[#64748B] dark:text-muted-foreground">
+                  No upcoming activities scheduled.
+                </div>
               )}
             </div>
           </div>
