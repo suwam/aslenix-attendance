@@ -2,6 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AslenixLogo } from "@/components/AslenixLogo";
+import { ThreeDGlobeCanvas } from "@/components/ThreeDGlobeCanvas";
+import { ThreeDTiltCard } from "@/components/ThreeDTiltCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -19,6 +21,8 @@ import {
   ArrowRight,
   Sparkles,
   CheckCircle2,
+  Activity,
+  Zap,
 } from "lucide-react";
 
 export const Route = createFileRoute("/login")({ component: LoginPage });
@@ -72,114 +76,143 @@ function LoginPage() {
   return (
     <div className="min-h-screen w-full flex flex-col lg:flex-row bg-background overflow-x-hidden selection:bg-primary/20 selection:text-primary">
       {/* =========================================================
-          LEFT PANEL: Showcase & Branding (Desktop)
+          LEFT PANEL: Interactive 3D Showcase & Branding (Desktop)
           ========================================================= */}
-      <div className="hidden lg:flex lg:w-[50%] xl:w-[52%] relative flex-col justify-between p-10 xl:p-14 bg-[#090D16] text-white overflow-hidden border-r border-border/10 shrink-0">
+      <div className="hidden lg:flex lg:w-[50%] xl:w-[53%] relative flex-col justify-between p-10 xl:p-14 bg-[#080C16] text-white overflow-hidden border-r border-border/10 shrink-0">
         {/* Ambient Glowing Background Orbs */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -top-32 -left-24 h-[440px] w-[440px] rounded-full blur-[130px] opacity-35"
+          className="pointer-events-none absolute -top-32 -left-24 h-[460px] w-[460px] rounded-full blur-[140px] opacity-35"
           style={{ background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)" }}
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute -bottom-32 -right-24 h-[440px] w-[440px] rounded-full blur-[130px] opacity-30"
+          className="pointer-events-none absolute -bottom-32 -right-24 h-[460px] w-[460px] rounded-full blur-[140px] opacity-30"
           style={{ background: "linear-gradient(135deg, #e11d48 0%, #9333ea 100%)" }}
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute top-1/2 left-1/3 -translate-y-1/2 h-[320px] w-[320px] rounded-full blur-[110px] opacity-20"
+          className="pointer-events-none absolute top-1/2 left-1/3 -translate-y-1/2 h-[340px] w-[340px] rounded-full blur-[120px] opacity-25"
           style={{ background: "#6366f1" }}
         />
 
-        {/* Subtle Geometric Dot Grid Pattern */}
+        {/* 3D Cyber Perspective Floor Grid (Bottom half) */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)",
-            backgroundSize: "24px 24px",
-          }}
+          className="cyber-3d-grid pointer-events-none absolute bottom-0 left-0 right-0 h-[380px] opacity-40 z-0"
         />
 
-        {/* Top Header */}
-        <div className="relative z-10 flex items-center justify-between">
+        {/* Top Header Row */}
+        <div className="relative z-20 flex items-center justify-between">
           <AslenixLogo inverted size="md" />
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 backdrop-blur-md">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 backdrop-blur-md shadow-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span>All Systems Online</span>
           </div>
         </div>
 
-        {/* Hero & Highlights Content */}
-        <div className="relative z-10 my-auto py-8 xl:py-10 space-y-7 max-w-xl">
+        {/* Center 3D Interactive Globe & Content Canvas */}
+        <div className="relative z-20 my-auto py-6 xl:py-8 space-y-7 max-w-xl">
+          {/* Eyebrow & Hero Header */}
           <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-indigo-400">
-              <Sparkles size={14} className="text-indigo-400" />
-              <span>Enterprise Attendance Suite</span>
+            <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.22em] text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-3 py-1 rounded-full backdrop-blur-md">
+              <Sparkles size={13} className="text-indigo-400" />
+              <span>Interactive 3D Workspace Suite</span>
             </div>
-            <h1 className="text-3xl xl:text-4xl 2xl:text-[42px] font-extrabold tracking-tight leading-[1.18] text-white">
+            <h1 className="text-3xl xl:text-4xl 2xl:text-[44px] font-extrabold tracking-tight leading-[1.16] text-white">
               Smart Attendance, Canteen &amp; Real-Time Team Intelligence.
             </h1>
             <p className="text-sm xl:text-base text-neutral-300/85 leading-relaxed">
-              Unified workspace solution built for ASLENIX employees and administrators. Contactless QR scanning, automated Bikram Sambat canteen logging, and instant reports.
+              Unified workspace solution built for ASLENIX employees and administrators. Move your mouse to explore the real-time 3D interactive particle network.
             </p>
           </div>
 
+          {/* Interactive 3D Canvas Stage with Floating Holographic Badges */}
+          <div className="relative w-full h-[260px] xl:h-[300px] flex items-center justify-center my-2 select-none">
+            {/* The 3D Interactive Particle Globe */}
+            <ThreeDGlobeCanvas
+              className="absolute inset-0 z-10"
+              radius={140}
+              nodeCount={175}
+              primaryColor="#6366f1"
+              secondaryColor="#ec4899"
+              accentColor="#38bdf8"
+            />
+
+            {/* Floating Holographic Badge 1 (Top Left) */}
+            <div className="animate-float-slow absolute top-3 left-2 xl:left-4 z-20 flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900/85 border border-indigo-500/30 backdrop-blur-md shadow-lg shadow-indigo-500/10">
+              <div className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400">
+                <Zap size={13} />
+              </div>
+              <div className="text-left leading-tight">
+                <span className="block text-[11px] font-bold text-white">Sub-Second Scan</span>
+                <span className="block text-[9px] text-indigo-300 font-medium">99.9% Geo-Accuracy</span>
+              </div>
+            </div>
+
+            {/* Floating Holographic Badge 2 (Bottom Right) */}
+            <div className="animate-float-reverse absolute bottom-3 right-2 xl:right-4 z-20 flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900/85 border border-rose-500/30 backdrop-blur-md shadow-lg shadow-rose-500/10">
+              <div className="p-1.5 rounded-lg bg-rose-500/20 text-rose-400">
+                <Utensils size={13} />
+              </div>
+              <div className="text-left leading-tight">
+                <span className="block text-[11px] font-bold text-white">Smart Canteen BS</span>
+                <span className="block text-[9px] text-rose-300 font-medium">Auto-Synced Meals</span>
+              </div>
+            </div>
+
+            {/* Floating Holographic Badge 3 (Top Right) */}
+            <div className="animate-float-slow absolute top-4 right-3 z-20 hidden xl:flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-900/80 border border-emerald-500/30 backdrop-blur-md shadow-sm">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+              <span className="text-[10px] font-bold text-emerald-300">Live Device Mesh</span>
+            </div>
+          </div>
+
           {/* Interactive Feature Cards */}
-          <div className="space-y-3 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
             {/* Feature 1 */}
-            <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-md hover:bg-white/[0.07] hover:border-white/15 transition-all duration-200">
-              <div className="p-2.5 rounded-xl bg-indigo-500/15 border border-indigo-500/25 text-indigo-400 shrink-0">
-                <QrCode size={18} />
-              </div>
-              <div className="space-y-0.5">
-                <div className="text-sm font-bold text-white flex items-center gap-1.5">
-                  <span>Contactless QR &amp; Biometrics</span>
-                  <CheckCircle2 size={13} className="text-indigo-400" />
+            <div className="p-3 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-md hover:bg-white/[0.08] hover:border-indigo-400/30 transition-all duration-200">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400 shrink-0">
+                  <QrCode size={15} />
                 </div>
-                <p className="text-xs text-neutral-400 leading-relaxed">
-                  Sub-second mobile scan with anti-spoofing and automatic shift calculation.
-                </p>
+                <span className="text-xs font-bold text-white">QR Pass</span>
               </div>
+              <p className="text-[11px] text-neutral-400 leading-snug">
+                Contactless scan with anti-spoofing security.
+              </p>
             </div>
 
             {/* Feature 2 */}
-            <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-md hover:bg-white/[0.07] hover:border-white/15 transition-all duration-200">
-              <div className="p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/25 text-rose-400 shrink-0">
-                <Utensils size={18} />
-              </div>
-              <div className="space-y-0.5">
-                <div className="text-sm font-bold text-white flex items-center gap-1.5">
-                  <span>Automated Canteen Log Sheet</span>
-                  <CheckCircle2 size={13} className="text-rose-400" />
+            <div className="p-3 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-md hover:bg-white/[0.08] hover:border-rose-400/30 transition-all duration-200">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="p-1.5 rounded-lg bg-rose-500/20 text-rose-400 shrink-0">
+                  <Utensils size={15} />
                 </div>
-                <p className="text-xs text-neutral-400 leading-relaxed">
-                  Nepali Bikram Sambat (BS) date sync, weekend offs, and crisp PDF &amp; Excel exports.
-                </p>
+                <span className="text-xs font-bold text-white">Canteen BS</span>
               </div>
+              <p className="text-[11px] text-neutral-400 leading-snug">
+                Bikram Sambat logs &amp; one-click PDF export.
+              </p>
             </div>
 
             {/* Feature 3 */}
-            <div className="flex items-start gap-3.5 p-3.5 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-md hover:bg-white/[0.07] hover:border-white/15 transition-all duration-200">
-              <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 shrink-0">
-                <ShieldCheck size={18} />
-              </div>
-              <div className="space-y-0.5">
-                <div className="text-sm font-bold text-white flex items-center gap-1.5">
-                  <span>Multi-Tier Role Security</span>
-                  <CheckCircle2 size={13} className="text-emerald-400" />
+            <div className="p-3 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-md hover:bg-white/[0.08] hover:border-emerald-400/30 transition-all duration-200">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 shrink-0">
+                  <ShieldCheck size={15} />
                 </div>
-                <p className="text-xs text-neutral-400 leading-relaxed">
-                  Granular administrative permissions, leave approvals, and audit tracking.
-                </p>
+                <span className="text-xs font-bold text-white">Multi-Role</span>
               </div>
+              <p className="text-[11px] text-neutral-400 leading-snug">
+                Role governance, leaves &amp; audit history.
+              </p>
             </div>
           </div>
         </div>
 
         {/* Bottom Metrics & Copyright */}
-        <div className="relative z-10 pt-6 border-t border-white/10 flex items-center justify-between text-xs text-neutral-400">
+        <div className="relative z-20 pt-5 border-t border-white/10 flex items-center justify-between text-xs text-neutral-400">
           <div className="flex items-center gap-6">
             <div>
               <span className="block font-bold text-white text-sm">99.9%</span>
@@ -203,9 +236,9 @@ function LoginPage() {
       </div>
 
       {/* =========================================================
-          RIGHT PANEL: Sleek Login Form
+          RIGHT PANEL: 3D Perspective Tilt Login Card
           ========================================================= */}
-      <div className="w-full lg:w-[50%] xl:w-[48%] min-h-screen flex items-center justify-center p-6 sm:p-10 lg:p-12 relative">
+      <div className="w-full lg:w-[50%] xl:w-[47%] min-h-screen flex items-center justify-center p-6 sm:p-10 lg:p-12 relative">
         {/* Soft Ambient Background Elements for Right Panel */}
         <div
           aria-hidden
@@ -218,15 +251,20 @@ function LoginPage() {
           style={{ background: "var(--neon-blue)" }}
         />
 
-        {/* Form Container */}
-        <div className="w-full max-w-md space-y-7 relative z-10">
+        {/* 3D Perspective Tilt Card Container */}
+        <ThreeDTiltCard
+          maxTilt={7}
+          scale={1.01}
+          glareOpacity={0.16}
+          className="w-full max-w-md mx-auto rounded-3xl p-7 sm:p-9 bg-card/95 border border-border/80 shadow-2xl backdrop-blur-xl relative z-10"
+        >
           {/* Mobile Brand Logo */}
           <div className="flex lg:hidden justify-center mb-6">
             <AslenixLogo size="lg" />
           </div>
 
           {/* Form Header */}
-          <div className="space-y-2 text-center lg:text-left">
+          <div className="space-y-2 text-center lg:text-left mb-6">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
               <ShieldCheck size={12} />
               <span>Secure Workspace Portal</span>
@@ -333,7 +371,7 @@ function LoginPage() {
           </form>
 
           {/* Form Footer */}
-          <div className="space-y-4 pt-2 text-center">
+          <div className="space-y-4 pt-3 text-center">
             <p className="text-sm text-muted-foreground">
               Don't have an account?{" "}
               <Link to="/signup" className="text-primary font-bold hover:underline transition-colors">
@@ -347,7 +385,7 @@ function LoginPage() {
               <span>Protected by 256-bit SSL encryption</span>
             </div>
           </div>
-        </div>
+        </ThreeDTiltCard>
       </div>
     </div>
   );
