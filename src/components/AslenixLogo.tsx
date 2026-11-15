@@ -3,9 +3,11 @@ import logoMarkUrl from "@/assets/aslenix-mark.png";
 export function AslenixLogo({
   size = "md",
   showText = true,
+  inverted = false,
 }: {
   size?: "sm" | "md" | "lg";
   showText?: boolean;
+  inverted?: boolean;
 }) {
   const dim = size === "lg" ? "h-12 w-12" : size === "sm" ? "h-8 w-8" : "h-10 w-10";
   const text = size === "lg" ? "text-2xl" : size === "sm" ? "text-base" : "text-xl";
@@ -32,12 +34,16 @@ export function AslenixLogo({
       {showText && (
         <div className="flex flex-col leading-none items-center">
           <span
-            className={`${text} font-bold tracking-[0.1em] text-[#0F172A]`}
+            className={`${text} font-bold tracking-[0.1em] ${inverted ? "text-white" : "text-[#0F172A]"}`}
             style={{ fontFamily: "var(--font-display)" }}
           >
             ASLENIX
           </span>
-          <span className="text-[9px] font-bold text-[#1E293B] tracking-[0.2em] uppercase mt-1">
+          <span
+            className={`text-[9px] font-bold tracking-[0.2em] uppercase mt-1 ${
+              inverted ? "text-neutral-300" : "text-[#1E293B]"
+            }`}
+          >
             TECH & SOLUTION
           </span>
         </div>
