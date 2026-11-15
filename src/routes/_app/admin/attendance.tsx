@@ -734,8 +734,8 @@ function AttendancePage() {
       </GlassCard>
 
       <Dialog open={Boolean(editing)} onOpenChange={(open) => !open && setEditing(null)}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto border-border bg-background/95 p-0 shadow-[0_0_80px_-28px_oklch(0.65_0.27_22)] sm:max-w-4xl">
-          <div className="relative overflow-hidden rounded-t-xl border-b border-border bg-[radial-gradient(circle_at_20%_0%,oklch(0.65_0.27_22/.22),transparent_34%),radial-gradient(circle_at_90%_10%,oklch(0.6_0.25_260/.24),transparent_36%),oklch(1_0_0/.035)] p-5 sm:p-6">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] overflow-y-auto border-border bg-background/95 p-0 shadow-2xl sm:max-w-4xl">
+          <div className="relative overflow-hidden rounded-t-xl border-b border-border bg-gradient-to-r from-primary/10 via-background to-secondary/10 p-5 sm:p-6">
             <DialogHeader>
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
@@ -818,7 +818,7 @@ function AttendancePage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-primary/20 bg-primary/[0.035] p-4 shadow-[inset_0_1px_0_oklch(1_0_0/.08)]">
+              <div className="rounded-xl border border-primary/20 bg-primary/[0.035] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
                     <div className="text-sm font-semibold text-foreground">Corrected values</div>
@@ -876,7 +876,7 @@ function AttendancePage() {
                       onClick={() => setForm({ ...form, status })}
                       className={`rounded-xl border px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.12em] transition ${
                         form.status === status
-                          ? "border-primary/40 bg-primary/15 text-foreground shadow-[0_0_26px_-14px_oklch(0.65_0.27_22)]"
+                          ? "border-primary/40 bg-primary/15 text-foreground shadow-sm"
                           : "border-border bg-card text-muted-foreground hover:border-border hover:text-foreground"
                       }`}
                     >

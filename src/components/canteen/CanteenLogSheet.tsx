@@ -332,16 +332,16 @@ export function CanteenLogSheet({
                               style={{
                                 verticalAlign: "middle",
                                 textAlign: "center",
-                                height: "100%",
+                                backgroundColor: "#f5f5f5",
                               }}
                             >
-                              <div className="flex h-full w-full flex-col items-center justify-center py-2 select-none">
+                              <div className="inline-flex flex-col items-center justify-center py-3 select-none">
                                 {hol.label.split(" ").map((word, wIdx) => (
-                                  <div key={wIdx} className={`flex flex-col items-center ${wIdx > 0 ? "mt-2.5" : ""}`}>
+                                  <div key={wIdx} className={`flex flex-col items-center ${wIdx > 0 ? "mt-3" : ""}`}>
                                     {word.split("").map((ch, cIdx) => (
                                       <span
                                         key={cIdx}
-                                        className="text-xs sm:text-[13px] font-black leading-none py-[1.5px] text-red-600 tracking-wider"
+                                        className="text-xs sm:text-[13px] font-black leading-tight py-0.5 text-red-600 tracking-wider"
                                         style={{ fontFamily: "Arial, sans-serif", fontWeight: 900 }}
                                       >
                                         {ch}
