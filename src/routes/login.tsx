@@ -240,17 +240,17 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden bg-[#F4F6FC] dark:bg-slate-950 selection:bg-indigo-500/20 selection:text-indigo-600">
+    <div className="min-h-screen w-full flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-hidden bg-[linear-gradient(135deg,#f8fbff_0%,#f3f5ff_42%,#faf5ff_100%)] dark:bg-slate-950 selection:bg-indigo-500/20 selection:text-indigo-600">
       {/* Soft Ambient Background Glow Orbs */}
       <div
         aria-hidden
         className="pointer-events-none absolute -top-40 -left-40 h-[480px] w-[480px] rounded-full blur-[130px] opacity-25 dark:opacity-20"
-        style={{ background: "linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)" }}
+        style={{ background: "linear-gradient(135deg, #dbeafe 0%, #e0e7ff 55%, #f5dffd 100%)" }}
       />
       <div
         aria-hidden
         className="pointer-events-none absolute -bottom-40 -right-40 h-[480px] w-[480px] rounded-full blur-[130px] opacity-25 dark:opacity-20"
-        style={{ background: "linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%)" }}
+        style={{ background: "linear-gradient(135deg, #e0f2fe 0%, #ddd6fe 55%, #fae8ff 100%)" }}
       />
 
       {/* Centered Login Stage: 3D Avatar (Behind) + Login Card (Foreground) */}

@@ -33,6 +33,16 @@ import { AslenixLogo } from "@/components/AslenixLogo";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { formatDistanceToNow } from "date-fns";
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
@@ -228,12 +238,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   const handleSignOut = async () => {
-    if (window.confirm("Are you sure you want to log out?")) {
-      await signOut();
-      nav({ to: "/login" });
-    }
+    await signOut();
+    nav({ to: "/login" });
   };
 
   const isMessagesPage = currentPath === "/messages";
@@ -502,7 +511,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <button
                   onClick={() => {
                     setProfileDropdownOpen(false);
-                    handleSignOut();
+                    setLogoutDialogOpen(true);
                   }}
                   className="flex items-center gap-2 px-2 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-lg transition-colors w-full text-left"
                 >
@@ -540,6 +549,30 @@ export function AppShell({ children }: { children: ReactNode }) {
             )}
           </Link>
         )}
+
+        <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+          <AlertDialogContent className="w-[calc(100vw-2rem)] max-w-sm rounded-2xl border-slate-200 bg-white p-6 shadow-2xl dark:border-border dark:bg-card">
+            <AlertDialogHeader className="text-left">
+              <AlertDialogTitle className="text-xl font-bold text-slate-900 dark:text-foreground">
+                Log out?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-sm leading-6 text-slate-600 dark:text-muted-foreground">
+                Are you sure you want to log out of your ASLENIX account?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="mt-2 flex-row justify-end gap-3 space-x-0">
+              <AlertDialogCancel className="mt-0 rounded-xl border-slate-200 bg-white px-5 text-slate-700 hover:bg-slate-50 dark:border-border dark:bg-card dark:text-foreground">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleSignOut}
+                className="rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 px-5 text-white shadow-md shadow-indigo-500/20 hover:from-indigo-600 hover:to-violet-700"
+              >
+                Log out
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
