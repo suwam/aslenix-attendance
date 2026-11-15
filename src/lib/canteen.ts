@@ -166,7 +166,7 @@ function convertColorToRgba(colorStr: string): string {
       const alpha = d[3] / 255;
       return alpha < 1 ? `rgba(${d[0]}, ${d[1]}, ${d[2]}, ${alpha})` : `rgb(${d[0]}, ${d[1]}, ${d[2]})`;
     }
-  } catch {}
+  } catch { }
   if (colorStr.startsWith("oklch")) {
     return parseOklchMatch(colorStr);
   }
@@ -247,7 +247,7 @@ export async function exportCanteenSheetToPDF(elementId: string, filename = "Can
         (node as HTMLElement).style.display = "none";
       });
 
-      // 5. Freeze all elements inside the sheet to pure sRGB so html2canvas never encounters modern colors in computed styles
+      // 5. Freeze and normalize all elements inside the sheet for flawless PDF rasterization
       if (clonedSheet) {
         clonedSheet.style.width = "1320px";
         clonedSheet.style.minWidth = "1320px";
@@ -257,6 +257,46 @@ export async function exportCanteenSheetToPDF(elementId: string, filename = "Can
         clonedSheet.style.color = "#000000";
         clonedSheet.style.padding = "16px";
         clonedSheet.style.boxSizing = "border-box";
+
+        // Remove sticky positioning and box-shadows that cause offset glitches in html2canvas
+        clonedSheet.querySelectorAll("th, td").forEach((cell) => {
+          const el = cell as HTMLElement;
+          el.style.position = "static";
+          el.style.boxShadow = "none";
+        });
+
+        // Ensure all table rows are completely transparent and borderless
+        // (Prevents html2canvas from drawing row backgrounds and horizontal rules across multi-row spanned columns)
+        clonedSheet.querySelectorAll("tr").forEach((row) => {
+          const tr = row as HTMLElement;
+          tr.style.backgroundColor = "transparent";
+          tr.style.border = "none";
+          tr.style.outline = "none";
+          tr.style.boxShadow = "none";
+        });
+
+        // Normalize table borders
+        const table = clonedSheet.querySelector("table");
+        if (table) {
+          table.style.borderCollapse = "collapse";
+          table.style.border = "2px solid #000000";
+          table.style.backgroundColor = "#ffffff";
+        }
+
+        // Ensure multi-row spanned holiday cells stretch the full height without clipping
+        clonedSheet.querySelectorAll("td[rowspan]").forEach((cell) => {
+          const td = cell as HTMLElement;
+          td.style.backgroundColor = "#f3f4f6";
+          td.style.verticalAlign = "middle";
+          td.style.textAlign = "center";
+          const innerDiv = td.querySelector("div");
+          if (innerDiv) {
+            (innerDiv as HTMLElement).style.display = "flex";
+            (innerDiv as HTMLElement).style.flexDirection = "column";
+            (innerDiv as HTMLElement).style.justifyContent = "center";
+            (innerDiv as HTMLElement).style.alignItems = "center";
+          }
+        });
 
         const colorProperties = [
           "backgroundColor",

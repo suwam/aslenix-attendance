@@ -10,9 +10,11 @@ import {
   Bell,
   Calendar,
   CalendarCheck,
+  CalendarDays,
   CalendarPlus,
   CheckCheck,
   CheckSquare,
+  ClipboardList,
   Clock,
   ExternalLink,
   FileEdit,
@@ -20,6 +22,7 @@ import {
   LogIn,
   LogOut,
   ShieldCheck,
+  Sparkles,
   User,
   UserCheck,
   Video,
@@ -532,11 +535,11 @@ function EmployeeDashboard() {
   }, [meetings, holidays, notifications, activityFilter, todayDate]);
 
   return (
-    <div className="space-y-4 max-w-[1440px] mx-auto text-foreground">
+    <div className="space-y-4 max-w-[1440px] mx-auto text-foreground pb-12 sm:pb-6">
       {/* ========================================================================= */}
       {/* ROW 1: Welcome Header with Integrated Compact Employee Profile Summary   */}
       {/* ========================================================================= */}
-      <header className="bg-card rounded-2xl border border-border/80 p-4 sm:p-5 shadow-xs">
+      <header className="glass glass-strong rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-start sm:items-center gap-3.5 min-w-0">
             {/* Employee Avatar */}
@@ -553,11 +556,11 @@ function EmployeeDashboard() {
               >
                 {profile?.full_name
                   ? profile.full_name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .slice(0, 2)
-                      .join("")
-                      .toUpperCase()
+                    .split(" ")
+                    .map((n) => n[0])
+                    .slice(0, 2)
+                    .join("")
+                    .toUpperCase()
                   : "AS"}
               </div>
             )}
@@ -568,7 +571,7 @@ function EmployeeDashboard() {
                 <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground truncate">
                   {greeting}, {profile?.full_name || firstName}
                 </h1>
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-2 py-0.5 text-[11px] font-semibold">
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-2.5 py-0.5 text-[11px] font-semibold">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                   {profile?.approval_status === "approved" ? "Active Staff" : "Staff"}
                 </span>
@@ -583,7 +586,7 @@ function EmployeeDashboard() {
                 {profile?.employee_code && (
                   <>
                     <span>·</span>
-                    <span className="font-mono text-[11px] bg-muted px-1.5 py-0.5 rounded text-foreground font-medium border border-border/60">
+                    <span className="font-mono text-[11px] bg-muted/80 px-1.5 py-0.5 rounded text-foreground font-medium border border-border/60">
                       ID: {profile.employee_code}
                     </span>
                   </>
@@ -605,17 +608,17 @@ function EmployeeDashboard() {
           </div>
 
           {/* Quick Header Actions */}
-          <div className="flex items-center gap-2 self-start md:self-center shrink-0">
+          <div className="flex items-center gap-2 self-start md:self-center shrink-0 w-full sm:w-auto">
             <Link
               to="/profile"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs hover:bg-muted/70 hover:border-primary/40 transition-colors"
+              className="flex-1 sm:flex-initial inline-flex justify-center items-center gap-1.5 rounded-xl border border-border/80 bg-white/80 hover:bg-white px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs hover:border-primary/40 transition-all"
             >
               <User size={13} className="text-primary" />
               <span>My Profile</span>
             </Link>
             <Link
               to="/my-attendance"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs hover:bg-muted/70 hover:border-primary/40 transition-colors"
+              className="flex-1 sm:flex-initial inline-flex justify-center items-center gap-1.5 rounded-xl border border-border/80 bg-white/80 hover:bg-white px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs hover:border-primary/40 transition-all"
             >
               <Clock size={13} className="text-primary" />
               <span>Attendance History</span>
@@ -627,11 +630,11 @@ function EmployeeDashboard() {
       {/* ========================================================================= */}
       {/* ROW 2: Full-width Today's Attendance Panel                                */}
       {/* ========================================================================= */}
-      <section className="bg-card rounded-2xl border border-border/80 p-4 sm:p-5 shadow-xs">
+      <section className="glass rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           {/* Status & Shift Information */}
           <div className="flex items-start sm:items-center gap-3.5 min-w-[270px]">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary shadow-xs">
               <ShieldCheck size={20} />
             </div>
             <div className="min-w-0">
@@ -689,7 +692,7 @@ function EmployeeDashboard() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0 w-full xl:w-auto">
             {isAdmin && (
               <span className="hidden 2xl:inline text-xs font-medium text-muted-foreground italic mr-1">
                 Admin mode
@@ -698,7 +701,7 @@ function EmployeeDashboard() {
             <Button
               onClick={checkIn}
               disabled={busy || isWeeklyOff || Boolean(today) || (isCutoffPassed && !isAdmin)}
-              className="neon-button h-9 sm:h-10 rounded-xl px-5 font-bold text-xs sm:text-sm shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="neon-button flex-1 xl:flex-initial h-9 sm:h-10 rounded-xl px-5 font-bold text-xs sm:text-sm shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               <LogIn size={15} className="mr-1.5" /> Check In
             </Button>
@@ -706,7 +709,7 @@ function EmployeeDashboard() {
               onClick={checkOut}
               disabled={busy || !today || Boolean(today?.check_out_time)}
               variant="outline"
-              className="h-9 sm:h-10 rounded-xl border-border bg-card text-foreground hover:bg-muted font-semibold px-4 text-xs sm:text-sm shadow-xs transition-colors"
+              className="flex-1 xl:flex-initial h-9 sm:h-10 rounded-xl border-border/80 bg-white/80 hover:bg-white text-foreground font-semibold px-4 text-xs sm:text-sm shadow-xs transition-colors"
             >
               <LogOut size={15} className="mr-1.5" /> Check Out
             </Button>
@@ -715,89 +718,105 @@ function EmployeeDashboard() {
       </section>
 
       {/* ========================================================================= */}
-      {/* ROW 3: Four Statistics Cards (Consistent ASLENIX Theme Format)            */}
+      {/* ROW 3: Four Statistics Cards (ASLENIX Theme Format)                       */}
       {/* ========================================================================= */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Present Days */}
         <Link
           to="/my-attendance"
-          className="bg-card rounded-2xl border border-border/80 p-4 shadow-xs flex flex-col justify-between h-[104px] hover:border-primary/50 transition-colors group"
+          className="glass metric-card-green rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between transition-all hover:scale-[1.01] hover:shadow-md group"
         >
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium group-hover:text-primary transition-colors">Present Days</span>
-            <CalendarCheck size={16} className="text-emerald-500" />
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-foreground tracking-tight tabular-nums">
-              {monthStats.present} <span className="text-xs font-normal text-muted-foreground">days</span>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold group-hover:text-foreground transition-colors">
+                Present Days
+              </div>
+              <div className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight tabular-nums mt-1">
+                {monthStats.present} <span className="text-xs font-normal text-muted-foreground">days</span>
+              </div>
             </div>
-            <p className="text-[11px] text-muted-foreground truncate mt-0.5">
-              {nepaliMonth.label} BS · {monthStats.late > 0 ? `${monthStats.late} late arrival${monthStats.late > 1 ? "s" : ""}` : "On-time record"}
-            </p>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/80 bg-white/75 shadow-xs text-emerald-600 transition-transform group-hover:scale-105">
+              <CalendarCheck size={20} />
+            </div>
           </div>
+          <p className="text-[11px] text-muted-foreground truncate mt-2">
+            {nepaliMonth.label} BS · {monthStats.late > 0 ? `${monthStats.late} late arrival${monthStats.late > 1 ? "s" : ""}` : "On-time record"}
+          </p>
         </Link>
 
         {/* Pending Tasks */}
         <Link
           to="/tasks"
-          className="bg-card rounded-2xl border border-border/80 p-4 shadow-xs flex flex-col justify-between h-[104px] hover:border-primary/50 transition-colors group"
+          className="glass metric-card-amber rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between transition-all hover:scale-[1.01] hover:shadow-md group"
         >
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium group-hover:text-primary transition-colors">Pending Tasks</span>
-            <Clock size={16} className="text-amber-500" />
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-foreground tracking-tight tabular-nums">
-              {taskStats.pending}
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold group-hover:text-foreground transition-colors">
+                Pending Tasks
+              </div>
+              <div className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight tabular-nums mt-1">
+                {taskStats.pending} <span className="text-xs font-normal text-muted-foreground">tasks</span>
+              </div>
             </div>
-            <p className="text-[11px] text-muted-foreground truncate mt-0.5">
-              {taskStats.overdue > 0 ? (
-                <span className="text-destructive font-semibold">{taskStats.overdue} overdue</span>
-              ) : (
-                "All tasks on schedule"
-              )}
-            </p>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/80 bg-white/75 shadow-xs text-amber-600 transition-transform group-hover:scale-105">
+              <Clock size={20} />
+            </div>
           </div>
+          <p className="text-[11px] text-muted-foreground truncate mt-2">
+            {taskStats.overdue > 0 ? (
+              <span className="text-destructive font-semibold">{taskStats.overdue} overdue</span>
+            ) : (
+              "All tasks on schedule"
+            )}
+          </p>
         </Link>
 
         {/* Completed Tasks */}
         <Link
           to="/tasks"
-          className="bg-card rounded-2xl border border-border/80 p-4 shadow-xs flex flex-col justify-between h-[104px] hover:border-primary/50 transition-colors group"
+          className="glass metric-card-blue rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between transition-all hover:scale-[1.01] hover:shadow-md group"
         >
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium group-hover:text-primary transition-colors">Completed Tasks</span>
-            <CheckCheck size={16} className="text-primary" />
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-foreground tracking-tight tabular-nums">
-              {taskStats.completed} <span className="text-xs font-normal text-muted-foreground">/ {taskStats.total}</span>
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold group-hover:text-foreground transition-colors">
+                Completed Tasks
+              </div>
+              <div className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight tabular-nums mt-1">
+                {taskStats.completed} <span className="text-xs font-normal text-muted-foreground">/ {taskStats.total}</span>
+              </div>
             </div>
-            <p className="text-[11px] text-muted-foreground truncate mt-0.5">
-              {taskStats.total ? Math.round((taskStats.completed / taskStats.total) * 100) : 0}% completion rate
-            </p>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/80 bg-white/75 shadow-xs text-primary transition-transform group-hover:scale-105">
+              <CheckCheck size={20} />
+            </div>
           </div>
+          <p className="text-[11px] text-muted-foreground truncate mt-2">
+            {taskStats.total ? Math.round((taskStats.completed / taskStats.total) * 100) : 0}% completion rate
+          </p>
         </Link>
 
         {/* Available Leave Balance */}
         <Link
           to="/my-leaves"
-          className="bg-card rounded-2xl border border-border/80 p-4 shadow-xs flex flex-col justify-between h-[104px] hover:border-primary/50 transition-colors group"
+          className="glass card-tone-lavender rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between transition-all hover:scale-[1.01] hover:shadow-md group"
         >
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-medium group-hover:text-primary transition-colors">Available Leave</span>
-            <FileText size={16} className="text-purple-500" />
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold group-hover:text-foreground transition-colors">
+                Available Leave
+              </div>
+              <div className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight tabular-nums mt-1">
+                {availableLeaveDays} <span className="text-xs font-normal text-muted-foreground">days</span>
+              </div>
+            </div>
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/80 bg-white/75 shadow-xs text-purple-600 transition-transform group-hover:scale-105">
+              <FileText size={20} />
+            </div>
           </div>
-          <div>
-            <div className="text-2xl font-bold text-foreground tracking-tight tabular-nums">
-              {availableLeaveDays} <span className="text-xs font-normal text-muted-foreground">days</span>
-            </div>
-            <div className="flex items-center justify-between mt-0.5">
-              <span className="text-[11px] text-muted-foreground">Annual quota balance</span>
-              <span className="text-[11px] font-semibold text-primary group-hover:underline">
-                Apply →
-              </span>
-            </div>
+          <div className="flex items-center justify-between text-[11px] mt-2">
+            <span className="text-muted-foreground">Annual quota balance</span>
+            <span className="font-semibold text-primary group-hover:underline">
+              Apply →
+            </span>
           </div>
         </Link>
       </section>
@@ -807,12 +826,15 @@ function EmployeeDashboard() {
       {/* ========================================================================= */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Left Column (60%): My Tasks */}
-        <div className="lg:col-span-7 bg-card rounded-2xl border border-border/80 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-7 glass rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between bg-card/90">
           <div>
             <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-2">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
+                  <ClipboardList size={14} />
+                </div>
                 <h2 className="text-sm font-bold text-foreground">My Tasks</h2>
-                <span className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                <span className="rounded-md bg-muted/80 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground border border-border/60">
                   {focusTasks.length} active
                 </span>
               </div>
@@ -913,10 +935,15 @@ function EmployeeDashboard() {
         </div>
 
         {/* Right Column (40%): Today's Schedule and Upcoming Activities */}
-        <div className="lg:col-span-5 bg-card rounded-2xl border border-border/80 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-5 glass rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between bg-card/90">
           <div>
             <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-2">
-              <h2 className="text-sm font-bold text-foreground">Schedule & Activities</h2>
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
+                  <CalendarDays size={14} />
+                </div>
+                <h2 className="text-sm font-bold text-foreground">Schedule & Activities</h2>
+              </div>
               <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/60 p-0.5 text-[11px] font-medium text-muted-foreground">
                 <button
                   type="button"
@@ -1024,12 +1051,15 @@ function EmployeeDashboard() {
       {/* ========================================================================= */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Left Column (60%): Leave Request Status */}
-        <div className="lg:col-span-7 bg-card rounded-2xl border border-border/80 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-7 glass rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between bg-card/90">
           <div>
             <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-2">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
+                  <Calendar size={14} />
+                </div>
                 <h2 className="text-sm font-bold text-foreground">Leave Requests Status</h2>
-                <span className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                <span className="rounded-md bg-muted/80 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground border border-border/60">
                   {recentLeaves.filter((r) => r.status === "pending").length} pending
                 </span>
               </div>
@@ -1058,12 +1088,12 @@ function EmployeeDashboard() {
                     className="py-2.5 first:pt-1 last:pb-1 flex items-center justify-between gap-3"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap">
                         <span className="text-xs sm:text-sm font-semibold capitalize text-foreground truncate">
                           {request.leave_type.replace("_", " ")} Leave
                         </span>
-                        <span className="text-[11px] text-muted-foreground/60">·</span>
-                        <span className="text-xs text-muted-foreground tabular-nums">
+                        <span className="text-[11px] text-muted-foreground/60 hidden sm:inline">·</span>
+                        <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
                           {format(new Date(request.start_date), "MMM d")} –{" "}
                           {format(new Date(request.end_date), "MMM d, yyyy")}
                         </span>
@@ -1103,10 +1133,13 @@ function EmployeeDashboard() {
         </div>
 
         {/* Right Column (40%): Recent Notifications */}
-        <div className="lg:col-span-5 bg-card rounded-2xl border border-border/80 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-5 glass rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between bg-card/90">
           <div>
             <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-2">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
+                  <Bell size={14} />
+                </div>
                 <h2 className="text-sm font-bold text-foreground">Recent Notifications</h2>
                 {notifications.filter((n) => !n.is_read).length > 0 && (
                   <span className="rounded-full bg-primary/15 text-primary px-1.5 py-0.2 text-[10px] font-bold">
@@ -1163,10 +1196,13 @@ function EmployeeDashboard() {
       {/* ========================================================================= */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Left Column (60%): Recent Attendance History */}
-        <div className="lg:col-span-7 bg-card rounded-2xl border border-border/80 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-7 glass rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between bg-card/90">
           <div>
             <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-2">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
+                  <Clock size={14} />
+                </div>
                 <h2 className="text-sm font-bold text-foreground">Recent Attendance History</h2>
                 <span className="text-[11px] text-muted-foreground hidden sm:inline">
                   (Past 5 records)
@@ -1181,34 +1217,34 @@ function EmployeeDashboard() {
               </Link>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+            <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+              <table className="w-full min-w-[480px] text-left text-xs">
                 <thead>
                   <tr className="border-b border-border/60 text-muted-foreground text-[11px]">
-                    <th className="py-2 font-semibold">Date</th>
-                    <th className="py-2 font-semibold">In</th>
-                    <th className="py-2 font-semibold">Out</th>
-                    <th className="py-2 font-semibold">Hours</th>
-                    <th className="py-2 font-semibold text-right">Status</th>
+                    <th className="py-2.5 px-3 first:pl-0 font-semibold">Date</th>
+                    <th className="py-2.5 px-3 font-semibold">In</th>
+                    <th className="py-2.5 px-3 font-semibold">Out</th>
+                    <th className="py-2.5 px-3 font-semibold">Hours</th>
+                    <th className="py-2.5 px-3 last:pr-0 font-semibold text-right">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/40">
                   {recentAttendance.length > 0 ? (
                     recentAttendance.map((row) => (
                       <tr key={row.id} className="hover:bg-muted/40 transition-colors">
-                        <td className="py-2.5 font-semibold text-foreground tabular-nums whitespace-nowrap">
+                        <td className="py-2.5 px-3 first:pl-0 font-semibold text-foreground tabular-nums whitespace-nowrap">
                           {format(new Date(row.date), "MMM d, yyyy")}
                         </td>
-                        <td className="py-2.5 text-muted-foreground tabular-nums whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-muted-foreground tabular-nums whitespace-nowrap">
                           {row.check_in_time ? formatTime12Hour(row.check_in_time) : "—"}
                         </td>
-                        <td className="py-2.5 text-muted-foreground tabular-nums whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-muted-foreground tabular-nums whitespace-nowrap">
                           {row.check_out_time ? formatTime12Hour(row.check_out_time) : "—"}
                         </td>
-                        <td className="py-2.5 text-foreground font-bold tabular-nums whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-foreground font-bold tabular-nums whitespace-nowrap">
                           {row.work_hours ? formatWorkHours(row.work_hours) : "—"}
                         </td>
-                        <td className="py-2.5 text-right whitespace-nowrap">
+                        <td className="py-2.5 px-3 last:pr-0 text-right whitespace-nowrap">
                           <span
                             className={cn(
                               "inline-block rounded px-2 py-0.5 text-[10px] font-bold capitalize border",
@@ -1240,17 +1276,22 @@ function EmployeeDashboard() {
         </div>
 
         {/* Right Column (40%): Employee Quick Actions */}
-        <div className="lg:col-span-5 bg-card rounded-2xl border border-border/80 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-5 glass rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between bg-card/90">
           <div>
             <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-3">
-              <h2 className="text-sm font-bold text-foreground">Quick Actions</h2>
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
+                  <Sparkles size={14} />
+                </div>
+                <h2 className="text-sm font-bold text-foreground">Quick Actions</h2>
+              </div>
               <span className="text-xs text-muted-foreground">Self-service</span>
             </div>
 
             <div className="grid grid-cols-2 gap-2.5">
               <Link
                 to="/my-leaves"
-                className="flex items-center gap-2.5 rounded-xl border border-border bg-card p-2.5 hover:border-primary/50 hover:bg-muted/40 transition-all group shadow-2xs"
+                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 hover:bg-white p-2.5 hover:border-primary/40 hover:shadow-2xs transition-all group shadow-2xs"
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-500/10 text-purple-600 border border-purple-500/20">
                   <CalendarPlus size={15} />
@@ -1267,7 +1308,7 @@ function EmployeeDashboard() {
 
               <Link
                 to="/my-attendance"
-                className="flex items-center gap-2.5 rounded-xl border border-border bg-card p-2.5 hover:border-primary/50 hover:bg-muted/40 transition-all group shadow-2xs"
+                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 hover:bg-white p-2.5 hover:border-primary/40 hover:shadow-2xs transition-all group shadow-2xs"
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
                   <CalendarCheck size={15} />
@@ -1284,7 +1325,7 @@ function EmployeeDashboard() {
 
               <Link
                 to="/my-attendance"
-                className="flex items-center gap-2.5 rounded-xl border border-border bg-card p-2.5 hover:border-primary/50 hover:bg-muted/40 transition-all group shadow-2xs"
+                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 hover:bg-white p-2.5 hover:border-primary/40 hover:shadow-2xs transition-all group shadow-2xs"
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 border border-amber-500/20">
                   <FileEdit size={15} />
@@ -1301,7 +1342,7 @@ function EmployeeDashboard() {
 
               <Link
                 to="/tasks"
-                className="flex items-center gap-2.5 rounded-xl border border-border bg-card p-2.5 hover:border-primary/50 hover:bg-muted/40 transition-all group shadow-2xs"
+                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 hover:bg-white p-2.5 hover:border-primary/40 hover:shadow-2xs transition-all group shadow-2xs"
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
                   <CheckSquare size={15} />
@@ -1318,7 +1359,7 @@ function EmployeeDashboard() {
 
               <Link
                 to="/meetings"
-                className="flex items-center gap-2.5 rounded-xl border border-border bg-card p-2.5 hover:border-primary/50 hover:bg-muted/40 transition-all group shadow-2xs"
+                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 hover:bg-white p-2.5 hover:border-primary/40 hover:shadow-2xs transition-all group shadow-2xs"
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 border border-blue-500/20">
                   <Video size={15} />
@@ -1335,9 +1376,9 @@ function EmployeeDashboard() {
 
               <Link
                 to="/profile"
-                className="flex items-center gap-2.5 rounded-xl border border-border bg-card p-2.5 hover:border-primary/50 hover:bg-muted/40 transition-all group shadow-2xs"
+                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 hover:bg-white p-2.5 hover:border-primary/40 hover:shadow-2xs transition-all group shadow-2xs"
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground border border-border">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/80 text-muted-foreground border border-border/70">
                   <UserCheck size={15} />
                 </div>
                 <div className="min-w-0">

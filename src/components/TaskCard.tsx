@@ -52,9 +52,8 @@ export function TaskCard({
         draggable={draggable}
         onDragStart={draggable ? onDragStart : undefined}
         onClick={onClick}
-        className={`glass kanban-task-card rounded-xl p-4 select-none border border-border hover:border-primary/40 hover:-translate-y-1 hover:shadow-lg transition-all ${
-          draggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
-        } ${autoMoved ? "kanban-task-card-auto-moved ring-2 ring-primary/50" : ""}`}
+        className={`glass kanban-task-card rounded-xl p-4 select-none border border-border hover:border-primary/40 hover:-translate-y-1 hover:shadow-lg transition-all ${draggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
+          } ${autoMoved ? "kanban-task-card-auto-moved ring-2 ring-primary/50" : ""}`}
       >
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="flex-1 min-w-0 space-y-1.5">
@@ -87,7 +86,7 @@ export function TaskCard({
             <span className="font-bold">{task.progress}%</span>
           </div>
           <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
-            <div 
+            <div
               className="h-full bg-primary transition-all duration-500 ease-out rounded-full"
               style={{ width: `${task.progress}%` }}
             />

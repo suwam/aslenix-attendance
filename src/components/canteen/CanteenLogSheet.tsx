@@ -153,17 +153,17 @@ export function CanteenLogSheet({
           {/* Header Rows */}
           <thead>
             {/* First Header Row */}
-            <tr className="bg-neutral-100 font-bold border-b border-black">
+            <tr className="font-bold">
               <th
                 rowSpan={2}
-                className="border border-black py-1 px-1 text-center text-xs font-black uppercase text-black sticky left-0 z-20 bg-neutral-100 print:static align-middle select-none"
+                className="border border-black border-b-2 py-1 px-1 text-center text-xs font-black uppercase text-black sticky left-0 z-20 bg-neutral-100 print:static align-middle select-none"
                 style={{ verticalAlign: "middle" }}
               >
                 SN
               </th>
               <th
                 rowSpan={2}
-                className="border border-black px-3 py-1 text-left text-xs font-black uppercase text-black sticky left-[42px] z-20 bg-neutral-100 print:static shadow-[1px_0_0_0_#000] align-middle select-none"
+                className="border border-black border-b-2 px-3 py-1 text-left text-xs font-black uppercase text-black sticky left-[42px] z-20 bg-neutral-100 print:static shadow-[1px_0_0_0_#000] align-middle select-none"
                 style={{ verticalAlign: "middle" }}
               >
                 Name
@@ -183,14 +183,14 @@ export function CanteenLogSheet({
               {showTotalColumn && (
                 <th
                   rowSpan={2}
-                  className="border border-black px-1.5 py-1 text-center bg-neutral-100 select-none align-middle"
+                  className="border border-black border-b-2 px-1.5 py-1 text-center bg-neutral-100 select-none align-middle"
                   style={{ verticalAlign: "middle" }}
                 >
-                  <div className="flex flex-col items-center justify-center leading-tight">
+                  <div className="flex flex-col items-center justify-center leading-tight py-0.5">
                     <span className="text-[11px] sm:text-xs font-black uppercase tracking-tight text-black leading-tight">
                       TOTAL
                     </span>
-                    <span className="text-[11px] sm:text-xs font-black uppercase tracking-tight text-black leading-tight mt-0.5">
+                    <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-tight text-black leading-tight mt-0.5">
                       MEALS
                     </span>
                   </div>
@@ -199,19 +199,19 @@ export function CanteenLogSheet({
             </tr>
 
             {/* Second Header Row */}
-            <tr className="bg-neutral-50 font-bold border-b-2 border-black">
+            <tr className="font-bold">
               {/* Week 1 Days */}
               {week1Days.map((d) => {
                 const isToday = d.dateString === todayDateString;
                 return (
                   <th
                     key={d.dayIndex}
-                    className={`border border-black py-1 text-center font-bold ${
+                    className={`border border-black border-b-2 py-1 text-center font-bold ${
                       isToday
                         ? "bg-emerald-100 text-emerald-950 ring-2 ring-inset ring-emerald-600 print:ring-0"
                         : d.isSaturday
                           ? "text-[#ea580c] bg-orange-50 font-black"
-                          : "text-black"
+                          : "text-black bg-neutral-50"
                     }`}
                     title={isToday ? `Today (${d.displayDate} - ${d.nepaliDateString} BS)` : undefined}
                   >
@@ -234,12 +234,12 @@ export function CanteenLogSheet({
                 return (
                   <th
                     key={d.dayIndex}
-                    className={`border border-black py-1 text-center font-bold ${
+                    className={`border border-black border-b-2 py-1 text-center font-bold ${
                       isToday
                         ? "bg-emerald-100 text-emerald-950 ring-2 ring-inset ring-emerald-600 print:ring-0"
                         : d.isSaturday
                           ? "text-[#ea580c] bg-orange-50 font-black"
-                          : "text-black"
+                          : "text-black bg-neutral-50"
                     }`}
                     title={isToday ? `Today (${d.displayDate} - ${d.nepaliDateString} BS)` : undefined}
                   >
@@ -285,40 +285,28 @@ export function CanteenLogSheet({
                   }
                 });
 
+                const rowBgClass = isHighlighted
+                  ? "bg-amber-100"
+                  : empIdx % 2 === 1
+                    ? "bg-neutral-50"
+                    : "bg-white";
+
                 return (
                   <tr
                     key={emp.id}
-                    className={`border-b border-black transition-colors ${
-                      isHighlighted
-                        ? "bg-amber-100"
-                        : empIdx % 2 === 1
-                          ? "bg-neutral-50/60"
-                          : "bg-white"
-                    }`}
+                    className="transition-colors"
                     style={{ height: employees.length <= 10 ? "42px" : "38px" }}
                   >
                     {/* SN */}
                     <td
-                      className={`border border-black text-center font-bold text-xs text-black sticky left-0 z-10 print:static ${
-                        isHighlighted
-                          ? "bg-amber-100"
-                          : empIdx % 2 === 1
-                            ? "bg-neutral-100"
-                            : "bg-white"
-                      }`}
+                      className={`border border-black text-center font-bold text-xs text-black sticky left-0 z-10 print:static ${rowBgClass}`}
                     >
                       {emp.serial_number}
                     </td>
 
                     {/* Employee Name */}
                     <td
-                      className={`border border-black px-2.5 py-1 text-left font-medium text-xs sm:text-sm text-black truncate sticky left-[42px] z-10 print:static shadow-[1px_0_0_0_#000] ${
-                        isHighlighted
-                          ? "bg-amber-100"
-                          : empIdx % 2 === 1
-                            ? "bg-neutral-100"
-                            : "bg-white"
-                      }`}
+                      className={`border border-black px-2.5 py-1 text-left font-medium text-xs sm:text-sm text-black truncate sticky left-[42px] z-10 print:static shadow-[1px_0_0_0_#000] ${rowBgClass}`}
                     >
                       <span>{emp.name}</span>
                       {canEdit && !isAdmin && (
@@ -344,6 +332,7 @@ export function CanteenLogSheet({
                               style={{
                                 verticalAlign: "middle",
                                 textAlign: "center",
+                                height: "100%",
                               }}
                             >
                               <div className="flex h-full w-full flex-col items-center justify-center py-2 select-none">
@@ -409,7 +398,7 @@ export function CanteenLogSheet({
                                   ? "cursor-not-allowed bg-rose-50/40 text-rose-400"
                                   : isOtherDayForEmployee
                                     ? "cursor-not-allowed text-neutral-300"
-                                    : "cursor-default"
+                                    : rowBgClass
                           } ${d.isSaturday ? "bg-orange-50/40" : ""} ${isToday ? "ring-1 ring-inset ring-emerald-500/30" : ""}`}
                           title={
                             isCellEditable
@@ -449,7 +438,7 @@ export function CanteenLogSheet({
 
                     {/* Total Meals Column */}
                     {showTotalColumn && (
-                      <td className="border border-black text-center font-bold text-xs sm:text-sm text-black bg-neutral-100/70">
+                      <td className="border border-black text-center font-bold text-xs sm:text-sm text-black bg-neutral-100">
                         {mealsCount}
                       </td>
                     )}

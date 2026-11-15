@@ -93,15 +93,36 @@ export function parseTimeString(timeStr?: string | null): { hour: number; minute
 export function formatTime12Hour(time: string | Date | null | undefined): string {
   if (!time) return "—";
   if (time instanceof Date) {
-    return format(time, "hh:mm a");
+    return isNaN(time.getTime()) ? "—" : format(time, "hh:mm a");
   }
-  const match = /^(\d{1,2}):(\d{2})(?::(\d{2}))?/.exec(time);
-  if (!match) return String(time);
-  const hour = Number(match[1]);
-  const minute = match[2];
-  const ampm = hour >= 12 ? "PM" : "AM";
-  const hour12 = hour % 12 || 12;
-  return `${String(hour12).padStart(2, "0")}:${minute} ${ampm}`;
+  const str = String(time).trim();
+  if (!str) return "—";
+
+  // If it's a full ISO or datetime string (e.g. 2026-11-06T03:29:09 or date-time)
+  if (str.includes("T") || (str.includes("-") && str.includes(":"))) {
+    const parsedDate = new Date(str);
+    if (!isNaN(parsedDate.getTime())) {
+      return format(parsedDate, "hh:mm a");
+    }
+  }
+
+  // If it's "HH:mm" or "HH:mm:ss"
+  const match = /^(\d{1,2}):(\d{2})(?::(\d{2}))?/.exec(str);
+  if (match) {
+    const hour = Number(match[1]);
+    const minute = match[2];
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 || 12;
+    return `${String(hour12).padStart(2, "0")}:${minute} ${ampm}`;
+  }
+
+  // Fallback: try parsing as Date
+  const fallbackDate = new Date(str);
+  if (!isNaN(fallbackDate.getTime())) {
+    return format(fallbackDate, "hh:mm a");
+  }
+
+  return str;
 }
 
 /**
