@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
@@ -19,14 +19,12 @@ type WelcomeAvatar3DProps = {
   state: AvatarAnimationState;
   showPassword?: boolean;
   className?: string;
-  onGreetingComplete?: () => void;
 };
 
 export function WelcomeAvatar3D({
   state,
   showPassword = false,
   className = "",
-  onGreetingComplete,
 }: WelcomeAvatar3DProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const stateRef = useRef(state);
@@ -34,52 +32,6 @@ export function WelcomeAvatar3D({
 
   const showPasswordRef = useRef(showPassword);
   showPasswordRef.current = showPassword;
-
-  // Speech bubble text with animated transition
-  const [displaySpeechText, setDisplaySpeechText] = useState("Hi there! Welcome to ASLENIX!");
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const speechVisible = true;
-
-  const updateSpeech = (newText: string) => {
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setDisplaySpeechText(newText);
-      setIsTransitioning(false);
-    }, 180);
-  };
-
-  // Sync speech bubble text smoothly according to avatar animation state
-  useEffect(() => {
-    switch (state) {
-      case "peek":
-      case "entrance":
-      case "wave":
-        updateSpeech("Hi there! Welcome to ASLENIX! 👋");
-        break;
-      case "guidance":
-      case "idle":
-        updateSpeech("Ready to start your day? Sign in to check in! ✨");
-        break;
-      case "look_at_form":
-        updateSpeech("Enter your username or email 📝");
-        break;
-      case "cover_eyes":
-        updateSpeech("No peeking! Your password is safe 🙈");
-        break;
-      case "peeking_eyes":
-        updateSpeech("I see you! Password revealed 👀");
-        break;
-      case "loading":
-        updateSpeech("Verifying credentials... hang tight! 🚀");
-        break;
-      case "celebrating":
-        updateSpeech("Welcome back! Redirecting you now 🎉");
-        break;
-      case "error":
-        updateSpeech("Oops! Please double-check your credentials 💡");
-        break;
-    }
-  }, [state]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -774,32 +726,6 @@ export function WelcomeAvatar3D({
 
   return (
     <div className={`relative w-full h-full pointer-events-none select-none ${className}`}>
-      {/* Speech Bubble Floating Elegantly Above and Beside the Avatar's Head */}
-      {speechVisible && (
-        <div
-          className={`absolute z-30 pointer-events-none transition-all duration-300 ease-out
-            top-4 sm:top-6 left-2 sm:left-4
-            max-w-[210px] sm:max-w-[245px]
-            ${
-              isTransitioning
-                ? "opacity-0 -translate-y-1 scale-95"
-                : "opacity-100 translate-y-0 scale-100"
-            }
-          `}
-        >
-          <div className="relative rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 bg-slate-900/95 text-white border border-indigo-500/35 shadow-xl shadow-slate-950/40 backdrop-blur-md">
-            <p className="text-xs sm:text-[13px] font-semibold leading-snug text-slate-100 tracking-tight">
-              {displaySpeechText}
-            </p>
-            {/* Pointer directed toward avatar's head (bottom-right) */}
-            <div
-              aria-hidden
-              className="absolute -bottom-1.5 right-8 w-3 h-3 bg-slate-900/95 border-r border-b border-indigo-500/35 transform rotate-45"
-            />
-          </div>
-        </div>
-      )}
-
       {/* 3D WebGL Canvas Container */}
       <div ref={containerRef} className="w-full h-full" />
     </div>

@@ -26,6 +26,43 @@ function LoginPage() {
 
   // 3D Avatar state management
   const [avatarState, setAvatarState] = useState<AvatarAnimationState>("peek");
+  const [speechText, setSpeechText] = useState("");
+  const [isSpeechChanging, setIsSpeechChanging] = useState(false);
+
+  useEffect(() => {
+    const nextSpeech = (() => {
+      switch (avatarState) {
+        case "entrance":
+        case "wave":
+          return "Hi there! Welcome to ASLENIX!";
+        case "guidance":
+        case "idle":
+          return "Ready to start your day? Sign in to check in!";
+        case "look_at_form":
+          return "Enter your username or email.";
+        case "cover_eyes":
+          return "No peeking — your password is safe.";
+        case "peeking_eyes":
+          return "Password revealed.";
+        case "loading":
+          return "Verifying your credentials...";
+        case "celebrating":
+          return "Welcome back! Redirecting you now.";
+        case "error":
+          return "Please double-check your credentials.";
+        default:
+          return "";
+      }
+    })();
+
+    if (nextSpeech === speechText) return;
+    setIsSpeechChanging(true);
+    const textTimer = window.setTimeout(() => {
+      setSpeechText(nextSpeech);
+      setIsSpeechChanging(false);
+    }, speechText ? 120 : 0);
+    return () => window.clearTimeout(textTimer);
+  }, [avatarState, speechText]);
 
   // Entrance choreography: Starts peeking behind the card, then smoothly emerges, waves, and guides the user
   useEffect(() => {
@@ -221,18 +258,40 @@ function LoginPage() {
         {/* =======================================================
             3D HUMAN RECEPTIONIST AVATAR (Layer Z-10: Sits behind card)
             ======================================================= */}
-        <div className="hidden md:block absolute -top-8 -right-28 lg:-right-36 xl:-right-44 w-[360px] lg:w-[400px] xl:w-[440px] h-[520px] lg:h-[560px] xl:h-[600px] z-10 pointer-events-none">
+        <div className="hidden md:block absolute -top-8 -right-28 lg:-right-36 xl:-right-44 w-[360px] lg:w-[400px] xl:w-[440px] h-[480px] z-10 pointer-events-none">
           <WelcomeAvatar3D
             state={avatarState}
             showPassword={show}
-            onGreetingComplete={() => setAvatarState("idle")}
           />
+        </div>
+
+        {/* This lives in the stage layer instead of the canvas layer so the card can
+            cover the avatar without ever covering the avatar's message. */}
+        <div
+          aria-live="polite"
+          className={`hidden md:block absolute z-30 pointer-events-none top-3 lg:top-5 right-[-5rem] lg:right-[-11rem] xl:right-[-15rem] w-[220px] lg:w-[240px] transition-all duration-200 ease-out ${
+            speechText
+              ? isSpeechChanging
+                ? "opacity-0 -translate-y-1 scale-[0.98]"
+                : "opacity-100 translate-y-0 scale-100"
+              : "opacity-0 -translate-y-1 scale-[0.98]"
+          }`}
+        >
+          <div className="relative rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-[0_12px_30px_-12px_rgba(15,23,42,0.34)]">
+            <p className="text-[13px] font-semibold leading-snug tracking-tight text-slate-800">
+              {speechText}
+            </p>
+            <span
+              aria-hidden
+              className="absolute -bottom-1.5 right-9 h-3 w-3 rotate-45 border-b border-r border-slate-200 bg-white"
+            />
+          </div>
         </div>
 
         {/* =======================================================
             PREMIUM WHITE LOGIN CARD (Layer Z-20: Pure White, Crisp Shadow)
             ======================================================= */}
-        <div className="relative z-20 w-full max-w-[420px] bg-white dark:bg-card border border-slate-200/80 dark:border-border/80 shadow-[0_20px_60px_-15px_rgba(79,70,229,0.12)] dark:shadow-2xl rounded-3xl p-8 sm:p-10 backdrop-blur-xl transition-all">
+        <div className="relative z-20 box-border w-[calc(100vw-2rem)] max-w-[420px] sm:w-full bg-white dark:bg-card border border-slate-200/80 dark:border-border/80 shadow-[0_20px_60px_-15px_rgba(79,70,229,0.12)] dark:shadow-2xl rounded-3xl p-6 sm:p-10 backdrop-blur-xl transition-all">
           {/* Original ASLENIX Logo at Top Center */}
           <div className="flex justify-center mb-6">
             <AslenixLogo size="lg" />

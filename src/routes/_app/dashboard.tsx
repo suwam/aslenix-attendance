@@ -112,6 +112,40 @@ function liveWorkedHours(today: any, nowMs: number) {
   return Math.round((diffMs / 3600000) * 10) / 10;
 }
 
+function LiveTimeCount() {
+  const [time, setTime] = useState(() =>
+    new Date().toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    })
+  );
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTime(
+        new Date().toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+        })
+      );
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex-initial inline-flex items-center gap-2 rounded-xl border border-border/80 bg-white/80 dark:bg-card/80 px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs">
+      <Clock size={13} className="text-primary animate-pulse" />
+      <span className="font-mono text-xs sm:text-[13px] font-bold tabular-nums text-foreground tracking-tight">
+        {time}
+      </span>
+    </div>
+  );
+}
+
 function EmployeeDashboard() {
   const { user, profile, isAdmin } = useAuth();
   const [today, setToday] = useState<any>(null);
@@ -608,7 +642,10 @@ function EmployeeDashboard() {
           </div>
 
           {/* Quick Header Actions */}
-          <div className="flex items-center gap-2 self-start md:self-center shrink-0 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-2 self-start md:self-center shrink-0 w-full sm:w-auto">
+            {/* Live Time Count: Placed to the left side of the profile */}
+            <LiveTimeCount />
+
             <Link
               to="/profile"
               className="flex-1 sm:flex-initial inline-flex justify-center items-center gap-1.5 rounded-xl border border-border/80 bg-white/80 hover:bg-white px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs hover:border-primary/40 transition-all"
