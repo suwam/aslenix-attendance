@@ -434,41 +434,41 @@ function EmployeeDashboard() {
       return {
         label: WEEKLY_OFF_LABEL,
         dotClass: "bg-purple-500",
-        badgeClass: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800",
+        badgeClass: "bg-purple-500/10 text-purple-600 border-purple-500/20",
       };
     }
     if (!today) {
       if (isCutoffPassed && !isAdmin) {
         return {
           label: "Closed (Past 2:00 PM)",
-          dotClass: "bg-rose-500",
-          badgeClass: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800",
+          dotClass: "bg-destructive",
+          badgeClass: "bg-destructive/10 text-destructive border-destructive/20",
         };
       }
       return {
         label: "Not Checked In",
-        dotClass: "bg-slate-400",
-        badgeClass: "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
+        dotClass: "bg-muted-foreground",
+        badgeClass: "bg-muted text-muted-foreground border-border",
       };
     }
     if (today.check_out_time) {
       return {
         label: today.is_early_checkout ? "Completed · Early Left" : "Day Completed",
-        dotClass: "bg-blue-500",
-        badgeClass: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800",
+        dotClass: "bg-primary",
+        badgeClass: "bg-primary/10 text-primary border-primary/20",
       };
     }
     if (today.is_late) {
       return {
         label: "Working · Late Arrival",
         dotClass: "bg-amber-500 animate-pulse",
-        badgeClass: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800",
+        badgeClass: "bg-amber-500/10 text-amber-600 border-amber-500/20",
       };
     }
     return {
       label: "Working · On Time",
       dotClass: "bg-emerald-500 animate-pulse",
-      badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800",
+      badgeClass: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
     };
   }, [isWeeklyOff, today, isCutoffPassed, isAdmin]);
 
@@ -532,11 +532,11 @@ function EmployeeDashboard() {
   }, [meetings, holidays, notifications, activityFilter, todayDate]);
 
   return (
-    <div className="space-y-4 sm:space-y-4 max-w-[1440px] mx-auto text-[#172033] dark:text-foreground">
+    <div className="space-y-4 max-w-[1440px] mx-auto text-foreground">
       {/* ========================================================================= */}
       {/* ROW 1: Welcome Header with Integrated Compact Employee Profile Summary   */}
       {/* ========================================================================= */}
-      <header className="bg-white dark:bg-card rounded-xl border border-[#E2E8F0] dark:border-border/70 p-4 sm:p-5 shadow-xs">
+      <header className="bg-card rounded-2xl border border-border/80 p-4 sm:p-5 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-start sm:items-center gap-3.5 min-w-0">
             {/* Employee Avatar */}
@@ -544,10 +544,13 @@ function EmployeeDashboard() {
               <img
                 src={profile.avatar_url}
                 alt={profile?.full_name || "Employee"}
-                className="h-12 w-12 rounded-full object-cover border border-[#E2E8F0] dark:border-border/70 shrink-0 shadow-xs"
+                className="h-12 w-12 rounded-full object-cover border border-border shrink-0 shadow-xs"
               />
             ) : (
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#EEF2FF] text-[#4F46E5] font-bold text-sm border border-[#C7D2FE] dark:bg-primary/10 dark:text-primary dark:border-primary/20 shadow-xs">
+              <div
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full font-bold text-sm text-[#0F172A] border border-border/80 shadow-xs"
+                style={{ background: "var(--gradient-brand)" }}
+              >
                 {profile?.full_name
                   ? profile.full_name
                       .split(" ")
@@ -562,17 +565,17 @@ function EmployeeDashboard() {
             {/* Profile Information & Greetings */}
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[#172033] dark:text-foreground truncate">
+                <h1 className="text-lg sm:text-xl font-bold tracking-tight text-foreground truncate">
                   {greeting}, {profile?.full_name || firstName}
                 </h1>
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 text-[11px] font-semibold dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800">
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-2 py-0.5 text-[11px] font-semibold">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                   {profile?.approval_status === "approved" ? "Active Staff" : "Staff"}
                 </span>
               </div>
 
-              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#64748B] dark:text-muted-foreground">
-                <span className="font-medium text-[#172033] dark:text-foreground">
+              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <span className="font-semibold text-foreground">
                   {profile?.position || "Team Member"}
                 </span>
                 <span>·</span>
@@ -580,7 +583,7 @@ function EmployeeDashboard() {
                 {profile?.employee_code && (
                   <>
                     <span>·</span>
-                    <span className="font-mono text-[11px] bg-[#F1F5F9] dark:bg-muted px-1.5 py-0.5 rounded text-[#475569] dark:text-muted-foreground">
+                    <span className="font-mono text-[11px] bg-muted px-1.5 py-0.5 rounded text-foreground font-medium border border-border/60">
                       ID: {profile.employee_code}
                     </span>
                   </>
@@ -588,14 +591,14 @@ function EmployeeDashboard() {
                 {profile?.joining_date && (
                   <>
                     <span className="hidden sm:inline">·</span>
-                    <span className="hidden sm:inline">
+                    <span className="hidden sm:inline text-muted-foreground">
                       Joined {format(new Date(profile.joining_date), "MMM yyyy")}
                     </span>
                   </>
                 )}
               </div>
 
-              <div className="mt-1 text-[11px] text-[#94A3B8] dark:text-muted-foreground">
+              <div className="mt-1 text-[11px] text-muted-foreground/80">
                 {format(new Date(), "EEEE, MMMM d, yyyy")} · {nepaliToday} BS
               </div>
             </div>
@@ -605,16 +608,16 @@ function EmployeeDashboard() {
           <div className="flex items-center gap-2 self-start md:self-center shrink-0">
             <Link
               to="/profile"
-              className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#E2E8F0] dark:border-border/70 bg-white dark:bg-card px-3 py-1.5 text-xs font-semibold text-[#172033] dark:text-foreground shadow-xs hover:bg-[#F8FAFC] dark:hover:bg-muted hover:border-[#CBD5E1] transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs hover:bg-muted/70 hover:border-primary/40 transition-colors"
             >
-              <User size={13} className="text-[#64748B] dark:text-muted-foreground" />
+              <User size={13} className="text-primary" />
               <span>My Profile</span>
             </Link>
             <Link
               to="/my-attendance"
-              className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#E2E8F0] dark:border-border/70 bg-white dark:bg-card px-3 py-1.5 text-xs font-semibold text-[#172033] dark:text-foreground shadow-xs hover:bg-[#F8FAFC] dark:hover:bg-muted hover:border-[#CBD5E1] transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs hover:bg-muted/70 hover:border-primary/40 transition-colors"
             >
-              <Clock size={13} className="text-[#64748B] dark:text-muted-foreground" />
+              <Clock size={13} className="text-primary" />
               <span>Attendance History</span>
             </Link>
           </div>
@@ -624,62 +627,62 @@ function EmployeeDashboard() {
       {/* ========================================================================= */}
       {/* ROW 2: Full-width Today's Attendance Panel                                */}
       {/* ========================================================================= */}
-      <section className="bg-white dark:bg-card rounded-xl border border-[#E2E8F0] dark:border-border/70 p-4 sm:p-5 shadow-xs">
+      <section className="bg-card rounded-2xl border border-border/80 p-4 sm:p-5 shadow-xs">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           {/* Status & Shift Information */}
           <div className="flex items-start sm:items-center gap-3.5 min-w-[270px]">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[#EEF2FF] text-[#4F46E5] dark:bg-primary/10 dark:text-primary">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
               <ShieldCheck size={20} />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium border", statusConfig.badgeClass)}>
+                <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold border", statusConfig.badgeClass)}>
                   <span className={cn("h-1.5 w-1.5 rounded-full", statusConfig.dotClass)} />
                   {statusConfig.label}
                 </span>
                 {today?.late_minutes > 0 && today?.is_late && (
-                  <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                  <span className="text-[11px] font-semibold text-amber-600">
                     +{today.late_minutes}m
                   </span>
                 )}
               </div>
-              <div className="mt-1 text-xs text-[#64748B] dark:text-muted-foreground truncate">
-                <strong className="text-[#172033] dark:text-foreground font-semibold">{assignedShift.name}</strong> ·{" "}
+              <div className="mt-1 text-xs text-muted-foreground truncate">
+                <strong className="text-foreground font-semibold">{assignedShift.name}</strong> ·{" "}
                 {formatTime12Hour(assignedShift.start_time)} – {formatTime12Hour(assignedShift.end_time)} (Grace: {assignedShift.grace_period_mins}m)
               </div>
             </div>
           </div>
 
           {/* Attendance Times & Hours */}
-          <div className="grid grid-cols-3 gap-3 sm:gap-6 border-y xl:border-y-0 xl:border-x border-[#E2E8F0] dark:border-border/60 py-3 xl:py-0 xl:px-6">
+          <div className="grid grid-cols-3 gap-3 sm:gap-6 border-y xl:border-y-0 xl:border-x border-border/70 py-3 xl:py-0 xl:px-6">
             <div>
-              <div className="text-[11px] font-medium text-[#64748B] dark:text-muted-foreground">Check In</div>
-              <div className="mt-0.5 text-sm sm:text-base font-semibold text-[#172033] dark:text-foreground tabular-nums">
+              <div className="text-[11px] font-medium text-muted-foreground">Check In</div>
+              <div className="mt-0.5 text-sm sm:text-base font-bold text-foreground tabular-nums">
                 {today?.check_in_time ? formatTime12Hour(today.check_in_time) : "—"}
               </div>
-              <div className="text-[10px] text-[#94A3B8] dark:text-muted-foreground">
+              <div className="text-[10px] text-muted-foreground/80">
                 Sched: {formatTime12Hour(assignedShift.start_time)}
               </div>
             </div>
 
-            <div className="border-x xl:border-x-0 border-[#E2E8F0] dark:border-border/60 px-3 xl:px-0">
-              <div className="text-[11px] font-medium text-[#64748B] dark:text-muted-foreground">Check Out</div>
-              <div className="mt-0.5 text-sm sm:text-base font-semibold text-[#172033] dark:text-foreground tabular-nums">
+            <div className="border-x xl:border-x-0 border-border/70 px-3 xl:px-0">
+              <div className="text-[11px] font-medium text-muted-foreground">Check Out</div>
+              <div className="mt-0.5 text-sm sm:text-base font-bold text-foreground tabular-nums">
                 {today?.check_out_time ? formatTime12Hour(today.check_out_time) : today ? (
-                  <span className="text-[#4F46E5] dark:text-primary font-medium">Working</span>
+                  <span className="text-primary font-semibold">Working</span>
                 ) : "—"}
               </div>
-              <div className="text-[10px] text-[#94A3B8] dark:text-muted-foreground">
+              <div className="text-[10px] text-muted-foreground/80">
                 Sched: {formatTime12Hour(assignedShift.end_time)}
               </div>
             </div>
 
             <div>
-              <div className="text-[11px] font-medium text-[#64748B] dark:text-muted-foreground">Working Hours</div>
-              <div className="mt-0.5 text-sm sm:text-base font-semibold text-[#172033] dark:text-foreground tabular-nums">
+              <div className="text-[11px] font-medium text-muted-foreground">Working Hours</div>
+              <div className="mt-0.5 text-sm sm:text-base font-bold text-foreground tabular-nums">
                 {workedHours ? formatWorkHours(workedHours) : "0h 0m"}
               </div>
-              <div className="text-[10px] text-[#94A3B8] dark:text-muted-foreground">
+              <div className="text-[10px] text-muted-foreground/80">
                 {expectedDailyHours}h expected
               </div>
             </div>
@@ -688,14 +691,14 @@ function EmployeeDashboard() {
           {/* Action Buttons */}
           <div className="flex items-center gap-2.5 shrink-0">
             {isAdmin && (
-              <span className="hidden 2xl:inline text-xs font-medium text-[#64748B] dark:text-muted-foreground italic mr-1">
+              <span className="hidden 2xl:inline text-xs font-medium text-muted-foreground italic mr-1">
                 Admin mode
               </span>
             )}
             <Button
               onClick={checkIn}
               disabled={busy || isWeeklyOff || Boolean(today) || (isCutoffPassed && !isAdmin)}
-              className="h-9 sm:h-10 rounded-[10px] bg-[#172554] hover:bg-[#1E293B] text-white font-medium px-4 text-xs sm:text-sm shadow-xs transition-colors"
+              className="neon-button h-9 sm:h-10 rounded-xl px-5 font-bold text-xs sm:text-sm shadow-xs transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               <LogIn size={15} className="mr-1.5" /> Check In
             </Button>
@@ -703,7 +706,7 @@ function EmployeeDashboard() {
               onClick={checkOut}
               disabled={busy || !today || Boolean(today?.check_out_time)}
               variant="outline"
-              className="h-9 sm:h-10 rounded-[10px] border-[#E2E8F0] dark:border-border/70 bg-white dark:bg-card text-[#172033] dark:text-foreground hover:bg-[#F8FAFC] dark:hover:bg-muted font-medium px-4 text-xs sm:text-sm shadow-xs transition-colors"
+              className="h-9 sm:h-10 rounded-xl border-border bg-card text-foreground hover:bg-muted font-semibold px-4 text-xs sm:text-sm shadow-xs transition-colors"
             >
               <LogOut size={15} className="mr-1.5" /> Check Out
             </Button>
@@ -712,23 +715,23 @@ function EmployeeDashboard() {
       </section>
 
       {/* ========================================================================= */}
-      {/* ROW 3: Four Statistics Cards (Clean Enterprise Format)                     */}
+      {/* ROW 3: Four Statistics Cards (Consistent ASLENIX Theme Format)            */}
       {/* ========================================================================= */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Present Days */}
         <Link
           to="/my-attendance"
-          className="bg-white dark:bg-card rounded-xl border border-[#E2E8F0] dark:border-border/70 p-4 shadow-xs flex flex-col justify-between h-[102px] hover:border-primary/40 transition-colors group"
+          className="bg-card rounded-2xl border border-border/80 p-4 shadow-xs flex flex-col justify-between h-[104px] hover:border-primary/50 transition-colors group"
         >
-          <div className="flex items-center justify-between text-[#64748B] dark:text-muted-foreground">
+          <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-xs font-medium group-hover:text-primary transition-colors">Present Days</span>
-            <CalendarCheck size={16} className="text-[#64748B] dark:text-muted-foreground" />
+            <CalendarCheck size={16} className="text-emerald-500" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-[#172033] dark:text-foreground tracking-tight tabular-nums">
-              {monthStats.present} <span className="text-xs font-normal text-[#64748B] dark:text-muted-foreground">days</span>
+            <div className="text-2xl font-bold text-foreground tracking-tight tabular-nums">
+              {monthStats.present} <span className="text-xs font-normal text-muted-foreground">days</span>
             </div>
-            <p className="text-[11px] text-[#64748B] dark:text-muted-foreground truncate mt-0.5">
+            <p className="text-[11px] text-muted-foreground truncate mt-0.5">
               {nepaliMonth.label} BS · {monthStats.late > 0 ? `${monthStats.late} late arrival${monthStats.late > 1 ? "s" : ""}` : "On-time record"}
             </p>
           </div>
@@ -737,19 +740,19 @@ function EmployeeDashboard() {
         {/* Pending Tasks */}
         <Link
           to="/tasks"
-          className="bg-white dark:bg-card rounded-xl border border-[#E2E8F0] dark:border-border/70 p-4 shadow-xs flex flex-col justify-between h-[102px] hover:border-primary/40 transition-colors group"
+          className="bg-card rounded-2xl border border-border/80 p-4 shadow-xs flex flex-col justify-between h-[104px] hover:border-primary/50 transition-colors group"
         >
-          <div className="flex items-center justify-between text-[#64748B] dark:text-muted-foreground">
+          <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-xs font-medium group-hover:text-primary transition-colors">Pending Tasks</span>
-            <Clock size={16} className="text-[#64748B] dark:text-muted-foreground" />
+            <Clock size={16} className="text-amber-500" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-[#172033] dark:text-foreground tracking-tight tabular-nums">
+            <div className="text-2xl font-bold text-foreground tracking-tight tabular-nums">
               {taskStats.pending}
             </div>
-            <p className="text-[11px] text-[#64748B] dark:text-muted-foreground truncate mt-0.5">
+            <p className="text-[11px] text-muted-foreground truncate mt-0.5">
               {taskStats.overdue > 0 ? (
-                <span className="text-[#DC2626] font-medium">{taskStats.overdue} overdue</span>
+                <span className="text-destructive font-semibold">{taskStats.overdue} overdue</span>
               ) : (
                 "All tasks on schedule"
               )}
@@ -760,17 +763,17 @@ function EmployeeDashboard() {
         {/* Completed Tasks */}
         <Link
           to="/tasks"
-          className="bg-white dark:bg-card rounded-xl border border-[#E2E8F0] dark:border-border/70 p-4 shadow-xs flex flex-col justify-between h-[102px] hover:border-primary/40 transition-colors group"
+          className="bg-card rounded-2xl border border-border/80 p-4 shadow-xs flex flex-col justify-between h-[104px] hover:border-primary/50 transition-colors group"
         >
-          <div className="flex items-center justify-between text-[#64748B] dark:text-muted-foreground">
+          <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-xs font-medium group-hover:text-primary transition-colors">Completed Tasks</span>
-            <CheckCheck size={16} className="text-[#64748B] dark:text-muted-foreground" />
+            <CheckCheck size={16} className="text-primary" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-[#172033] dark:text-foreground tracking-tight tabular-nums">
-              {taskStats.completed} <span className="text-xs font-normal text-[#64748B] dark:text-muted-foreground">/ {taskStats.total}</span>
+            <div className="text-2xl font-bold text-foreground tracking-tight tabular-nums">
+              {taskStats.completed} <span className="text-xs font-normal text-muted-foreground">/ {taskStats.total}</span>
             </div>
-            <p className="text-[11px] text-[#64748B] dark:text-muted-foreground truncate mt-0.5">
+            <p className="text-[11px] text-muted-foreground truncate mt-0.5">
               {taskStats.total ? Math.round((taskStats.completed / taskStats.total) * 100) : 0}% completion rate
             </p>
           </div>
@@ -779,19 +782,19 @@ function EmployeeDashboard() {
         {/* Available Leave Balance */}
         <Link
           to="/my-leaves"
-          className="bg-white dark:bg-card rounded-xl border border-[#E2E8F0] dark:border-border/70 p-4 shadow-xs flex flex-col justify-between h-[102px] hover:border-primary/40 transition-colors group"
+          className="bg-card rounded-2xl border border-border/80 p-4 shadow-xs flex flex-col justify-between h-[104px] hover:border-primary/50 transition-colors group"
         >
-          <div className="flex items-center justify-between text-[#64748B] dark:text-muted-foreground">
+          <div className="flex items-center justify-between text-muted-foreground">
             <span className="text-xs font-medium group-hover:text-primary transition-colors">Available Leave</span>
-            <FileText size={16} className="text-[#64748B] dark:text-muted-foreground" />
+            <FileText size={16} className="text-purple-500" />
           </div>
           <div>
-            <div className="text-2xl font-bold text-[#172033] dark:text-foreground tracking-tight tabular-nums">
-              {availableLeaveDays} <span className="text-xs font-normal text-[#64748B] dark:text-muted-foreground">days</span>
+            <div className="text-2xl font-bold text-foreground tracking-tight tabular-nums">
+              {availableLeaveDays} <span className="text-xs font-normal text-muted-foreground">days</span>
             </div>
             <div className="flex items-center justify-between mt-0.5">
-              <span className="text-[11px] text-[#64748B] dark:text-muted-foreground">Annual quota balance</span>
-              <span className="text-[11px] font-semibold text-[#4F46E5] group-hover:underline">
+              <span className="text-[11px] text-muted-foreground">Annual quota balance</span>
+              <span className="text-[11px] font-semibold text-primary group-hover:underline">
                 Apply →
               </span>
             </div>
@@ -804,25 +807,25 @@ function EmployeeDashboard() {
       {/* ========================================================================= */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Left Column (60%): My Tasks */}
-        <div className="lg:col-span-7 bg-white dark:bg-card rounded-xl border border-[#E2E8F0] dark:border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-7 bg-card rounded-2xl border border-border/80 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-[#E2E8F0] dark:border-border/60 pb-3 mb-2">
+            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-2">
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-bold text-[#172033] dark:text-foreground">My Tasks</h2>
-                <span className="rounded-md bg-[#F1F5F9] dark:bg-muted px-2 py-0.5 text-[11px] font-medium text-[#64748B] dark:text-muted-foreground">
+                <h2 className="text-sm font-bold text-foreground">My Tasks</h2>
+                <span className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
                   {focusTasks.length} active
                 </span>
               </div>
               <Link
                 to="/tasks"
-                className="text-xs font-semibold text-[#4F46E5] dark:text-primary hover:underline inline-flex items-center gap-1"
+                className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
               >
                 <span>View all tasks</span>
                 <ArrowRight size={12} />
               </Link>
             </div>
 
-            <div className="divide-y divide-[#F1F5F9] dark:divide-border/40">
+            <div className="divide-y divide-border/40">
               {focusTasks.length > 0 ? (
                 focusTasks.map((task) => {
                   const isOverdue = task.deadline && new Date(task.deadline).getTime() < Date.now();
@@ -835,27 +838,27 @@ function EmployeeDashboard() {
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <h3 className="text-xs sm:text-sm font-semibold text-[#172033] dark:text-foreground group-hover:text-[#4F46E5] transition-colors truncate">
+                            <h3 className="text-xs sm:text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">
                               {task.title}
                             </h3>
                             {task.priority && (
                               <span
                                 className={cn(
-                                  "rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider shrink-0 border",
+                                  "rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider shrink-0 border",
                                   task.priority === "high"
-                                    ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
+                                    ? "bg-destructive/10 text-destructive border-destructive/20"
                                     : task.priority === "medium"
-                                      ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
-                                      : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
+                                      ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                                      : "bg-muted text-muted-foreground border-border",
                                 )}
                               >
                                 {task.priority}
                               </span>
                             )}
                           </div>
-                          <div className="mt-1 flex items-center gap-3 text-xs text-[#64748B] dark:text-muted-foreground">
+                          <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
                             {task.deadline ? (
-                              <span className={cn("inline-flex items-center gap-1", isOverdue ? "text-rose-600 dark:text-rose-400 font-medium" : "")}>
+                              <span className={cn("inline-flex items-center gap-1", isOverdue ? "text-destructive font-semibold" : "")}>
                                 <Clock size={12} />
                                 {isOverdue ? "Overdue: " : "Deadline: "}
                                 {format(new Date(task.deadline), "MMM d, yyyy")}
@@ -869,12 +872,12 @@ function EmployeeDashboard() {
                         <div className="shrink-0">
                           <span
                             className={cn(
-                              "rounded-md px-2 py-0.5 text-[11px] font-medium capitalize border",
+                              "rounded-md px-2 py-0.5 text-[11px] font-semibold capitalize border",
                               task.status === "in_progress"
-                                ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800"
+                                ? "bg-primary/10 text-primary border-primary/20"
                                 : task.status === "review"
-                                  ? "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800"
-                                  : "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
+                                  ? "bg-purple-500/10 text-purple-600 border-purple-500/20"
+                                  : "bg-muted text-muted-foreground border-border",
                             )}
                           >
                             {task.status ? task.status.replace("_", " ") : "Pending"}
@@ -882,15 +885,18 @@ function EmployeeDashboard() {
                         </div>
                       </div>
 
-                      {/* Progress Bar */}
+                      {/* Progress Bar with ASLENIX Brand Gradient */}
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-[#F1F5F9] dark:bg-muted rounded-full overflow-hidden">
+                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-[#4F46E5] rounded-full transition-all duration-300"
-                            style={{ width: `${progressPct}%` }}
+                            className="h-full rounded-full transition-all duration-300"
+                            style={{
+                              width: `${progressPct}%`,
+                              background: "var(--gradient-brand)",
+                            }}
                           />
                         </div>
-                        <span className="text-[10px] text-[#94A3B8] tabular-nums font-mono">
+                        <span className="text-[10px] text-muted-foreground tabular-nums font-mono">
                           {progressPct}%
                         </span>
                       </div>
@@ -898,7 +904,7 @@ function EmployeeDashboard() {
                   );
                 })
               ) : (
-                <div className="py-6 text-center text-xs text-[#64748B] dark:text-muted-foreground">
+                <div className="py-6 text-center text-xs text-muted-foreground">
                   No active pending tasks assigned to you right now.
                 </div>
               )}
@@ -907,18 +913,21 @@ function EmployeeDashboard() {
         </div>
 
         {/* Right Column (40%): Today's Schedule and Upcoming Activities */}
-        <div className="lg:col-span-5 bg-white dark:bg-card rounded-xl border border-[#E2E8F0] dark:border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-5 bg-card rounded-2xl border border-border/80 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-[#E2E8F0] dark:border-border/60 pb-3 mb-2">
-              <h2 className="text-sm font-bold text-[#172033] dark:text-foreground">Schedule & Activities</h2>
-              <div className="flex items-center gap-1 text-[11px] font-medium text-[#64748B] dark:text-muted-foreground">
+            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-2">
+              <h2 className="text-sm font-bold text-foreground">Schedule & Activities</h2>
+              <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/60 p-0.5 text-[11px] font-medium text-muted-foreground">
                 <button
                   type="button"
                   onClick={() => setActivityFilter("all")}
                   className={cn(
                     "px-2 py-0.5 rounded transition-colors",
-                    activityFilter === "all" ? "bg-[#F1F5F9] dark:bg-muted text-[#172033] dark:text-foreground font-semibold" : "hover:text-[#172033]",
+                    activityFilter === "all"
+                      ? "font-bold text-[#0F172A] shadow-xs"
+                      : "hover:text-foreground",
                   )}
+                  style={activityFilter === "all" ? { background: "var(--gradient-brand)" } : undefined}
                 >
                   All
                 </button>
@@ -927,8 +936,11 @@ function EmployeeDashboard() {
                   onClick={() => setActivityFilter("meetings")}
                   className={cn(
                     "px-2 py-0.5 rounded transition-colors",
-                    activityFilter === "meetings" ? "bg-[#F1F5F9] dark:bg-muted text-[#172033] dark:text-foreground font-semibold" : "hover:text-[#172033]",
+                    activityFilter === "meetings"
+                      ? "font-bold text-[#0F172A] shadow-xs"
+                      : "hover:text-foreground",
                   )}
+                  style={activityFilter === "meetings" ? { background: "var(--gradient-brand)" } : undefined}
                 >
                   Meetings
                 </button>
@@ -937,15 +949,18 @@ function EmployeeDashboard() {
                   onClick={() => setActivityFilter("holidays")}
                   className={cn(
                     "px-2 py-0.5 rounded transition-colors",
-                    activityFilter === "holidays" ? "bg-[#F1F5F9] dark:bg-muted text-[#172033] dark:text-foreground font-semibold" : "hover:text-[#172033]",
+                    activityFilter === "holidays"
+                      ? "font-bold text-[#0F172A] shadow-xs"
+                      : "hover:text-foreground",
                   )}
+                  style={activityFilter === "holidays" ? { background: "var(--gradient-brand)" } : undefined}
                 >
                   Holidays
                 </button>
               </div>
             </div>
 
-            <div className="divide-y divide-[#F1F5F9] dark:divide-border/40">
+            <div className="divide-y divide-border/40">
               {upcomingActivities.length > 0 ? (
                 upcomingActivities.map((item) => (
                   <div
@@ -956,26 +971,26 @@ function EmployeeDashboard() {
                       <div className="flex items-center gap-1.5">
                         <span
                           className={cn(
-                            "rounded px-1.5 py-0.2 text-[10px] font-semibold uppercase tracking-wider shrink-0 border",
+                            "rounded px-1.5 py-0.2 text-[10px] font-bold uppercase tracking-wider shrink-0 border",
                             item.type === "meeting"
-                              ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800"
+                              ? "bg-primary/10 text-primary border-primary/20"
                               : item.type === "holiday"
-                                ? "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800"
-                                : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800",
+                                ? "bg-purple-500/10 text-purple-600 border-purple-500/20"
+                                : "bg-amber-500/10 text-amber-600 border-amber-500/20",
                           )}
                         >
                           {item.type}
                         </span>
                         {item.isToday && (
-                          <span className="rounded bg-emerald-100 text-emerald-800 px-1 py-0.2 text-[9px] font-bold uppercase shrink-0">
+                          <span className="rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-1 py-0.2 text-[9px] font-bold uppercase shrink-0">
                             Today
                           </span>
                         )}
-                        <h3 className="truncate text-xs sm:text-sm font-medium text-[#172033] dark:text-foreground">
+                        <h3 className="truncate text-xs sm:text-sm font-semibold text-foreground">
                           {item.title}
                         </h3>
                       </div>
-                      <div className="mt-0.5 text-[11px] text-[#64748B] dark:text-muted-foreground flex items-center gap-1.5">
+                      <div className="mt-0.5 text-[11px] text-muted-foreground flex items-center gap-1.5">
                         <Clock size={11} className="shrink-0" />
                         <span>{item.timeLabel}</span>
                         {item.subLabel && <span className="truncate">· {item.subLabel}</span>}
@@ -986,7 +1001,7 @@ function EmployeeDashboard() {
                         href={item.actionUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 rounded-[8px] bg-[#EEF2FF] dark:bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-[#4F46E5] dark:text-primary hover:bg-[#E0E7FF] transition-colors shrink-0"
+                        className="inline-flex items-center gap-1 rounded-lg border border-primary/25 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors shrink-0"
                       >
                         <span>Join</span>
                         <ExternalLink size={11} />
@@ -995,7 +1010,7 @@ function EmployeeDashboard() {
                   </div>
                 ))
               ) : (
-                <div className="py-6 text-center text-xs text-[#64748B] dark:text-muted-foreground">
+                <div className="py-6 text-center text-xs text-muted-foreground">
                   No upcoming activities scheduled.
                 </div>
               )}
@@ -1009,33 +1024,33 @@ function EmployeeDashboard() {
       {/* ========================================================================= */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Left Column (60%): Leave Request Status */}
-        <div className="lg:col-span-7 bg-white dark:bg-card rounded-xl border border-[#E2E8F0] dark:border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-7 bg-card rounded-2xl border border-border/80 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-[#E2E8F0] dark:border-border/60 pb-3 mb-2">
+            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-2">
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-bold text-[#172033] dark:text-foreground">Leave Requests Status</h2>
-                <span className="rounded-md bg-[#F1F5F9] dark:bg-muted px-2 py-0.5 text-[11px] font-medium text-[#64748B] dark:text-muted-foreground">
+                <h2 className="text-sm font-bold text-foreground">Leave Requests Status</h2>
+                <span className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
                   {recentLeaves.filter((r) => r.status === "pending").length} pending
                 </span>
               </div>
               <div className="flex items-center gap-3">
                 <Link
                   to="/my-leaves"
-                  className="text-xs font-semibold text-[#4F46E5] dark:text-primary hover:underline inline-flex items-center gap-1"
+                  className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
                 >
                   <span>Apply Leave</span>
                   <CalendarPlus size={13} />
                 </Link>
                 <Link
                   to="/my-leaves"
-                  className="text-xs font-medium text-[#64748B] dark:text-muted-foreground hover:underline hidden sm:inline"
+                  className="text-xs font-medium text-muted-foreground hover:text-foreground hover:underline hidden sm:inline"
                 >
                   View all
                 </Link>
               </div>
             </div>
 
-            <div className="divide-y divide-[#F1F5F9] dark:divide-border/40">
+            <div className="divide-y divide-border/40">
               {recentLeaves.length > 0 ? (
                 recentLeaves.slice(0, 4).map((request) => (
                   <div
@@ -1044,16 +1059,16 @@ function EmployeeDashboard() {
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs sm:text-sm font-semibold capitalize text-[#172033] dark:text-foreground truncate">
+                        <span className="text-xs sm:text-sm font-semibold capitalize text-foreground truncate">
                           {request.leave_type.replace("_", " ")} Leave
                         </span>
-                        <span className="text-[11px] text-[#94A3B8]">·</span>
-                        <span className="text-xs text-[#64748B] dark:text-muted-foreground tabular-nums">
+                        <span className="text-[11px] text-muted-foreground/60">·</span>
+                        <span className="text-xs text-muted-foreground tabular-nums">
                           {format(new Date(request.start_date), "MMM d")} –{" "}
                           {format(new Date(request.end_date), "MMM d, yyyy")}
                         </span>
                       </div>
-                      <div className="mt-0.5 text-[11px] text-[#64748B] dark:text-muted-foreground truncate">
+                      <div className="mt-0.5 text-[11px] text-muted-foreground truncate">
                         {request.reason ? `Reason: ${request.reason}` : "No specific reason provided"}
                       </div>
                     </div>
@@ -1062,12 +1077,12 @@ function EmployeeDashboard() {
                         className={cn(
                           "rounded-md px-2 py-0.5 text-[11px] font-semibold capitalize border",
                           request.status === "approved"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                            ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                             : request.status === "rejected"
-                              ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
+                              ? "bg-destructive/10 text-destructive border-destructive/20"
                               : request.status === "cancelled"
-                                ? "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
-                                : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800",
+                                ? "bg-muted text-muted-foreground border-border"
+                                : "bg-amber-500/10 text-amber-600 border-amber-500/20",
                         )}
                       >
                         {request.status}
@@ -1076,9 +1091,9 @@ function EmployeeDashboard() {
                   </div>
                 ))
               ) : (
-                <div className="py-6 text-center text-xs text-[#64748B] dark:text-muted-foreground">
+                <div className="py-6 text-center text-xs text-muted-foreground">
                   No leave requests submitted recently.{" "}
-                  <Link to="/my-leaves" className="text-[#4F46E5] font-semibold hover:underline">
+                  <Link to="/my-leaves" className="text-primary font-semibold hover:underline">
                     Submit a request
                   </Link>
                 </div>
@@ -1088,27 +1103,27 @@ function EmployeeDashboard() {
         </div>
 
         {/* Right Column (40%): Recent Notifications */}
-        <div className="lg:col-span-5 bg-white dark:bg-card rounded-xl border border-[#E2E8F0] dark:border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-5 bg-card rounded-2xl border border-border/80 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-[#E2E8F0] dark:border-border/60 pb-3 mb-2">
+            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-2">
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-bold text-[#172033] dark:text-foreground">Recent Notifications</h2>
+                <h2 className="text-sm font-bold text-foreground">Recent Notifications</h2>
                 {notifications.filter((n) => !n.is_read).length > 0 && (
-                  <span className="rounded-full bg-blue-100 text-blue-700 px-1.5 py-0.2 text-[10px] font-bold">
+                  <span className="rounded-full bg-primary/15 text-primary px-1.5 py-0.2 text-[10px] font-bold">
                     {notifications.filter((n) => !n.is_read).length} new
                   </span>
                 )}
               </div>
               <Link
                 to="/notifications"
-                className="text-xs font-semibold text-[#4F46E5] dark:text-primary hover:underline inline-flex items-center gap-1"
+                className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
               >
                 <span>View all</span>
                 <ArrowRight size={12} />
               </Link>
             </div>
 
-            <div className="divide-y divide-[#F1F5F9] dark:divide-border/40">
+            <div className="divide-y divide-border/40">
               {notifications.length > 0 ? (
                 notifications.slice(0, 4).map((n) => (
                   <div
@@ -1118,23 +1133,23 @@ function EmployeeDashboard() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
                         {!n.is_read && (
-                          <span className="h-1.5 w-1.5 rounded-full bg-[#4F46E5] shrink-0" />
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
                         )}
-                        <h3 className="truncate text-xs sm:text-sm font-semibold text-[#172033] dark:text-foreground">
+                        <h3 className="truncate text-xs sm:text-sm font-semibold text-foreground">
                           {n.title}
                         </h3>
                       </div>
-                      <p className="mt-0.5 truncate text-[11px] text-[#64748B] dark:text-muted-foreground">
+                      <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
                         {n.message}
                       </p>
                     </div>
-                    <span className="text-[10px] text-[#94A3B8] shrink-0 tabular-nums whitespace-nowrap">
+                    <span className="text-[10px] text-muted-foreground/80 shrink-0 tabular-nums whitespace-nowrap">
                       {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                     </span>
                   </div>
                 ))
               ) : (
-                <div className="py-6 text-center text-xs text-[#64748B] dark:text-muted-foreground">
+                <div className="py-6 text-center text-xs text-muted-foreground">
                   No notifications yet.
                 </div>
               )}
@@ -1148,18 +1163,18 @@ function EmployeeDashboard() {
       {/* ========================================================================= */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Left Column (60%): Recent Attendance History */}
-        <div className="lg:col-span-7 bg-white dark:bg-card rounded-xl border border-[#E2E8F0] dark:border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-7 bg-card rounded-2xl border border-border/80 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-[#E2E8F0] dark:border-border/60 pb-3 mb-2">
+            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-2">
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-bold text-[#172033] dark:text-foreground">Recent Attendance History</h2>
-                <span className="text-[11px] text-[#64748B] dark:text-muted-foreground hidden sm:inline">
-                  (Past 5 days)
+                <h2 className="text-sm font-bold text-foreground">Recent Attendance History</h2>
+                <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                  (Past 5 records)
                 </span>
               </div>
               <Link
                 to="/my-attendance"
-                className="text-xs font-semibold text-[#4F46E5] dark:text-primary hover:underline inline-flex items-center gap-1"
+                className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
               >
                 <span>View full log</span>
                 <ArrowRight size={12} />
@@ -1169,41 +1184,41 @@ function EmployeeDashboard() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-[#F1F5F9] dark:border-border/40 text-[#64748B] dark:text-muted-foreground text-[11px]">
-                    <th className="py-2 font-medium">Date</th>
-                    <th className="py-2 font-medium">In</th>
-                    <th className="py-2 font-medium">Out</th>
-                    <th className="py-2 font-medium">Hours</th>
-                    <th className="py-2 font-medium text-right">Status</th>
+                  <tr className="border-b border-border/60 text-muted-foreground text-[11px]">
+                    <th className="py-2 font-semibold">Date</th>
+                    <th className="py-2 font-semibold">In</th>
+                    <th className="py-2 font-semibold">Out</th>
+                    <th className="py-2 font-semibold">Hours</th>
+                    <th className="py-2 font-semibold text-right">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#F1F5F9] dark:divide-border/40">
+                <tbody className="divide-y divide-border/40">
                   {recentAttendance.length > 0 ? (
                     recentAttendance.map((row) => (
-                      <tr key={row.id} className="hover:bg-[#F8FAFC] dark:hover:bg-muted/40 transition-colors">
-                        <td className="py-2.5 font-medium text-[#172033] dark:text-foreground tabular-nums whitespace-nowrap">
+                      <tr key={row.id} className="hover:bg-muted/40 transition-colors">
+                        <td className="py-2.5 font-semibold text-foreground tabular-nums whitespace-nowrap">
                           {format(new Date(row.date), "MMM d, yyyy")}
                         </td>
-                        <td className="py-2.5 text-[#64748B] dark:text-muted-foreground tabular-nums whitespace-nowrap">
+                        <td className="py-2.5 text-muted-foreground tabular-nums whitespace-nowrap">
                           {row.check_in_time ? formatTime12Hour(row.check_in_time) : "—"}
                         </td>
-                        <td className="py-2.5 text-[#64748B] dark:text-muted-foreground tabular-nums whitespace-nowrap">
+                        <td className="py-2.5 text-muted-foreground tabular-nums whitespace-nowrap">
                           {row.check_out_time ? formatTime12Hour(row.check_out_time) : "—"}
                         </td>
-                        <td className="py-2.5 text-[#172033] dark:text-foreground font-semibold tabular-nums whitespace-nowrap">
+                        <td className="py-2.5 text-foreground font-bold tabular-nums whitespace-nowrap">
                           {row.work_hours ? formatWorkHours(row.work_hours) : "—"}
                         </td>
                         <td className="py-2.5 text-right whitespace-nowrap">
                           <span
                             className={cn(
-                              "inline-block rounded px-2 py-0.5 text-[10px] font-semibold capitalize border",
+                              "inline-block rounded px-2 py-0.5 text-[10px] font-bold capitalize border",
                               row.status === "present" && !row.is_late
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                                 : row.is_late || row.status === "late"
-                                  ? "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
+                                  ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
                                   : row.status === "leave"
-                                    ? "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800"
-                                    : "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
+                                    ? "bg-purple-500/10 text-purple-600 border-purple-500/20"
+                                    : "bg-muted text-muted-foreground border-border",
                             )}
                           >
                             {row.is_late ? "Late" : row.status}
@@ -1213,7 +1228,7 @@ function EmployeeDashboard() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={5} className="py-6 text-center text-xs text-[#64748B] dark:text-muted-foreground">
+                      <td colSpan={5} className="py-6 text-center text-xs text-muted-foreground">
                         No recent attendance records found.
                       </td>
                     </tr>
@@ -1225,26 +1240,26 @@ function EmployeeDashboard() {
         </div>
 
         {/* Right Column (40%): Employee Quick Actions */}
-        <div className="lg:col-span-5 bg-white dark:bg-card rounded-xl border border-[#E2E8F0] dark:border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+        <div className="lg:col-span-5 bg-card rounded-2xl border border-border/80 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-[#E2E8F0] dark:border-border/60 pb-3 mb-3">
-              <h2 className="text-sm font-bold text-[#172033] dark:text-foreground">Quick Actions</h2>
-              <span className="text-xs text-[#64748B] dark:text-muted-foreground">Self-service</span>
+            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-3">
+              <h2 className="text-sm font-bold text-foreground">Quick Actions</h2>
+              <span className="text-xs text-muted-foreground">Self-service</span>
             </div>
 
             <div className="grid grid-cols-2 gap-2.5">
               <Link
                 to="/my-leaves"
-                className="flex items-center gap-2.5 rounded-lg border border-[#E2E8F0] dark:border-border/60 bg-[#F8FAFC] dark:bg-muted/40 p-2.5 hover:border-primary/50 hover:bg-white dark:hover:bg-muted transition-all group shadow-2xs"
+                className="flex items-center gap-2.5 rounded-xl border border-border bg-card p-2.5 hover:border-primary/50 hover:bg-muted/40 transition-all group shadow-2xs"
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/50 dark:text-purple-300">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-500/10 text-purple-600 border border-purple-500/20">
                   <CalendarPlus size={15} />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-semibold text-[#172033] dark:text-foreground group-hover:text-primary transition-colors truncate">
+                  <div className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors truncate">
                     Apply Leave
                   </div>
-                  <div className="text-[10px] text-[#64748B] dark:text-muted-foreground truncate">
+                  <div className="text-[10px] text-muted-foreground truncate">
                     Vacation & sick leave
                   </div>
                 </div>
@@ -1252,16 +1267,16 @@ function EmployeeDashboard() {
 
               <Link
                 to="/my-attendance"
-                className="flex items-center gap-2.5 rounded-lg border border-[#E2E8F0] dark:border-border/60 bg-[#F8FAFC] dark:bg-muted/40 p-2.5 hover:border-primary/50 hover:bg-white dark:hover:bg-muted transition-all group shadow-2xs"
+                className="flex items-center gap-2.5 rounded-xl border border-border bg-card p-2.5 hover:border-primary/50 hover:bg-muted/40 transition-all group shadow-2xs"
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
                   <CalendarCheck size={15} />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-semibold text-[#172033] dark:text-foreground group-hover:text-primary transition-colors truncate">
+                  <div className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors truncate">
                     My Attendance
                   </div>
-                  <div className="text-[10px] text-[#64748B] dark:text-muted-foreground truncate">
+                  <div className="text-[10px] text-muted-foreground truncate">
                     Logs & time report
                   </div>
                 </div>
@@ -1269,16 +1284,16 @@ function EmployeeDashboard() {
 
               <Link
                 to="/my-attendance"
-                className="flex items-center gap-2.5 rounded-lg border border-[#E2E8F0] dark:border-border/60 bg-[#F8FAFC] dark:bg-muted/40 p-2.5 hover:border-primary/50 hover:bg-white dark:hover:bg-muted transition-all group shadow-2xs"
+                className="flex items-center gap-2.5 rounded-xl border border-border bg-card p-2.5 hover:border-primary/50 hover:bg-muted/40 transition-all group shadow-2xs"
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-300">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 border border-amber-500/20">
                   <FileEdit size={15} />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-semibold text-[#172033] dark:text-foreground group-hover:text-primary transition-colors truncate">
+                  <div className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors truncate">
                     Correction
                   </div>
-                  <div className="text-[10px] text-[#64748B] dark:text-muted-foreground truncate">
+                  <div className="text-[10px] text-muted-foreground truncate">
                     Request time adjustment
                   </div>
                 </div>
@@ -1286,16 +1301,16 @@ function EmployeeDashboard() {
 
               <Link
                 to="/tasks"
-                className="flex items-center gap-2.5 rounded-lg border border-[#E2E8F0] dark:border-border/60 bg-[#F8FAFC] dark:bg-muted/40 p-2.5 hover:border-primary/50 hover:bg-white dark:hover:bg-muted transition-all group shadow-2xs"
+                className="flex items-center gap-2.5 rounded-xl border border-border bg-card p-2.5 hover:border-primary/50 hover:bg-muted/40 transition-all group shadow-2xs"
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/50 dark:text-blue-300">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
                   <CheckSquare size={15} />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-semibold text-[#172033] dark:text-foreground group-hover:text-primary transition-colors truncate">
+                  <div className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors truncate">
                     My Tasks
                   </div>
-                  <div className="text-[10px] text-[#64748B] dark:text-muted-foreground truncate">
+                  <div className="text-[10px] text-muted-foreground truncate">
                     Kanban & sprint work
                   </div>
                 </div>
@@ -1303,16 +1318,16 @@ function EmployeeDashboard() {
 
               <Link
                 to="/meetings"
-                className="flex items-center gap-2.5 rounded-lg border border-[#E2E8F0] dark:border-border/60 bg-[#F8FAFC] dark:bg-muted/40 p-2.5 hover:border-primary/50 hover:bg-white dark:hover:bg-muted transition-all group shadow-2xs"
+                className="flex items-center gap-2.5 rounded-xl border border-border bg-card p-2.5 hover:border-primary/50 hover:bg-muted/40 transition-all group shadow-2xs"
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/50 dark:text-indigo-300">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 border border-blue-500/20">
                   <Video size={15} />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-semibold text-[#172033] dark:text-foreground group-hover:text-primary transition-colors truncate">
+                  <div className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors truncate">
                     Meetings
                   </div>
-                  <div className="text-[10px] text-[#64748B] dark:text-muted-foreground truncate">
+                  <div className="text-[10px] text-muted-foreground truncate">
                     Team calls & standups
                   </div>
                 </div>
@@ -1320,16 +1335,16 @@ function EmployeeDashboard() {
 
               <Link
                 to="/profile"
-                className="flex items-center gap-2.5 rounded-lg border border-[#E2E8F0] dark:border-border/60 bg-[#F8FAFC] dark:bg-muted/40 p-2.5 hover:border-primary/50 hover:bg-white dark:hover:bg-muted transition-all group shadow-2xs"
+                className="flex items-center gap-2.5 rounded-xl border border-border bg-card p-2.5 hover:border-primary/50 hover:bg-muted/40 transition-all group shadow-2xs"
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-800 dark:text-slate-300">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground border border-border">
                   <UserCheck size={15} />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-semibold text-[#172033] dark:text-foreground group-hover:text-primary transition-colors truncate">
+                  <div className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors truncate">
                     Account Details
                   </div>
-                  <div className="text-[10px] text-[#64748B] dark:text-muted-foreground truncate">
+                  <div className="text-[10px] text-muted-foreground truncate">
                     Profile & emergency
                   </div>
                 </div>

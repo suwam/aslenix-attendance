@@ -55,7 +55,7 @@ export function StatCard({
           <div
             className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/80 bg-white/75 shadow-sm"
             style={{
-              background: `color-mix(in oklab, ${colors[accent]} 22%, transparent)`,
+              background: `color-mix(in srgb, ${colors[accent]} 22%, transparent)`,
               color: colors[accent],
             }}
           >

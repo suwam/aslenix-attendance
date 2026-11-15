@@ -9,22 +9,34 @@ function sanitizeColorString(str: string): string {
   if (!str || (!str.includes("oklch") && !str.includes("oklab") && !str.includes("lch") && !str.includes("lab") && !str.includes("color")))
     return str;
 
-  // Find all color function occurrences like oklch(...), oklab(...), color-mix(...)
-  return str.replace(/\b(?:oklch|oklab|lab|lch|color-mix|color|hwb)\((?:[^()]|\([^()]*\))*\)/gi, (match) => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 1;
-    canvas.height = 1;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx) return match;
+  let current = str;
+  let iterations = 0;
+  while (/(?:oklch|oklab|lab|lch|color-mix|color|hwb)\s*\(/i.test(current) && iterations < 5) {
+    const next = current.replace(/\b(?:oklch|oklab|lab|lch|color-mix|color|hwb)\((?:[^()]|\([^()]*\))*\)/gi, (match) => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = 1;
+        canvas.height = 1;
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        if (!ctx) return "rgba(0, 0, 0, 0)";
 
-    ctx.clearRect(0, 0, 1, 1);
-    ctx.fillStyle = match;
-    ctx.fillRect(0, 0, 1, 1);
-    const d = ctx.getImageData(0, 0, 1, 1).data;
-
-    // Convert back to standard rgba which html2canvas parses easily
-    return `rgba(${d[0]}, ${d[1]}, ${d[2]}, ${d[3] / 255})`;
-  });
+        ctx.clearRect(0, 0, 1, 1);
+        ctx.fillStyle = match;
+        ctx.fillRect(0, 0, 1, 1);
+        const d = ctx.getImageData(0, 0, 1, 1).data;
+        return `rgba(${d[0]}, ${d[1]}, ${d[2]}, ${d[3] / 255})`;
+      } catch {
+        return "rgba(0, 0, 0, 0)";
+      }
+    });
+    if (next === current) {
+      current = current.replace(/\b(?:oklch|oklab|lab|lch|color-mix|color|hwb)\([^;{}]+?\)/gi, "rgba(0, 0, 0, 0)");
+      break;
+    }
+    current = next;
+    iterations++;
+  }
+  return current;
 }
 
 export async function captureSanitizedPdfPage(originalElement: HTMLElement): Promise<string> {

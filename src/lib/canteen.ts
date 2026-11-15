@@ -177,8 +177,19 @@ const MODERN_COLOR_REGEX = /\b(?:oklch|oklab|lab|lch|color-mix|color|hwb)\((?:[^
 
 export function replaceModernColorsInString(str: string): string {
   if (!str) return str;
-  if (!/(?:oklch|oklab|lab|lch|color-mix|color|hwb)/i.test(str)) return str;
-  return str.replace(MODERN_COLOR_REGEX, (match) => convertColorToRgba(match));
+  let current = str;
+  let iterations = 0;
+  while (/(?:oklch|oklab|lab|lch|color-mix|color|hwb)\s*\(/i.test(current) && iterations < 5) {
+    const next = current.replace(MODERN_COLOR_REGEX, (match) => convertColorToRgba(match));
+    if (next === current) {
+      // Fallback: replace any remaining modern color functions with transparent
+      current = current.replace(/\b(?:oklch|oklab|lab|lch|color-mix|color|hwb)\([^;{}]+?\)/gi, "rgba(0, 0, 0, 0)");
+      break;
+    }
+    current = next;
+    iterations++;
+  }
+  return current;
 }
 
 // Backward compatible alias
@@ -198,22 +209,32 @@ export async function exportCanteenSheetToPDF(elementId: string, filename = "Can
     logging: false,
     windowWidth: 1400,
     onclone: (clonedDoc: Document) => {
-      // 1. Sanitize all <style> tags in the cloned document so no CSS rule contains oklch/oklab/color-mix
+      // 1. Isolate the target sheet and remove extraneous page elements (PageHeader, sidebar, navigation, modals)
+      // This guarantees html2canvas never evaluates styles or fonts of other components on the page.
+      const clonedSheet = clonedDoc.getElementById(elementId);
+      if (clonedSheet && clonedDoc.body) {
+        const isolatedWrapper = clonedDoc.createElement("div");
+        isolatedWrapper.id = "canteen-pdf-isolated-wrapper";
+        isolatedWrapper.style.backgroundColor = "#ffffff";
+        isolatedWrapper.style.color = "#000000";
+        isolatedWrapper.style.padding = "0";
+        isolatedWrapper.style.margin = "0";
+        isolatedWrapper.appendChild(clonedSheet);
+
+        clonedDoc.body.innerHTML = "";
+        clonedDoc.body.style.backgroundColor = "#ffffff";
+        clonedDoc.body.style.color = "#000000";
+        clonedDoc.body.appendChild(isolatedWrapper);
+      }
+
+      // 2. Sanitize all <style> tags in the cloned document so no CSS rule contains modern colors
       clonedDoc.querySelectorAll("style").forEach((styleTag) => {
-        if (styleTag.textContent && /(?:oklch|oklab|lab|lch|color-mix|color)/i.test(styleTag.textContent)) {
+        if (styleTag.textContent && /(?:oklch|oklab|lab|lch|color-mix|color|hwb)/i.test(styleTag.textContent)) {
           styleTag.textContent = replaceModernColorsInString(styleTag.textContent);
         }
       });
 
-      // 2. Sanitize any inline style attributes containing modern color functions
-      clonedDoc.querySelectorAll("*").forEach((element) => {
-        const styleAttr = element.getAttribute("style");
-        if (styleAttr && /(?:oklch|oklab|lab|lch|color-mix|color)/i.test(styleAttr)) {
-          element.setAttribute("style", replaceModernColorsInString(styleAttr));
-        }
-      });
-
-      // 3. Ensure document and body background are pure sRGB white (prevents html2canvas root background error)
+      // 3. Ensure document and body background are pure sRGB white
       clonedDoc.documentElement.style.backgroundColor = "#ffffff";
       clonedDoc.documentElement.style.color = "#000000";
       if (clonedDoc.body) {
@@ -227,7 +248,6 @@ export async function exportCanteenSheetToPDF(elementId: string, filename = "Can
       });
 
       // 5. Freeze all elements inside the sheet to pure sRGB so html2canvas never encounters modern colors in computed styles
-      const clonedSheet = clonedDoc.getElementById(elementId);
       if (clonedSheet) {
         clonedSheet.style.width = "1320px";
         clonedSheet.style.minWidth = "1320px";
@@ -254,36 +274,20 @@ export async function exportCanteenSheetToPDF(elementId: string, filename = "Can
         allSheetElements.forEach((node) => {
           const elem = node as HTMLElement;
           try {
-            // Read computed style safely from the live element in window
-            const liveEl = document.getElementById(elem.id) || elem;
-            const computed = window.getComputedStyle(liveEl);
+            const computed = window.getComputedStyle(elem);
             for (const prop of colorProperties) {
               const val = computed[prop];
-              if (val && typeof val === "string" && /(?:oklch|oklab|lab|lch|color)/i.test(val)) {
+              if (val && typeof val === "string" && /(?:oklch|oklab|lab|lch|color|hwb)/i.test(val)) {
                 elem.style[prop as any] = replaceModernColorsInString(val);
               }
             }
           } catch {
-            // Fallback: check inline style
             const s = elem.getAttribute("style");
-            if (s && /(?:oklch|oklab|lab|lch|color)/i.test(s)) {
+            if (s && /(?:oklch|oklab|lab|lch|color|hwb)/i.test(s)) {
               elem.setAttribute("style", replaceModernColorsInString(s));
             }
           }
         });
-      }
-
-      const clonedContainer = clonedDoc.getElementById("canteen-log-sheet-container");
-      if (clonedContainer) {
-        clonedContainer.style.width = "1320px";
-        clonedContainer.style.minWidth = "1320px";
-        clonedContainer.style.maxWidth = "1320px";
-        clonedContainer.style.overflow = "visible";
-        clonedContainer.style.padding = "0";
-        clonedContainer.style.margin = "0";
-        clonedContainer.style.border = "none";
-        clonedContainer.style.boxShadow = "none";
-        clonedContainer.style.backgroundColor = "#ffffff";
       }
     },
   });

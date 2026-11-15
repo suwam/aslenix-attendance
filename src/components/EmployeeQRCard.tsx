@@ -44,7 +44,7 @@ export const EmployeeQRCard = forwardRef<HTMLDivElement, { profile: QRProfile; s
         className="rounded-2xl p-5 relative overflow-hidden"
         style={{
           background: "var(--card)",
-          border: "1px solid color-mix(in oklab, var(--primary) 25%, transparent)",
+          border: "1px solid color-mix(in srgb, var(--primary) 25%, transparent)",
           boxShadow: "var(--shadow-neon-red), var(--shadow-glass)",
           width: 320,
         }}
@@ -59,8 +59,8 @@ export const EmployeeQRCard = forwardRef<HTMLDivElement, { profile: QRProfile; s
             className="text-[10px] uppercase tracking-wider px-2 py-1 rounded-full font-bold"
             style={{
               background: disabled
-                ? "color-mix(in oklab, #ef4444 25%, transparent)"
-                : "color-mix(in oklab, #10b981 25%, transparent)",
+                ? "color-mix(in srgb, #ef4444 25%, transparent)"
+                : "color-mix(in srgb, #10b981 25%, transparent)",
               color: disabled ? "#fca5a5" : "#86efac",
             }}
           >

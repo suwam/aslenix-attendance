@@ -72,7 +72,7 @@ export function TaskCard({
           <span
             className="shrink-0 text-[10px] uppercase font-bold px-2 py-0.5 rounded-md"
             style={{
-              background: `color-mix(in oklab, ${PRIORITY_COLORS[task.priority] || '#888'} 15%, transparent)`,
+              background: `color-mix(in srgb, ${PRIORITY_COLORS[task.priority] || '#888'} 15%, transparent)`,
               color: PRIORITY_COLORS[task.priority] || '#888',
             }}
           >
