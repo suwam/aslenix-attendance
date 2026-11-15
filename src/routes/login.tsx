@@ -101,9 +101,26 @@ function LoginPage() {
   }, []);
 
   useEffect(() => {
-    // The avatar is decorative. Deferring it protects first input and paint performance.
-    const timer = window.setTimeout(() => setShowAvatar(true), 450);
-    return () => window.clearTimeout(timer);
+    // The avatar is decorative. Never download or initialize WebGL on mobile,
+    // where the form is the only visible login content.
+    const desktopMedia = window.matchMedia("(min-width: 768px)");
+    let timer: number | undefined;
+
+    const syncAvatar = () => {
+      if (timer) window.clearTimeout(timer);
+      if (!desktopMedia.matches) {
+        setShowAvatar(false);
+        return;
+      }
+      timer = window.setTimeout(() => setShowAvatar(true), 450);
+    };
+
+    syncAvatar();
+    desktopMedia.addEventListener("change", syncAvatar);
+    return () => {
+      if (timer) window.clearTimeout(timer);
+      desktopMedia.removeEventListener("change", syncAvatar);
+    };
   }, []);
 
   const checkCapsLock = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -210,34 +227,9 @@ function LoginPage() {
       setAvatarState("celebrating");
       toast.success("Welcome back");
 
-      // Direct, robust role-based navigation
-      const [{ data: p }, { data: r }] = await Promise.all([
-        supabase
-          .from("profiles")
-          .select("approval_status, is_suspended")
-          .eq("user_id", authData.user.id)
-          .maybeSingle(),
-        supabase.from("user_roles").select("role").eq("user_id", authData.user.id),
-      ]);
-
-      const userRoles = (r ?? []).map((x: any) => x.role);
-      const isAdminUser = userRoles.some((x: string) =>
-        ["super_admin", "admin", "hr_manager"].includes(x)
-      );
-
-      if (p?.approval_status === "pending") {
-        nav({ to: "/pending" });
-      } else if (
-        p?.is_suspended ||
-        p?.approval_status === "rejected" ||
-        p?.approval_status === "suspended"
-      ) {
-        nav({ to: "/account-locked" });
-      } else if (isAdminUser) {
-        nav({ to: "/admin" });
-      } else {
-        nav({ to: "/dashboard" });
-      }
+      // AuthProvider already loads the profile and roles after sign-in. Going through
+      // the landing route avoids duplicating those requests, especially on mobile.
+      nav({ to: "/" });
     } catch (err: any) {
       console.error("Login unexpected error:", err);
       setAvatarState("error");
