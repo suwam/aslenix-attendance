@@ -321,10 +321,11 @@ function AttendancePage() {
   const saveEdit = async () => {
     if (!editing?.attendance || !user) return;
     setSaving(true);
+    const isAbsentOrLeave = form.status === "absent" || form.status === "leave";
     const { error } = await supabase.rpc("apply_admin_attendance_edit", {
       _attendance_id: editing.attendance.id,
-      _check_in_time: fromDateTimeInput(form.checkIn) as any,
-      _check_out_time: fromDateTimeInput(form.checkOut) as any,
+      _check_in_time: isAbsentOrLeave ? null : (fromDateTimeInput(form.checkIn) as any),
+      _check_out_time: isAbsentOrLeave ? null : (fromDateTimeInput(form.checkOut) as any),
       _status: form.status,
       _work_location: form.workLocation,
       _reason: form.reason,

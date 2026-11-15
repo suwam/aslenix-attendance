@@ -244,6 +244,8 @@ DECLARE
   v_check_out_local TIME;
   v_late_threshold TIME;
   v_early_threshold TIME;
+  v_effective_check_in TIMESTAMPTZ;
+  v_effective_check_out TIMESTAMPTZ;
 BEGIN
   IF NOT public.is_admin(auth.uid()) THEN
     RAISE EXCEPTION 'Only admins and HR can edit attendance';
@@ -277,61 +279,96 @@ BEGIN
   FROM public.get_employee_shift_for_date(v_old.user_id, v_old.date)
   LIMIT 1;
 
-  IF _check_in_time IS NOT NULL AND v_shift.start_time IS NOT NULL THEN
-    v_check_in_local := (_check_in_time AT TIME ZONE 'Asia/Kathmandu')::time;
-    v_late_threshold := (v_shift.start_time + (v_shift.grace_period_mins || ' minutes')::interval)::time;
-    IF v_check_in_local > v_late_threshold THEN
-      v_is_late := true;
-      v_late_mins := GREATEST(0, ROUND(EXTRACT(EPOCH FROM (v_check_in_local - v_shift.start_time)) / 60));
-    ELSE
-      v_is_late := false;
-      v_late_mins := 0;
-    END IF;
-  END IF;
-
-  IF _check_out_time IS NOT NULL AND v_shift.end_time IS NOT NULL THEN
-    v_check_out_local := (_check_out_time AT TIME ZONE 'Asia/Kathmandu')::time;
-    v_early_threshold := (v_shift.end_time - (COALESCE(v_shift.checkout_grace_period_mins, 0) || ' minutes')::interval)::time;
-    IF v_check_out_local < v_early_threshold THEN
-      v_is_early := true;
-      v_early_mins := GREATEST(0, ROUND(EXTRACT(EPOCH FROM (v_shift.end_time - v_check_out_local)) / 60));
-    ELSE
-      v_is_early := false;
-      v_early_mins := 0;
-      IF v_check_out_local > v_shift.end_time THEN
-        v_overtime_mins := GREATEST(0, ROUND(EXTRACT(EPOCH FROM (v_check_out_local - v_shift.end_time)) / 60));
-      END IF;
-    END IF;
-  END IF;
-
-  IF _check_in_time IS NOT NULL AND _check_out_time IS NOT NULL AND _check_out_time > _check_in_time THEN
-    v_work_mins := GREATEST(0, ROUND(EXTRACT(EPOCH FROM (_check_out_time - _check_in_time)) / 60));
-    v_work_hours := ROUND((v_work_mins::numeric / 60.0), 2);
+  -- Resolve attendance status with strict type safety (no enum/text COALESCE mismatch)
+  IF _status IS NOT NULL THEN
+    v_status := _status;
+  ELSIF v_old.status IS NOT NULL THEN
+    v_status := v_old.status;
   ELSE
-    v_work_mins := 0;
-    v_work_hours := 0;
+    v_status := 'present'::public.attendance_status;
   END IF;
 
-  v_status := COALESCE(_status, CASE WHEN v_is_late THEN 'late' ELSE 'present' END);
-  IF v_status = 'present' THEN
+  -- If marked absent or leave, clear check-in / check-out times and all duration metrics
+  IF v_status IN ('absent', 'leave') THEN
+    v_effective_check_in := NULL;
+    v_effective_check_out := NULL;
     v_is_late := false;
     v_late_mins := 0;
-  ELSIF v_status = 'late' THEN
-    v_is_late := true;
+    v_is_early := false;
+    v_early_mins := 0;
+    v_work_mins := 0;
+    v_work_hours := 0;
+    v_overtime_mins := 0;
+  ELSE
+    v_effective_check_in := _check_in_time;
+    v_effective_check_out := _check_out_time;
+
+    -- Calculate check-in metrics against assigned shift
+    IF v_effective_check_in IS NOT NULL AND v_shift.start_time IS NOT NULL THEN
+      v_check_in_local := (v_effective_check_in AT TIME ZONE 'Asia/Kathmandu')::time;
+      v_late_threshold := (v_shift.start_time + (v_shift.grace_period_mins || ' minutes')::interval)::time;
+      IF v_check_in_local > v_late_threshold THEN
+        v_is_late := true;
+        v_late_mins := GREATEST(0, ROUND(EXTRACT(EPOCH FROM (v_check_in_local - v_shift.start_time)) / 60));
+      ELSE
+        v_is_late := false;
+        v_late_mins := 0;
+      END IF;
+    END IF;
+
+    -- Calculate check-out metrics against assigned shift
+    IF v_effective_check_out IS NOT NULL AND v_shift.end_time IS NOT NULL THEN
+      v_check_out_local := (v_effective_check_out AT TIME ZONE 'Asia/Kathmandu')::time;
+      v_early_threshold := (v_shift.end_time - (COALESCE(v_shift.checkout_grace_period_mins, 0) || ' minutes')::interval)::time;
+      IF v_check_out_local < v_early_threshold THEN
+        v_is_early := true;
+        v_early_mins := GREATEST(0, ROUND(EXTRACT(EPOCH FROM (v_shift.end_time - v_check_out_local)) / 60));
+      ELSE
+        v_is_early := false;
+        v_early_mins := 0;
+        IF v_check_out_local > v_shift.end_time THEN
+          v_overtime_mins := GREATEST(0, ROUND(EXTRACT(EPOCH FROM (v_check_out_local - v_shift.end_time)) / 60));
+        END IF;
+      END IF;
+    END IF;
+
+    -- Calculate total working time
+    IF v_effective_check_in IS NOT NULL AND v_effective_check_out IS NOT NULL AND v_effective_check_out > v_effective_check_in THEN
+      v_work_mins := GREATEST(0, ROUND(EXTRACT(EPOCH FROM (v_effective_check_out - v_effective_check_in)) / 60));
+      v_work_hours := ROUND((v_work_mins::numeric / 60.0), 2);
+    ELSE
+      v_work_mins := 0;
+      v_work_hours := 0;
+    END IF;
+
+    -- If no explicit status was supplied, infer late vs present
+    IF _status IS NULL THEN
+      IF v_is_late THEN
+        v_status := 'late'::public.attendance_status;
+      ELSE
+        v_status := 'present'::public.attendance_status;
+      END IF;
+    ELSIF v_status = 'present' THEN
+      v_is_late := false;
+      v_late_mins := 0;
+    ELSIF v_status = 'late' THEN
+      v_is_late := true;
+    END IF;
   END IF;
 
   PERFORM set_config('attendance.audit_context', 'admin_edit', true);
 
   UPDATE public.attendance
   SET
-    check_in_time = _check_in_time,
-    check_out_time = _check_out_time,
+    check_in_time = v_effective_check_in,
+    check_out_time = v_effective_check_out,
     status = v_status,
     work_location = COALESCE(NULLIF(BTRIM(_work_location), ''), 'Office'),
     work_hours = v_work_hours,
     is_late = v_is_late,
     is_early_checkout = CASE
-      WHEN v_status IN ('present', 'half_day') AND _check_out_time IS NULL THEN false
+      WHEN v_status IN ('absent', 'leave') THEN false
+      WHEN v_status IN ('present', 'half_day') AND v_effective_check_out IS NULL THEN false
       WHEN v_status = 'present' AND NOT v_is_early THEN false
       ELSE v_is_early
     END,
