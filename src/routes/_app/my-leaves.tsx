@@ -671,8 +671,8 @@ function MyLeaves() {
           )}
         </GlassCard>
       ) : (
-        /* Container-wise 3 cards in a row on desktop/large screens */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4.5">
+        /* Container-wise 3 cards in a row on desktop/large screens (styled like reference cards) */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredRows.map((r) => {
             const details = getLeaveTypeDetails(r.leave_type);
             const Icon = details.icon;
@@ -682,120 +682,136 @@ function MyLeaves() {
             const isPending = r.status === "pending";
 
             return (
-              <GlassCard
+              <div
                 key={r.id}
                 className={cn(
-                  "rounded-2xl border p-4.5 transition-all flex flex-col justify-between shadow-xs hover:shadow-md hover:-translate-y-0.5 duration-200",
+                  "rounded-3xl sm:rounded-[1.75rem] border p-6 sm:p-7 transition-all flex flex-col justify-between shadow-xs hover:shadow-xl hover:-translate-y-0.5 duration-300",
                   isRejected
-                    ? "border-red-500/50 bg-gradient-to-b from-red-500/[0.08] via-red-500/[0.03] to-transparent ring-1 ring-red-500/25"
+                    ? "border-rose-500/30 bg-gradient-to-br from-rose-500/[0.05] via-card to-card hover:border-rose-500/50 hover:shadow-rose-500/5 ring-1 ring-rose-500/10"
                     : isApproved
-                      ? "border-emerald-500/40 bg-gradient-to-b from-emerald-500/[0.06] via-emerald-500/[0.02] to-transparent ring-1 ring-emerald-500/20"
+                      ? "border-emerald-500/25 bg-gradient-to-br from-emerald-500/[0.04] via-card to-card hover:border-emerald-500/45 hover:shadow-emerald-500/5 ring-1 ring-emerald-500/10"
                       : isPending
-                        ? "border-amber-500/40 bg-gradient-to-b from-amber-500/[0.05] to-transparent ring-1 ring-amber-500/20"
-                        : "border-border/80 bg-white/80 dark:bg-card/80",
+                        ? "border-amber-500/30 bg-gradient-to-br from-amber-500/[0.04] via-card to-card hover:border-amber-500/45 hover:shadow-amber-500/5 ring-1 ring-amber-500/10"
+                        : "border-border/80 bg-white/80 dark:bg-card/80 hover:border-border/90",
                 )}
               >
-                <div className="flex flex-col gap-3.5">
-                  {/* Card Header: Type Badge + Duration + Status */}
-                  <div className="flex items-start justify-between gap-2.5">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div
-                        className={cn(
-                          "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border shadow-xs transition-transform",
-                          isRejected
-                            ? "border-red-500/30 bg-red-500/15 text-red-600 dark:text-red-400"
-                            : isApproved
-                              ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                              : isPending
-                                ? "border-amber-500/30 bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                                : details.color,
-                        )}
-                      >
-                        <Icon size={18} />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <h3 className="text-xs sm:text-sm font-bold capitalize text-foreground truncate">
-                            {typeLabel(r.leave_type)}
-                          </h3>
-                          <span
-                            className={cn(
-                              "rounded-md px-1.5 py-0.2 text-[9px] font-extrabold uppercase shrink-0 border",
-                              isRejected
-                                ? "bg-red-500/10 text-red-700 dark:text-red-300 border-red-500/25"
-                                : isApproved
-                                  ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25"
-                                  : "bg-muted text-muted-foreground border-border",
-                            )}
-                          >
-                            {requestedDays}{" "}
-                            {requestedDays === 1 ? "Day" : requestedDays === 0.5 ? "Day" : "Days"}
-                            {r.is_half_day &&
-                              r.half_day_session &&
-                              ` · ${r.half_day_session === "morning" ? "AM" : "PM"}`}
-                          </span>
-                        </div>
-                        <div className="text-[10px] text-muted-foreground mt-0.5">
-                          Submitted {formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}
-                        </div>
-                      </div>
+                <div>
+                  {/* Top Row: Square-rounded Icon Badge (Left) + Minimal Uppercase Tag (Right, like CORE in reference) */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div
+                      className={cn(
+                        "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border shadow-xs transition-transform",
+                        isRejected
+                          ? "border-rose-500/30 bg-rose-500/10 text-rose-500 dark:text-rose-400"
+                          : isApproved
+                            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                            : isPending
+                              ? "border-amber-500/30 bg-amber-500/10 text-amber-500 dark:text-amber-400"
+                              : "border-border/80 bg-muted/60 text-muted-foreground",
+                      )}
+                    >
+                      <Icon size={22} strokeWidth={2.2} />
                     </div>
 
-                    <LeaveStatusPill status={r.status} />
+                    <div
+                      className={cn(
+                        "text-[11px] sm:text-xs font-black tracking-widest uppercase select-none pt-1",
+                        isRejected
+                          ? "text-rose-500 dark:text-rose-400"
+                          : isApproved
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : isPending
+                              ? "text-amber-500 dark:text-amber-400"
+                              : "text-muted-foreground/70",
+                      )}
+                    >
+                      {isApproved
+                        ? "APPROVED"
+                        : isRejected
+                          ? "REJECTED"
+                          : isPending
+                            ? "PENDING"
+                            : "CANCELLED"}
+                    </div>
                   </div>
 
-                  {/* Date Range Strip */}
-                  <div
-                    className={cn(
-                      "rounded-xl border p-2.5 flex items-center justify-between text-xs font-bold",
-                      isRejected
-                        ? "border-red-500/25 bg-red-500/10 text-red-950 dark:text-red-200"
-                        : isApproved
-                          ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-950 dark:text-emerald-200"
-                          : "border-border/70 bg-muted/40 text-foreground",
-                    )}
-                  >
-                    <div className="flex items-center gap-1.5 min-w-0 truncate">
+                  {/* Title & Subtitle Group (matching Our Mission / Our Identity in reference image) */}
+                  <div className="mt-5 space-y-1">
+                    <h3 className="text-xl font-extrabold text-foreground tracking-tight">
+                      {typeLabel(r.leave_type)}
+                    </h3>
+                    <div
+                      className={cn(
+                        "text-xs font-bold uppercase tracking-wider",
+                        isRejected
+                          ? "text-rose-500 dark:text-rose-400"
+                          : isApproved
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : isPending
+                              ? "text-amber-500 dark:text-amber-400"
+                              : "text-muted-foreground",
+                      )}
+                    >
+                      {requestedDays}{" "}
+                      {requestedDays === 1 ? "Day" : requestedDays === 0.5 ? "Half Day" : "Days"}
+                      {r.is_half_day &&
+                        r.half_day_session &&
+                        ` (${r.half_day_session === "morning" ? "Morning" : "Afternoon"})`}
+                      <span className="opacity-40 mx-1.5 font-normal">·</span>
+                      Submitted {formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}
+                    </div>
+                  </div>
+
+                  {/* Reason & Context: Clean, unboxed body text leading-relaxed directly below title */}
+                  <p className="mt-3.5 text-sm text-muted-foreground leading-relaxed line-clamp-3">
+                    {r.reason ? `"${r.reason}"` : "Personal absence request submitted for administrator evaluation."}
+                  </p>
+
+                  {/* Dates Bar */}
+                  <div className="mt-5 pt-3.5 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1.5 font-medium text-foreground/85">
                       <CalendarDays
-                        size={13}
+                        size={14}
                         className={cn(
                           "shrink-0",
-                          isRejected ? "text-red-500" : isApproved ? "text-emerald-500" : "text-primary",
+                          isRejected
+                            ? "text-rose-500"
+                            : isApproved
+                              ? "text-emerald-500"
+                              : isPending
+                                ? "text-amber-500"
+                                : "text-primary",
                         )}
                       />
-                      <span className="truncate text-[11px] sm:text-xs">
+                      <span className="font-semibold text-[11px] sm:text-xs">
                         {formatNepaliDate(r.start_date, "DD MMM YYYY")} BS
-                        <span className="opacity-50 mx-1 font-normal">→</span>
+                        <span className="opacity-40 mx-1.5 font-normal">→</span>
                         {formatNepaliDate(r.end_date, "DD MMM YYYY")} BS
                       </span>
                     </div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">
+                      {requestedDays} {requestedDays === 1 ? "Day" : "Days"}
+                    </span>
                   </div>
-
-                  {/* Reason Text */}
-                  {r.reason && (
-                    <div className="rounded-xl border border-border/60 bg-white/60 dark:bg-card/60 p-2.5 text-xs text-foreground/90 leading-relaxed italic line-clamp-3">
-                      "{r.reason}"
-                    </div>
-                  )}
 
                   {/* Admin Comment (Distinct Red on Rejected, Emerald on Approved) */}
                   {r.admin_comment && (
                     <div
                       className={cn(
-                        "rounded-xl border p-2.5 text-xs flex items-start gap-2",
+                        "mt-3 rounded-2xl border p-3 text-xs leading-relaxed flex items-start gap-2.5",
                         isRejected
-                          ? "border-red-500/30 bg-red-500/10 text-red-900 dark:text-red-200"
+                          ? "border-rose-500/25 bg-rose-500/10 text-rose-950 dark:text-rose-200"
                           : isApproved
-                            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-900 dark:text-emerald-200"
-                            : "border-blue-500/30 bg-blue-500/10 text-blue-900 dark:text-blue-200",
+                            ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-950 dark:text-emerald-200"
+                            : "border-blue-500/25 bg-blue-500/10 text-blue-950 dark:text-blue-200",
                       )}
                     >
                       {isRejected ? (
-                        <ShieldAlert size={14} className="text-red-600 shrink-0 mt-0.5" />
+                        <ShieldAlert size={14} className="text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
                       ) : isApproved ? (
-                        <CheckCircle2 size={14} className="text-emerald-600 shrink-0 mt-0.5" />
+                        <CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                       ) : (
-                        <ShieldCheck size={14} className="text-blue-600 shrink-0 mt-0.5" />
+                        <ShieldCheck size={14} className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
                       )}
                       <div>
                         <span className="font-bold">
@@ -808,11 +824,11 @@ function MyLeaves() {
                 </div>
 
                 {/* Card Footer Actions */}
-                <div className="mt-3 pt-2.5 border-t border-border/50">
+                <div className="mt-4 pt-3 border-t border-border/40">
                   {isApproved && (
-                    <div className="flex items-center justify-between text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                    <div className="flex items-center justify-between text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                       <span className="flex items-center gap-1.5">
-                        <CheckCircle2 size={13} />
+                        <CheckCircle2 size={14} />
                         Approved by Admin
                       </span>
                       <span className="text-muted-foreground font-normal text-[10px]">
@@ -822,9 +838,9 @@ function MyLeaves() {
                   )}
 
                   {isRejected && (
-                    <div className="flex items-center justify-between text-[11px] font-bold text-red-600 dark:text-red-400">
+                    <div className="flex items-center justify-between text-xs font-semibold text-rose-600 dark:text-rose-400">
                       <span className="flex items-center gap-1.5">
-                        <ShieldAlert size={13} />
+                        <ShieldAlert size={14} />
                         Rejected by Admin
                       </span>
                       <span className="text-muted-foreground font-normal text-[10px]">
@@ -835,14 +851,14 @@ function MyLeaves() {
 
                   {isPending && (
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1.5">
+                      <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1.5">
                         <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
                         Pending Review
                       </span>
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-7 px-2.5 rounded-lg text-[10px] text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20 font-bold cursor-pointer"
+                        className="h-7 px-3 rounded-xl text-[10px] text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20 font-bold cursor-pointer"
                         onClick={() => cancel(r.id)}
                       >
                         <X size={11} className="mr-1" />
@@ -852,13 +868,13 @@ function MyLeaves() {
                   )}
 
                   {!isApproved && !isRejected && !isPending && (
-                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                       <span>Cancelled by user</span>
-                      <span>Archived</span>
+                      <span className="text-[10px]">Archived</span>
                     </div>
                   )}
                 </div>
-              </GlassCard>
+              </div>
             );
           })}
         </div>
