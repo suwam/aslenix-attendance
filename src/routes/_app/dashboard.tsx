@@ -953,53 +953,63 @@ function EmployeeDashboard() {
       {/* ========================================================================= */}
       {/* ROW 4: Attendance Tracker (Visual 5-day strip / Table toggle)             */}
       {/* ========================================================================= */}
-      <section className="glass aslenix-dashboard-card card-tone-lavender rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs">
+      <section className="glass aslenix-dashboard-card card-tone-lavender rounded-2xl border border-border/80 p-4 sm:p-5 shadow-xs">
         <div>
-          <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-3.5">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
-                <Clock size={14} />
+          {/* Tracker Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/70 pb-3.5 mb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500/15 via-purple-500/10 to-indigo-500/5 text-primary border border-primary/25 shadow-2xs">
+                <Clock size={16} />
               </div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-bold text-foreground">Attendance Tracker</h2>
-                <span className="hidden md:inline-flex items-center gap-1 rounded-md bg-muted/80 border border-border/60 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
-                  Avg: {attendanceSummary.avgHours} · {attendanceSummary.onTimeRate} On-Time
-                </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-bold text-foreground tracking-tight">Attendance Tracker</h2>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    5-Day Recent Strip
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Avg: <span className="font-bold text-foreground">{attendanceSummary.avgHours}</span> / day ·{" "}
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">{attendanceSummary.onTimeRate}</span> on-time record
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-end sm:self-auto">
               {/* Visual vs Table View Switcher */}
-              <div className="inline-flex items-center rounded-lg border border-border bg-muted/60 p-0.5 text-xs">
+              <div className="inline-flex items-center rounded-xl border border-border/80 bg-muted/60 p-0.5 text-xs shadow-2xs">
                 <button
                   type="button"
                   onClick={() => setAttendanceViewMode("visual")}
                   className={cn(
-                    "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all",
+                    "px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5",
                     attendanceViewMode === "visual"
-                      ? "bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] font-bold shadow-xs"
+                      ? "bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] shadow-xs"
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  Visual Strip
+                  <CalendarDays size={12} />
+                  <span>Visual Strip</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setAttendanceViewMode("table")}
                   className={cn(
-                    "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all",
+                    "px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5",
                     attendanceViewMode === "table"
-                      ? "bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] font-bold shadow-xs"
+                      ? "bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] shadow-xs"
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  Table
+                  <ClipboardList size={12} />
+                  <span>Table</span>
                 </button>
               </div>
 
               <Link
                 to="/my-attendance"
-                className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 hidden sm:inline-flex group"
+                className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-primary/5 transition-colors group"
               >
                 <span>Full log</span>
                 <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
@@ -1009,9 +1019,9 @@ function EmployeeDashboard() {
 
           {/* MODE 1: VISUAL 5-DAY ATTENDANCE STRIP */}
           {attendanceViewMode === "visual" ? (
-            <div className="space-y-2">
+            <div>
               {recentAttendance.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-3">
+                <div className="flex lg:grid lg:grid-cols-5 gap-3 overflow-x-auto pb-2 lg:pb-0 scrollbar-none snap-x snap-mandatory">
                   {recentAttendance.slice(0, 5).map((row) => {
                     const isRowToday = row.date === todayDate;
                     const hours = row.work_hours
@@ -1019,83 +1029,157 @@ function EmployeeDashboard() {
                       : isRowToday && workedHours
                         ? workedHours
                         : 0;
+                    const expectedHours = expectedDailyHours || 9;
                     const pct = Math.min(
                       100,
-                      Math.round((hours / (expectedDailyHours || 9)) * 100),
+                      Math.round((hours / expectedHours) * 100),
                     );
                     const isLate = row.is_late || row.status === "late";
+                    const dayShort = format(new Date(row.date), "EEE");
+                    const dateFormatted = format(new Date(row.date), "MMM d");
+
+                    if (isRowToday) {
+                      return (
+                        <div
+                          key={row.id}
+                          className="min-w-[210px] lg:min-w-0 flex-1 snap-start rounded-2xl border-2 transition-all duration-200 flex flex-col justify-between p-3.5 sm:p-4 group shadow-sm border-indigo-400/60 dark:border-indigo-500/50 bg-gradient-to-b from-indigo-50/80 via-white to-purple-50/30 dark:from-indigo-950/30 dark:via-card dark:to-purple-950/20 ring-2 ring-indigo-500/15 hover:shadow-md"
+                        >
+                          {/* Card Top */}
+                          <div>
+                            <div className="flex items-center justify-between gap-1.5 mb-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="rounded-md bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wider shadow-2xs">
+                                  Today
+                                </span>
+                                <span className="text-xs sm:text-sm font-extrabold text-foreground">
+                                  {dayShort}
+                                </span>
+                              </div>
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold">
+                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                {row.status === "present" && !isLate ? "Working" : isLate ? "Late" : "Active"}
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-muted-foreground font-medium">
+                              {dateFormatted} · Active Shift
+                            </div>
+                          </div>
+
+                          {/* Hours & Visual Progress */}
+                          <div className="my-3">
+                            <div className="flex items-baseline justify-between mb-1">
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-lg sm:text-xl font-black text-foreground tabular-nums tracking-tight">
+                                  {hours ? formatWorkHours(hours) : "0h 0m"}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground font-medium">
+                                  / {expectedHours}h
+                                </span>
+                              </div>
+                              <span className="text-[10px] font-extrabold text-primary tabular-nums">
+                                {pct}%
+                              </span>
+                            </div>
+                            <div className="h-2 w-full rounded-full bg-muted/80 overflow-hidden shadow-inner p-0.5">
+                              <div
+                                className="h-full rounded-full transition-all duration-500 bg-gradient-to-r from-[#818cf8] via-[#a78bfa] to-[#c084fc] shadow-xs"
+                                style={{ width: `${Math.max(6, pct)}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Card Bottom / Punch Time */}
+                          <div className="pt-2.5 border-t border-indigo-200/60 dark:border-indigo-900/40 flex items-center justify-between text-[11px]">
+                            <div className="flex items-center gap-1.5 text-muted-foreground">
+                              <LogIn size={12} className="text-emerald-500 shrink-0 stroke-[2.5]" />
+                              <span className="text-[10px] font-medium">In:</span>
+                              <strong className="text-foreground font-mono font-bold text-[11px]">
+                                {row.check_in_time ? formatTime12Hour(row.check_in_time) : "—"}
+                              </strong>
+                            </div>
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
+                              Live
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
 
                     return (
                       <div
                         key={row.id}
-                        className={cn(
-                          "rounded-xl border p-2.5 sm:p-3 flex flex-col justify-between transition-all group",
-                          isRowToday
-                            ? "border-primary/60 bg-gradient-to-b from-primary/10 to-primary/5 shadow-xs ring-1 ring-primary/25"
-                            : "border-border/70 bg-white/75 dark:bg-card/75 hover:border-primary/30",
-                        )}
+                        className="min-w-[190px] lg:min-w-0 flex-1 snap-start rounded-2xl border border-border/80 bg-white/80 dark:bg-card/80 p-3 sm:p-3.5 shadow-2xs hover:shadow-sm hover:border-primary/40 hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between group"
                       >
+                        {/* Card Top */}
                         <div>
-                          <div className="flex items-center justify-between text-[11px] font-bold">
-                            <span className={cn("text-foreground", isRowToday && "text-primary font-extrabold")}>
-                              {format(new Date(row.date), "EEE")}
+                          <div className="flex items-center justify-between gap-1.5 mb-1">
+                            <span className="text-xs sm:text-sm font-bold text-foreground group-hover:text-primary transition-colors">
+                              {dayShort}
                             </span>
                             <span
                               className={cn(
-                                "rounded px-1.5 py-0.2 text-[9px] font-bold uppercase",
+                                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider border",
                                 row.status === "present" && !isLate
-                                  ? "bg-emerald-500/10 text-emerald-600"
+                                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
                                   : isLate
-                                    ? "bg-amber-500/10 text-amber-600"
-                                    : "bg-muted text-muted-foreground",
+                                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                                    : "bg-muted text-muted-foreground border-border",
                               )}
                             >
-                              {isLate ? "Late" : row.status}
+                              {row.status === "present" && !isLate ? (
+                                <CheckCheck size={10} className="stroke-[2.5]" />
+                              ) : isLate ? (
+                                <Clock size={10} className="stroke-[2.5]" />
+                              ) : null}
+                              <span>{isLate ? "Late" : row.status}</span>
                             </span>
                           </div>
-                          <div className="text-[10px] text-muted-foreground mt-0.5 font-medium">
-                            {format(new Date(row.date), "MMM d")}
+                          <div className="text-[10px] text-muted-foreground font-medium">
+                            {dateFormatted}
                           </div>
                         </div>
 
+                        {/* Hours & Visual Progress */}
                         <div className="my-2.5">
-                          <div className="text-xs font-extrabold text-foreground tabular-nums flex items-center justify-between">
-                            <span>{hours ? formatWorkHours(hours) : "—"}</span>
-                            {isRowToday && (
-                              <span className="text-[9px] font-bold text-primary flex items-center gap-1">
-                                <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                                Live
-                              </span>
-                            )}
+                          <div className="flex items-baseline justify-between mb-1">
+                            <span className="text-base sm:text-lg font-black text-foreground tabular-nums tracking-tight">
+                              {hours ? formatWorkHours(hours) : "—"}
+                            </span>
+                            <span className="text-[10px] font-bold text-muted-foreground/80 tabular-nums">
+                              {pct}%
+                            </span>
                           </div>
-                          <div className="mt-1 h-1.5 w-full rounded-full bg-muted/80 overflow-hidden">
+                          <div className="h-1.5 w-full rounded-full bg-muted/80 overflow-hidden">
                             <div
                               className={cn(
                                 "h-full rounded-full transition-all duration-300",
                                 row.status === "present" && !isLate
-                                  ? "bg-emerald-500"
+                                  ? "bg-gradient-to-r from-emerald-500 to-teal-400"
                                   : isLate
-                                    ? "bg-amber-500"
+                                    ? "bg-gradient-to-r from-amber-500 to-orange-400"
                                     : "bg-primary",
                               )}
-                              style={{ width: `${pct}%` }}
+                              style={{ width: `${Math.min(100, pct)}%` }}
                             />
                           </div>
                         </div>
 
-                        <div className="pt-1.5 border-t border-border/50 text-[10px] text-muted-foreground font-mono">
-                          {isRowToday ? (
-                            <div className="flex items-center justify-between">
-                              <span>In: {row.check_in_time ? formatTime12Hour(row.check_in_time) : "—"}</span>
-                              <span className="font-semibold text-emerald-600 dark:text-emerald-400">Working</span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-between truncate">
-                              <span>{row.check_in_time ? formatTime12Hour(row.check_in_time) : "—"}</span>
-                              <span className="text-muted-foreground/50">→</span>
-                              <span>{row.check_out_time ? formatTime12Hour(row.check_out_time) : "—"}</span>
-                            </div>
-                          )}
+                        {/* Card Bottom / In - Out Times */}
+                        <div className="pt-2 border-t border-border/60 flex items-center justify-between text-[10px] text-muted-foreground font-mono">
+                          <div className="flex items-center gap-1" title="Check In">
+                            <LogIn size={11} className="text-emerald-500 shrink-0" />
+                            <span className="font-semibold text-foreground">
+                              {row.check_in_time ? formatTime12Hour(row.check_in_time) : "—"}
+                            </span>
+                          </div>
+                          <span className="text-muted-foreground/40 font-sans">→</span>
+                          <div className="flex items-center gap-1" title="Check Out">
+                            <LogOut size={11} className="text-slate-400 shrink-0" />
+                            <span className="font-semibold text-foreground">
+                              {row.check_out_time ? formatTime12Hour(row.check_out_time) : "—"}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     );
@@ -1109,48 +1193,102 @@ function EmployeeDashboard() {
             </div>
           ) : (
             /* MODE 2: COMPACT CLEAN TABLE */
-            <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-              <table className="w-full min-w-[440px] text-left text-xs">
+            <div className="overflow-x-auto rounded-xl border border-border/70 bg-white/60 dark:bg-card/60">
+              <table className="w-full min-w-[500px] text-left text-xs">
                 <thead>
-                  <tr className="border-b border-border/60 text-muted-foreground text-[11px]">
-                    <th className="py-2 px-2.5 first:pl-0 font-semibold">Date</th>
-                    <th className="py-2 px-2.5 font-semibold">In</th>
-                    <th className="py-2 px-2.5 font-semibold">Out</th>
-                    <th className="py-2 px-2.5 font-semibold">Hours</th>
-                    <th className="py-2 px-2.5 last:pr-0 font-semibold text-right">Status</th>
+                  <tr className="border-b border-border/70 bg-muted/40 text-muted-foreground text-[11px]">
+                    <th className="py-2.5 px-3 font-semibold">Date</th>
+                    <th className="py-2.5 px-3 font-semibold">Check In</th>
+                    <th className="py-2.5 px-3 font-semibold">Check Out</th>
+                    <th className="py-2.5 px-3 font-semibold">Worked Hours</th>
+                    <th className="py-2.5 px-3 font-semibold">Shift Progress</th>
+                    <th className="py-2.5 px-3 font-semibold text-right">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/40">
-                  {recentAttendance.map((row) => (
-                    <tr key={row.id} className="hover:bg-muted/40 transition-colors">
-                      <td className="py-2 px-2.5 first:pl-0 font-semibold text-foreground tabular-nums whitespace-nowrap">
-                        {format(new Date(row.date), "MMM d, yyyy")}
-                      </td>
-                      <td className="py-2 px-2.5 text-muted-foreground tabular-nums whitespace-nowrap">
-                        {row.check_in_time ? formatTime12Hour(row.check_in_time) : "—"}
-                      </td>
-                      <td className="py-2 px-2.5 text-muted-foreground tabular-nums whitespace-nowrap">
-                        {row.check_out_time ? formatTime12Hour(row.check_out_time) : "—"}
-                      </td>
-                      <td className="py-2 px-2.5 text-foreground font-bold tabular-nums whitespace-nowrap">
-                        {row.work_hours ? formatWorkHours(row.work_hours) : "—"}
-                      </td>
-                      <td className="py-2 px-2.5 last:pr-0 text-right whitespace-nowrap">
-                        <span
-                          className={cn(
-                            "inline-block rounded px-2 py-0.5 text-[10px] font-bold capitalize border",
-                            row.status === "present" && !row.is_late
-                              ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                              : row.is_late || row.status === "late"
-                                ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                                : "bg-muted text-muted-foreground border-border",
+                  {recentAttendance.map((row) => {
+                    const isRowToday = row.date === todayDate;
+                    const hours = row.work_hours
+                      ? Number(row.work_hours)
+                      : isRowToday && workedHours
+                        ? workedHours
+                        : 0;
+                    const isLate = row.is_late || row.status === "late";
+                    const pct = Math.min(100, Math.round((hours / (expectedDailyHours || 9)) * 100));
+
+                    return (
+                      <tr key={row.id} className="hover:bg-muted/40 transition-colors">
+                        <td className="py-2.5 px-3 font-semibold text-foreground tabular-nums whitespace-nowrap">
+                          <div className="flex items-center gap-1.5">
+                            {isRowToday && (
+                              <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                            )}
+                            <span>{format(new Date(row.date), "EEE, MMM d, yyyy")}</span>
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 text-muted-foreground tabular-nums whitespace-nowrap">
+                          {row.check_in_time ? (
+                            <span className="inline-flex items-center gap-1 text-foreground font-mono font-medium">
+                              <LogIn size={11} className="text-emerald-500" />
+                              {formatTime12Hour(row.check_in_time)}
+                            </span>
+                          ) : (
+                            "—"
                           )}
-                        >
-                          {row.is_late ? "Late" : row.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="py-2.5 px-3 text-muted-foreground tabular-nums whitespace-nowrap">
+                          {row.check_out_time ? (
+                            <span className="inline-flex items-center gap-1 text-foreground font-mono font-medium">
+                              <LogOut size={11} className="text-slate-400" />
+                              {formatTime12Hour(row.check_out_time)}
+                            </span>
+                          ) : isRowToday ? (
+                            <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold text-[10px]">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              Working
+                            </span>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 text-foreground font-extrabold tabular-nums whitespace-nowrap">
+                          {hours ? formatWorkHours(hours) : "—"}
+                        </td>
+                        <td className="py-2.5 px-3 whitespace-nowrap">
+                          <div className="flex items-center gap-2 max-w-[120px]">
+                            <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+                              <div
+                                className={cn(
+                                  "h-full rounded-full transition-all",
+                                  row.status === "present" && !isLate
+                                    ? "bg-emerald-500"
+                                    : isLate
+                                      ? "bg-amber-500"
+                                      : "bg-primary",
+                                )}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <span className="text-[10px] text-muted-foreground font-mono tabular-nums">{pct}%</span>
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                          <span
+                            className={cn(
+                              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase border",
+                              row.status === "present" && !isLate
+                                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                                : row.is_late || row.status === "late"
+                                  ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                                  : "bg-muted text-muted-foreground border-border",
+                            )}
+                          >
+                            {isLate ? "Late" : row.status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
