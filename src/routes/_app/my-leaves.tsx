@@ -39,7 +39,7 @@ export const Route = createFileRoute("/_app/my-leaves")({ component: MyLeaves })
 const TYPES = [
   { v: "sick", l: "Sick Leave" },
   { v: "casual", l: "Casual Leave" },
-  { v: "vacation", l: "Vacation" },
+  { v: "vacation", l: "Vacation (Requires Admin Permission)" },
   { v: "emergency", l: "Emergency" },
   { v: "wfh", l: "Work From Home" },
 ];
@@ -58,6 +58,7 @@ function MyLeaves() {
   const [balances, setBalances] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [vacationConsent, setVacationConsent] = useState(false);
   const [form, setForm] = useState({
     leave_type: "casual",
     start_date: "",
@@ -97,10 +98,15 @@ function MyLeaves() {
 
     const requestedDays = getLeaveDays(startDate, endDate, form.is_half_day);
 
-    // Vacation Leave rule: must be exactly 1 month (28-31 days) and requires Admin approval
+    // Vacation Leave rule: must be exactly 1 month (28-31 days) and requires Admin permission
     if (form.leave_type === "vacation") {
       if (form.is_half_day) {
         return toast.error("Vacation leave cannot be taken as half day. Vacation must be a 1-month leave block.");
+      }
+      if (!vacationConsent) {
+        return toast.error(
+          "Admin Permission is required for Vacation Leave. Please confirm acknowledgment before submitting.",
+        );
       }
       if (requestedDays < 28 || requestedDays > 31) {
         return toast.error(
@@ -127,12 +133,13 @@ function MyLeaves() {
     if (error) return toast.error(error.message);
 
     if (form.leave_type === "vacation") {
-      toast.success("1-Month Vacation leave requested. Submitted for Admin approval.");
+      toast.success("1-Month Vacation leave requested. Submitted for Admin permission & approval.");
     } else {
       toast.success("Leave request submitted for Admin review.");
     }
 
     setOpen(false);
+    setVacationConsent(false);
     setForm({
       leave_type: "casual",
       start_date: "",
@@ -289,13 +296,16 @@ function MyLeaves() {
                 <Label className="mb-2 block text-sm font-semibold text-foreground">Type</Label>
                 <Select
                   value={form.leave_type}
-                  onValueChange={(v) =>
+                  onValueChange={(v) => {
                     setForm({
                       ...form,
                       leave_type: v,
                       is_half_day: v === "vacation" ? false : form.is_half_day,
-                    })
-                  }
+                    });
+                    if (v !== "vacation") {
+                      setVacationConsent(false);
+                    }
+                  }}
                 >
                   <SelectTrigger className="rounded-xl border-border bg-card">
                     <SelectValue />
@@ -303,12 +313,52 @@ function MyLeaves() {
                   <SelectContent>
                     {TYPES.map((t) => (
                       <SelectItem key={t.v} value={t.v}>
-                        {t.l}
+                        <div className="flex items-center justify-between gap-3 w-full">
+                          <span>{t.l}</span>
+                          {t.v === "vacation" && (
+                            <span className="rounded bg-purple-500/15 text-purple-700 dark:text-purple-300 text-[9px] font-bold px-1.5 py-0.2 uppercase border border-purple-500/25 shrink-0">
+                              Admin Permission
+                            </span>
+                          )}
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* DEDICATED CALLOUT: VACATION REQUIRES ADMIN PERMISSION */}
+              {form.leave_type === "vacation" && (
+                <div className="sm:col-span-2 rounded-xl border border-purple-500/30 bg-purple-500/10 p-3.5 flex items-start gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-500/20 text-purple-600 dark:text-purple-400">
+                    <ShieldAlert size={16} />
+                  </div>
+                  <div className="text-xs flex-1">
+                    <div className="font-bold text-purple-900 dark:text-purple-200 flex items-center gap-1.5">
+                      <span>Admin Permission Required</span>
+                      <span className="rounded bg-purple-500/25 px-1.5 py-0.2 text-[9px] font-extrabold uppercase text-purple-700 dark:text-purple-300">
+                        1-Month Block Only
+                      </span>
+                    </div>
+                    <p className="mt-1 text-purple-700/90 dark:text-purple-300/90 leading-relaxed">
+                      Vacation leave is strictly taken as a 1-month leave block (28–31 days) and requires prior Admin permission. Your request will remain pending until reviewed and approved by management.
+                    </p>
+                    <div className="mt-2.5 flex items-center gap-2 pt-2 border-t border-purple-500/20">
+                      <input
+                        type="checkbox"
+                        id="admin-permission-check"
+                        required
+                        checked={vacationConsent}
+                        onChange={(e) => setVacationConsent(e.target.checked)}
+                        className="h-3.5 w-3.5 rounded border-purple-400 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                      />
+                      <label htmlFor="admin-permission-check" className="text-[11px] font-semibold text-purple-900 dark:text-purple-200 cursor-pointer">
+                        I acknowledge that this 1-month vacation request requires direct Admin permission.
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {form.leave_type !== "vacation" && (
                 <div className="sm:col-span-2">
@@ -383,7 +433,9 @@ function MyLeaves() {
               </div>
               <div className="sm:col-span-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-xs text-muted-foreground">
-                  Your request will appear as pending until an admin reviews it.
+                  {form.leave_type === "vacation"
+                    ? "Vacation requests require direct administrator permission & review."
+                    : "Your request will appear as pending until an admin reviews it."}
                 </div>
                 <Button type="submit" disabled={busy} className="neon-button h-11 rounded-xl px-6">
                   {busy ? (
@@ -391,7 +443,11 @@ function MyLeaves() {
                   ) : (
                     <Send size={15} className="mr-2" />
                   )}
-                  {busy ? "Submitting..." : "Submit request"}
+                  {busy
+                    ? "Submitting..."
+                    : form.leave_type === "vacation"
+                      ? "Submit for Admin Permission (1 Month)"
+                      : "Submit request"}
                 </Button>
               </div>
             </div>
