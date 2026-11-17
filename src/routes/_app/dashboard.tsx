@@ -454,9 +454,9 @@ function EmployeeDashboard() {
     return () => window.clearInterval(interval);
   }, []);
 
-  // Morning Greeting & Daily Brief: opens once per day after morning login
+  // Morning Greeting & Daily Brief: opens once per day after morning login if already checked in
   useEffect(() => {
-    if (!user) return;
+    if (!user || !today?.check_in_time) return;
     const storageKey = `aslenix_morning_greeting_${user.id}_${todayDate}`;
     const alreadyShown = localStorage.getItem(storageKey);
     if (!alreadyShown) {
@@ -466,7 +466,7 @@ function EmployeeDashboard() {
       }, 750);
       return () => window.clearTimeout(timer);
     }
-  }, [user, todayDate]);
+  }, [user, today, todayDate]);
 
   // Functional Check-in
   const checkIn = async () => {
@@ -516,6 +516,10 @@ function EmployeeDashboard() {
         ? `Checked in (${evalResult.late_minutes}m late for ${assignedShift.name})`
         : `Checked in on time for ${assignedShift.name}`,
     );
+
+    // ASLENIX Smart Greeting: trigger morning greeting automatically after successful check-in confirmation
+    setGreetingOpen(true);
+    localStorage.setItem(`aslenix_morning_greeting_${user.id}_${todayDate}`, "true");
   };
 
   // Functional Check-out
@@ -1929,11 +1933,11 @@ function EmployeeDashboard() {
         </div>
       </section>
 
-      {/* Morning Greeting & Daily Motivation Modal (Once per day after login) */}
+      {/* Morning Greeting & Daily Motivation Modal (Once per day after login / check-in) */}
       <MorningGreetingModal
         open={greetingOpen}
         onOpenChange={setGreetingOpen}
-        userName={firstName}
+        userName={profile?.full_name || user?.user_metadata?.full_name || firstName}
         nepaliDate={nepaliToday}
         gregorianDate={format(new Date(), "EEEE, MMM d, yyyy")}
         shiftName={assignedShift?.name || "Morning Shift"}
@@ -1952,7 +1956,7 @@ function EmployeeDashboard() {
       <CheckoutGreetingModal
         open={checkoutGreetingOpen}
         onOpenChange={setCheckoutGreetingOpen}
-        userName={firstName}
+        userName={profile?.full_name || user?.user_metadata?.full_name || firstName}
         checkInTime={
           checkoutModalData?.checkInTime ??
           (today?.check_in_time ? format(new Date(today.check_in_time), "hh:mm a") : null)

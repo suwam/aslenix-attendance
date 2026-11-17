@@ -203,7 +203,7 @@ BEGIN
     status = 'approved',
     reviewed_by = auth.uid(),
     reviewed_at = now(),
-    review_notes = 'Applied automatically via Admin edit: ' || BTRIM(_reason),
+    admin_comment = 'Applied automatically via Admin edit: ' || BTRIM(_reason),
     updated_at = now()
   WHERE attendance_id = _attendance_id
     AND status = 'pending';

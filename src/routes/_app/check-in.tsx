@@ -58,6 +58,7 @@ import {
   isAttendanceCutoffPassed,
 } from "@/lib/attendance-engine";
 import { CheckoutGreetingModal } from "@/components/CheckoutGreetingModal";
+import { MorningGreetingModal } from "@/components/MorningGreetingModal";
 
 export const Route = createFileRoute("/_app/check-in")({ component: CheckInPage });
 
@@ -95,6 +96,7 @@ function CheckInPage() {
   // Attendance closes at 2:00 PM Nepal time.
   const [isPastCutoff, setIsPastCutoff] = useState(() => isAttendanceCutoffPassed());
   const [showProhibitedDialog, setShowProhibitedDialog] = useState(false);
+  const [morningGreetingOpen, setMorningGreetingOpen] = useState(false);
   const [checkoutGreetingOpen, setCheckoutGreetingOpen] = useState(false);
   const [checkoutModalData, setCheckoutModalData] = useState<{
     checkInTime?: string | null;
@@ -202,6 +204,12 @@ function CheckInPage() {
       toast.warning(`Checked in (${evalResult.late_minutes}m late for ${assignedShift.name})\nWhatsApp notification: Queued`);
     } else {
       toast.success(`Checked in on time for ${assignedShift.name}!\nWhatsApp notification: Queued`);
+    }
+
+    // ASLENIX Smart Greeting: trigger morning greeting automatically upon successful check-in
+    setMorningGreetingOpen(true);
+    if (user) {
+      localStorage.setItem(`aslenix_morning_greeting_${user.id}_${todayDate}`, "true");
     }
   };
 
@@ -705,11 +713,18 @@ function CheckInPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Morning Greeting & Daily Motivation Modal */}
+      <MorningGreetingModal
+        open={morningGreetingOpen}
+        onOpenChange={setMorningGreetingOpen}
+        userName={user?.user_metadata?.full_name || "Team Member"}
+      />
+
       {/* Shift Checkout Farewell & Day Completion Modal */}
       <CheckoutGreetingModal
         open={checkoutGreetingOpen}
         onOpenChange={setCheckoutGreetingOpen}
-        userName={user?.user_metadata?.full_name?.split(" ")[0] || "Team Member"}
+        userName={user?.user_metadata?.full_name || "Team Member"}
         checkInTime={
           checkoutModalData?.checkInTime ??
           (today?.check_in_time ? format(new Date(today.check_in_time), "hh:mm a") : null)
