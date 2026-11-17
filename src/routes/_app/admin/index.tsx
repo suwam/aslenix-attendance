@@ -22,10 +22,48 @@ import {
 import { addDays, format, subDays } from "date-fns";
 import { getCurrentNepaliMonthRange, formatNepaliDate } from "@/lib/nepali-calendar";
 import type { WeeklyAttendanceDay } from "@/components/AdminCharts";
+import {
+  LiveWorkforceRadar,
+  type LiveEmployeePresence,
+} from "@/components/LiveWorkforceRadar";
 
 const AdminCharts = lazy(() => import("@/components/AdminCharts"));
 
 export const Route = createFileRoute("/_app/admin/")({ component: AdminDashboard });
+
+function LiveTimeCount() {
+  const [time, setTime] = useState(() =>
+    new Date().toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    }),
+  );
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTime(
+        new Date().toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+        }),
+      );
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex-initial inline-flex items-center gap-2 rounded-xl border border-border/80 bg-white/80 dark:bg-card/80 px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs">
+      <Clock size={13} className="text-primary animate-pulse" />
+      <span className="font-mono text-xs sm:text-[13px] font-bold tabular-nums text-foreground tracking-tight">
+        {time}
+      </span>
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
   const { profile } = useAuth();
@@ -45,6 +83,7 @@ export default function AdminDashboard() {
     fourteenDays: WeeklyAttendanceDay[];
     monthDays: WeeklyAttendanceDay[];
   } | null>(null);
+  const [roster, setRoster] = useState<LiveEmployeePresence[]>([]);
   const [deptData, setDeptData] = useState<any[]>([]);
   const [activity, setActivity] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -94,6 +133,45 @@ export default function AdminDashboard() {
         pending: pending.data?.length ?? 0,
         pct,
       });
+
+      // Build live workforce presence roster
+      const attMap = new Map(employeeAttendanceToday.map((a) => [a.user_id, a]));
+      const presenceList: LiveEmployeePresence[] = employeeProfiles
+        .filter((p) => p.approval_status === "approved" && !p.is_suspended)
+        .map((p) => {
+          const att = attMap.get(p.user_id);
+          let status: LiveEmployeePresence["status"] = "absent";
+          if (att) {
+            if (att.status === "wfh") status = "wfh";
+            else if (att.status === "leave") status = "leave";
+            else if (att.is_late || att.status === "late") status = "late";
+            else status = "present";
+          }
+          return {
+            userId: p.user_id,
+            fullName: p.full_name || p.email?.split("@")[0] || "Employee",
+            email: p.email || "",
+            department: p.department || "General",
+            designation: p.position || undefined,
+            avatarUrl: p.avatar_url || null,
+            phone: p.phone || null,
+            status,
+            checkInTime: att?.check_in_time || null,
+            checkOutTime: att?.check_out_time || null,
+            lateMinutes: att?.late_minutes || null,
+            workLocation: att?.work_location || null,
+          };
+        });
+
+      // Sort: Late first, then Present, then WFH, then Absent, alphabetical
+      presenceList.sort((a, b) => {
+        const order = { late: 0, present: 1, wfh: 2, leave: 3, absent: 4 };
+        if (order[a.status] !== order[b.status]) {
+          return order[a.status] - order[b.status];
+        }
+        return a.fullName.localeCompare(b.fullName);
+      });
+      setRoster(presenceList);
 
       // Fetch attendance history for the last 31 days in ONE single optimized query
       const todayDate = new Date(`${today}T00:00:00`);
@@ -189,6 +267,9 @@ export default function AdminDashboard() {
         subtitle={`Live Operations · ${format(new Date(), "EEEE, MMMM d, yyyy")} (${formatNepaliDate(new Date().toISOString(), "DD MMMM YYYY")} BS)`}
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            {/* Live Digital Time Counter */}
+            <LiveTimeCount />
+
             {/* Quick Action: QR / Card Reader Attendance */}
             <Link
               to="/admin/card-reader-attendance"
@@ -348,6 +429,18 @@ export default function AdminDashboard() {
         />
       </div>
 
+      {/* UNIQUE & NECESSARY FEATURE: Live Workforce Presence Radar */}
+      <LiveWorkforceRadar
+        roster={roster}
+        activeCount={stats.active}
+        presentCount={stats.present}
+        lateCount={stats.late}
+        absentCount={stats.absent}
+        wfhCount={roster.filter((r) => r.status === "wfh").length}
+        pct={stats.pct}
+      />
+
+      {/* Comprehensive Attendance Charts & Departments Breakdown */}
       <Suspense
         fallback={
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
