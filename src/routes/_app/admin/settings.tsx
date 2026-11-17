@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
   Building2,
+  CalendarDays,
   Clock3,
   KeyRound,
   Loader2,
@@ -23,6 +24,14 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPasswordManagement } from "@/components/AdminPasswordManagement";
+import { cn } from "@/lib/utils";
+import {
+  ALL_DAYS_OF_WEEK,
+  DEFAULT_WEEKLY_OFF_DAYS,
+  getWeeklyOffDays,
+  setWeeklyOffDays,
+  getWeeklyOffSummary,
+} from "@/lib/weekly-off";
 
 export const Route = createFileRoute("/_app/admin/settings")({ component: SettingsPage });
 
@@ -54,10 +63,23 @@ function SettingsPage() {
       .limit(1)
       .maybeSingle()
       .then(({ data }) => {
-        const next = { auto_checkout_time: "19:00", attendance_radius_meters: 20, ...data };
+        const storedWeeklyOff = getWeeklyOffDays();
+        const dbWeeklyOff =
+          data && Array.isArray((data as any).weekly_off_days)
+            ? (data as any).weekly_off_days
+            : storedWeeklyOff;
+        const next = {
+          auto_checkout_time: "19:00",
+          attendance_radius_meters: 20,
+          weekly_off_days: dbWeeklyOff || DEFAULT_WEEKLY_OFF_DAYS,
+          ...data,
+        };
         setSupportsAutoCheckout(Boolean(data && "auto_checkout_time" in data));
         setS(next);
         setInitial(next);
+        if (dbWeeklyOff) {
+          setWeeklyOffDays(dbWeeklyOff);
+        }
       });
   }, []);
 
@@ -78,7 +100,20 @@ function SettingsPage() {
       updates.auto_checkout_time = s.auto_checkout_time;
     }
 
-    const { error } = await supabase.from("settings").update(updates as any).eq("id", s.id);
+    if (s.weekly_off_days) {
+      updates.weekly_off_days = s.weekly_off_days;
+      setWeeklyOffDays(s.weekly_off_days);
+    }
+
+    let { error } = await supabase.from("settings").update(updates as any).eq("id", s.id);
+
+    // If weekly_off_days column is not yet migrated on remote database, save locally and update remaining fields
+    if (error && error.message?.includes("weekly_off_days")) {
+      delete updates.weekly_off_days;
+      const retry = await supabase.from("settings").update(updates as any).eq("id", s.id);
+      error = retry.error;
+    }
+
     setSaving(false);
     if (error) return toast.error(error.message);
     setInitial(s);
@@ -185,7 +220,7 @@ function SettingsPage() {
         <AdminPasswordManagement initialEmployeeId={initialEmpId} />
       ) : (
         <>
-          <section className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
+          <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <SettingMetric
               icon={Building2}
               label="Company"
@@ -203,6 +238,12 @@ function SettingsPage() {
               label="Late after"
               value={lateAfter || "--:--"}
               tone="amber"
+            />
+            <SettingMetric
+              icon={CalendarDays}
+              label="Weekly off"
+              value={getWeeklyOffSummary(s.weekly_off_days).summary}
+              tone="blue"
             />
             <SettingMetric
               icon={Radar}
@@ -269,6 +310,101 @@ function SettingsPage() {
             <div className="mt-4 rounded-xl border border-amber-300/15 bg-amber-300/10 p-3 text-xs leading-5 text-foreground">
               Keep the radius tight, usually 20-50 meters. Employees outside this fence, or with
               weak GPS accuracy, will be blocked from checking in or checking out.
+            </div>
+          </SettingsSection>
+
+          <SettingsSection
+            icon={CalendarDays}
+            title="Weekly Off Days"
+            subtitle="Configure which days of the week are company weekly off days (e.g., Sunday and Saturday)."
+          >
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-bold text-foreground">
+                    Select Weekly Off Days
+                  </div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    Click any day to toggle between Weekly Off and Working Day
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-xs font-extrabold text-primary">
+                    {s.weekly_off_days?.length || 0} Days Off
+                  </span>
+                  <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground">
+                    {7 - (s.weekly_off_days?.length || 0)} Working Days
+                  </span>
+                </div>
+              </div>
+
+              {/* Day selection grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 pt-1">
+                {ALL_DAYS_OF_WEEK.map((d) => {
+                  const isOff = s.weekly_off_days?.includes(d.index);
+                  return (
+                    <button
+                      type="button"
+                      key={d.index}
+                      onClick={() => {
+                        const current: number[] = s.weekly_off_days || [];
+                        const next = isOff
+                          ? current.filter((x) => x !== d.index)
+                          : [...current, d.index].sort((a, b) => a - b);
+                        setS({ ...s, weekly_off_days: next });
+                      }}
+                      className={cn(
+                        "flex flex-col items-center justify-center p-3 rounded-xl border text-xs font-bold transition-all duration-200 group cursor-pointer",
+                        isOff
+                          ? "border-transparent bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] font-black shadow-xs ring-1 ring-primary/30"
+                          : "border-border/70 bg-white/70 dark:bg-card/70 text-muted-foreground hover:bg-white dark:hover:bg-card hover:border-border",
+                      )}
+                    >
+                      <span className="text-sm font-extrabold">{d.shortName}</span>
+                      <span className="text-[10px] font-medium opacity-80">{d.name}</span>
+                      <span
+                        className={cn(
+                          "mt-1.5 rounded-full px-2 py-0.2 text-[9px] font-extrabold uppercase tracking-wider",
+                          isOff
+                            ? "bg-primary/20 text-[#0f172a]"
+                            : "bg-muted text-muted-foreground",
+                        )}
+                      >
+                        {isOff ? "Off Day" : "Working"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Status Banner & Presets */}
+              <div className="rounded-xl border border-primary/25 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div>
+                  <div className="text-xs font-extrabold text-foreground flex items-center gap-1.5">
+                    <CalendarDays size={14} className="text-primary" />
+                    <span>Active Company Policy: {getWeeklyOffSummary(s.weekly_off_days).summary}</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    This automatically adjusts attendance calculations, reports, dashboard calendar, and employee check-in rules.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setS({ ...s, weekly_off_days: [0, 6] })}
+                    className="rounded-lg border border-primary/30 bg-white/80 dark:bg-card/80 px-2.5 py-1 text-[11px] font-bold text-primary hover:bg-primary/10 transition-colors"
+                  >
+                    Set Sunday & Saturday (2 Days)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setS({ ...s, weekly_off_days: [6] })}
+                    className="rounded-lg border border-border bg-white/80 dark:bg-card/80 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground hover:bg-muted transition-colors"
+                  >
+                    Saturday Only
+                  </button>
+                </div>
+              </div>
             </div>
           </SettingsSection>
 

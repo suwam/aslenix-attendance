@@ -82,7 +82,7 @@ const DEFAULT_FORM: ShiftForm = {
   grace_period_mins: 10,
   checkout_grace_period_mins: 0,
   break_duration_mins: 60,
-  working_days: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+  working_days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
   description: "",
   is_active: true,
   is_default: false,

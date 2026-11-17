@@ -20,7 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
-import { WEEKLY_OFF_DAY } from "@/lib/weekly-off";
+import { isWeeklyOffDayIndex, WEEKLY_OFF_DAY } from "@/lib/weekly-off";
 import { supabase } from "@/integrations/supabase/client";
 import { bsInputToAdDateString, formatBsInput } from "@/lib/nepali-calendar";
 import NepaliDate from "nepali-date-converter";
@@ -191,7 +191,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
   );
   const visibleDays = days.filter(Boolean);
   const holidayCount = visibleDays.filter((day) => holidaysByDate[day.bsDate]).length;
-  const weeklyOffCount = visibleDays.filter((day) => day.weekday === WEEKLY_OFF_DAY).length;
+  const weeklyOffCount = visibleDays.filter((day) => isWeeklyOffDayIndex(day.weekday)).length;
   const selectedHoliday = holidaysByDate[form.bsDate];
   const monthRange = visibleDays.length
     ? `${format(visibleDays[0].adDate, "MMM d")} - ${format(visibleDays[visibleDays.length - 1].adDate, "MMM d, yyyy")}`
@@ -432,7 +432,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
         <div className="rounded-xl border border-border bg-card/45 p-2 shadow-[0_0_30px_-22px_var(--primary),0_0_34px_-26px_var(--accent),inset_0_1px_0_oklch(1_0_0_/_0.08)] backdrop-blur-xl">
           <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
             {WEEKDAYS.map((day, index) => (
-              <div key={day} className={cn("py-2", index === 6 && "text-primary")}>
+              <div key={day} className={cn("py-2", isWeeklyOffDayIndex(index) && "text-primary font-bold")}>
                 {day}
               </div>
             ))}
@@ -442,7 +442,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
             {days.map((day, index) => {
               const holiday = day ? holidaysByDate[day.bsDate] : null;
               const isToday = day?.bsDate === todayKey;
-              const isWeeklyOff = day?.weekday === WEEKLY_OFF_DAY;
+              const isWeeklyOff = isWeeklyOffDayIndex(day?.weekday);
               const isSaturday = isWeeklyOff;
 
               return (

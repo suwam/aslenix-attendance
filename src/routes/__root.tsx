@@ -1,9 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/lib/auth-context";
+import { syncWeeklyOffFromDatabase } from "@/lib/weekly-off";
 
 const Toaster = lazy(() => import("sonner").then((mod) => ({ default: mod.Toaster })));
 
@@ -106,6 +107,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const [queryClient] = useState(() => new QueryClient());
+
+  useEffect(() => {
+    syncWeeklyOffFromDatabase();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
