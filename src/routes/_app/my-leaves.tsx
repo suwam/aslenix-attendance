@@ -23,9 +23,11 @@ import {
   Clock,
   FileText,
   Loader2,
+  Palmtree,
   Plus,
   Send,
   ShieldAlert,
+  ShieldCheck,
   Sparkles,
   X,
 } from "lucide-react";
@@ -94,32 +96,20 @@ function MyLeaves() {
       return toast.error("Enter valid BS dates in YYYY-MM-DD format");
 
     const requestedDays = getLeaveDays(startDate, endDate, form.is_half_day);
-    const balanceRow = balances.find((b) => b.leave_type === form.leave_type);
-    const availableDays = Math.max(
-      0,
-      Number(balanceRow?.balance ?? getDefaultBalance(form.leave_type)) - Number(balanceRow?.used ?? 0),
-    );
-    const isEmergencyRequest =
-      form.leave_type === "emergency" ||
-      /emergency|urgent|medical|family|critical/i.test(form.reason || "");
 
-    if (requestedDays > availableDays && !isEmergencyRequest) {
+    // Vacation Leave rule: must be exactly 1 month (28-31 days) and requires Admin approval
+    if (form.leave_type === "vacation") {
+      if (form.is_half_day) {
+        return toast.error("Vacation leave cannot be taken as half day. Vacation must be a 1-month leave block.");
+      }
+      if (requestedDays < 28 || requestedDays > 31) {
+        return toast.error(
+          `Vacation leave must be requested for exactly 1 month (28–31 days). You selected ${requestedDays} days.`,
+        );
+      }
+    } else if (requestedDays > 30) {
       return toast.error(
-        `Insufficient leave balance (Required: ${requestedDays}, Available: ${availableDays})`,
-      );
-    }
-
-    if (form.leave_type === "vacation" && requestedDays > 50) {
-      return toast.error("Vacation leave can be requested for up to 50 working days.");
-    }
-
-    if (requestedDays > 30 && isEmergencyRequest) {
-      return toast.error("Emergency leave can be allocated up to 30 days only.");
-    }
-
-    if (requestedDays > availableDays && isEmergencyRequest) {
-      toast.warning(
-        "Emergency leave exceeds the normal balance. This request will be marked for special HR review.",
+        "Standard leave requests cannot exceed 30 consecutive days. For extended absence, please apply for Vacation Leave (1-month block).",
       );
     }
 
@@ -130,12 +120,18 @@ function MyLeaves() {
       end_date: endDate as any,
       reason: form.reason,
       user_id: user.id,
-      is_half_day: form.is_half_day,
-      half_day_session: form.is_half_day ? form.half_day_session : null,
+      is_half_day: form.is_half_day && form.leave_type !== "vacation",
+      half_day_session: form.is_half_day && form.leave_type !== "vacation" ? form.half_day_session : null,
     });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Leave requested");
+
+    if (form.leave_type === "vacation") {
+      toast.success("1-Month Vacation leave requested. Submitted for Admin approval.");
+    } else {
+      toast.success("Leave request submitted for Admin review.");
+    }
+
     setOpen(false);
     setForm({
       leave_type: "casual",
@@ -184,31 +180,40 @@ function MyLeaves() {
         }
       />
 
-      <div className="mb-6">
-        <h3 className="mb-3 text-sm font-semibold text-foreground">Leave Balances</h3>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-          {TYPES.map((t) => {
-            const bal = balances.find((b) => b.leave_type === t.v);
-            const total = bal ? Number(bal.balance) : getDefaultBalance(t.v);
-            const used = bal ? Number(bal.used) : 0;
-            const remaining = total - used;
-            return (
-              <GlassCard key={t.v} className="p-3 border-border bg-card">
-                <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {t.l}
-                </div>
-                <div className="mt-1 flex items-baseline gap-1 text-2xl font-bold text-foreground">
-                  {remaining}{" "}
-                  <span className="text-xs font-normal text-muted-foreground">left</span>
-                </div>
-                <div className="mt-1.5 flex justify-between text-[10px] text-muted-foreground">
-                  <span>Total: {total}</span>
-                  <span>Used: {used}</span>
-                </div>
-              </GlassCard>
-            );
-          })}
-        </div>
+      {/* Policy & Guidelines Overview (Quota remaining hidden as requested) */}
+      <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-3">
+        <GlassCard className="p-4 border-border bg-card flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
+            <CalendarClock size={18} />
+          </div>
+          <div>
+            <div className="text-xs font-bold text-foreground">Standard Accrual Quota</div>
+            <div className="text-lg font-extrabold text-primary mt-0.5">2 Days / Month</div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">24 total days per year allowance</div>
+          </div>
+        </GlassCard>
+
+        <GlassCard className="p-4 border-border bg-card flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 border border-purple-500/20">
+            <Palmtree size={18} />
+          </div>
+          <div>
+            <div className="text-xs font-bold text-foreground">Vacation Leave Policy</div>
+            <div className="text-lg font-extrabold text-purple-600 dark:text-purple-400 mt-0.5">1 Full Month Only</div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">Strictly 1-month block · Admin approval required</div>
+          </div>
+        </GlassCard>
+
+        <GlassCard className="p-4 border-border bg-card flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+            <ShieldCheck size={18} />
+          </div>
+          <div>
+            <div className="text-xs font-bold text-foreground">Approval Routing</div>
+            <div className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">Admin Verified</div>
+            <div className="text-[11px] text-muted-foreground mt-0.5">Every request is reviewed & confirmed by Admin</div>
+          </div>
+        </GlassCard>
       </div>
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -249,7 +254,7 @@ function MyLeaves() {
               </div>
               <div className="text-lg font-semibold text-foreground">Request details</div>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Select your leave type and dates. Add a concise reason so HR can review quickly.
+                Select your leave type and dates. Add a concise reason so Admin can review quickly.
               </p>
               {form.start_date && (form.is_half_day || form.end_date) && (
                 <div className="mt-4 rounded-xl border border-border bg-card p-3">
@@ -260,36 +265,20 @@ function MyLeaves() {
                     {getLeaveDays(
                       form.start_date,
                       form.is_half_day ? form.start_date : form.end_date,
-                      form.is_half_day,
+                      form.is_half_day && form.leave_type !== "vacation",
                     )}{" "}
-                    {form.is_half_day ? "day" : "days"}
+                    {form.is_half_day && form.leave_type !== "vacation" ? "day" : "days"}
                   </div>
-                  <div className="mt-2 text-xs text-amber-700">
-                    {(() => {
-                      const requestedDays = getLeaveDays(
-                        form.start_date,
-                        form.is_half_day ? form.start_date : form.end_date,
-                        form.is_half_day,
-                      );
-                      const balanceRow = balances.find((b) => b.leave_type === form.leave_type);
-                      const remainingDays = Math.max(
-                        0,
-                        Number(balanceRow?.balance ?? getDefaultBalance(form.leave_type)) - Number(balanceRow?.used ?? 0),
-                      );
-                      const isEmergencyRequest =
-                        form.leave_type === "emergency" ||
-                        /emergency|urgent|medical|critical/i.test(form.reason || "");
-
-                      if (requestedDays > remainingDays && isEmergencyRequest) {
-                        return "Emergency leave up to 30 days may be allocated with HR review.";
-                      }
-
-                      if (requestedDays > remainingDays) {
-                        return `Insufficient leave balance: ${remainingDays} day(s) available.`;
-                      }
-
-                      return "Available balance covers this request.";
-                    })()}
+                  <div className="mt-2 text-xs">
+                    {form.leave_type === "vacation" ? (
+                      <span className="text-purple-600 dark:text-purple-400 font-semibold block leading-relaxed">
+                        🌴 Vacation Policy: Vacation leave must be requested for exactly 1 month (28–31 days). Requires Admin approval.
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground block leading-relaxed">
+                        Standard accrual: 2 days/month (24 days/year). Request will be routed to Admin for review.
+                      </span>
+                    )}
                   </div>
                 </div>
               )}
@@ -300,7 +289,13 @@ function MyLeaves() {
                 <Label className="mb-2 block text-sm font-semibold text-foreground">Type</Label>
                 <Select
                   value={form.leave_type}
-                  onValueChange={(v) => setForm({ ...form, leave_type: v })}
+                  onValueChange={(v) =>
+                    setForm({
+                      ...form,
+                      leave_type: v,
+                      is_half_day: v === "vacation" ? false : form.is_half_day,
+                    })
+                  }
                 >
                   <SelectTrigger className="rounded-xl border-border bg-card">
                     <SelectValue />
@@ -314,23 +309,26 @@ function MyLeaves() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="sm:col-span-2">
-                <Label className="mb-2 block text-sm font-semibold text-foreground">
-                  Leave Duration
-                </Label>
-                <Select
-                  value={form.is_half_day ? "half" : "full"}
-                  onValueChange={(v) => setForm({ ...form, is_half_day: v === "half" })}
-                >
-                  <SelectTrigger className="rounded-xl border-border bg-card">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="full">Full Day</SelectItem>
-                    <SelectItem value="half">Half Day</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+
+              {form.leave_type !== "vacation" && (
+                <div className="sm:col-span-2">
+                  <Label className="mb-2 block text-sm font-semibold text-foreground">
+                    Leave Duration
+                  </Label>
+                  <Select
+                    value={form.is_half_day ? "half" : "full"}
+                    onValueChange={(v) => setForm({ ...form, is_half_day: v === "half" })}
+                  >
+                    <SelectTrigger className="rounded-xl border-border bg-card">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="full">Full Day</SelectItem>
+                      <SelectItem value="half">Half Day</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div>
                 <Label className="mb-2 block text-sm font-semibold text-foreground">
                   {form.is_half_day ? "Leave date (BS)" : "Start date (BS)"}

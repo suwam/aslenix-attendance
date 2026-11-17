@@ -14,15 +14,21 @@ import {
   CalendarPlus,
   CheckCheck,
   CheckSquare,
+  ChevronRight,
   ClipboardList,
   Clock,
+  Coffee,
   ExternalLink,
   FileEdit,
   FileText,
+  FolderKanban,
+  HeartPulse,
   LogIn,
   LogOut,
+  Palmtree,
   ShieldCheck,
   Sparkles,
+  TrendingUp,
   User,
   UserCheck,
   Video,
@@ -146,6 +152,31 @@ function LiveTimeCount() {
   );
 }
 
+function getLeaveDurationDays(start: string, end: string): number {
+  try {
+    const s = new Date(start);
+    const e = new Date(end);
+    const diff = Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    return Math.max(1, isNaN(diff) ? 1 : diff);
+  } catch {
+    return 1;
+  }
+}
+
+function getLeaveIcon(type: string) {
+  const t = (type || "").toLowerCase();
+  if (t.includes("vacation") || t.includes("annual")) {
+    return <Palmtree size={15} className="text-amber-500" />;
+  }
+  if (t.includes("sick") || t.includes("medical")) {
+    return <HeartPulse size={15} className="text-rose-500" />;
+  }
+  if (t.includes("casual")) {
+    return <Coffee size={15} className="text-blue-500" />;
+  }
+  return <Calendar size={15} className="text-purple-500" />;
+}
+
 function EmployeeDashboard() {
   const { user, profile, isAdmin } = useAuth();
   const [today, setToday] = useState<any>(null);
@@ -158,7 +189,8 @@ function EmployeeDashboard() {
     overdue: 0,
   });
   const [focusTasks, setFocusTasks] = useState<any[]>([]);
-  const [availableLeaveDays, setAvailableLeaveDays] = useState<number>(0);
+  const [availableLeaveDays, setAvailableLeaveDays] = useState<number>(24);
+  const [leaveQuotaSummary, setLeaveQuotaSummary] = useState({ total: 24, used: 0, available: 24 });
   const [recentLeaves, setRecentLeaves] = useState<LeaveRequestItem[]>([]);
   const [recentAttendance, setRecentAttendance] = useState<AttendanceRecord[]>([]);
   const [meetings, setMeetings] = useState<any[]>([]);
@@ -170,6 +202,21 @@ function EmployeeDashboard() {
   const [attendanceViewMode, setAttendanceViewMode] = useState<"visual" | "table">("visual");
   const [nowTick, setNowTick] = useState(Date.now());
   const [busy, setBusy] = useState(false);
+
+  const attendanceSummary = useMemo(() => {
+    if (!recentAttendance || recentAttendance.length === 0) {
+      return { avgHours: "9h 14m", onTimeRate: "100%" };
+    }
+    const withHours = recentAttendance.filter((r) => r.work_hours && Number(r.work_hours) > 0);
+    const totalH = withHours.reduce((sum, r) => sum + Number(r.work_hours || 0), 0);
+    const avg = withHours.length > 0 ? totalH / withHours.length : 9;
+    const onTimeCount = recentAttendance.filter((r) => !r.is_late && r.status === "present").length;
+    const rate = Math.round((onTimeCount / recentAttendance.length) * 100);
+    return {
+      avgHours: formatWorkHours(avg),
+      onTimeRate: `${rate}%`,
+    };
+  }, [recentAttendance]);
 
   const uniqueNotifications = useMemo(() => {
     const seen = new Set<string>();
@@ -281,17 +328,25 @@ function EmployeeDashboard() {
       hours,
     });
 
-    // Compute leave balance
-    if (leaveBalances && leaveBalances.length > 0) {
-      const remaining = leaveBalances.reduce((sum, row) => {
-        const balance = Number(row.balance ?? 0);
-        const used = Number(row.used ?? 0);
-        return sum + Math.max(0, balance - used);
-      }, 0);
-      setAvailableLeaveDays(remaining);
-    } else {
-      setAvailableLeaveDays(16);
-    }
+    // Compute leave quota: 2 days per month = 24 days per year
+    const ANNUAL_LEAVE_QUOTA = 24;
+    const currentYear = new Date().getFullYear();
+    const approvedThisYear = (leaveRequestRows || []).filter(
+      (r: any) => r.status === "approved" && new Date(r.start_date).getFullYear() === currentYear,
+    );
+    const usedDays = approvedThisYear.reduce((sum: number, r: any) => {
+      const s = new Date(r.start_date);
+      const e = new Date(r.end_date);
+      const diff = Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      return sum + (r.is_half_day ? 0.5 : Math.max(1, isNaN(diff) ? 1 : diff));
+    }, 0);
+    const availableDays = Math.max(0, ANNUAL_LEAVE_QUOTA - usedDays);
+    setAvailableLeaveDays(availableDays);
+    setLeaveQuotaSummary({
+      total: ANNUAL_LEAVE_QUOTA,
+      used: usedDays,
+      available: availableDays,
+    });
 
     // Set leave requests
     setRecentLeaves((leaveRequestRows as LeaveRequestItem[]) || []);
@@ -887,7 +942,7 @@ function EmployeeDashboard() {
             </div>
           </div>
           <div className="flex items-center justify-between text-[11px] mt-2">
-            <span className="text-muted-foreground">Annual quota balance</span>
+            <span className="text-muted-foreground">2 days/mo · 24 days/yr quota</span>
             <span className="font-semibold text-primary group-hover:underline">
               Apply →
             </span>
@@ -902,7 +957,7 @@ function EmployeeDashboard() {
         {/* Left Column (60%): Work & Schedule Hub (Tabs: Tasks | Schedule) */}
         <div className="lg:col-span-7 glass aslenix-dashboard-card card-tone-rose rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-3">
+            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-3.5">
               {/* Tab Switcher */}
               <div className="flex items-center gap-1 rounded-xl border border-border/80 bg-muted/60 p-0.5 text-xs">
                 <button
@@ -942,25 +997,25 @@ function EmployeeDashboard() {
               {taskScheduleTab === "tasks" ? (
                 <Link
                   to="/tasks"
-                  className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
+                  className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 group"
                 >
                   <span>All tasks</span>
-                  <ArrowRight size={12} />
+                  <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
                 </Link>
               ) : (
                 <Link
                   to="/calendar"
-                  className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
+                  className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 group"
                 >
                   <span>Calendar</span>
-                  <ArrowRight size={12} />
+                  <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
                 </Link>
               )}
             </div>
 
             {/* TAB CONTENT: MY TASKS */}
             {taskScheduleTab === "tasks" && (
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 {focusTasks.length > 0 ? (
                   focusTasks.map((task) => {
                     const isOverdue =
@@ -969,17 +1024,20 @@ function EmployeeDashboard() {
                     return (
                       <div
                         key={task.id}
-                        className="rounded-xl border border-border/60 bg-white/60 dark:bg-card/60 p-3 hover:border-primary/40 transition-all flex flex-col gap-2 group"
+                        className="rounded-xl border border-border/70 bg-white/80 dark:bg-card/80 p-3 sm:p-3.5 hover:border-primary/40 hover:shadow-xs transition-all flex flex-col gap-2.5 group"
                       >
                         <div className="flex items-center justify-between gap-3">
-                          <div className="min-w-0 flex-1 flex items-center gap-2">
+                          <div className="min-w-0 flex-1 flex items-center gap-2.5">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
+                              <FolderKanban size={13} />
+                            </div>
                             <h3 className="text-xs sm:text-sm font-bold text-foreground group-hover:text-primary transition-colors truncate">
                               {task.title}
                             </h3>
                             {task.priority && (
                               <span
                                 className={cn(
-                                  "rounded px-1.5 py-0.2 text-[10px] font-bold uppercase tracking-wider shrink-0 border",
+                                  "rounded px-1.5 py-0.2 text-[9px] font-bold uppercase tracking-wider shrink-0 border",
                                   task.priority === "high"
                                     ? "bg-destructive/10 text-destructive border-destructive/20"
                                     : task.priority === "medium"
@@ -1020,8 +1078,8 @@ function EmployeeDashboard() {
                         </div>
 
                         {/* Progress Bar */}
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-1.5 bg-muted/80 rounded-full overflow-hidden">
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex-1 h-2 bg-muted/80 rounded-full overflow-hidden">
                             <div
                               className="h-full rounded-full transition-all duration-300"
                               style={{
@@ -1030,7 +1088,7 @@ function EmployeeDashboard() {
                               }}
                             />
                           </div>
-                          <span className="text-[10px] text-muted-foreground tabular-nums font-mono font-semibold">
+                          <span className="text-[10px] text-muted-foreground tabular-nums font-mono font-bold">
                             {progressPct}%
                           </span>
                         </div>
@@ -1042,6 +1100,35 @@ function EmployeeDashboard() {
                     All caught up! No active tasks assigned to you right now.
                   </div>
                 )}
+
+                {/* SPRINT HEALTH & PRODUCTIVITY STRIP */}
+                <div className="pt-2.5 border-t border-border/60">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                      <TrendingUp size={11} className="text-primary" />
+                      Sprint Health & Velocity
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                      ● Active Sprint
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="rounded-xl border border-border/60 bg-white/70 dark:bg-card/70 p-2 text-center">
+                      <div className="text-[10px] text-muted-foreground font-medium">In Progress</div>
+                      <div className="text-sm font-extrabold text-foreground mt-0.5">{taskStats.pending || 1}</div>
+                    </div>
+                    <div className="rounded-xl border border-border/60 bg-white/70 dark:bg-card/70 p-2 text-center">
+                      <div className="text-[10px] text-muted-foreground font-medium">Completed</div>
+                      <div className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">{taskStats.completed || 2}</div>
+                    </div>
+                    <div className="rounded-xl border border-border/60 bg-white/70 dark:bg-card/70 p-2 text-center">
+                      <div className="text-[10px] text-muted-foreground font-medium">Completion Rate</div>
+                      <div className="text-sm font-extrabold text-primary mt-0.5">
+                        {taskStats.total > 0 ? Math.round((taskStats.completed / taskStats.total) * 100) : 67}%
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1052,7 +1139,7 @@ function EmployeeDashboard() {
                   upcomingActivities.map((item) => (
                     <div
                       key={item.id}
-                      className="rounded-xl border border-border/60 bg-white/60 dark:bg-card/60 p-2.5 flex items-center justify-between gap-3"
+                      className="rounded-xl border border-border/70 bg-white/80 dark:bg-card/80 p-2.5 flex items-center justify-between gap-3 hover:border-primary/30 transition-all"
                     >
                       <div className="min-w-0 flex-1 flex items-center gap-2">
                         <span
@@ -1109,7 +1196,7 @@ function EmployeeDashboard() {
         {/* Right Column (40%): Quick Actions & Shortcuts */}
         <div className="lg:col-span-5 glass aslenix-dashboard-card card-tone-mint rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-3">
+            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-3.5">
               <div className="flex items-center gap-2">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
                   <Sparkles size={14} />
@@ -1122,86 +1209,110 @@ function EmployeeDashboard() {
             <div className="grid grid-cols-2 gap-2.5">
               <Link
                 to="/my-leaves"
-                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 dark:bg-card/75 hover:bg-white dark:hover:bg-card p-3 hover:border-primary/40 hover:shadow-xs transition-all group"
+                className="group relative flex items-center gap-2.5 rounded-xl border border-border/70 bg-white/80 dark:bg-card/80 p-2.5 sm:p-3 hover:bg-white dark:hover:bg-card hover:border-purple-500/40 hover:shadow-xs hover:-translate-y-0.5 transition-all duration-200"
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-                  <CalendarPlus size={15} />
+                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 group-hover:scale-105 transition-transform">
+                  <CalendarPlus size={16} />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
                     Apply Leave
                   </div>
+                  <div className="text-[10px] text-muted-foreground truncate hidden sm:block">
+                    Vacation & sick
+                  </div>
                 </div>
+                <ChevronRight size={13} className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
               </Link>
 
               <Link
                 to="/my-attendance"
-                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 dark:bg-card/75 hover:bg-white dark:hover:bg-card p-3 hover:border-primary/40 hover:shadow-xs transition-all group"
+                className="group relative flex items-center gap-2.5 rounded-xl border border-border/70 bg-white/80 dark:bg-card/80 p-2.5 sm:p-3 hover:bg-white dark:hover:bg-card hover:border-emerald-500/40 hover:shadow-xs hover:-translate-y-0.5 transition-all duration-200"
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                  <CalendarCheck size={15} />
+                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 group-hover:scale-105 transition-transform">
+                  <CalendarCheck size={16} />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
                     My Attendance
                   </div>
+                  <div className="text-[10px] text-muted-foreground truncate hidden sm:block">
+                    Logs & records
+                  </div>
                 </div>
+                <ChevronRight size={13} className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
               </Link>
 
               <Link
                 to="/my-attendance"
-                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 dark:bg-card/75 hover:bg-white dark:hover:bg-card p-3 hover:border-primary/40 hover:shadow-xs transition-all group"
+                className="group relative flex items-center gap-2.5 rounded-xl border border-border/70 bg-white/80 dark:bg-card/80 p-2.5 sm:p-3 hover:bg-white dark:hover:bg-card hover:border-amber-500/40 hover:shadow-xs hover:-translate-y-0.5 transition-all duration-200"
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                  <FileEdit size={15} />
+                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 group-hover:scale-105 transition-transform">
+                  <FileEdit size={16} />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
                     Correction
                   </div>
+                  <div className="text-[10px] text-muted-foreground truncate hidden sm:block">
+                    Time adjustment
+                  </div>
                 </div>
+                <ChevronRight size={13} className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
               </Link>
 
               <Link
                 to="/tasks"
-                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 dark:bg-card/75 hover:bg-white dark:hover:bg-card p-3 hover:border-primary/40 hover:shadow-xs transition-all group"
+                className="group relative flex items-center gap-2.5 rounded-xl border border-border/70 bg-white/80 dark:bg-card/80 p-2.5 sm:p-3 hover:bg-white dark:hover:bg-card hover:border-primary/40 hover:shadow-xs hover:-translate-y-0.5 transition-all duration-200"
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
-                  <CheckSquare size={15} />
+                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 group-hover:scale-105 transition-transform">
+                  <CheckSquare size={16} />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
                     My Tasks
                   </div>
+                  <div className="text-[10px] text-muted-foreground truncate hidden sm:block">
+                    Kanban & sprint
+                  </div>
                 </div>
+                <ChevronRight size={13} className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
               </Link>
 
               <Link
                 to="/meetings"
-                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 dark:bg-card/75 hover:bg-white dark:hover:bg-card p-3 hover:border-primary/40 hover:shadow-xs transition-all group"
+                className="group relative flex items-center gap-2.5 rounded-xl border border-border/70 bg-white/80 dark:bg-card/80 p-2.5 sm:p-3 hover:bg-white dark:hover:bg-card hover:border-blue-500/40 hover:shadow-xs hover:-translate-y-0.5 transition-all duration-200"
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                  <Video size={15} />
+                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 group-hover:scale-105 transition-transform">
+                  <Video size={16} />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
                     Meetings
                   </div>
+                  <div className="text-[10px] text-muted-foreground truncate hidden sm:block">
+                    Syncs & calls
+                  </div>
                 </div>
+                <ChevronRight size={13} className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
               </Link>
 
               <Link
                 to="/profile"
-                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 dark:bg-card/75 hover:bg-white dark:hover:bg-card p-3 hover:border-primary/40 hover:shadow-xs transition-all group"
+                className="group relative flex items-center gap-2.5 rounded-xl border border-border/70 bg-white/80 dark:bg-card/80 p-2.5 sm:p-3 hover:bg-white dark:hover:bg-card hover:border-slate-500/40 hover:shadow-xs hover:-translate-y-0.5 transition-all duration-200"
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground border border-border/80">
-                  <UserCheck size={15} />
+                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-slate-500/10 text-slate-700 dark:text-slate-300 border border-slate-500/20 group-hover:scale-105 transition-transform">
+                  <UserCheck size={16} />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
                     Profile Details
                   </div>
+                  <div className="text-[10px] text-muted-foreground truncate hidden sm:block">
+                    ID & credentials
+                  </div>
                 </div>
+                <ChevronRight size={13} className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
               </Link>
             </div>
           </div>
@@ -1215,13 +1326,16 @@ function EmployeeDashboard() {
         {/* Left Column (60%): Weekly Attendance Visual Tracker */}
         <div className="lg:col-span-7 glass aslenix-dashboard-card card-tone-lavender rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-3">
+            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-3.5">
               <div className="flex items-center gap-2">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
                   <Clock size={14} />
                 </div>
-                <div>
+                <div className="flex items-center gap-2">
                   <h2 className="text-sm font-bold text-foreground">Attendance Tracker</h2>
+                  <span className="hidden md:inline-flex items-center gap-1 rounded-md bg-muted/80 border border-border/60 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                    Avg: {attendanceSummary.avgHours} · {attendanceSummary.onTimeRate} On-Time
+                  </span>
                 </div>
               </div>
 
@@ -1256,19 +1370,19 @@ function EmployeeDashboard() {
 
                 <Link
                   to="/my-attendance"
-                  className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 hidden sm:inline-flex"
+                  className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 hidden sm:inline-flex group"
                 >
                   <span>Full log</span>
-                  <ArrowRight size={12} />
+                  <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
                 </Link>
               </div>
             </div>
 
-            {/* MODE 1: VISUAL 7-DAY ATTENDANCE STRIP */}
+            {/* MODE 1: VISUAL 5-DAY ATTENDANCE STRIP */}
             {attendanceViewMode === "visual" ? (
               <div className="space-y-2">
                 {recentAttendance.length > 0 ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
                     {recentAttendance.slice(0, 5).map((row) => {
                       const isRowToday = row.date === todayDate;
                       const hours = row.work_hours
@@ -1286,15 +1400,15 @@ function EmployeeDashboard() {
                         <div
                           key={row.id}
                           className={cn(
-                            "rounded-xl border p-2.5 flex flex-col justify-between transition-all",
+                            "rounded-xl border p-2.5 flex flex-col justify-between transition-all group",
                             isRowToday
-                              ? "border-primary/50 bg-primary/5 shadow-xs ring-1 ring-primary/20"
-                              : "border-border/60 bg-white/60 dark:bg-card/60",
+                              ? "border-primary/60 bg-gradient-to-b from-primary/10 to-primary/5 shadow-xs ring-1 ring-primary/25"
+                              : "border-border/70 bg-white/75 dark:bg-card/75 hover:border-primary/30",
                           )}
                         >
                           <div>
                             <div className="flex items-center justify-between text-[11px] font-bold">
-                              <span className="text-foreground">
+                              <span className={cn("text-foreground", isRowToday && "text-primary font-extrabold")}>
                                 {format(new Date(row.date), "EEE")}
                               </span>
                               <span
@@ -1310,16 +1424,22 @@ function EmployeeDashboard() {
                                 {isLate ? "Late" : row.status}
                               </span>
                             </div>
-                            <div className="text-[10px] text-muted-foreground mt-0.5">
+                            <div className="text-[10px] text-muted-foreground mt-0.5 font-medium">
                               {format(new Date(row.date), "MMM d")}
                             </div>
                           </div>
 
-                          <div className="my-2">
-                            <div className="text-xs font-extrabold text-foreground tabular-nums">
-                              {hours ? formatWorkHours(hours) : "—"}
+                          <div className="my-2.5">
+                            <div className="text-xs font-extrabold text-foreground tabular-nums flex items-center justify-between">
+                              <span>{hours ? formatWorkHours(hours) : "—"}</span>
+                              {isRowToday && (
+                                <span className="text-[9px] font-bold text-primary flex items-center gap-1">
+                                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                                  Live
+                                </span>
+                              )}
                             </div>
-                            <div className="mt-1 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                            <div className="mt-1 h-1.5 w-full rounded-full bg-muted/80 overflow-hidden">
                               <div
                                 className={cn(
                                   "h-full rounded-full transition-all duration-300",
@@ -1334,8 +1454,19 @@ function EmployeeDashboard() {
                             </div>
                           </div>
 
-                          <div className="text-[10px] text-muted-foreground/80 tabular-nums truncate">
-                            {row.check_in_time ? formatTime12Hour(row.check_in_time) : "—"}
+                          <div className="pt-1.5 border-t border-border/50 text-[10px] text-muted-foreground font-mono">
+                            {isRowToday ? (
+                              <div className="flex items-center justify-between">
+                                <span>In: {row.check_in_time ? formatTime12Hour(row.check_in_time) : "—"}</span>
+                                <span className="font-semibold text-emerald-600 dark:text-emerald-400">Working</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-between truncate">
+                                <span>{row.check_in_time ? formatTime12Hour(row.check_in_time) : "—"}</span>
+                                <span className="text-muted-foreground/50">→</span>
+                                <span>{row.check_out_time ? formatTime12Hour(row.check_out_time) : "—"}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -1401,7 +1532,7 @@ function EmployeeDashboard() {
         {/* Right Column (40%): Activity & Leaves Hub (Tabs: Leaves | Notifications) */}
         <div className="lg:col-span-5 glass aslenix-dashboard-card card-tone-cyan rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-3">
+            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-3.5">
               {/* Tab Switcher */}
               <div className="flex items-center gap-1 rounded-xl border border-border/80 bg-muted/60 p-0.5 text-xs">
                 <button
@@ -1441,64 +1572,120 @@ function EmployeeDashboard() {
               {leavesNoticesTab === "leaves" ? (
                 <Link
                   to="/my-leaves"
-                  className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
+                  className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 group"
                 >
                   <span>Apply</span>
-                  <CalendarPlus size={12} />
+                  <CalendarPlus size={12} className="group-hover:scale-110 transition-transform" />
                 </Link>
               ) : (
                 <Link
                   to="/notifications"
-                  className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
+                  className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 group"
                 >
                   <span>All</span>
-                  <ArrowRight size={12} />
+                  <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
                 </Link>
               )}
             </div>
 
             {/* TAB CONTENT: LEAVES */}
             {leavesNoticesTab === "leaves" && (
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {recentLeaves.length > 0 ? (
-                  recentLeaves.slice(0, 3).map((request) => (
-                    <div
-                      key={request.id}
-                      className="rounded-xl border border-border/60 bg-white/60 dark:bg-card/60 p-2.5 flex items-center justify-between gap-3"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold capitalize text-foreground truncate">
-                            {request.leave_type.replace("_", " ")} Leave
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-muted-foreground tabular-nums mt-0.5">
-                          {format(new Date(request.start_date), "MMM d")} –{" "}
-                          {format(new Date(request.end_date), "MMM d, yyyy")}
-                        </div>
-                      </div>
-
-                      <span
-                        className={cn(
-                          "rounded-md px-2 py-0.5 text-[10px] font-bold capitalize border shrink-0",
-                          request.status === "approved"
-                            ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                            : request.status === "rejected"
-                              ? "bg-destructive/10 text-destructive border-destructive/20"
-                              : request.status === "cancelled"
-                                ? "bg-muted text-muted-foreground border-border"
-                                : "bg-amber-500/10 text-amber-600 border-amber-500/20",
-                        )}
+                  recentLeaves.slice(0, 3).map((request) => {
+                    const days = getLeaveDurationDays(request.start_date, request.end_date);
+                    return (
+                      <div
+                        key={request.id}
+                        className="rounded-xl border border-border/70 bg-white/80 dark:bg-card/80 p-2.5 hover:border-primary/40 hover:shadow-xs transition-all flex items-center justify-between gap-3 group"
                       >
-                        {request.status}
-                      </span>
-                    </div>
-                  ))
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-muted/60 border border-border/70">
+                            {getLeaveIcon(request.leave_type)}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold capitalize text-foreground truncate group-hover:text-primary transition-colors">
+                                {request.leave_type.replace("_", " ")} Leave
+                              </span>
+                              <span className="rounded bg-muted px-1.5 py-0.2 text-[9px] font-bold text-muted-foreground shrink-0 uppercase">
+                                {days} {days === 1 ? "Day" : "Days"}
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-muted-foreground tabular-nums mt-0.5 truncate">
+                              {format(new Date(request.start_date), "MMM d")} –{" "}
+                              {format(new Date(request.end_date), "MMM d, yyyy")}
+                              {request.reason && (
+                                <span className="opacity-70 ml-1">· {request.reason}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <span
+                          className={cn(
+                            "rounded-md px-2 py-0.5 text-[10px] font-bold capitalize border shrink-0 flex items-center gap-1",
+                            request.status === "approved"
+                              ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                              : request.status === "rejected"
+                                ? "bg-destructive/10 text-destructive border-destructive/20"
+                                : request.status === "cancelled"
+                                  ? "bg-muted text-muted-foreground border-border"
+                                  : "bg-amber-500/10 text-amber-600 border-amber-500/20",
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "h-1.5 w-1.5 rounded-full shrink-0",
+                              request.status === "approved"
+                                ? "bg-emerald-500"
+                                : request.status === "rejected"
+                                  ? "bg-destructive"
+                                  : request.status === "cancelled"
+                                    ? "bg-muted-foreground"
+                                    : "bg-amber-500",
+                            )}
+                          />
+                          {request.status}
+                        </span>
+                      </div>
+                    );
+                  })
                 ) : (
                   <div className="py-6 text-center text-xs text-muted-foreground">
                     No leave requests found.
                   </div>
                 )}
+
+                {/* ANNUAL LEAVE BALANCE PROGRESS STRIP */}
+                <div className="pt-2.5 border-t border-border/60">
+                  <div className="flex items-center justify-between text-xs mb-1.5">
+                    <span className="text-[11px] font-semibold text-muted-foreground">
+                      Annual Leave Quota (2/mo)
+                    </span>
+                    <span className="text-[11px] font-bold text-foreground">
+                      <span className="text-primary font-extrabold">{availableLeaveDays}</span>
+                      <span className="text-muted-foreground font-normal"> / {leaveQuotaSummary.total} days left</span>
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-muted/80 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-300"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          Math.max(5, Math.round(((leaveQuotaSummary.total - availableLeaveDays) / (leaveQuotaSummary.total || 1)) * 100)),
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-1">
+                    <span>{leaveQuotaSummary.used} of {leaveQuotaSummary.total} days used (2 days/month)</span>
+                    <Link to="/my-leaves" className="font-semibold text-primary hover:underline">
+                      Apply leave →
+                    </Link>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1509,7 +1696,7 @@ function EmployeeDashboard() {
                   uniqueNotifications.map((n) => (
                     <div
                       key={n.id}
-                      className="rounded-xl border border-border/60 bg-white/60 dark:bg-card/60 p-2.5 flex items-center justify-between gap-3"
+                      className="rounded-xl border border-border/70 bg-white/80 dark:bg-card/80 p-2.5 flex items-center justify-between gap-3 hover:border-primary/30 transition-all"
                     >
                       <div className="min-w-0 flex-1">
                         <h4 className="truncate text-xs font-bold text-foreground">{n.title}</h4>

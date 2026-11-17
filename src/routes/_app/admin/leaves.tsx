@@ -403,8 +403,15 @@ function LeavesPage() {
                       <div className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-500">
                         Leave type
                       </div>
-                      <div className="mt-2 text-[1.12rem] font-semibold text-slate-800">
-                        {formatLeaveType(r.leave_type)}
+                      <div className="mt-2 flex items-center gap-2 flex-wrap">
+                        <span className="text-[1.12rem] font-semibold text-slate-800">
+                          {formatLeaveType(r.leave_type)}
+                        </span>
+                        {r.leave_type === "vacation" && (
+                          <span className="rounded-full border border-purple-500/30 bg-purple-500/15 px-2.5 py-0.5 text-[10px] font-bold text-purple-700">
+                            🌴 1-Month Vacation Block
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="rounded-[1.5rem] bg-white/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
