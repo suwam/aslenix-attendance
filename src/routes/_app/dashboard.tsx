@@ -13,6 +13,7 @@ import {
   CalendarDays,
   CalendarPlus,
   CheckCheck,
+  CheckCircle2,
   CheckSquare,
   ChevronRight,
   ClipboardList,
@@ -50,6 +51,8 @@ import {
   isAttendanceCutoffPassed,
 } from "@/lib/attendance-engine";
 import { cn } from "@/lib/utils";
+import { MorningGreetingModal } from "@/components/MorningGreetingModal";
+import { CheckoutGreetingModal } from "@/components/CheckoutGreetingModal";
 
 export const Route = createFileRoute("/_app/dashboard")({ component: EmployeeDashboard });
 
@@ -202,6 +205,16 @@ function EmployeeDashboard() {
   const [attendanceViewMode, setAttendanceViewMode] = useState<"visual" | "table">("visual");
   const [nowTick, setNowTick] = useState(Date.now());
   const [busy, setBusy] = useState(false);
+  const [greetingOpen, setGreetingOpen] = useState(false);
+  const [checkoutGreetingOpen, setCheckoutGreetingOpen] = useState(false);
+  const [checkoutModalData, setCheckoutModalData] = useState<{
+    checkInTime?: string | null;
+    checkOutTime?: string | null;
+    workHours?: number | string | null;
+    isEarly?: boolean;
+    earlyMinutes?: number;
+    overtimeMinutes?: number;
+  } | null>(null);
 
   const attendanceSummary = useMemo(() => {
     if (!recentAttendance || recentAttendance.length === 0) {
@@ -441,10 +454,24 @@ function EmployeeDashboard() {
     return () => window.clearInterval(interval);
   }, []);
 
+  // Morning Greeting & Daily Brief: opens once per day after morning login
+  useEffect(() => {
+    if (!user) return;
+    const storageKey = `aslenix_morning_greeting_${user.id}_${todayDate}`;
+    const alreadyShown = localStorage.getItem(storageKey);
+    if (!alreadyShown) {
+      const timer = window.setTimeout(() => {
+        setGreetingOpen(true);
+        localStorage.setItem(storageKey, "true");
+      }, 750);
+      return () => window.clearTimeout(timer);
+    }
+  }, [user, todayDate]);
+
   // Functional Check-in
   const checkIn = async () => {
     if (!user) return;
-    if (isWeeklyOff) return toast.info("Saturday is a weekly off. Attendance is not required.");
+    if (isWeeklyOff) return toast.info(`Today is a weekly off (${WEEKLY_OFF_LABEL}). Attendance is not required.`);
     if (isAttendanceCutoffPassed()) {
       return;
     }
@@ -532,6 +559,20 @@ function EmployeeDashboard() {
         ? `Checked out early (${evalResult.early_checkout_minutes}m before scheduled closing)`
         : `Checked out (${formatWorkHours(evalResult.work_hours)} worked)`,
     );
+
+    // Pop the checkout farewell / day completion message once immediately after checkout
+    setCheckoutModalData({
+      checkInTime: updatedToday.check_in_time ? format(new Date(updatedToday.check_in_time), "hh:mm a") : null,
+      checkOutTime: format(now, "hh:mm a"),
+      workHours: evalResult.work_hours,
+      isEarly: evalResult.is_early_checkout,
+      earlyMinutes: evalResult.early_checkout_minutes,
+      overtimeMinutes: evalResult.overtime_minutes,
+    });
+    setCheckoutGreetingOpen(true);
+    if (user) {
+      localStorage.setItem(`aslenix_checkout_greeting_${user.id}_${todayDate}`, "true");
+    }
   };
 
   const workedHours = liveWorkedHours(today, nowTick);
@@ -717,6 +758,17 @@ function EmployeeDashboard() {
             {/* Live Time Count: Placed to the left side of the profile */}
             <LiveTimeCount />
 
+            {/* Daily Brief & Morning Greeting trigger */}
+            <button
+              type="button"
+              onClick={() => setGreetingOpen(true)}
+              title="Daily Morning Brief & Greeting"
+              className="flex-initial inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 px-3 py-2 text-xs font-semibold text-amber-700 dark:text-amber-300 shadow-xs hover:border-amber-400 transition-all cursor-pointer"
+            >
+              <Sparkles size={13} className="text-amber-500" />
+              <span className="hidden sm:inline">Daily Brief</span>
+            </button>
+
             <Link
               to="/profile"
               className="flex-1 sm:flex-initial inline-flex justify-center items-center gap-1.5 rounded-xl border border-border/80 bg-white/80 hover:bg-white px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs hover:border-primary/40 transition-all"
@@ -834,14 +886,36 @@ function EmployeeDashboard() {
             >
               <LogIn size={15} className="mr-1.5" /> Check In
             </Button>
-            <Button
-              onClick={checkOut}
-              disabled={busy || !today || Boolean(today?.check_out_time)}
-              variant="outline"
-              className="flex-1 xl:flex-initial h-9 sm:h-10 rounded-xl border-border/80 bg-white/80 hover:bg-white text-foreground font-semibold px-4 text-xs sm:text-sm shadow-xs transition-colors"
-            >
-              <LogOut size={15} className="mr-1.5" /> Check Out
-            </Button>
+            {today?.check_out_time ? (
+              <Button
+                type="button"
+                onClick={() => {
+                  setCheckoutModalData({
+                    checkInTime: today.check_in_time ? format(new Date(today.check_in_time), "hh:mm a") : null,
+                    checkOutTime: today.check_out_time ? format(new Date(today.check_out_time), "hh:mm a") : null,
+                    workHours: today.work_hours,
+                    isEarly: today.is_early_checkout,
+                    earlyMinutes: today.early_checkout_minutes,
+                    overtimeMinutes: today.overtime_minutes,
+                  });
+                  setCheckoutGreetingOpen(true);
+                }}
+                variant="outline"
+                title="View shift completion summary & farewell message"
+                className="flex-1 xl:flex-initial h-9 sm:h-10 rounded-xl border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-semibold px-4 text-xs sm:text-sm shadow-xs transition-colors cursor-pointer"
+              >
+                <CheckCircle2 size={15} className="mr-1.5 text-emerald-500" /> Day Completed
+              </Button>
+            ) : (
+              <Button
+                onClick={checkOut}
+                disabled={busy || !today || Boolean(today?.check_out_time)}
+                variant="outline"
+                className="flex-1 xl:flex-initial h-9 sm:h-10 rounded-xl border-border/80 bg-white/80 hover:bg-white text-foreground font-semibold px-4 text-xs sm:text-sm shadow-xs transition-colors"
+              >
+                <LogOut size={15} className="mr-1.5" /> Check Out
+              </Button>
+            )}
           </div>
         </div>
       </section>
@@ -1854,6 +1928,47 @@ function EmployeeDashboard() {
           </Link>
         </div>
       </section>
+
+      {/* Morning Greeting & Daily Motivation Modal (Once per day after login) */}
+      <MorningGreetingModal
+        open={greetingOpen}
+        onOpenChange={setGreetingOpen}
+        userName={firstName}
+        nepaliDate={nepaliToday}
+        gregorianDate={format(new Date(), "EEEE, MMM d, yyyy")}
+        shiftName={assignedShift?.name || "Morning Shift"}
+        shiftTime={
+          assignedShift
+            ? `${formatTime12Hour(assignedShift.start_time)} – ${formatTime12Hour(assignedShift.end_time)}`
+            : "09:00 AM – 06:00 PM"
+        }
+        isCheckedIn={!!today?.check_in_time}
+        checkInTime={today?.check_in_time ? format(new Date(today.check_in_time), "hh:mm a") : null}
+        onCheckIn={checkIn}
+        isWeeklyOff={isWeeklyOff}
+      />
+
+      {/* Shift Checkout Farewell & Day Completion Modal (Pops up once immediately after checkout is clicked) */}
+      <CheckoutGreetingModal
+        open={checkoutGreetingOpen}
+        onOpenChange={setCheckoutGreetingOpen}
+        userName={firstName}
+        checkInTime={
+          checkoutModalData?.checkInTime ??
+          (today?.check_in_time ? format(new Date(today.check_in_time), "hh:mm a") : null)
+        }
+        checkOutTime={
+          checkoutModalData?.checkOutTime ??
+          (today?.check_out_time ? format(new Date(today.check_out_time), "hh:mm a") : null)
+        }
+        workHours={checkoutModalData?.workHours ?? today?.work_hours}
+        isEarly={checkoutModalData?.isEarly ?? today?.is_early_checkout}
+        earlyMinutes={checkoutModalData?.earlyMinutes ?? today?.early_checkout_minutes ?? 0}
+        overtimeMinutes={checkoutModalData?.overtimeMinutes ?? today?.overtime_minutes ?? 0}
+        shiftName={assignedShift?.name || "Standard Shift"}
+        gregorianDate={format(new Date(), "EEEE, MMM d, yyyy")}
+        nepaliDate={nepaliToday}
+      />
     </div>
   );
 }

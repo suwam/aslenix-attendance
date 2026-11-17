@@ -57,6 +57,7 @@ import {
   getShiftExpectedHours,
   isAttendanceCutoffPassed,
 } from "@/lib/attendance-engine";
+import { CheckoutGreetingModal } from "@/components/CheckoutGreetingModal";
 
 export const Route = createFileRoute("/_app/check-in")({ component: CheckInPage });
 
@@ -94,6 +95,15 @@ function CheckInPage() {
   // Attendance closes at 2:00 PM Nepal time.
   const [isPastCutoff, setIsPastCutoff] = useState(() => isAttendanceCutoffPassed());
   const [showProhibitedDialog, setShowProhibitedDialog] = useState(false);
+  const [checkoutGreetingOpen, setCheckoutGreetingOpen] = useState(false);
+  const [checkoutModalData, setCheckoutModalData] = useState<{
+    checkInTime?: string | null;
+    checkOutTime?: string | null;
+    workHours?: number | string | null;
+    isEarly?: boolean;
+    earlyMinutes?: number;
+    overtimeMinutes?: number;
+  } | null>(null);
 
   useEffect(() => {
     const updateTime = () => setIsPastCutoff(isAttendanceCutoffPassed());
@@ -238,6 +248,20 @@ function CheckInPage() {
       toast.success(`Checked out (${evalResult.overtime_minutes}m overtime) · ${formatWorkHours(evalResult.work_hours)} worked\nWhatsApp notification: Queued`);
     } else {
       toast.success(`Checked out · ${formatWorkHours(evalResult.work_hours)} worked\nWhatsApp notification: Queued`);
+    }
+
+    // Pop the checkout farewell / day completion message once immediately after checkout
+    setCheckoutModalData({
+      checkInTime: (updatedToday as any).check_in_time ? format(new Date((updatedToday as any).check_in_time), "hh:mm a") : null,
+      checkOutTime: format(now, "hh:mm a"),
+      workHours: evalResult.work_hours,
+      isEarly: evalResult.is_early_checkout,
+      earlyMinutes: evalResult.early_checkout_minutes,
+      overtimeMinutes: evalResult.overtime_minutes,
+    });
+    setCheckoutGreetingOpen(true);
+    if (user) {
+      localStorage.setItem(`aslenix_checkout_greeting_${user.id}_${todayDate}`, "true");
     }
   };
 
@@ -552,6 +576,26 @@ function CheckInPage() {
                               Early checkout: {today.early_checkout_minutes ?? "Early"} mins before scheduled {formatTime12Hour(assignedShift.end_time)}
                             </div>
                           )}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setCheckoutModalData({
+                                checkInTime: today.check_in_time ? format(new Date(today.check_in_time), "hh:mm a") : null,
+                                checkOutTime: today.check_out_time ? format(new Date(today.check_out_time), "hh:mm a") : null,
+                                workHours: today.work_hours,
+                                isEarly: today.is_early_checkout,
+                                earlyMinutes: today.early_checkout_minutes ?? 0,
+                                overtimeMinutes: today.overtime_minutes ?? 0,
+                              });
+                              setCheckoutGreetingOpen(true);
+                            }}
+                            className="mt-3 rounded-xl border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold cursor-pointer"
+                          >
+                            <Sparkles size={13} className="mr-1.5 text-emerald-500" />
+                            View Day Summary
+                          </Button>
                         </div>
                       </div>
                     )}
@@ -660,6 +704,28 @@ function CheckInPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Shift Checkout Farewell & Day Completion Modal */}
+      <CheckoutGreetingModal
+        open={checkoutGreetingOpen}
+        onOpenChange={setCheckoutGreetingOpen}
+        userName={user?.user_metadata?.full_name?.split(" ")[0] || "Team Member"}
+        checkInTime={
+          checkoutModalData?.checkInTime ??
+          (today?.check_in_time ? format(new Date(today.check_in_time), "hh:mm a") : null)
+        }
+        checkOutTime={
+          checkoutModalData?.checkOutTime ??
+          (today?.check_out_time ? format(new Date(today.check_out_time), "hh:mm a") : null)
+        }
+        workHours={checkoutModalData?.workHours ?? today?.work_hours}
+        isEarly={checkoutModalData?.isEarly ?? today?.is_early_checkout}
+        earlyMinutes={checkoutModalData?.earlyMinutes ?? today?.early_checkout_minutes ?? 0}
+        overtimeMinutes={checkoutModalData?.overtimeMinutes ?? today?.overtime_minutes ?? 0}
+        shiftName={assignedShift?.name || "Standard Shift"}
+        gregorianDate={format(new Date(), "EEEE, MMM d, yyyy")}
+        nepaliDate={formatNepaliDate(new Date(), "MMMM DD, YYYY")}
+      />
     </>
   );
 }
