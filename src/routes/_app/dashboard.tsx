@@ -847,7 +847,7 @@ function EmployeeDashboard() {
       </section>
 
       {/* ========================================================================= */}
-      {/* ROW 3: Four Statistics Cards (ASLENIX Theme Format)                       */}
+      {/* ROW 3: Key Metrics (Present Days, Pending Tasks, Completed, Available Leave) */}
       {/* ========================================================================= */}
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Present Days */}
@@ -951,7 +951,215 @@ function EmployeeDashboard() {
       </section>
 
       {/* ========================================================================= */}
-      {/* ROW 4: Work & Schedule Hub (Left) + Quick Actions (Right)                 */}
+      {/* ROW 4: Attendance Tracker (Visual 5-day strip / Table toggle)             */}
+      {/* ========================================================================= */}
+      <section className="glass aslenix-dashboard-card card-tone-lavender rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs">
+        <div>
+          <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-3.5">
+            <div className="flex items-center gap-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
+                <Clock size={14} />
+              </div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-foreground">Attendance Tracker</h2>
+                <span className="hidden md:inline-flex items-center gap-1 rounded-md bg-muted/80 border border-border/60 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                  Avg: {attendanceSummary.avgHours} · {attendanceSummary.onTimeRate} On-Time
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Visual vs Table View Switcher */}
+              <div className="inline-flex items-center rounded-lg border border-border bg-muted/60 p-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setAttendanceViewMode("visual")}
+                  className={cn(
+                    "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all",
+                    attendanceViewMode === "visual"
+                      ? "bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] font-bold shadow-xs"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  Visual Strip
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAttendanceViewMode("table")}
+                  className={cn(
+                    "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all",
+                    attendanceViewMode === "table"
+                      ? "bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] font-bold shadow-xs"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  Table
+                </button>
+              </div>
+
+              <Link
+                to="/my-attendance"
+                className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 hidden sm:inline-flex group"
+              >
+                <span>Full log</span>
+                <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
+          </div>
+
+          {/* MODE 1: VISUAL 5-DAY ATTENDANCE STRIP */}
+          {attendanceViewMode === "visual" ? (
+            <div className="space-y-2">
+              {recentAttendance.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-3">
+                  {recentAttendance.slice(0, 5).map((row) => {
+                    const isRowToday = row.date === todayDate;
+                    const hours = row.work_hours
+                      ? Number(row.work_hours)
+                      : isRowToday && workedHours
+                        ? workedHours
+                        : 0;
+                    const pct = Math.min(
+                      100,
+                      Math.round((hours / (expectedDailyHours || 9)) * 100),
+                    );
+                    const isLate = row.is_late || row.status === "late";
+
+                    return (
+                      <div
+                        key={row.id}
+                        className={cn(
+                          "rounded-xl border p-2.5 sm:p-3 flex flex-col justify-between transition-all group",
+                          isRowToday
+                            ? "border-primary/60 bg-gradient-to-b from-primary/10 to-primary/5 shadow-xs ring-1 ring-primary/25"
+                            : "border-border/70 bg-white/75 dark:bg-card/75 hover:border-primary/30",
+                        )}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between text-[11px] font-bold">
+                            <span className={cn("text-foreground", isRowToday && "text-primary font-extrabold")}>
+                              {format(new Date(row.date), "EEE")}
+                            </span>
+                            <span
+                              className={cn(
+                                "rounded px-1.5 py-0.2 text-[9px] font-bold uppercase",
+                                row.status === "present" && !isLate
+                                  ? "bg-emerald-500/10 text-emerald-600"
+                                  : isLate
+                                    ? "bg-amber-500/10 text-amber-600"
+                                    : "bg-muted text-muted-foreground",
+                              )}
+                            >
+                              {isLate ? "Late" : row.status}
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5 font-medium">
+                            {format(new Date(row.date), "MMM d")}
+                          </div>
+                        </div>
+
+                        <div className="my-2.5">
+                          <div className="text-xs font-extrabold text-foreground tabular-nums flex items-center justify-between">
+                            <span>{hours ? formatWorkHours(hours) : "—"}</span>
+                            {isRowToday && (
+                              <span className="text-[9px] font-bold text-primary flex items-center gap-1">
+                                <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                                Live
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-1 h-1.5 w-full rounded-full bg-muted/80 overflow-hidden">
+                            <div
+                              className={cn(
+                                "h-full rounded-full transition-all duration-300",
+                                row.status === "present" && !isLate
+                                  ? "bg-emerald-500"
+                                  : isLate
+                                    ? "bg-amber-500"
+                                    : "bg-primary",
+                              )}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="pt-1.5 border-t border-border/50 text-[10px] text-muted-foreground font-mono">
+                          {isRowToday ? (
+                            <div className="flex items-center justify-between">
+                              <span>In: {row.check_in_time ? formatTime12Hour(row.check_in_time) : "—"}</span>
+                              <span className="font-semibold text-emerald-600 dark:text-emerald-400">Working</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between truncate">
+                              <span>{row.check_in_time ? formatTime12Hour(row.check_in_time) : "—"}</span>
+                              <span className="text-muted-foreground/50">→</span>
+                              <span>{row.check_out_time ? formatTime12Hour(row.check_out_time) : "—"}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="py-6 text-center text-xs text-muted-foreground">
+                  No attendance records captured yet.
+                </div>
+              )}
+            </div>
+          ) : (
+            /* MODE 2: COMPACT CLEAN TABLE */
+            <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+              <table className="w-full min-w-[440px] text-left text-xs">
+                <thead>
+                  <tr className="border-b border-border/60 text-muted-foreground text-[11px]">
+                    <th className="py-2 px-2.5 first:pl-0 font-semibold">Date</th>
+                    <th className="py-2 px-2.5 font-semibold">In</th>
+                    <th className="py-2 px-2.5 font-semibold">Out</th>
+                    <th className="py-2 px-2.5 font-semibold">Hours</th>
+                    <th className="py-2 px-2.5 last:pr-0 font-semibold text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {recentAttendance.map((row) => (
+                    <tr key={row.id} className="hover:bg-muted/40 transition-colors">
+                      <td className="py-2 px-2.5 first:pl-0 font-semibold text-foreground tabular-nums whitespace-nowrap">
+                        {format(new Date(row.date), "MMM d, yyyy")}
+                      </td>
+                      <td className="py-2 px-2.5 text-muted-foreground tabular-nums whitespace-nowrap">
+                        {row.check_in_time ? formatTime12Hour(row.check_in_time) : "—"}
+                      </td>
+                      <td className="py-2 px-2.5 text-muted-foreground tabular-nums whitespace-nowrap">
+                        {row.check_out_time ? formatTime12Hour(row.check_out_time) : "—"}
+                      </td>
+                      <td className="py-2 px-2.5 text-foreground font-bold tabular-nums whitespace-nowrap">
+                        {row.work_hours ? formatWorkHours(row.work_hours) : "—"}
+                      </td>
+                      <td className="py-2 px-2.5 last:pr-0 text-right whitespace-nowrap">
+                        <span
+                          className={cn(
+                            "inline-block rounded px-2 py-0.5 text-[10px] font-bold capitalize border",
+                            row.status === "present" && !row.is_late
+                              ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                              : row.is_late || row.status === "late"
+                                ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                                : "bg-muted text-muted-foreground border-border",
+                          )}
+                        >
+                          {row.is_late ? "Late" : row.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* ROW 5: Work & Activity Hubs (Side-by-Side)                                */}
       {/* ========================================================================= */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Left Column (60%): Work & Schedule Hub (Tabs: Tasks | Schedule) */}
@@ -1193,342 +1401,6 @@ function EmployeeDashboard() {
           </div>
         </div>
 
-        {/* Right Column (40%): Quick Actions & Shortcuts */}
-        <div className="lg:col-span-5 glass aslenix-dashboard-card card-tone-mint rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-3.5">
-              <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
-                  <Sparkles size={14} />
-                </div>
-                <h2 className="text-sm font-bold text-foreground">Quick Actions</h2>
-              </div>
-              <span className="text-xs text-muted-foreground font-medium">Self-service shortcuts</span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5">
-              <Link
-                to="/my-leaves"
-                className="group relative flex items-center gap-2.5 rounded-xl border border-border/70 bg-white/80 dark:bg-card/80 p-2.5 sm:p-3 hover:bg-white dark:hover:bg-card hover:border-purple-500/40 hover:shadow-xs hover:-translate-y-0.5 transition-all duration-200"
-              >
-                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 group-hover:scale-105 transition-transform">
-                  <CalendarPlus size={16} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
-                    Apply Leave
-                  </div>
-                  <div className="text-[10px] text-muted-foreground truncate hidden sm:block">
-                    Vacation & sick
-                  </div>
-                </div>
-                <ChevronRight size={13} className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
-              </Link>
-
-              <Link
-                to="/my-attendance"
-                className="group relative flex items-center gap-2.5 rounded-xl border border-border/70 bg-white/80 dark:bg-card/80 p-2.5 sm:p-3 hover:bg-white dark:hover:bg-card hover:border-emerald-500/40 hover:shadow-xs hover:-translate-y-0.5 transition-all duration-200"
-              >
-                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 group-hover:scale-105 transition-transform">
-                  <CalendarCheck size={16} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
-                    My Attendance
-                  </div>
-                  <div className="text-[10px] text-muted-foreground truncate hidden sm:block">
-                    Logs & records
-                  </div>
-                </div>
-                <ChevronRight size={13} className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
-              </Link>
-
-              <Link
-                to="/my-attendance"
-                className="group relative flex items-center gap-2.5 rounded-xl border border-border/70 bg-white/80 dark:bg-card/80 p-2.5 sm:p-3 hover:bg-white dark:hover:bg-card hover:border-amber-500/40 hover:shadow-xs hover:-translate-y-0.5 transition-all duration-200"
-              >
-                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 group-hover:scale-105 transition-transform">
-                  <FileEdit size={16} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
-                    Correction
-                  </div>
-                  <div className="text-[10px] text-muted-foreground truncate hidden sm:block">
-                    Time adjustment
-                  </div>
-                </div>
-                <ChevronRight size={13} className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
-              </Link>
-
-              <Link
-                to="/tasks"
-                className="group relative flex items-center gap-2.5 rounded-xl border border-border/70 bg-white/80 dark:bg-card/80 p-2.5 sm:p-3 hover:bg-white dark:hover:bg-card hover:border-primary/40 hover:shadow-xs hover:-translate-y-0.5 transition-all duration-200"
-              >
-                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 group-hover:scale-105 transition-transform">
-                  <CheckSquare size={16} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
-                    My Tasks
-                  </div>
-                  <div className="text-[10px] text-muted-foreground truncate hidden sm:block">
-                    Kanban & sprint
-                  </div>
-                </div>
-                <ChevronRight size={13} className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
-              </Link>
-
-              <Link
-                to="/meetings"
-                className="group relative flex items-center gap-2.5 rounded-xl border border-border/70 bg-white/80 dark:bg-card/80 p-2.5 sm:p-3 hover:bg-white dark:hover:bg-card hover:border-blue-500/40 hover:shadow-xs hover:-translate-y-0.5 transition-all duration-200"
-              >
-                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 group-hover:scale-105 transition-transform">
-                  <Video size={16} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
-                    Meetings
-                  </div>
-                  <div className="text-[10px] text-muted-foreground truncate hidden sm:block">
-                    Syncs & calls
-                  </div>
-                </div>
-                <ChevronRight size={13} className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
-              </Link>
-
-              <Link
-                to="/profile"
-                className="group relative flex items-center gap-2.5 rounded-xl border border-border/70 bg-white/80 dark:bg-card/80 p-2.5 sm:p-3 hover:bg-white dark:hover:bg-card hover:border-slate-500/40 hover:shadow-xs hover:-translate-y-0.5 transition-all duration-200"
-              >
-                <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-slate-500/10 text-slate-700 dark:text-slate-300 border border-slate-500/20 group-hover:scale-105 transition-transform">
-                  <UserCheck size={16} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
-                    Profile Details
-                  </div>
-                  <div className="text-[10px] text-muted-foreground truncate hidden sm:block">
-                    ID & credentials
-                  </div>
-                </div>
-                <ChevronRight size={13} className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* ROW 5: Weekly Attendance Visual Tracker (Left) + Leaves & Updates (Right) */}
-      {/* ========================================================================= */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Left Column (60%): Weekly Attendance Visual Tracker */}
-        <div className="lg:col-span-7 glass aslenix-dashboard-card card-tone-lavender rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-3.5">
-              <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
-                  <Clock size={14} />
-                </div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-bold text-foreground">Attendance Tracker</h2>
-                  <span className="hidden md:inline-flex items-center gap-1 rounded-md bg-muted/80 border border-border/60 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
-                    Avg: {attendanceSummary.avgHours} · {attendanceSummary.onTimeRate} On-Time
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {/* Visual vs Table View Switcher */}
-                <div className="inline-flex items-center rounded-lg border border-border bg-muted/60 p-0.5 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => setAttendanceViewMode("visual")}
-                    className={cn(
-                      "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all",
-                      attendanceViewMode === "visual"
-                        ? "bg-white dark:bg-card text-foreground shadow-xs"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    Visual Strip
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAttendanceViewMode("table")}
-                    className={cn(
-                      "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all",
-                      attendanceViewMode === "table"
-                        ? "bg-white dark:bg-card text-foreground shadow-xs"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    Table
-                  </button>
-                </div>
-
-                <Link
-                  to="/my-attendance"
-                  className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 hidden sm:inline-flex group"
-                >
-                  <span>Full log</span>
-                  <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
-                </Link>
-              </div>
-            </div>
-
-            {/* MODE 1: VISUAL 5-DAY ATTENDANCE STRIP */}
-            {attendanceViewMode === "visual" ? (
-              <div className="space-y-2">
-                {recentAttendance.length > 0 ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-                    {recentAttendance.slice(0, 5).map((row) => {
-                      const isRowToday = row.date === todayDate;
-                      const hours = row.work_hours
-                        ? Number(row.work_hours)
-                        : isRowToday && workedHours
-                          ? workedHours
-                          : 0;
-                      const pct = Math.min(
-                        100,
-                        Math.round((hours / (expectedDailyHours || 9)) * 100),
-                      );
-                      const isLate = row.is_late || row.status === "late";
-
-                      return (
-                        <div
-                          key={row.id}
-                          className={cn(
-                            "rounded-xl border p-2.5 flex flex-col justify-between transition-all group",
-                            isRowToday
-                              ? "border-primary/60 bg-gradient-to-b from-primary/10 to-primary/5 shadow-xs ring-1 ring-primary/25"
-                              : "border-border/70 bg-white/75 dark:bg-card/75 hover:border-primary/30",
-                          )}
-                        >
-                          <div>
-                            <div className="flex items-center justify-between text-[11px] font-bold">
-                              <span className={cn("text-foreground", isRowToday && "text-primary font-extrabold")}>
-                                {format(new Date(row.date), "EEE")}
-                              </span>
-                              <span
-                                className={cn(
-                                  "rounded px-1.5 py-0.2 text-[9px] font-bold uppercase",
-                                  row.status === "present" && !isLate
-                                    ? "bg-emerald-500/10 text-emerald-600"
-                                    : isLate
-                                      ? "bg-amber-500/10 text-amber-600"
-                                      : "bg-muted text-muted-foreground",
-                                )}
-                              >
-                                {isLate ? "Late" : row.status}
-                              </span>
-                            </div>
-                            <div className="text-[10px] text-muted-foreground mt-0.5 font-medium">
-                              {format(new Date(row.date), "MMM d")}
-                            </div>
-                          </div>
-
-                          <div className="my-2.5">
-                            <div className="text-xs font-extrabold text-foreground tabular-nums flex items-center justify-between">
-                              <span>{hours ? formatWorkHours(hours) : "—"}</span>
-                              {isRowToday && (
-                                <span className="text-[9px] font-bold text-primary flex items-center gap-1">
-                                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                                  Live
-                                </span>
-                              )}
-                            </div>
-                            <div className="mt-1 h-1.5 w-full rounded-full bg-muted/80 overflow-hidden">
-                              <div
-                                className={cn(
-                                  "h-full rounded-full transition-all duration-300",
-                                  row.status === "present" && !isLate
-                                    ? "bg-emerald-500"
-                                    : isLate
-                                      ? "bg-amber-500"
-                                      : "bg-primary",
-                                )}
-                                style={{ width: `${pct}%` }}
-                              />
-                            </div>
-                          </div>
-
-                          <div className="pt-1.5 border-t border-border/50 text-[10px] text-muted-foreground font-mono">
-                            {isRowToday ? (
-                              <div className="flex items-center justify-between">
-                                <span>In: {row.check_in_time ? formatTime12Hour(row.check_in_time) : "—"}</span>
-                                <span className="font-semibold text-emerald-600 dark:text-emerald-400">Working</span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center justify-between truncate">
-                                <span>{row.check_in_time ? formatTime12Hour(row.check_in_time) : "—"}</span>
-                                <span className="text-muted-foreground/50">→</span>
-                                <span>{row.check_out_time ? formatTime12Hour(row.check_out_time) : "—"}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="py-6 text-center text-xs text-muted-foreground">
-                    No attendance records captured yet.
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* MODE 2: COMPACT CLEAN TABLE */
-              <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-                <table className="w-full min-w-[440px] text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-border/60 text-muted-foreground text-[11px]">
-                      <th className="py-2 px-2.5 first:pl-0 font-semibold">Date</th>
-                      <th className="py-2 px-2.5 font-semibold">In</th>
-                      <th className="py-2 px-2.5 font-semibold">Out</th>
-                      <th className="py-2 px-2.5 font-semibold">Hours</th>
-                      <th className="py-2 px-2.5 last:pr-0 font-semibold text-right">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/40">
-                    {recentAttendance.map((row) => (
-                      <tr key={row.id} className="hover:bg-muted/40 transition-colors">
-                        <td className="py-2 px-2.5 first:pl-0 font-semibold text-foreground tabular-nums whitespace-nowrap">
-                          {format(new Date(row.date), "MMM d, yyyy")}
-                        </td>
-                        <td className="py-2 px-2.5 text-muted-foreground tabular-nums whitespace-nowrap">
-                          {row.check_in_time ? formatTime12Hour(row.check_in_time) : "—"}
-                        </td>
-                        <td className="py-2 px-2.5 text-muted-foreground tabular-nums whitespace-nowrap">
-                          {row.check_out_time ? formatTime12Hour(row.check_out_time) : "—"}
-                        </td>
-                        <td className="py-2 px-2.5 text-foreground font-bold tabular-nums whitespace-nowrap">
-                          {row.work_hours ? formatWorkHours(row.work_hours) : "—"}
-                        </td>
-                        <td className="py-2 px-2.5 last:pr-0 text-right whitespace-nowrap">
-                          <span
-                            className={cn(
-                              "inline-block rounded px-2 py-0.5 text-[10px] font-bold capitalize border",
-                              row.status === "present" && !row.is_late
-                                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                                : row.is_late || row.status === "late"
-                                  ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                                  : "bg-muted text-muted-foreground border-border",
-                            )}
-                          >
-                            {row.is_late ? "Late" : row.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-
         {/* Right Column (40%): Activity & Leaves Hub (Tabs: Leaves | Notifications) */}
         <div className="lg:col-span-5 glass aslenix-dashboard-card card-tone-cyan rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
@@ -1541,7 +1413,7 @@ function EmployeeDashboard() {
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
                     leavesNoticesTab === "leaves"
-                      ? "bg-white dark:bg-card text-foreground shadow-xs"
+                      ? "bg-white dark:bg-card text-foreground shadow-xs font-bold"
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
@@ -1557,7 +1429,7 @@ function EmployeeDashboard() {
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
                     leavesNoticesTab === "notices"
-                      ? "bg-white dark:bg-card text-foreground shadow-xs"
+                      ? "bg-white dark:bg-card text-foreground shadow-xs font-bold"
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
@@ -1717,6 +1589,131 @@ function EmployeeDashboard() {
               </div>
             )}
           </div>
+        </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* ROW 6: Quick Actions & Self-Service Shortcuts (Full-width 6-Column Bar)   */}
+      {/* ========================================================================= */}
+      <section className="glass aslenix-dashboard-card card-tone-mint rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs">
+        <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-3.5">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
+              <Sparkles size={14} />
+            </div>
+            <h2 className="text-sm font-bold text-foreground">Quick Actions</h2>
+          </div>
+          <span className="text-xs text-muted-foreground font-medium">Self-service shortcuts</span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+          <Link
+            to="/my-leaves"
+            className="group relative flex items-center gap-2.5 rounded-xl border border-border/70 bg-white/80 dark:bg-card/80 p-2.5 sm:p-3 hover:bg-white dark:hover:bg-card hover:border-purple-500/40 hover:shadow-xs hover:-translate-y-0.5 transition-all duration-200"
+          >
+            <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 group-hover:scale-105 transition-transform">
+              <CalendarPlus size={16} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                Apply Leave
+              </div>
+              <div className="text-[10px] text-muted-foreground truncate hidden sm:block">
+                Vacation & sick
+              </div>
+            </div>
+            <ChevronRight size={13} className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+          </Link>
+
+          <Link
+            to="/my-attendance"
+            className="group relative flex items-center gap-2.5 rounded-xl border border-border/70 bg-white/80 dark:bg-card/80 p-2.5 sm:p-3 hover:bg-white dark:hover:bg-card hover:border-emerald-500/40 hover:shadow-xs hover:-translate-y-0.5 transition-all duration-200"
+          >
+            <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 group-hover:scale-105 transition-transform">
+              <CalendarCheck size={16} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                My Attendance
+              </div>
+              <div className="text-[10px] text-muted-foreground truncate hidden sm:block">
+                Logs & records
+              </div>
+            </div>
+            <ChevronRight size={13} className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+          </Link>
+
+          <Link
+            to="/my-attendance"
+            className="group relative flex items-center gap-2.5 rounded-xl border border-border/70 bg-white/80 dark:bg-card/80 p-2.5 sm:p-3 hover:bg-white dark:hover:bg-card hover:border-amber-500/40 hover:shadow-xs hover:-translate-y-0.5 transition-all duration-200"
+          >
+            <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 group-hover:scale-105 transition-transform">
+              <FileEdit size={16} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                Correction
+              </div>
+              <div className="text-[10px] text-muted-foreground truncate hidden sm:block">
+                Time adjustment
+              </div>
+            </div>
+            <ChevronRight size={13} className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+          </Link>
+
+          <Link
+            to="/tasks"
+            className="group relative flex items-center gap-2.5 rounded-xl border border-border/70 bg-white/80 dark:bg-card/80 p-2.5 sm:p-3 hover:bg-white dark:hover:bg-card hover:border-primary/40 hover:shadow-xs hover:-translate-y-0.5 transition-all duration-200"
+          >
+            <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 group-hover:scale-105 transition-transform">
+              <CheckSquare size={16} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                My Tasks
+              </div>
+              <div className="text-[10px] text-muted-foreground truncate hidden sm:block">
+                Kanban & sprint
+              </div>
+            </div>
+            <ChevronRight size={13} className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+          </Link>
+
+          <Link
+            to="/meetings"
+            className="group relative flex items-center gap-2.5 rounded-xl border border-border/70 bg-white/80 dark:bg-card/80 p-2.5 sm:p-3 hover:bg-white dark:hover:bg-card hover:border-blue-500/40 hover:shadow-xs hover:-translate-y-0.5 transition-all duration-200"
+          >
+            <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 group-hover:scale-105 transition-transform">
+              <Video size={16} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                Meetings
+              </div>
+              <div className="text-[10px] text-muted-foreground truncate hidden sm:block">
+                Syncs & calls
+              </div>
+            </div>
+            <ChevronRight size={13} className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+          </Link>
+
+          <Link
+            to="/profile"
+            className="group relative flex items-center gap-2.5 rounded-xl border border-border/70 bg-white/80 dark:bg-card/80 p-2.5 sm:p-3 hover:bg-white dark:hover:bg-card hover:border-slate-500/40 hover:shadow-xs hover:-translate-y-0.5 transition-all duration-200"
+          >
+            <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-slate-500/10 text-slate-700 dark:text-slate-300 border border-slate-500/20 group-hover:scale-105 transition-transform">
+              <UserCheck size={16} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                Profile Details
+              </div>
+              <div className="text-[10px] text-muted-foreground truncate hidden sm:block">
+                ID & credentials
+              </div>
+            </div>
+            <ChevronRight size={13} className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+          </Link>
         </div>
       </section>
     </div>
