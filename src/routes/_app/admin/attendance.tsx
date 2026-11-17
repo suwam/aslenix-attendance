@@ -162,6 +162,10 @@ function AttendancePage() {
     reason: "",
   });
   const isWeeklyOff = isWeeklyOffDate(date);
+  const correctedTiming = useMemo(
+    () => getCorrectedTiming(form, editing?.assigned_shift),
+    [form, editing?.assigned_shift],
+  );
 
   const load = async () => {
     setLoading(true);
@@ -884,6 +888,36 @@ function AttendancePage() {
                     </button>
                   ))}
                 </div>
+                {correctedTiming &&
+                  (correctedTiming.lateMinutes > 0 || correctedTiming.earlyMinutes > 0) && (
+                    <div className="mt-4 space-y-2 rounded-xl border border-warning/30 bg-warning/10 p-3 text-xs">
+                      <div className="flex items-center gap-2 font-semibold text-warning">
+                        <AlertCircle size={15} />
+                        Attendance indicators from this correction
+                      </div>
+                      {correctedTiming.lateMinutes > 0 && (
+                        <div className="text-muted-foreground">
+                          Late check-in:{" "}
+                          <span className="font-semibold text-foreground">
+                            {correctedTiming.lateMinutes} minutes
+                          </span>{" "}
+                          after the scheduled start.
+                        </div>
+                      )}
+                      {correctedTiming.earlyMinutes > 0 && (
+                        <div className="text-muted-foreground">
+                          Early check-out:{" "}
+                          <span className="font-semibold text-foreground">
+                            {correctedTiming.earlyMinutes} minutes
+                          </span>{" "}
+                          before the scheduled end.
+                        </div>
+                      )}
+                      <div className="text-muted-foreground">
+                        These check-in and check-out indicators will be recalculated when you save.
+                      </div>
+                    </div>
+                  )}
               </div>
             </div>
 
@@ -924,6 +958,12 @@ function AttendancePage() {
             </div>
             <DiffRow label="Check-in" value={form.checkIn || "-"} />
             <DiffRow label="Check-out" value={form.checkOut || "-"} />
+            {correctedTiming?.earlyMinutes ? (
+              <DiffRow label="Check-out result" value={`${correctedTiming.earlyMinutes}m early`} />
+            ) : null}
+            {correctedTiming?.lateMinutes ? (
+              <DiffRow label="Check-in result" value={`${correctedTiming.lateMinutes}m late`} />
+            ) : null}
             <DiffRow label="Status" value={form.status.replace("_", " ")} />
             <DiffRow label="Work location" value={form.workLocation || "-"} />
           </div>
@@ -995,18 +1035,18 @@ function buildHistoricalEmployeeRows(
   attendanceRecords: AttendanceRecord[],
   adminUserIds: Set<string>,
 ) {
-  const attendanceUserIds = new Set(attendanceRecords.map((record) => record.user_id).filter(Boolean));
+  const attendanceUserIds = new Set(
+    attendanceRecords.map((record) => record.user_id).filter(Boolean),
+  );
   const profilesByUser = new Map(profiles.map((profile) => [profile.user_id, profile]));
   const includedUserIds = new Set<string>();
-  const rows = profiles.filter(
-    (profile) => {
-      const shouldInclude =
-        !adminUserIds.has(profile.user_id) &&
-        (profile.approval_status === "approved" || attendanceUserIds.has(profile.user_id));
-      if (shouldInclude) includedUserIds.add(profile.user_id);
-      return shouldInclude;
-    },
-  );
+  const rows = profiles.filter((profile) => {
+    const shouldInclude =
+      !adminUserIds.has(profile.user_id) &&
+      (profile.approval_status === "approved" || attendanceUserIds.has(profile.user_id));
+    if (shouldInclude) includedUserIds.add(profile.user_id);
+    return shouldInclude;
+  });
 
   attendanceRecords.forEach((record) => {
     if (
@@ -1163,6 +1203,37 @@ function fromDateTimeInput(value: string) {
 
 function formatTime(value?: string | null) {
   return value ? format(new Date(value), "HH:mm") : "-";
+}
+
+function getCorrectedTiming(form: EditForm, shift?: Shift) {
+  if (!shift || form.status === "absent" || form.status === "leave") return null;
+
+  const checkInMinutes = timeInputToMinutes(form.checkIn);
+  const checkOutMinutes = timeInputToMinutes(form.checkOut);
+  const start = parseTimeString(shift.start_time);
+  const end = parseTimeString(shift.end_time);
+  const scheduledStart = start.hour * 60 + start.minute;
+  const scheduledEnd = end.hour * 60 + end.minute;
+  const lateThreshold = scheduledStart + (shift.grace_period_mins || 0);
+  const earlyThreshold = scheduledEnd - (shift.checkout_grace_period_mins || 0);
+
+  return {
+    lateMinutes:
+      checkInMinutes !== null && checkInMinutes > lateThreshold
+        ? checkInMinutes - scheduledStart
+        : 0,
+    earlyMinutes:
+      checkOutMinutes !== null && checkOutMinutes < earlyThreshold
+        ? scheduledEnd - checkOutMinutes
+        : 0,
+  };
+}
+
+function timeInputToMinutes(value: string) {
+  const time = value.split("T")[1];
+  if (!time) return null;
+  const [hour, minute] = time.split(":").map(Number);
+  return Number.isFinite(hour) && Number.isFinite(minute) ? hour * 60 + minute : null;
 }
 
 const kathmanduClockFormatter = new Intl.DateTimeFormat("en-GB", {
