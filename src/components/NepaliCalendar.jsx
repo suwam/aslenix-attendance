@@ -20,7 +20,13 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/GlassCard";
 import { cn } from "@/lib/utils";
-import { isWeeklyOffDayIndex, WEEKLY_OFF_DAY } from "@/lib/weekly-off";
+import {
+  ALL_DAYS_OF_WEEK,
+  getWeeklyOffDays,
+  setWeeklyOffDays,
+  isWeeklyOffDayIndex,
+  getWeeklyOffSummary,
+} from "@/lib/weekly-off";
 import { supabase } from "@/integrations/supabase/client";
 import { bsInputToAdDateString, formatBsInput } from "@/lib/nepali-calendar";
 import NepaliDate from "nepali-date-converter";
@@ -137,6 +143,37 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
   const [holidayError, setHolidayError] = useState(null);
   const [holidayNotice, setHolidayNotice] = useState(null);
   const [holidayReloadKey, setHolidayReloadKey] = useState(0);
+  const [weeklyOffDays, setWeeklyOffState] = useState(() => getWeeklyOffDays());
+
+  useEffect(() => {
+    function onOffChanged(e) {
+      if (Array.isArray(e.detail)) {
+        setWeeklyOffState(e.detail);
+      }
+    }
+    window.addEventListener("aslenix_weekly_off_changed", onOffChanged);
+    return () => window.removeEventListener("aslenix_weekly_off_changed", onOffChanged);
+  }, []);
+
+  const toggleWeeklyOffDay = async (dayIndex) => {
+    if (!isAdmin) return;
+    const current = [...weeklyOffDays];
+    const next = current.includes(dayIndex)
+      ? current.filter((d) => d !== dayIndex)
+      : [...current, dayIndex].sort((a, b) => a - b);
+
+    setWeeklyOffState(next);
+    setWeeklyOffDays(next);
+
+    try {
+      const { data: s } = await supabase.from("settings").select("id").limit(1).maybeSingle();
+      if (s?.id) {
+        await supabase.from("settings").update({ weekly_off_days: next }).eq("id", s.id);
+      }
+    } catch {
+      // ignore
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -191,7 +228,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
   );
   const visibleDays = days.filter(Boolean);
   const holidayCount = visibleDays.filter((day) => holidaysByDate[day.bsDate]).length;
-  const weeklyOffCount = visibleDays.filter((day) => isWeeklyOffDayIndex(day.weekday)).length;
+  const weeklyOffCount = visibleDays.filter((day) => weeklyOffDays.includes(day.weekday)).length;
   const selectedHoliday = holidaysByDate[form.bsDate];
   const monthRange = visibleDays.length
     ? `${format(visibleDays[0].adDate, "MMM d")} - ${format(visibleDays[visibleDays.length - 1].adDate, "MMM d, yyyy")}`
@@ -431,19 +468,27 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
 
         <div className="rounded-xl border border-border bg-card/45 p-2 shadow-[0_0_30px_-22px_var(--primary),0_0_34px_-26px_var(--accent),inset_0_1px_0_oklch(1_0_0_/_0.08)] backdrop-blur-xl">
           <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-            {WEEKDAYS.map((day, index) => (
-              <div key={day} className={cn("py-2", isWeeklyOffDayIndex(index) && "text-primary font-bold")}>
-                {day}
-              </div>
-            ))}
+            {WEEKDAYS.map((day, index) => {
+              const isOffHeader = weeklyOffDays.includes(index);
+              return (
+                <div
+                  key={day}
+                  className={cn(
+                    "py-2 transition-colors",
+                    isOffHeader ? "text-rose-500 font-bold dark:text-rose-400" : "text-muted-foreground",
+                  )}
+                >
+                  {day}
+                </div>
+              );
+            })}
           </div>
 
           <div className="grid min-w-0 grid-cols-7 gap-1">
             {days.map((day, index) => {
               const holiday = day ? holidaysByDate[day.bsDate] : null;
               const isToday = day?.bsDate === todayKey;
-              const isWeeklyOff = isWeeklyOffDayIndex(day?.weekday);
-              const isSaturday = isWeeklyOff;
+              const isWeeklyOff = day && weeklyOffDays.includes(day.weekday);
 
               return (
                 <button
@@ -461,8 +506,8 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
                       "border-border bg-gradient-to-br from-pink-500/35 via-blue-500/30 to-purple-500/35 text-foreground shadow-[0_0_36px_-8px_rgba(236,72,153,0.55),0_0_30px_-10px_rgba(59,130,246,0.5),0_0_28px_-12px_rgba(168,85,247,0.5)] ring-1 ring-pink-300/35 animate-pulse-glow",
                     holiday && "border-red-500/35 bg-red-500/10 text-red-500 shadow-[0_0_22px_-16px_rgba(239,68,68,0.45)]",
                     isWeeklyOff &&
-                      "border-primary/45 bg-primary/10 text-primary shadow-[0_0_24px_-14px_var(--primary)]",
-                    holiday && isSaturday && "border-red-500/45 bg-red-500/10",
+                      "border-rose-400/50 bg-rose-500/10 text-rose-600 dark:border-rose-500/40 dark:bg-rose-950/25 dark:text-rose-400 shadow-[0_0_20px_-12px_rgba(244,63,94,0.45)]",
+                    holiday && isWeeklyOff && "border-red-500/50 bg-red-500/15",
                   )}
                 >
                   {day && (
@@ -470,7 +515,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
                       <span
                         className={cn(
                           "text-sm font-black leading-none tabular-nums sm:text-base",
-                          isSaturday && "text-primary",
+                          isWeeklyOff && "text-rose-600 dark:text-rose-400 font-bold",
                           isToday && "text-foreground drop-shadow-[0_0_8px_rgba(255,255,255,0.45)]",
                         )}
                       >
@@ -483,11 +528,9 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
                         <span
                           className={cn(
                             "absolute bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full sm:bottom-1.5",
-                            holiday && isSaturday
+                            holiday
                               ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]"
-                              : holiday
-                                ? "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]"
-                                : "bg-primary shadow-[0_0_10px_var(--primary)]",
+                              : "bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)]",
                           )}
                         />
                       )}
@@ -502,7 +545,7 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
         <div className="mt-3 grid gap-2 sm:grid-cols-3">
           <LegendItem icon={Flame} label="Today" className="text-primary" />
           <LegendItem icon={Sparkles} label="Holiday" className="text-red-500" />
-          <LegendItem icon={Circle} label="Weekly off" className="text-primary" />
+          <LegendItem icon={Circle} label="Weekly off" className="text-rose-500" />
         </div>
 
         <div className="mt-4 rounded-xl border border-border bg-card/45 p-3 shadow-[0_0_26px_-18px_var(--accent)] backdrop-blur-xl transition-all duration-300 ease-out hover:border-accent/25 hover:shadow-[0_0_30px_-12px_var(--accent)]">
@@ -681,10 +724,74 @@ export function NepaliCalendar({ isAdmin = false, onHolidaysChange }) {
               )}
             </div>
 
-            <div>
-              <Label className="text-[11px]">Weekly off</Label>
-              <div className="mt-2 rounded-lg border border-primary/35 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary shadow-[0_0_22px_-14px_var(--primary)]">
-                Saturday for all employees
+            <div className="rounded-xl border border-rose-500/25 bg-rose-500/5 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-[11px] font-bold text-foreground">Weekly Off Policy</Label>
+                <span className="rounded-full bg-rose-500/15 border border-rose-500/30 px-2 py-0.2 text-[9px] font-extrabold text-rose-600 dark:text-rose-400">
+                  {weeklyOffDays.length} Days Off (Red Light)
+                </span>
+              </div>
+
+              <div className="text-[10px] text-muted-foreground mb-2">
+                Toggle days below to set Weekly Off (Red) or Working Day:
+              </div>
+
+              {/* 7 Interactive Day Buttons */}
+              <div className="grid grid-cols-7 gap-1">
+                {ALL_DAYS_OF_WEEK.map((d) => {
+                  const isOff = weeklyOffDays.includes(d.index);
+                  return (
+                    <button
+                      type="button"
+                      key={d.index}
+                      onClick={() => toggleWeeklyOffDay(d.index)}
+                      className={cn(
+                        "flex flex-col items-center justify-center py-1.5 px-0.5 rounded-lg border text-[10px] font-bold transition-all duration-200 cursor-pointer",
+                        isOff
+                          ? "border-rose-400/70 bg-rose-500/20 text-rose-600 dark:text-rose-400 font-extrabold shadow-2xs"
+                          : "border-border/70 bg-card/70 text-muted-foreground hover:bg-card hover:text-foreground",
+                      )}
+                      title={`Toggle ${d.name} as ${isOff ? "Working Day" : "Weekly Off"}`}
+                    >
+                      <span className="text-[11px] font-extrabold">{d.shortName}</span>
+                      <span className="text-[8px] uppercase mt-0.5">{isOff ? "Off" : "Work"}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Quick Presets */}
+              <div className="mt-2.5 pt-2 border-t border-rose-500/20 flex items-center justify-between gap-1 text-[10px]">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const next = [0, 6];
+                    setWeeklyOffState(next);
+                    setWeeklyOffDays(next);
+                    try {
+                      const { data: s } = await supabase.from("settings").select("id").limit(1).maybeSingle();
+                      if (s?.id) await supabase.from("settings").update({ weekly_off_days: next }).eq("id", s.id);
+                    } catch {}
+                  }}
+                  className="px-2 py-1 rounded-md border border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold hover:bg-rose-500/20 transition-colors"
+                >
+                  Sun & Sat (2 Days)
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const next = [6];
+                    setWeeklyOffState(next);
+                    setWeeklyOffDays(next);
+                    try {
+                      const { data: s } = await supabase.from("settings").select("id").limit(1).maybeSingle();
+                      if (s?.id) await supabase.from("settings").update({ weekly_off_days: next }).eq("id", s.id);
+                    } catch {}
+                  }}
+                  className="px-2 py-1 rounded-md border border-border bg-card text-muted-foreground font-semibold hover:bg-muted transition-colors"
+                >
+                  Sat Only (1 Day)
+                </button>
               </div>
             </div>
           </div>
