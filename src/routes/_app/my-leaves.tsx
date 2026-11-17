@@ -19,7 +19,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
@@ -30,11 +29,8 @@ import {
   CheckCircle2,
   Clock,
   Coffee,
-  FileText,
-  Filter,
   HeartPulse,
   Home,
-  Info,
   Loader2,
   Palmtree,
   Plus,
@@ -106,7 +102,7 @@ function MyLeaves() {
   const [rows, setRows] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "approved" | "history">("all");
+  const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "approved" | "rejected" | "history">("all");
   const [vacationConsent, setVacationConsent] = useState(false);
   const [form, setForm] = useState({
     leave_type: "casual",
@@ -210,9 +206,7 @@ function MyLeaves() {
 
   const pendingCount = rows.filter((row) => row.status === "pending").length;
   const approvedCount = rows.filter((row) => row.status === "approved").length;
-  const historyCount = rows.filter(
-    (row) => row.status === "rejected" || row.status === "cancelled",
-  ).length;
+  const rejectedCount = rows.filter((row) => row.status === "rejected").length;
   const totalRequestedDays = rows.reduce(
     (sum, row) => sum + getLeaveDays(row.start_date, row.end_date, row.is_half_day),
     0,
@@ -221,6 +215,7 @@ function MyLeaves() {
   const filteredRows = useMemo(() => {
     if (filterStatus === "pending") return rows.filter((r) => r.status === "pending");
     if (filterStatus === "approved") return rows.filter((r) => r.status === "approved");
+    if (filterStatus === "rejected") return rows.filter((r) => r.status === "rejected");
     if (filterStatus === "history")
       return rows.filter((r) => r.status === "rejected" || r.status === "cancelled");
     return rows;
@@ -245,7 +240,7 @@ function MyLeaves() {
               setVacationConsent(false);
               setOpen(true);
             }}
-            className="neon-button rounded-xl gap-2 font-semibold shadow-xs"
+            className="rounded-xl px-4 py-2 h-10 gap-2 font-bold text-xs sm:text-sm bg-gradient-to-r from-primary to-indigo-600 text-white shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer"
           >
             <Plus size={16} />
             <span>New Leave Request</span>
@@ -306,9 +301,10 @@ function MyLeaves() {
       {/* ========================================================================= */}
       {/* 2. SUMMARY METRIC TILES                                                  */}
       {/* ========================================================================= */}
-      <div className="mb-6 grid grid-cols-1 gap-3.5 sm:grid-cols-3">
-        <LeaveMetric label="Pending requests" value={pendingCount} icon={Clock} tone="amber" />
+      <div className="mb-6 grid grid-cols-1 gap-3.5 sm:grid-cols-4">
+        <LeaveMetric label="Pending review" value={pendingCount} icon={Clock} tone="amber" />
         <LeaveMetric label="Approved leaves" value={approvedCount} icon={CheckCircle2} tone="green" />
+        <LeaveMetric label="Rejected requests" value={rejectedCount} icon={ShieldAlert} tone="red" />
         <LeaveMetric
           label="Total requested days"
           value={totalRequestedDays}
@@ -321,59 +317,62 @@ function MyLeaves() {
       {/* 3. FILTER TABS & SEARCH CONTROLS                                         */}
       {/* ========================================================================= */}
       <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="inline-flex items-center gap-1 rounded-xl border border-border/80 bg-muted/50 p-1 text-xs">
+        <div className="inline-flex items-center gap-1 rounded-xl border border-border/80 bg-muted/50 p-1 text-xs flex-wrap">
           <button
             type="button"
             onClick={() => setFilterStatus("all")}
             className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
+              "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
               filterStatus === "all"
                 ? "bg-white dark:bg-card text-foreground shadow-xs"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
-            All Requests ({rows.length})
+            All ({rows.length})
           </button>
           <button
             type="button"
             onClick={() => setFilterStatus("pending")}
             className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
+              "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5",
               filterStatus === "pending"
-                ? "bg-white dark:bg-card text-foreground shadow-xs"
+                ? "bg-white dark:bg-card text-amber-600 dark:text-amber-400 shadow-xs font-bold"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
             Pending ({pendingCount})
           </button>
           <button
             type="button"
             onClick={() => setFilterStatus("approved")}
             className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
+              "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5",
               filterStatus === "approved"
-                ? "bg-white dark:bg-card text-foreground shadow-xs"
+                ? "bg-white dark:bg-card text-emerald-600 dark:text-emerald-400 shadow-xs font-bold"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
             Approved ({approvedCount})
           </button>
           <button
             type="button"
-            onClick={() => setFilterStatus("history")}
+            onClick={() => setFilterStatus("rejected")}
             className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
-              filterStatus === "history"
-                ? "bg-white dark:bg-card text-foreground shadow-xs"
+              "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5",
+              filterStatus === "rejected"
+                ? "bg-white dark:bg-card text-destructive shadow-xs font-bold"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
-            History ({historyCount})
+            <span className="h-1.5 w-1.5 rounded-full bg-destructive" />
+            Rejected ({rejectedCount})
           </button>
         </div>
 
         <span className="text-xs text-muted-foreground font-medium">
-          Showing {filteredRows.length} of {rows.length} request{rows.length === 1 ? "" : "s"}
+          Showing {filteredRows.length} of {rows.length} leave record{rows.length === 1 ? "" : "s"}
         </span>
       </div>
 
@@ -383,9 +382,9 @@ function MyLeaves() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-xl sm:max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl p-0 border border-border/80 bg-background shadow-2xl">
           {/* Modal Header */}
-          <div className="border-b border-border/70 bg-muted/30 px-6 py-5">
+          <div className="border-b border-border/70 bg-gradient-to-r from-primary/10 via-purple-500/10 to-transparent px-6 py-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-xs">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-md shadow-primary/25">
                 <CalendarPlus size={22} />
               </div>
               <div className="flex-1 min-w-0">
@@ -492,15 +491,15 @@ function MyLeaves() {
                 <Label className="mb-2 block text-xs font-bold uppercase tracking-wider text-muted-foreground">
                   Duration Type
                 </Label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2.5">
                   <button
                     type="button"
                     onClick={() => setForm({ ...form, is_half_day: false })}
                     className={cn(
-                      "flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-semibold transition-all",
+                      "flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-bold transition-all cursor-pointer",
                       !form.is_half_day
-                        ? "border-primary bg-primary/10 text-primary shadow-xs ring-1 ring-primary/20"
-                        : "border-border bg-card text-muted-foreground hover:text-foreground",
+                        ? "border-primary bg-primary text-white shadow-sm ring-2 ring-primary/20"
+                        : "border-border/80 bg-white/80 dark:bg-card/80 text-foreground hover:bg-muted",
                     )}
                   >
                     <CalendarDays size={14} />
@@ -510,10 +509,10 @@ function MyLeaves() {
                     type="button"
                     onClick={() => setForm({ ...form, is_half_day: true })}
                     className={cn(
-                      "flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-semibold transition-all",
+                      "flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-bold transition-all cursor-pointer",
                       form.is_half_day
-                        ? "border-primary bg-primary/10 text-primary shadow-xs ring-1 ring-primary/20"
-                        : "border-border bg-card text-muted-foreground hover:text-foreground",
+                        ? "border-primary bg-primary text-white shadow-sm ring-2 ring-primary/20"
+                        : "border-border/80 bg-white/80 dark:bg-card/80 text-foreground hover:bg-muted",
                     )}
                   >
                     <Clock size={14} />
@@ -610,39 +609,41 @@ function MyLeaves() {
             </div>
 
             {/* Modal Actions */}
-            <div className="pt-2 border-t border-border/60 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="pt-3 border-t border-border/60 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setOpen(false)}
-                className="rounded-xl h-11"
+                className="h-11 rounded-xl px-5 font-semibold text-sm border border-border/80 bg-white/80 dark:bg-card/80 hover:bg-muted text-foreground/80 hover:text-foreground transition-all cursor-pointer"
               >
                 Cancel
               </Button>
 
-              <Button
+              <button
                 type="submit"
                 disabled={busy}
-                className="neon-button h-11 rounded-xl px-6 font-semibold shadow-xs"
+                className="h-11 rounded-xl px-7 font-bold text-sm bg-gradient-to-r from-primary via-indigo-600 to-primary text-white shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/35 hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {busy ? (
-                  <Loader2 size={16} className="mr-2 animate-spin" />
+                  <Loader2 size={16} className="animate-spin" />
                 ) : (
-                  <Send size={16} className="mr-2" />
+                  <Send size={16} />
                 )}
-                {busy
-                  ? "Submitting..."
-                  : form.leave_type === "vacation"
-                    ? "Submit for Admin Permission (1 Month)"
-                    : "Submit Leave Request"}
-              </Button>
+                <span>
+                  {busy
+                    ? "Submitting..."
+                    : form.leave_type === "vacation"
+                      ? "Submit for Admin Permission (1 Month)"
+                      : "Submit Leave Request"}
+                </span>
+              </button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
 
       {/* ========================================================================= */}
-      {/* 5. LEAVE REQUESTS LIST                                                   */}
+      {/* 5. LEAVE REQUESTS LIST (CONTAINER-WISE 3 IN A ROW)                         */}
       {/* ========================================================================= */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
@@ -663,51 +664,78 @@ function MyLeaves() {
               variant="outline"
               size="sm"
               onClick={() => setFilterStatus("all")}
-              className="mt-4 rounded-xl"
+              className="mt-4 rounded-xl cursor-pointer"
             >
               Clear filter
             </Button>
           )}
         </GlassCard>
       ) : (
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        /* Container-wise 3 cards in a row on desktop/large screens */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4.5">
           {filteredRows.map((r) => {
             const details = getLeaveTypeDetails(r.leave_type);
             const Icon = details.icon;
             const requestedDays = getLeaveDays(r.start_date, r.end_date, r.is_half_day);
+            const isApproved = r.status === "approved";
+            const isRejected = r.status === "rejected";
             const isPending = r.status === "pending";
 
             return (
               <GlassCard
                 key={r.id}
-                className="border-border/80 bg-white/80 dark:bg-card/80 hover:border-primary/40 hover:shadow-xs transition-all flex flex-col justify-between"
+                className={cn(
+                  "rounded-2xl border p-4.5 transition-all flex flex-col justify-between shadow-xs hover:shadow-md hover:-translate-y-0.5 duration-200",
+                  isRejected
+                    ? "border-red-500/50 bg-gradient-to-b from-red-500/[0.08] via-red-500/[0.03] to-transparent ring-1 ring-red-500/25"
+                    : isApproved
+                      ? "border-emerald-500/40 bg-gradient-to-b from-emerald-500/[0.06] via-emerald-500/[0.02] to-transparent ring-1 ring-emerald-500/20"
+                      : isPending
+                        ? "border-amber-500/40 bg-gradient-to-b from-amber-500/[0.05] to-transparent ring-1 ring-amber-500/20"
+                        : "border-border/80 bg-white/80 dark:bg-card/80",
+                )}
               >
                 <div className="flex flex-col gap-3.5">
                   {/* Card Header: Type Badge + Duration + Status */}
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start justify-between gap-2.5">
                     <div className="flex items-center gap-3 min-w-0">
                       <div
                         className={cn(
-                          "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border shadow-xs",
-                          details.color,
+                          "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border shadow-xs transition-transform",
+                          isRejected
+                            ? "border-red-500/30 bg-red-500/15 text-red-600 dark:text-red-400"
+                            : isApproved
+                              ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                              : isPending
+                                ? "border-amber-500/30 bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                                : details.color,
                         )}
                       >
                         <Icon size={18} />
                       </div>
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-sm font-bold capitalize text-foreground truncate">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h3 className="text-xs sm:text-sm font-bold capitalize text-foreground truncate">
                             {typeLabel(r.leave_type)}
                           </h3>
-                          <span className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground shrink-0 uppercase">
+                          <span
+                            className={cn(
+                              "rounded-md px-1.5 py-0.2 text-[9px] font-extrabold uppercase shrink-0 border",
+                              isRejected
+                                ? "bg-red-500/10 text-red-700 dark:text-red-300 border-red-500/25"
+                                : isApproved
+                                  ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25"
+                                  : "bg-muted text-muted-foreground border-border",
+                            )}
+                          >
                             {requestedDays}{" "}
                             {requestedDays === 1 ? "Day" : requestedDays === 0.5 ? "Day" : "Days"}
                             {r.is_half_day &&
                               r.half_day_session &&
-                              ` · ${r.half_day_session === "morning" ? "Morning" : "Afternoon"}`}
+                              ` · ${r.half_day_session === "morning" ? "AM" : "PM"}`}
                           </span>
                         </div>
-                        <div className="text-[11px] text-muted-foreground mt-0.5">
+                        <div className="text-[10px] text-muted-foreground mt-0.5">
                           Submitted {formatDistanceToNow(new Date(r.created_at), { addSuffix: true })}
                         </div>
                       </div>
@@ -717,53 +745,119 @@ function MyLeaves() {
                   </div>
 
                   {/* Date Range Strip */}
-                  <div className="rounded-xl border border-border/70 bg-muted/30 p-3 flex items-center justify-between">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <CalendarDays size={15} className="text-primary shrink-0" />
-                      <span className="text-xs sm:text-sm font-bold text-foreground truncate">
-                        {formatNepaliDate(r.start_date, "DD MMMM YYYY")} BS
-                        <span className="text-muted-foreground font-normal mx-1.5">→</span>
-                        {formatNepaliDate(r.end_date, "DD MMMM YYYY")} BS
+                  <div
+                    className={cn(
+                      "rounded-xl border p-2.5 flex items-center justify-between text-xs font-bold",
+                      isRejected
+                        ? "border-red-500/25 bg-red-500/10 text-red-950 dark:text-red-200"
+                        : isApproved
+                          ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-950 dark:text-emerald-200"
+                          : "border-border/70 bg-muted/40 text-foreground",
+                    )}
+                  >
+                    <div className="flex items-center gap-1.5 min-w-0 truncate">
+                      <CalendarDays
+                        size={13}
+                        className={cn(
+                          "shrink-0",
+                          isRejected ? "text-red-500" : isApproved ? "text-emerald-500" : "text-primary",
+                        )}
+                      />
+                      <span className="truncate text-[11px] sm:text-xs">
+                        {formatNepaliDate(r.start_date, "DD MMM YYYY")} BS
+                        <span className="opacity-50 mx-1 font-normal">→</span>
+                        {formatNepaliDate(r.end_date, "DD MMM YYYY")} BS
                       </span>
                     </div>
                   </div>
 
                   {/* Reason Text */}
                   {r.reason && (
-                    <div className="rounded-xl border border-border/60 bg-white/60 dark:bg-card/60 p-3 text-xs text-foreground/90 leading-relaxed italic">
+                    <div className="rounded-xl border border-border/60 bg-white/60 dark:bg-card/60 p-2.5 text-xs text-foreground/90 leading-relaxed italic line-clamp-3">
                       "{r.reason}"
                     </div>
                   )}
 
-                  {/* Admin Comment */}
+                  {/* Admin Comment (Distinct Red on Rejected, Emerald on Approved) */}
                   {r.admin_comment && (
-                    <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-3 text-xs text-blue-900 dark:text-blue-200 flex items-start gap-2">
-                      <ShieldCheck size={15} className="text-blue-600 shrink-0 mt-0.5" />
+                    <div
+                      className={cn(
+                        "rounded-xl border p-2.5 text-xs flex items-start gap-2",
+                        isRejected
+                          ? "border-red-500/30 bg-red-500/10 text-red-900 dark:text-red-200"
+                          : isApproved
+                            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-900 dark:text-emerald-200"
+                            : "border-blue-500/30 bg-blue-500/10 text-blue-900 dark:text-blue-200",
+                      )}
+                    >
+                      {isRejected ? (
+                        <ShieldAlert size={14} className="text-red-600 shrink-0 mt-0.5" />
+                      ) : isApproved ? (
+                        <CheckCircle2 size={14} className="text-emerald-600 shrink-0 mt-0.5" />
+                      ) : (
+                        <ShieldCheck size={14} className="text-blue-600 shrink-0 mt-0.5" />
+                      )}
                       <div>
-                        <span className="font-bold">Admin response:</span> {r.admin_comment}
+                        <span className="font-bold">
+                          {isRejected ? "Rejection reason:" : isApproved ? "Admin note:" : "Admin response:"}
+                        </span>{" "}
+                        {r.admin_comment}
                       </div>
                     </div>
                   )}
                 </div>
 
                 {/* Card Footer Actions */}
-                {isPending && (
-                  <div className="pt-3 mt-3 border-t border-border/60 flex items-center justify-between">
-                    <span className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
-                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                      Pending managerial review
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-8 rounded-lg text-xs text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20"
-                      onClick={() => cancel(r.id)}
-                    >
-                      <X size={13} className="mr-1" />
-                      Cancel Request
-                    </Button>
-                  </div>
-                )}
+                <div className="mt-3 pt-2.5 border-t border-border/50">
+                  {isApproved && (
+                    <div className="flex items-center justify-between text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                      <span className="flex items-center gap-1.5">
+                        <CheckCircle2 size={13} />
+                        Approved by Admin
+                      </span>
+                      <span className="text-muted-foreground font-normal text-[10px]">
+                        Active record
+                      </span>
+                    </div>
+                  )}
+
+                  {isRejected && (
+                    <div className="flex items-center justify-between text-[11px] font-bold text-red-600 dark:text-red-400">
+                      <span className="flex items-center gap-1.5">
+                        <ShieldAlert size={13} />
+                        Rejected by Admin
+                      </span>
+                      <span className="text-muted-foreground font-normal text-[10px]">
+                        Declined
+                      </span>
+                    </div>
+                  )}
+
+                  {isPending && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                        Pending Review
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 px-2.5 rounded-lg text-[10px] text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20 font-bold cursor-pointer"
+                        onClick={() => cancel(r.id)}
+                      >
+                        <X size={11} className="mr-1" />
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
+
+                  {!isApproved && !isRejected && !isPending && (
+                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                      <span>Cancelled by user</span>
+                      <span>Archived</span>
+                    </div>
+                  )}
+                </div>
               </GlassCard>
             );
           })}
@@ -782,29 +876,33 @@ function LeaveMetric({
   label: string;
   value: number;
   icon: typeof Clock;
-  tone: "amber" | "green" | "blue";
+  tone: "amber" | "green" | "blue" | "red";
 }) {
   const colors = {
     amber: "border-warning/25 bg-warning/10 text-warning",
     green: "border-success/25 bg-success/10 text-success",
     blue: "border-blue-500/25 bg-blue-500/10 text-blue-600 dark:text-blue-400",
+    red: "border-red-500/25 bg-red-500/10 text-red-600 dark:text-red-400",
   };
 
   return (
     <GlassCard className="border-border/80 bg-white/70 dark:bg-card/70 shadow-xs hover:shadow-sm transition-all">
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
             {label}
           </div>
-          <div className="mt-2 text-2xl sm:text-3xl font-extrabold tabular-nums text-foreground tracking-tight">
+          <div className="mt-1.5 text-2xl font-extrabold tabular-nums text-foreground tracking-tight">
             {value}
           </div>
         </div>
         <div
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border shadow-xs ${colors[tone]}`}
+          className={cn(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border shadow-xs",
+            colors[tone],
+          )}
         >
-          <Icon size={20} />
+          <Icon size={18} />
         </div>
       </div>
     </GlassCard>
@@ -816,31 +914,37 @@ function LeaveStatusPill({ status }: { status: string }) {
   const isRejected = status === "rejected";
   const isCancelled = status === "cancelled";
 
-  const className = isApproved
-    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-    : isRejected
-      ? "border-destructive/20 bg-destructive/10 text-destructive"
-      : isCancelled
-        ? "border-border bg-muted text-muted-foreground"
-        : "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400";
+  if (isRejected) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-red-500/40 bg-red-500/15 px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-red-600 dark:text-red-400 shrink-0">
+        <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+        <span>Rejected</span>
+      </span>
+    );
+  }
 
-  const Icon = isApproved
-    ? CheckCircle2
-    : isRejected
-      ? ShieldAlert
-      : isCancelled
-        ? X
-        : Clock;
+  if (isApproved) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/35 bg-emerald-500/15 px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 shrink-0">
+        <CheckCircle2 size={12} className="text-emerald-600" />
+        <span>Approved</span>
+      </span>
+    );
+  }
+
+  if (isCancelled) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground shrink-0">
+        <X size={11} />
+        <span>Cancelled</span>
+      </span>
+    );
+  }
 
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wider shrink-0",
-        className,
-      )}
-    >
-      <Icon size={12} />
-      <span>{status}</span>
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/35 bg-amber-500/15 px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-300 shrink-0">
+      <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+      <span>Pending</span>
     </span>
   );
 }
