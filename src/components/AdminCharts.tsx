@@ -4,11 +4,14 @@ import {
   BellDot,
   CheckCircle2,
   ClipboardCheck,
+  Clock,
   FilePenLine,
+  Laptop,
   ListChecks,
   Megaphone,
   Plane,
   ShieldCheck,
+  TrendingUp,
   UserPlus,
 } from "lucide-react";
 import { format, formatDistanceToNow, isSameDay } from "date-fns";
@@ -65,7 +68,7 @@ const DEPARTMENT_COLORS = {
   development: "#f59e0b",
 };
 
-type WeeklyAttendanceDay = {
+export type WeeklyAttendanceDay = {
   day: string;
   date?: string;
   totalEmployees?: number;
@@ -76,6 +79,21 @@ type WeeklyAttendanceDay = {
   attendancePct?: number;
   noData?: boolean;
   isToday?: boolean;
+};
+
+export type AttendanceRange = "7d" | "14d" | "month";
+export type AttendanceViewMode = "all" | "bars" | "trend";
+
+export type AdminChartsProps = {
+  weekly: WeeklyAttendanceDay[];
+  historyData?: {
+    sevenDays: WeeklyAttendanceDay[];
+    fourteenDays: WeeklyAttendanceDay[];
+    monthDays: WeeklyAttendanceDay[];
+  };
+  deptData: any[];
+  activity: any[];
+  activeEmployeesCount?: number;
 };
 
 type DepartmentRow = {
@@ -115,23 +133,33 @@ type ActivityFeedItem = {
 
 export default function AdminCharts({
   weekly,
+  historyData,
   deptData,
   activity,
-}: {
-  weekly: WeeklyAttendanceDay[];
-  deptData: any[];
-  activity: any[];
-}) {
+  activeEmployeesCount,
+}: AdminChartsProps) {
   const navigate = useNavigate();
   const [activeDepartmentIndex, setActiveDepartmentIndex] = useState<number | null>(null);
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>("all");
   const [selectedActivity, setSelectedActivity] = useState<ActivityFeedItem | null>(null);
-  const weeklyRows = weekly.map((row) => {
+  const [attendanceRange, setAttendanceRange] = useState<AttendanceRange>("7d");
+  const [viewMode, setViewMode] = useState<AttendanceViewMode>("all");
+
+  const selectedWeekly =
+    attendanceRange === "7d"
+      ? (historyData?.sevenDays ?? weekly)
+      : attendanceRange === "14d"
+        ? (historyData?.fourteenDays ?? weekly)
+        : (historyData?.monthDays ?? weekly);
+
+  const weeklyRows = selectedWeekly.map((row) => {
     const present = Number(row.present ?? 0);
     const late = Number(row.late ?? 0);
     const wfh = Number(row.wfh ?? 0);
     const absent = Number(row.absent ?? 0);
-    const totalEmployees = Number(row.totalEmployees ?? present + late + wfh + absent);
+    const totalEmployees = Number(
+      row.totalEmployees ?? activeEmployeesCount ?? present + late + wfh + absent,
+    );
     const attended = present + late + wfh;
     return {
       ...row,
@@ -145,9 +173,15 @@ export default function AdminCharts({
       noData: row.noData ?? totalEmployees === 0,
     };
   });
+
   const summary = summarizeWeeklyAttendance(weeklyRows);
   const departmentRows = makeDepartmentRows(deptData);
   const departmentTotal = departmentRows.reduce((sum, row) => sum + row.value, 0);
+  const activeDepartment =
+    activeDepartmentIndex != null && departmentRows[activeDepartmentIndex]
+      ? departmentRows[activeDepartmentIndex]
+      : null;
+
   const activityItems = groupActivityItems(activity.map(normalizeActivityItem));
   const filteredActivityItems = activityItems.filter(
     (item) => activityFilter === "all" || item.category === activityFilter,
@@ -156,34 +190,145 @@ export default function AdminCharts({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* 1. WEEKLY ATTENDANCE CARD */}
       <GlassCard className="lg:col-span-2">
         <div className="mb-4 flex flex-col gap-3">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="text-lg font-semibold">Weekly attendance</h3>
+              <div className="flex items-center gap-2.5">
+                <h3 className="text-lg font-bold tracking-tight text-foreground">Weekly attendance</h3>
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  </span>
+                  <span>Live HRMS</span>
+                </div>
+              </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                Current BS month, up to the last 7 days
+                {attendanceRange === "7d"
+                  ? "Last 7 consecutive days"
+                  : attendanceRange === "14d"
+                    ? "Last 14 consecutive days"
+                    : "Current Nepali (BS) month"}
               </p>
             </div>
-            <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-100">
-              Live HRMS
-            </span>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {/* View Mode Toggle */}
+              <div className="inline-flex items-center rounded-xl border border-border/80 bg-muted/40 p-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("all")}
+                  className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all ${
+                    viewMode === "all"
+                      ? "bg-white dark:bg-card text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Combined
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("bars")}
+                  className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all ${
+                    viewMode === "bars"
+                      ? "bg-white dark:bg-card text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Headcount
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("trend")}
+                  className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all ${
+                    viewMode === "trend"
+                      ? "bg-white dark:bg-card text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Rate %
+                </button>
+              </div>
+
+              {/* Range Selector */}
+              <div className="inline-flex items-center rounded-xl border border-border/80 bg-muted/40 p-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setAttendanceRange("7d")}
+                  className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all ${
+                    attendanceRange === "7d"
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  7 Days
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAttendanceRange("14d")}
+                  className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all ${
+                    attendanceRange === "14d"
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  14 Days
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAttendanceRange("month")}
+                  className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all ${
+                    attendanceRange === "month"
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  This Month
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+
+          {/* Metric Tiles with Icons and Theme Colors */}
+          <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
             <WeeklySummaryTile
               label="Avg attendance"
               value={`${summary.avgAttendance}%`}
-              tone="blue"
+              icon={TrendingUp}
+              accent="blue"
+              subtext="Period average"
             />
-            <WeeklySummaryTile label="Total present" value={summary.present} tone="present" />
-            <WeeklySummaryTile label="Total late" value={summary.late} tone="late" />
-            <WeeklySummaryTile label="Total WFH" value={summary.wfh} tone="wfh" />
+            <WeeklySummaryTile
+              label="Total present"
+              value={summary.present}
+              icon={CheckCircle2}
+              accent="emerald"
+              subtext="Recorded check-ins"
+            />
+            <WeeklySummaryTile
+              label="Total late"
+              value={summary.late}
+              icon={Clock}
+              accent="amber"
+              subtext="Late arrivals"
+            />
+            <WeeklySummaryTile
+              label="Total WFH"
+              value={summary.wfh}
+              icon={Laptop}
+              accent="violet"
+              subtext="Remote working"
+            />
           </div>
         </div>
-        <ResponsiveContainer width="100%" height={280}>
+
+        {/* Dual-Axis Chart: Fixes squashed bars and scales headcount gracefully */}
+        <ResponsiveContainer width="100%" height={290}>
           <ComposedChart
             data={weeklyRows}
-            margin={{ top: 18, right: 10, left: -18, bottom: 8 }}
+            margin={{ top: 16, right: 10, left: -14, bottom: 6 }}
             barCategoryGap="28%"
           >
             <defs>
@@ -192,28 +337,19 @@ export default function AdminCharts({
                 <stop offset="100%" stopColor={ATTENDANCE_COLORS.present} />
               </linearGradient>
               <linearGradient id="lateBar" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#fbbf24" />
+                <stop offset="0%" stopColor="#fde68a" />
                 <stop offset="100%" stopColor={ATTENDANCE_COLORS.late} />
               </linearGradient>
               <linearGradient id="wfhBar" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#c4b5fd" />
+                <stop offset="0%" stopColor="#ddd6fe" />
                 <stop offset="100%" stopColor={ATTENDANCE_COLORS.wfh} />
               </linearGradient>
               <linearGradient id="absentBar" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#fda4af" />
+                <stop offset="0%" stopColor="#fecdd3" />
                 <stop offset="100%" stopColor={ATTENDANCE_COLORS.absent} />
               </linearGradient>
-              <filter id="todayGlow" x="-50%" y="-50%" width="200%" height="200%">
-                <feDropShadow
-                  dx="0"
-                  dy="0"
-                  stdDeviation="4"
-                  floodColor="#67e8f9"
-                  floodOpacity="0.55"
-                />
-              </filter>
             </defs>
-            <CartesianGrid vertical={false} stroke="oklch(1 0 0 / 0.07)" strokeDasharray="4 8" />
+            <CartesianGrid vertical={false} stroke="hsl(var(--border) / 0.55)" strokeDasharray="4 6" />
             <XAxis
               dataKey="day"
               axisLine={false}
@@ -222,121 +358,131 @@ export default function AdminCharts({
               interval={0}
               height={38}
             />
+            {/* Left Y-Axis for Headcount */}
             <YAxis
+              yAxisId="headcount"
+              orientation="left"
               axisLine={false}
               tickLine={false}
-              stroke="oklch(0.76 0.03 250)"
+              stroke="hsl(var(--muted-foreground))"
               fontSize={11}
-              tickMargin={8}
+              tickMargin={6}
               allowDecimals={false}
+              domain={[0, (dataMax: number) => Math.max(activeEmployeesCount || 10, dataMax, 4)]}
+            />
+            {/* Right Y-Axis for Percentage */}
+            <YAxis
+              yAxisId="percentage"
+              orientation="right"
+              axisLine={false}
+              tickLine={false}
+              stroke="hsl(var(--muted-foreground))"
+              fontSize={11}
+              tickMargin={6}
+              domain={[0, 100]}
+              tickFormatter={(v) => `${v}%`}
             />
             <Tooltip
-              cursor={{ fill: "oklch(1 0 0 / 0.045)", radius: 12 }}
+              cursor={{ fill: "hsl(var(--muted) / 0.35)", radius: 10 }}
               content={<WeeklyAttendanceTooltip />}
             />
-            <Bar
-              dataKey="present"
-              stackId="attendance"
-              fill="url(#presentBar)"
-              radius={[0, 0, 7, 7]}
-              isAnimationActive
-              animationDuration={650}
-            >
-              {weeklyRows.map((entry) => (
-                <Cell
-                  key={`present-${entry.day}`}
-                  className="transition-opacity duration-200 hover:opacity-90"
-                  filter={entry.isToday ? "url(#todayGlow)" : undefined}
-                />
-              ))}
-            </Bar>
-            <Bar
-              dataKey="late"
-              stackId="attendance"
-              fill="url(#lateBar)"
-              radius={[0, 0, 0, 0]}
-              isAnimationActive
-              animationDuration={700}
-            >
-              {weeklyRows.map((entry) => (
-                <Cell
-                  key={`late-${entry.day}`}
-                  filter={entry.isToday ? "url(#todayGlow)" : undefined}
-                />
-              ))}
-            </Bar>
-            <Bar
-              dataKey="wfh"
-              stackId="attendance"
-              fill="url(#wfhBar)"
-              radius={[0, 0, 0, 0]}
-              isAnimationActive
-              animationDuration={760}
-            >
-              {weeklyRows.map((entry) => (
-                <Cell
-                  key={`wfh-${entry.day}`}
-                  filter={entry.isToday ? "url(#todayGlow)" : undefined}
-                />
-              ))}
-            </Bar>
-            <Bar
-              dataKey="absent"
-              stackId="attendance"
-              fill="url(#absentBar)"
-              radius={[7, 7, 0, 0]}
-              minPointSize={weeklyRows.some((row) => row.noData) ? 3 : 0}
-              isAnimationActive
-              animationDuration={820}
-            >
-              {weeklyRows.map((entry) => (
-                <Cell
-                  key={`absent-${entry.day}`}
-                  stroke={
-                    entry.isToday
-                      ? "rgba(255,255,255,0.75)"
-                      : entry.noData
-                        ? "rgba(255,255,255,0.22)"
-                        : "transparent"
-                  }
-                  strokeWidth={entry.isToday ? 1.5 : entry.noData ? 1 : 0}
-                  strokeDasharray={entry.noData ? "3 3" : undefined}
-                  filter={entry.isToday ? "url(#todayGlow)" : undefined}
-                />
-              ))}
-            </Bar>
-            <Line
-              type="monotone"
-              dataKey="attendancePct"
-              yAxisId={0}
-              stroke={ATTENDANCE_COLORS.trend}
-              strokeWidth={2}
-              dot={<TrendDot />}
-              activeDot={{ r: 5, stroke: "#06111f", strokeWidth: 2, fill: ATTENDANCE_COLORS.trend }}
-              isAnimationActive
-              animationDuration={900}
-            />
+
+            {(viewMode === "all" || viewMode === "bars") && (
+              <>
+                <Bar
+                  yAxisId="headcount"
+                  dataKey="present"
+                  stackId="attendance"
+                  fill="url(#presentBar)"
+                  radius={[0, 0, 6, 6]}
+                  isAnimationActive
+                  animationDuration={650}
+                >
+                  {weeklyRows.map((entry) => (
+                    <Cell
+                      key={`present-${entry.day}-${entry.date}`}
+                      className="transition-opacity duration-200 hover:opacity-90"
+                    />
+                  ))}
+                </Bar>
+                <Bar
+                  yAxisId="headcount"
+                  dataKey="late"
+                  stackId="attendance"
+                  fill="url(#lateBar)"
+                  radius={[0, 0, 0, 0]}
+                  isAnimationActive
+                  animationDuration={700}
+                >
+                  {weeklyRows.map((entry) => (
+                    <Cell key={`late-${entry.day}-${entry.date}`} />
+                  ))}
+                </Bar>
+                <Bar
+                  yAxisId="headcount"
+                  dataKey="wfh"
+                  stackId="attendance"
+                  fill="url(#wfhBar)"
+                  radius={[0, 0, 0, 0]}
+                  isAnimationActive
+                  animationDuration={760}
+                >
+                  {weeklyRows.map((entry) => (
+                    <Cell key={`wfh-${entry.day}-${entry.date}`} />
+                  ))}
+                </Bar>
+                <Bar
+                  yAxisId="headcount"
+                  dataKey="absent"
+                  stackId="attendance"
+                  fill="url(#absentBar)"
+                  radius={[6, 6, 0, 0]}
+                  isAnimationActive
+                  animationDuration={820}
+                >
+                  {weeklyRows.map((entry) => (
+                    <Cell key={`absent-${entry.day}-${entry.date}`} />
+                  ))}
+                </Bar>
+              </>
+            )}
+
+            {(viewMode === "all" || viewMode === "trend") && (
+              <Line
+                yAxisId="percentage"
+                type="monotone"
+                dataKey="attendancePct"
+                stroke={ATTENDANCE_COLORS.trend}
+                strokeWidth={2.5}
+                dot={<TrendDot />}
+                activeDot={{ r: 5.5, stroke: "#ffffff", strokeWidth: 2, fill: ATTENDANCE_COLORS.trend }}
+                isAnimationActive
+                animationDuration={900}
+              />
+            )}
           </ComposedChart>
         </ResponsiveContainer>
-        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-medium text-muted-foreground">
+
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-semibold text-muted-foreground border-t border-border/50 pt-2.5">
           <AttendanceLegend color={ATTENDANCE_COLORS.present} label="Present" />
           <AttendanceLegend color={ATTENDANCE_COLORS.late} label="Late" />
           <AttendanceLegend color={ATTENDANCE_COLORS.wfh} label="WFH" />
           <AttendanceLegend color={ATTENDANCE_COLORS.absent} label="Absent" />
-          <span className="ml-auto hidden items-center gap-1.5 text-cyan-100/80 sm:flex">
-            <span className="h-px w-7 bg-cyan-300" />
-            Attendance trend
+          <span className="ml-auto hidden items-center gap-1.5 text-muted-foreground sm:flex">
+            <span className="h-0.5 w-6 rounded-full bg-cyan-400" />
+            <span>Attendance % Rate</span>
           </span>
         </div>
       </GlassCard>
 
+      {/* 2. DEPARTMENTS DISTRIBUTION CARD */}
       <GlassCard>
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-lg font-bold tracking-tight">Departments</h3>
-            <p className="mt-1 text-xs text-muted-foreground">Employee distribution</p>
+            <h3 className="text-lg font-bold tracking-tight text-foreground">Departments</h3>
+            <p className="mt-1 text-xs text-muted-foreground">Workforce distribution</p>
           </div>
-          <span className="rounded-full border border-border bg-card px-3 py-1 text-[11px] font-bold text-foreground/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+          <span className="rounded-full border border-border bg-card px-3 py-1 text-[11px] font-bold text-foreground/80 shadow-xs">
             {departmentRows.length} Departments
           </span>
         </div>
@@ -344,7 +490,7 @@ export default function AdminCharts({
           <div className="text-sm text-muted-foreground py-12 text-center">No data yet</div>
         ) : (
           <>
-            <ResponsiveContainer width="100%" height={248}>
+            <ResponsiveContainer width="100%" height={235}>
               <PieChart
                 role="img"
                 aria-label={`Department distribution chart with ${departmentTotal} employees`}
@@ -359,14 +505,11 @@ export default function AdminCharts({
                       x2="1"
                       y2="1"
                     >
-                      <stop offset="0%" stopColor={lightenHex(row.color, 28)} />
-                      <stop offset="58%" stopColor={row.color} />
-                      <stop offset="100%" stopColor={darkenHex(row.color, 10)} />
+                      <stop offset="0%" stopColor={lightenHex(row.color, 25)} />
+                      <stop offset="60%" stopColor={row.color} />
+                      <stop offset="100%" stopColor={darkenHex(row.color, 12)} />
                     </linearGradient>
                   ))}
-                  <filter id="departmentSliceGlow" x="-40%" y="-40%" width="180%" height="180%">
-                    <feDropShadow dx="0" dy="0" stdDeviation="3.2" floodOpacity="0.36" />
-                  </filter>
                 </defs>
                 <Pie
                   data={departmentRows}
@@ -374,9 +517,9 @@ export default function AdminCharts({
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={96}
-                  paddingAngle={2.5}
+                  innerRadius={62}
+                  outerRadius={95}
+                  paddingAngle={3}
                   cornerRadius={7}
                   activeIndex={activeDepartmentIndex ?? undefined}
                   activeShape={renderActiveDepartmentShape}
@@ -389,48 +532,65 @@ export default function AdminCharts({
                     <Cell
                       key={row.name}
                       fill={`url(#${row.gradientId})`}
-                      stroke="rgba(8,13,28,0.88)"
-                      strokeWidth={activeDepartmentIndex === i ? 4 : 3}
+                      stroke="hsl(var(--background))"
+                      strokeWidth={activeDepartmentIndex === i ? 3 : 2}
                       style={{
-                        filter:
-                          activeDepartmentIndex === i
-                            ? `drop-shadow(0 0 14px ${row.color}66)`
-                            : `drop-shadow(0 0 7px ${row.color}24)`,
-                        transition: "filter 180ms ease, opacity 180ms ease",
+                        transition: "opacity 180ms ease",
                         opacity:
-                          activeDepartmentIndex == null || activeDepartmentIndex === i ? 1 : 0.58,
+                          activeDepartmentIndex == null || activeDepartmentIndex === i ? 1 : 0.45,
                         outline: "none",
+                        cursor: "pointer",
                       }}
                     />
                   ))}
                 </Pie>
+
+                {/* DYNAMIC CENTER TEXT: Shows hovered department or total */}
                 <text
                   x="50%"
-                  y="47%"
+                  y={activeDepartment ? "42%" : "46%"}
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  fill="#f1f0ee"
-                  fontSize="30"
-                  fontWeight="800"
+                  className="fill-foreground font-black text-2xl sm:text-3xl tracking-tight"
+                  style={{ fill: "currentColor" }}
                 >
-                  {departmentTotal}
+                  {activeDepartment ? activeDepartment.value : departmentTotal}
                 </text>
                 <text
                   x="50%"
-                  y="59%"
+                  y={activeDepartment ? "57%" : "59%"}
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  fill="rgba(226,232,240,0.62)"
-                  fontSize="11"
-                  fontWeight="700"
-                  letterSpacing="0.8"
+                  className="fill-muted-foreground text-[10px] font-bold uppercase tracking-wider"
+                  style={{ fill: "hsl(var(--muted-foreground))" }}
                 >
-                  Employees
+                  {activeDepartment ? `${activeDepartment.percentage}% share` : "Employees"}
                 </text>
+                {activeDepartment && (
+                  <text
+                    x="50%"
+                    y="71%"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    className="text-[10px] font-extrabold"
+                    style={{ fill: activeDepartment.color }}
+                  >
+                    {activeDepartment.name.length > 15
+                      ? activeDepartment.name.slice(0, 13) + "…"
+                      : activeDepartment.name}
+                  </text>
+                )}
+
                 <Tooltip content={<DepartmentTooltip />} />
               </PieChart>
             </ResponsiveContainer>
-            <div className="mt-1 space-y-2" role="list" aria-label="Department employee breakdown">
+
+            {/* Enhanced Department List with Workforce Progress Bars */}
+            <div
+              className="mt-2 space-y-2 max-h-[290px] overflow-y-auto pr-1"
+              role="list"
+              aria-label="Department employee breakdown"
+            >
               {departmentRows.map((department, index) => {
                 const isActive = activeDepartmentIndex === index;
                 const isMuted = activeDepartmentIndex != null && !isActive;
@@ -441,35 +601,44 @@ export default function AdminCharts({
                     role="listitem"
                     onMouseEnter={() => setActiveDepartmentIndex(index)}
                     onMouseLeave={() => setActiveDepartmentIndex(null)}
-                    onFocus={() => setActiveDepartmentIndex(index)}
-                    onBlur={() => setActiveDepartmentIndex(null)}
-                    className={`flex w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-all duration-200 ${
+                    onClick={() => navigate({ to: "/admin/employees" })}
+                    className={`group flex w-full flex-col gap-1.5 rounded-xl border p-2.5 text-left transition-all duration-200 ${
                       isActive
-                        ? "border-border bg-card shadow-[0_10px_28px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.1)]"
-                        : "border-border bg-card hover:border-border hover:bg-card"
-                    } ${isMuted ? "opacity-55" : "opacity-100"}`}
+                        ? "border-primary/50 bg-primary/5 shadow-xs ring-1 ring-primary/25"
+                        : "border-border/70 bg-card hover:border-border hover:bg-muted/40"
+                    } ${isMuted ? "opacity-50" : "opacity-100"}`}
                     aria-label={`${department.name}: ${department.value} employees, ${department.percentage}% of total`}
                   >
-                    <span
-                      className="h-2.5 w-2.5 shrink-0 rounded-full shadow-[0_0_14px_currentColor]"
-                      style={{ backgroundColor: department.color, color: department.color }}
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-xs font-bold text-muted-foreground">
-                        {department.name}
-                      </span>
-                      <span className="mt-0.5 block text-[10px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                        {department.percentage}% of workforce
-                      </span>
-                    </span>
-                    <span className="text-right">
-                      <span className="block text-sm font-extrabold tabular-nums text-foreground">
-                        {department.value}
-                      </span>
-                      <span className="block text-[10px] font-semibold text-muted-foreground">
-                        Employees
-                      </span>
-                    </span>
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span
+                          className="h-2.5 w-2.5 shrink-0 rounded-full shadow-xs"
+                          style={{ backgroundColor: department.color }}
+                        />
+                        <span className="truncate text-xs font-bold text-foreground">
+                          {department.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs font-extrabold tabular-nums text-foreground">
+                          {department.value} Staff
+                        </span>
+                        <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-bold text-muted-foreground">
+                          {department.percentage}%
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar representing department workforce share */}
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted/70">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${Math.max(department.percentage, 4)}%`,
+                          backgroundColor: department.color,
+                        }}
+                      />
+                    </div>
                   </button>
                 );
               })}
@@ -1144,27 +1313,57 @@ function adjustHex(hex: string, amount: number) {
 function WeeklySummaryTile({
   label,
   value,
-  tone,
+  icon: Icon,
+  accent,
+  subtext,
 }: {
   label: string;
   value: string | number;
-  tone: "blue" | "present" | "late" | "wfh";
+  icon: any;
+  accent: "blue" | "emerald" | "amber" | "violet";
+  subtext?: string;
 }) {
-  const toneClass = {
-    blue: "from-cyan-300/16 to-blue-400/8 text-black",
-    present: "from-blue-400/18 to-blue-400/6 text-black",
-    late: "from-amber-300/18 to-amber-400/6 text-black",
-    wfh: "from-violet-300/18 to-violet-400/6 text-black",
-  }[tone];
+  const styles = {
+    blue: {
+      border: "border-blue-500/20 hover:border-blue-500/35",
+      bg: "bg-blue-50/50 dark:bg-blue-950/20",
+      iconBg: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+    },
+    emerald: {
+      border: "border-emerald-500/20 hover:border-emerald-500/35",
+      bg: "bg-emerald-50/50 dark:bg-emerald-950/20",
+      iconBg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    },
+    amber: {
+      border: "border-amber-500/20 hover:border-amber-500/35",
+      bg: "bg-amber-50/50 dark:bg-amber-950/20",
+      iconBg: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    },
+    violet: {
+      border: "border-violet-500/20 hover:border-violet-500/35",
+      bg: "bg-violet-50/50 dark:bg-violet-950/20",
+      iconBg: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
+    },
+  }[accent];
 
   return (
     <div
-      className={`rounded-lg border border-border bg-gradient-to-br ${toneClass} px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]`}
+      className={`rounded-xl border ${styles.border} ${styles.bg} p-3 transition-all duration-200 shadow-xs`}
     >
-      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-black/70">
-        {label}
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </span>
+        <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${styles.iconBg}`}>
+          <Icon size={14} />
+        </div>
       </div>
-      <div className="mt-1 text-lg font-bold tabular-nums leading-none text-black">{value}</div>
+      <div className="mt-1 text-xl sm:text-2xl font-black tabular-nums tracking-tight text-foreground">
+        {value}
+      </div>
+      {subtext && (
+        <div className="mt-0.5 text-[10px] font-medium text-muted-foreground">{subtext}</div>
+      )}
     </div>
   );
 }
@@ -1175,30 +1374,33 @@ function WeeklyAttendanceTooltip({ active, payload }: any) {
   if (!row) return null;
 
   return (
-    <div className="min-w-52 rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-900 shadow-xl">
-      <div className="mb-2 flex items-center justify-between gap-4 border-b border-slate-100 pb-2">
+    <div className="min-w-56 rounded-xl border border-border bg-card/95 p-3.5 text-xs text-foreground shadow-xl backdrop-blur-md">
+      <div className="mb-2.5 flex items-center justify-between gap-4 border-b border-border/80 pb-2">
         <div>
-          <div className="font-semibold text-slate-900">
-            {row.day}
-            {row.isToday ? " · Today" : ""}
+          <div className="font-bold text-foreground flex items-center gap-1.5">
+            <span>{row.day}</span>
+            {row.isToday && (
+              <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">
+                Today
+              </span>
+            )}
           </div>
-          <div className="text-[11px] text-slate-500">
-            {row.date ? formatNepaliDate(row.date, "DD MMM YYYY") + " BS" : "Weekly snapshot"}
+          <div className="text-[11px] text-muted-foreground">
+            {row.date ? formatNepaliDate(row.date, "DD MMM YYYY") + " BS" : "Snapshot"}
           </div>
         </div>
-        <div className="rounded-full bg-slate-100 px-2 py-1 font-bold text-slate-800 tabular-nums">
+        <div className="rounded-full bg-primary/10 border border-primary/20 px-2.5 py-1 font-extrabold text-primary tabular-nums text-xs">
           {row.attendancePct ?? 0}%
         </div>
       </div>
-      <TooltipRow label="Total employees" value={row.totalEmployees ?? 0} />
+      <TooltipRow label="Total Staff" value={row.totalEmployees ?? 0} />
       <TooltipRow label="Present" value={row.present ?? 0} color={ATTENDANCE_COLORS.present} />
       <TooltipRow label="Late" value={row.late ?? 0} color={ATTENDANCE_COLORS.late} />
       <TooltipRow label="WFH" value={row.wfh ?? 0} color={ATTENDANCE_COLORS.wfh} />
       <TooltipRow label="Absent" value={row.absent ?? 0} color={ATTENDANCE_COLORS.absent} />
-      <TooltipRow label="Attendance percentage" value={`${row.attendancePct ?? 0}%`} />
       {row.noData && (
-        <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px] text-slate-500">
-          No attendance records captured for this day.
+        <div className="mt-2 rounded-lg border border-border/70 bg-muted/50 px-2 py-1.5 text-[11px] text-muted-foreground">
+          No records captured for this day.
         </div>
       )}
     </div>
@@ -1216,19 +1418,20 @@ function TooltipRow({
 }) {
   return (
     <div className="flex items-center justify-between gap-4 py-1">
-      <span className="flex items-center gap-2 text-slate-600">
+      <span className="flex items-center gap-2 text-muted-foreground text-xs">
         {color && (
-          <span className="h-2.5 w-2.5 rounded-full shadow-sm" style={{ backgroundColor: color }} />
+          <span className="h-2 w-2 rounded-full shadow-xs shrink-0" style={{ backgroundColor: color }} />
         )}
         {label}
       </span>
-      <strong className="tabular-nums text-slate-900 font-semibold">{value}</strong>
+      <strong className="tabular-nums text-foreground font-bold text-xs">{value}</strong>
     </div>
   );
 }
 
 function WeeklyAxisTick({ x, y, payload }: any) {
   const row = payload?.payload as WeeklyAttendanceDay | undefined;
+  const isToday = row?.isToday;
   return (
     <g transform={`translate(${x},${y})`}>
       <text
@@ -1236,22 +1439,23 @@ function WeeklyAxisTick({ x, y, payload }: any) {
         y={0}
         dy={10}
         textAnchor="middle"
-        fill={row?.isToday ? "#e0f7ff" : "oklch(0.76 0.03 250)"}
-        fontSize={11}
-        fontWeight={row?.isToday ? 800 : 600}
+        className={
+          isToday
+            ? "fill-primary font-black text-[12px]"
+            : "fill-muted-foreground font-semibold text-[11px]"
+        }
       >
         {payload.value}
       </text>
-      {row?.isToday && (
-        <g transform="translate(-18,16)">
-          <rect
-            width="36"
-            height="16"
-            rx="8"
-            fill="rgba(103,232,249,0.14)"
-            stroke="rgba(103,232,249,0.38)"
-          />
-          <text x="18" y="11" textAnchor="middle" fill="#cffafe" fontSize="8" fontWeight="800">
+      {isToday && (
+        <g transform="translate(-16,14)">
+          <rect width="32" height="15" rx="7.5" className="fill-primary" />
+          <text
+            x="16"
+            y="10.5"
+            textAnchor="middle"
+            className="fill-primary-foreground text-[8px] font-bold"
+          >
             Today
           </text>
         </g>
@@ -1267,12 +1471,12 @@ function TrendDot(props: any) {
     <circle
       cx={cx}
       cy={cy}
-      r={payload?.isToday ? 4.5 : 3}
+      r={payload?.isToday ? 5 : 3.5}
       fill={ATTENDANCE_COLORS.trend}
-      stroke={payload?.isToday ? "#f1f0ee" : "#07111f"}
-      strokeWidth={payload?.isToday ? 2 : 1.5}
-      opacity={payload?.noData ? 0.55 : 1}
-      filter={payload?.isToday ? "url(#todayGlow)" : undefined}
+      stroke="#ffffff"
+      strokeWidth={2}
+      opacity={payload?.noData ? 0.4 : 1}
+      className="drop-shadow-xs"
     />
   );
 }

@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { lazy, Suspense, useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader, StatCard } from "@/components/PageHeader";
@@ -12,15 +12,22 @@ import {
   TrendingUp,
   BellDot,
   Activity,
+  QrCode,
+  UserPlus,
+  FileSpreadsheet,
+  RotateCw,
+  ArrowRight,
+  ShieldAlert,
 } from "lucide-react";
 import { addDays, format, subDays } from "date-fns";
-import { getCurrentNepaliMonthRange } from "@/lib/nepali-calendar";
+import { getCurrentNepaliMonthRange, formatNepaliDate } from "@/lib/nepali-calendar";
+import type { WeeklyAttendanceDay } from "@/components/AdminCharts";
 
 const AdminCharts = lazy(() => import("@/components/AdminCharts"));
 
 export const Route = createFileRoute("/_app/admin/")({ component: AdminDashboard });
 
-function AdminDashboard() {
+export default function AdminDashboard() {
   const { profile } = useAuth();
   const [stats, setStats] = useState({
     total: 0,
@@ -32,12 +39,19 @@ function AdminDashboard() {
     pending: 0,
     pct: 0,
   });
-  const [weekly, setWeekly] = useState<any[]>([]);
+  const [weekly, setWeekly] = useState<WeeklyAttendanceDay[]>([]);
+  const [historyData, setHistoryData] = useState<{
+    sevenDays: WeeklyAttendanceDay[];
+    fourteenDays: WeeklyAttendanceDay[];
+    monthDays: WeeklyAttendanceDay[];
+  } | null>(null);
   const [deptData, setDeptData] = useState<any[]>([]);
   const [activity, setActivity] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    (async () => {
+  const loadDashboardData = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    try {
       const today = new Date().toISOString().slice(0, 10);
       const [profiles, roles, attToday, leaves, pending] = await Promise.all([
         supabase.from("profiles").select("*"),
@@ -49,11 +63,12 @@ function AdminDashboard() {
         supabase.from("leave_requests").select("*").eq("status", "pending"),
         supabase.from("profiles").select("*").eq("approval_status", "pending"),
       ]);
+
       const adminUserIds = new Set((roles.data ?? []).map((row) => row.user_id));
       const employeeProfiles = (profiles.data ?? []).filter(
-        (profile) => !adminUserIds.has(profile.user_id),
+        (p) => !adminUserIds.has(p.user_id),
       );
-      const employeeIds = new Set(employeeProfiles.map((profile) => profile.user_id));
+      const employeeIds = new Set(employeeProfiles.map((p) => p.user_id));
       const employeeAttendanceToday = (attToday.data ?? []).filter((row) =>
         employeeIds.has(row.user_id),
       );
@@ -68,6 +83,7 @@ function AdminDashboard() {
       const late = employeeAttendanceToday.filter((a) => a.is_late).length;
       const absent = Math.max(0, active - present);
       const pct = active ? Math.round((present / active) * 100) : 0;
+
       setStats({
         total,
         active,
@@ -79,39 +95,66 @@ function AdminDashboard() {
         pct,
       });
 
-      // Weekly attendance, reset at the current Nepali month boundary.
-      const days: any[] = [];
-      const nepaliMonthStart = new Date(`${getCurrentNepaliMonthRange().startAd}T00:00:00`);
+      // Fetch attendance history for the last 31 days in ONE single optimized query
       const todayDate = new Date(`${today}T00:00:00`);
-      const chartStart = subDays(todayDate, 6);
-      const firstChartDate = chartStart < nepaliMonthStart ? nepaliMonthStart : chartStart;
-      for (let d = firstChartDate; d <= todayDate; d = addDays(d, 1)) {
-        const ds = format(d, "yyyy-MM-dd");
-        const { data } = await supabase
-          .from("attendance")
-          .select("user_id,status,is_late")
-          .eq("date", ds);
-        const employeeRows = (data ?? []).filter((row) => employeeIds.has(row.user_id));
-        const presentCount = employeeRows.filter(
-          (x: any) => x.status === "present" && !x.is_late,
-        ).length;
-        const lateCount = employeeRows.filter((x: any) => x.status === "late" || x.is_late).length;
-        const wfhCount = employeeRows.filter((x: any) => x.status === "wfh").length;
-        const attendedCount = presentCount + lateCount + wfhCount;
-        days.push({
-          day: format(d, "EEE"),
-          date: ds,
-          totalEmployees: active,
-          present: presentCount,
-          late: lateCount,
-          wfh: wfhCount,
-          absent: Math.max(0, active - attendedCount),
-          attendancePct: active ? Math.round((attendedCount / active) * 100) : 0,
-          noData: employeeRows.length === 0,
-          isToday: ds === today,
-        });
+      const earliestDate = subDays(todayDate, 31);
+      const { data: attendanceHistory } = await supabase
+        .from("attendance")
+        .select("user_id,status,is_late,date")
+        .gte("date", format(earliestDate, "yyyy-MM-dd"))
+        .lte("date", today);
+
+      // Group records by date for O(1) daily lookup
+      const attendanceByDate: Record<string, any[]> = {};
+      for (const row of attendanceHistory ?? []) {
+        if (employeeIds.has(row.user_id)) {
+          if (!attendanceByDate[row.date]) attendanceByDate[row.date] = [];
+          attendanceByDate[row.date].push(row);
+        }
       }
-      setWeekly(days);
+
+      const buildDaysForRange = (startDate: Date, endDate: Date): WeeklyAttendanceDay[] => {
+        const result: WeeklyAttendanceDay[] = [];
+        for (let d = startDate; d <= endDate; d = addDays(d, 1)) {
+          const ds = format(d, "yyyy-MM-dd");
+          const dayRows = attendanceByDate[ds] ?? [];
+          const presentCount = dayRows.filter(
+            (x: any) => x.status === "present" && !x.is_late,
+          ).length;
+          const lateCount = dayRows.filter(
+            (x: any) => x.status === "late" || x.is_late,
+          ).length;
+          const wfhCount = dayRows.filter((x: any) => x.status === "wfh").length;
+          const attendedCount = presentCount + lateCount + wfhCount;
+          result.push({
+            day: format(d, "EEE"),
+            date: ds,
+            totalEmployees: active,
+            present: presentCount,
+            late: lateCount,
+            wfh: wfhCount,
+            absent: Math.max(0, active - attendedCount),
+            attendancePct: active ? Math.round((attendedCount / active) * 100) : 0,
+            noData: dayRows.length === 0,
+            isToday: ds === today,
+          });
+        }
+        return result;
+      };
+
+      // 1. Rolling 7 days (ALWAYS guarantees 7 data points, never just 1 day)
+      const sevenDays = buildDaysForRange(subDays(todayDate, 6), todayDate);
+      // 2. Rolling 14 days
+      const fourteenDays = buildDaysForRange(subDays(todayDate, 13), todayDate);
+      // 3. Current Nepali month to date
+      const nepaliMonthStart = new Date(`${getCurrentNepaliMonthRange().startAd}T00:00:00`);
+      const monthDays = buildDaysForRange(
+        nepaliMonthStart <= todayDate ? nepaliMonthStart : subDays(todayDate, 6),
+        todayDate,
+      );
+
+      setWeekly(sevenDays);
+      setHistoryData({ sevenDays, fourteenDays, monthDays });
 
       // Departments
       const deptMap: Record<string, number> = {};
@@ -128,67 +171,180 @@ function AdminDashboard() {
         .order("created_at", { ascending: false })
         .limit(50);
       setActivity(notif ?? []);
-    })();
+    } finally {
+      if (isRefresh) setRefreshing(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
+
+  const hasUrgentActions = stats.pending > 0 || stats.leaves > 0;
 
   return (
     <>
       <PageHeader
         title={`Welcome back, ${profile?.full_name?.split(" ")[0] ?? "Admin"}`}
-        subtitle="Here's what's happening across ASLENIX today"
+        subtitle={`Live Operations · ${format(new Date(), "EEEE, MMMM d, yyyy")} (${formatNepaliDate(new Date().toISOString(), "DD MMMM YYYY")} BS)`}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Quick Action: QR / Card Reader Attendance */}
+            <Link
+              to="/admin/card-reader-attendance"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border/80 bg-white/80 dark:bg-card/80 hover:bg-white dark:hover:bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs hover:border-primary/40 transition-all"
+            >
+              <QrCode size={13} className="text-primary" />
+              <span>Scan & Attend</span>
+            </Link>
+
+            {/* Quick Action: Add Employee */}
+            <Link
+              to="/admin/employees"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border/80 bg-white/80 dark:bg-card/80 hover:bg-white dark:hover:bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs hover:border-primary/40 transition-all"
+            >
+              <UserPlus size={13} className="text-primary" />
+              <span>Add Employee</span>
+            </Link>
+
+            {/* Quick Action: Reports */}
+            <Link
+              to="/admin/reports"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border/80 bg-white/80 dark:bg-card/80 hover:bg-white dark:hover:bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs hover:border-primary/40 transition-all"
+            >
+              <FileSpreadsheet size={13} className="text-primary" />
+              <span>Reports</span>
+            </Link>
+
+            {/* Live Refresh Button */}
+            <button
+              type="button"
+              onClick={() => loadDashboardData(true)}
+              disabled={refreshing}
+              className="inline-flex items-center justify-center h-8.5 w-8.5 rounded-xl border border-border/80 bg-white/80 dark:bg-card/80 hover:bg-white dark:hover:bg-card text-muted-foreground hover:text-foreground shadow-xs hover:border-primary/40 transition-all disabled:opacity-50 cursor-pointer"
+              title="Refresh Dashboard Data"
+            >
+              <RotateCw size={13} className={refreshing ? "animate-spin text-primary" : ""} />
+            </button>
+          </div>
+        }
       />
 
+      {/* Action Required Alert Ribbon */}
+      {hasUrgentActions && (
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 dark:bg-amber-500/15 p-4 text-amber-950 dark:text-amber-100 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400">
+              <ShieldAlert size={20} />
+            </div>
+            <div>
+              <div className="text-sm font-bold">Action Required</div>
+              <p className="text-xs text-amber-800 dark:text-amber-200/90 mt-0.5">
+                {stats.pending > 0 && (
+                  <span>
+                    <strong>{stats.pending}</strong> pending registration approval
+                    {stats.pending > 1 ? "s" : ""}
+                  </span>
+                )}
+                {stats.pending > 0 && stats.leaves > 0 && " and "}
+                {stats.leaves > 0 && (
+                  <span>
+                    <strong>{stats.leaves}</strong> pending leave request
+                    {stats.leaves > 1 ? "s" : ""}
+                  </span>
+                )}{" "}
+                awaiting administrative review.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {stats.pending > 0 && (
+              <Link
+                to="/admin/approvals"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-1.5 text-xs font-semibold shadow-xs transition-colors"
+              >
+                <span>Review Approvals</span>
+                <ArrowRight size={12} />
+              </Link>
+            )}
+            {stats.leaves > 0 && (
+              <Link
+                to="/admin/leaves"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-white/80 dark:bg-card hover:bg-white px-3.5 py-1.5 text-xs font-semibold text-amber-900 dark:text-amber-200 shadow-xs transition-colors"
+              >
+                <span>Review Leaves</span>
+                <ArrowRight size={12} />
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Metric Cards — All Clickable with direct routes */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <StatCard
           label="Total employees"
           value={stats.total}
           icon={Users}
           accent="blue"
-          delay={0}
+          to="/admin/employees"
+          hint="Click to manage staff"
         />
         <StatCard
           label="Active"
           value={stats.active}
           icon={UserCheck}
           accent="green"
-          delay={0.05}
+          to="/admin/employees"
+          hint={`${stats.total - stats.active} inactive`}
         />
         <StatCard
           label="Present today"
           value={stats.present}
           icon={Activity}
           accent="green"
-          delay={0.1}
-          hint={`${stats.pct}% attendance`}
+          to="/admin/attendance"
+          hint={`${stats.pct}% attendance rate`}
         />
         <StatCard
           label="Absent today"
           value={stats.absent}
           icon={AlertTriangle}
           accent="red"
-          delay={0.15}
+          to="/admin/attendance"
+          hint={`${stats.active ? Math.round((stats.absent / stats.active) * 100) : 0}% absent`}
         />
-        <StatCard label="Late today" value={stats.late} icon={Clock} accent="amber" delay={0.2} />
+        <StatCard
+          label="Late today"
+          value={stats.late}
+          icon={Clock}
+          accent="amber"
+          to="/admin/attendance"
+          hint="Checked in after grace"
+        />
         <StatCard
           label="Leave requests"
           value={stats.leaves}
           icon={Calendar}
           accent="blue"
-          delay={0.25}
+          to="/admin/leaves"
+          hint={stats.leaves > 0 ? "Requires review" : "All cleared"}
         />
         <StatCard
           label="Pending approvals"
           value={stats.pending}
           icon={BellDot}
           accent="red"
-          delay={0.3}
+          to="/admin/approvals"
+          hint={stats.pending > 0 ? "Action required" : "Zero pending"}
         />
         <StatCard
           label="Attendance %"
           value={`${stats.pct}%`}
           icon={TrendingUp}
           accent="green"
-          delay={0.35}
+          to="/admin/attendance"
+          hint="Live today status"
         />
       </div>
 
@@ -201,7 +357,13 @@ function AdminDashboard() {
           </div>
         }
       >
-        <AdminCharts weekly={weekly} deptData={deptData} activity={activity} />
+        <AdminCharts
+          weekly={weekly}
+          historyData={historyData ?? undefined}
+          deptData={deptData}
+          activity={activity}
+          activeEmployeesCount={stats.active}
+        />
       </Suspense>
     </>
   );
