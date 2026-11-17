@@ -655,7 +655,7 @@ function ShiftManagementPage() {
                       }}
                       className={`text-xs px-2.5 py-1 rounded-md font-medium border transition-colors ${
                         isChecked
-                          ? "bg-primary text-primary-foreground border-primary"
+                          ? "border-transparent bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] font-bold shadow-xs"
                           : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
                       }`}
                     >

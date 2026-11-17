@@ -241,7 +241,7 @@ function MyLeaves() {
               setVacationConsent(false);
               setOpen(true);
             }}
-            className="h-11 rounded-2xl px-6 font-bold text-xs sm:text-sm bg-gradient-to-r from-primary via-indigo-600 to-primary text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:brightness-110 active:scale-[0.98] transition-all flex items-center gap-2 cursor-pointer"
+            className="h-11 rounded-2xl px-6 font-bold text-xs sm:text-sm bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] shadow-md shadow-indigo-500/10 hover:shadow-lg hover:shadow-indigo-500/20 hover:brightness-105 active:scale-[0.98] transition-all flex items-center gap-2 cursor-pointer border-0"
           >
             <Plus size={18} strokeWidth={2.5} />
             <span>New Leave Request</span>
@@ -433,7 +433,7 @@ function MyLeaves() {
           {/* Modal Header */}
           <div className="border-b border-border/70 bg-gradient-to-r from-primary/10 via-purple-500/10 to-transparent px-6 py-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-md shadow-primary/25">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#c4daff] to-[#e5ccff] text-[#0f172a] shadow-xs border border-white/60">
                 <CalendarPlus size={22} />
               </div>
               <div className="flex-1 min-w-0">
@@ -547,7 +547,7 @@ function MyLeaves() {
                     className={cn(
                       "flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-bold transition-all cursor-pointer",
                       !form.is_half_day
-                        ? "border-primary bg-primary text-white shadow-sm ring-2 ring-primary/20"
+                        ? "border-transparent bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] shadow-sm shadow-indigo-500/10 ring-2 ring-indigo-500/20"
                         : "border-border/80 bg-white/80 dark:bg-card/80 text-foreground hover:bg-muted",
                     )}
                   >
@@ -560,7 +560,7 @@ function MyLeaves() {
                     className={cn(
                       "flex items-center justify-center gap-2 rounded-xl border p-2.5 text-xs font-bold transition-all cursor-pointer",
                       form.is_half_day
-                        ? "border-primary bg-primary text-white shadow-sm ring-2 ring-primary/20"
+                        ? "border-transparent bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] shadow-sm shadow-indigo-500/10 ring-2 ring-indigo-500/20"
                         : "border-border/80 bg-white/80 dark:bg-card/80 text-foreground hover:bg-muted",
                     )}
                   >
@@ -671,7 +671,7 @@ function MyLeaves() {
               <button
                 type="submit"
                 disabled={busy}
-                className="h-11 rounded-xl px-7 font-bold text-sm bg-gradient-to-r from-primary via-indigo-600 to-primary text-white shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/35 hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-11 rounded-xl px-7 font-bold text-sm bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] shadow-md shadow-indigo-500/10 hover:shadow-lg hover:shadow-indigo-500/20 hover:brightness-105 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer border-0 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {busy ? (
                   <Loader2 size={16} className="animate-spin" />

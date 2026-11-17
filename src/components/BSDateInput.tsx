@@ -187,7 +187,7 @@ export function BSDateInput({
                       "grid h-9 place-items-center rounded-xl text-sm font-extrabold tabular-nums transition",
                       "hover:bg-accent hover:text-accent-foreground",
                       isSelected
-                        ? "bg-primary text-primary-foreground shadow-sm"
+                        ? "bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] font-bold shadow-sm"
                         : "text-foreground",
                       !isSelected &&
                         isToday &&
@@ -352,7 +352,7 @@ export function BSMonthInput({
                       "rounded-xl border px-2 py-3 text-sm font-bold transition",
                       "hover:border-primary/40 hover:bg-accent hover:text-accent-foreground",
                       isSelected
-                        ? "border-transparent bg-primary text-primary-foreground shadow-sm"
+                        ? "border-transparent bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] font-bold shadow-sm"
                         : "border-border bg-background text-foreground",
                       !isSelected && isCurrent && "border-primary/50 text-primary",
                     )}

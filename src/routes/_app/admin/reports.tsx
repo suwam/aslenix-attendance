@@ -736,7 +736,7 @@ function ReportsPage() {
                   className={cn(
                     "flex-1 text-[11px] py-1 rounded font-semibold transition-all",
                     monthlyMode === "full"
-                      ? "bg-primary text-primary-foreground shadow-sm"
+                      ? "bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] font-bold shadow-sm"
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
@@ -748,7 +748,7 @@ function ReportsPage() {
                   className={cn(
                     "flex-1 text-[11px] py-1 rounded font-semibold transition-all",
                     monthlyMode === "range"
-                      ? "bg-primary text-primary-foreground shadow-sm"
+                      ? "bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] font-bold shadow-sm"
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >

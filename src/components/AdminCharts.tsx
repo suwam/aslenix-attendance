@@ -259,7 +259,7 @@ export default function AdminCharts({
                   onClick={() => setAttendanceRange("7d")}
                   className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all ${
                     attendanceRange === "7d"
-                      ? "bg-primary text-primary-foreground shadow-xs"
+                      ? "bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] font-bold shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -270,7 +270,7 @@ export default function AdminCharts({
                   onClick={() => setAttendanceRange("14d")}
                   className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all ${
                     attendanceRange === "14d"
-                      ? "bg-primary text-primary-foreground shadow-xs"
+                      ? "bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] font-bold shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -281,7 +281,7 @@ export default function AdminCharts({
                   onClick={() => setAttendanceRange("month")}
                   className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all ${
                     attendanceRange === "month"
-                      ? "bg-primary text-primary-foreground shadow-xs"
+                      ? "bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] font-bold shadow-xs"
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >

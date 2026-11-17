@@ -155,7 +155,7 @@ function SettingsPage() {
           }}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-xl transition ${
             activeTab === "general"
-              ? "bg-primary text-primary-foreground shadow-sm"
+              ? "bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] font-bold shadow-sm"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
           }`}
         >
@@ -172,7 +172,7 @@ function SettingsPage() {
           }}
           className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-xl transition ${
             activeTab === "security"
-              ? "bg-primary text-primary-foreground shadow-sm"
+              ? "bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] font-bold shadow-sm"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
           }`}
         >

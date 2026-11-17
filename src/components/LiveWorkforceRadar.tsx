@@ -243,7 +243,7 @@ export function LiveWorkforceRadar({
             onClick={() => setFilter("all")}
             className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-all ${
               filter === "all"
-                ? "bg-primary text-primary-foreground shadow-xs"
+                ? "bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] font-bold shadow-xs border-transparent"
                 : "border border-border/80 bg-white/60 dark:bg-card/60 text-muted-foreground hover:text-foreground"
             }`}
           >
