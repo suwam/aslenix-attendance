@@ -165,8 +165,24 @@ function EmployeeDashboard() {
   const [holidays, setHolidays] = useState<CalendarHoliday[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [activityFilter, setActivityFilter] = useState<"all" | "meetings" | "holidays">("all");
+  const [taskScheduleTab, setTaskScheduleTab] = useState<"tasks" | "schedule">("tasks");
+  const [leavesNoticesTab, setLeavesNoticesTab] = useState<"leaves" | "notices">("leaves");
+  const [attendanceViewMode, setAttendanceViewMode] = useState<"visual" | "table">("visual");
   const [nowTick, setNowTick] = useState(Date.now());
   const [busy, setBusy] = useState(false);
+
+  const uniqueNotifications = useMemo(() => {
+    const seen = new Set<string>();
+    const list: NotificationItem[] = [];
+    for (const n of notifications) {
+      const key = `${n.title}:${n.message}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        list.push(n);
+      }
+    }
+    return list.slice(0, 4);
+  }, [notifications]);
 
   const todayDate = format(new Date(), "yyyy-MM-dd");
   const isWeeklyOff = isWeeklyOffDate(todayDate);
@@ -214,7 +230,7 @@ function EmployeeDashboard() {
         .select("*")
         .eq("user_id", user.id)
         .order("date", { ascending: false })
-        .limit(5),
+        .limit(7),
       fetchEmployeeAssignedShift(user.id, todayDate),
       supabase
         .from("leave_balances")
@@ -728,6 +744,27 @@ function EmployeeDashboard() {
             </div>
           </div>
 
+          {/* Visual Shift Progress Bar */}
+          <div className="hidden lg:flex flex-col justify-center min-w-[180px] max-w-[240px] flex-1 px-4 border-l border-border/70">
+            <div className="flex items-center justify-between text-[11px] font-semibold text-muted-foreground mb-1.5">
+              <span>Shift Progress</span>
+              <span className="text-foreground font-bold tabular-nums">
+                {workedHours ? Math.min(100, Math.round((workedHours / expectedDailyHours) * 100)) : 0}%
+              </span>
+            </div>
+            <div className="h-2 w-full rounded-full bg-muted/80 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-500 transition-all duration-500"
+                style={{
+                  width: `${Math.min(100, Math.round(((workedHours || 0) / (expectedDailyHours || 9)) * 100))}%`,
+                }}
+              />
+            </div>
+            <span className="text-[10px] text-muted-foreground mt-1 tabular-nums truncate">
+              {workedHours ? formatWorkHours(workedHours) : "0h 0m"} of {expectedDailyHours}h target
+            </span>
+          </div>
+
           {/* Action Buttons */}
           <div className="flex items-center gap-2.5 shrink-0 w-full xl:w-auto">
             {isAdmin && (
@@ -859,51 +896,90 @@ function EmployeeDashboard() {
       </section>
 
       {/* ========================================================================= */}
-      {/* ROW 4: Two-column Layout: My Tasks (Left) & Upcoming Activities (Right)   */}
+      {/* ROW 4: Work & Schedule Hub (Left) + Quick Actions (Right)                 */}
       {/* ========================================================================= */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Left Column (60%): My Tasks */}
+        {/* Left Column (60%): Work & Schedule Hub (Tabs: Tasks | Schedule) */}
         <div className="lg:col-span-7 glass aslenix-dashboard-card card-tone-rose rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-2">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
-                  <ClipboardList size={14} />
-                </div>
-                <h2 className="text-sm font-bold text-foreground">My Tasks</h2>
-                <span className="rounded-md bg-muted/80 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground border border-border/60">
-                  {focusTasks.length} active
-                </span>
+            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-3">
+              {/* Tab Switcher */}
+              <div className="flex items-center gap-1 rounded-xl border border-border/80 bg-muted/60 p-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setTaskScheduleTab("tasks")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
+                    taskScheduleTab === "tasks"
+                      ? "bg-white dark:bg-card text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <ClipboardList size={13} className="text-primary" />
+                  <span>My Tasks</span>
+                  <span className="rounded-md bg-muted px-1.5 py-0.2 text-[10px] font-bold text-muted-foreground">
+                    {focusTasks.length}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTaskScheduleTab("schedule")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
+                    taskScheduleTab === "schedule"
+                      ? "bg-white dark:bg-card text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <CalendarDays size={13} className="text-primary" />
+                  <span>Schedule & Events</span>
+                  <span className="rounded-md bg-muted px-1.5 py-0.2 text-[10px] font-bold text-muted-foreground">
+                    {upcomingActivities.length}
+                  </span>
+                </button>
               </div>
-              <Link
-                to="/tasks"
-                className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
-              >
-                <span>View all tasks</span>
-                <ArrowRight size={12} />
-              </Link>
+
+              {taskScheduleTab === "tasks" ? (
+                <Link
+                  to="/tasks"
+                  className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
+                >
+                  <span>All tasks</span>
+                  <ArrowRight size={12} />
+                </Link>
+              ) : (
+                <Link
+                  to="/calendar"
+                  className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
+                >
+                  <span>Calendar</span>
+                  <ArrowRight size={12} />
+                </Link>
+              )}
             </div>
 
-            <div className="divide-y divide-border/40">
-              {focusTasks.length > 0 ? (
-                focusTasks.map((task) => {
-                  const isOverdue = task.deadline && new Date(task.deadline).getTime() < Date.now();
-                  const progressPct = Math.min(100, Math.max(0, Number(task.progress || 0)));
-                  return (
-                    <div
-                      key={task.id}
-                      className="py-3 first:pt-1 last:pb-1 flex flex-col gap-2 group"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-xs sm:text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+            {/* TAB CONTENT: MY TASKS */}
+            {taskScheduleTab === "tasks" && (
+              <div className="space-y-2.5">
+                {focusTasks.length > 0 ? (
+                  focusTasks.map((task) => {
+                    const isOverdue =
+                      task.deadline && new Date(task.deadline).getTime() < Date.now();
+                    const progressPct = Math.min(100, Math.max(0, Number(task.progress || 0)));
+                    return (
+                      <div
+                        key={task.id}
+                        className="rounded-xl border border-border/60 bg-white/60 dark:bg-card/60 p-3 hover:border-primary/40 transition-all flex flex-col gap-2 group"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="min-w-0 flex-1 flex items-center gap-2">
+                            <h3 className="text-xs sm:text-sm font-bold text-foreground group-hover:text-primary transition-colors truncate">
                               {task.title}
                             </h3>
                             {task.priority && (
                               <span
                                 className={cn(
-                                  "rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider shrink-0 border",
+                                  "rounded px-1.5 py-0.2 text-[10px] font-bold uppercase tracking-wider shrink-0 border",
                                   task.priority === "high"
                                     ? "bg-destructive/10 text-destructive border-destructive/20"
                                     : task.priority === "medium"
@@ -915,127 +991,73 @@ function EmployeeDashboard() {
                               </span>
                             )}
                           </div>
-                          <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
-                            {task.deadline ? (
-                              <span className={cn("inline-flex items-center gap-1", isOverdue ? "text-destructive font-semibold" : "")}>
-                                <Clock size={12} />
-                                {isOverdue ? "Overdue: " : "Deadline: "}
-                                {format(new Date(task.deadline), "MMM d, yyyy")}
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            {task.deadline && (
+                              <span
+                                className={cn(
+                                  "inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground",
+                                  isOverdue ? "text-destructive font-semibold" : "",
+                                )}
+                              >
+                                <Clock size={11} />
+                                {format(new Date(task.deadline), "MMM d")}
                               </span>
-                            ) : (
-                              <span>No deadline set</span>
                             )}
+                            <span
+                              className={cn(
+                                "rounded-md px-2 py-0.5 text-[10px] font-bold capitalize border",
+                                task.status === "in_progress"
+                                  ? "bg-primary/10 text-primary border-primary/20"
+                                  : task.status === "review"
+                                    ? "bg-purple-500/10 text-purple-600 border-purple-500/20"
+                                    : "bg-muted text-muted-foreground border-border",
+                              )}
+                            >
+                              {task.status ? task.status.replace("_", " ") : "Pending"}
+                            </span>
                           </div>
                         </div>
 
-                        <div className="shrink-0">
-                          <span
-                            className={cn(
-                              "rounded-md px-2 py-0.5 text-[11px] font-semibold capitalize border",
-                              task.status === "in_progress"
-                                ? "bg-primary/10 text-primary border-primary/20"
-                                : task.status === "review"
-                                  ? "bg-purple-500/10 text-purple-600 border-purple-500/20"
-                                  : "bg-muted text-muted-foreground border-border",
-                            )}
-                          >
-                            {task.status ? task.status.replace("_", " ") : "Pending"}
+                        {/* Progress Bar */}
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1.5 bg-muted/80 rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-300"
+                              style={{
+                                width: `${progressPct}%`,
+                                background: "var(--gradient-brand)",
+                              }}
+                            />
+                          </div>
+                          <span className="text-[10px] text-muted-foreground tabular-nums font-mono font-semibold">
+                            {progressPct}%
                           </span>
                         </div>
                       </div>
-
-                      {/* Progress Bar with ASLENIX Brand Gradient */}
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full transition-all duration-300"
-                            style={{
-                              width: `${progressPct}%`,
-                              background: "var(--gradient-brand)",
-                            }}
-                          />
-                        </div>
-                        <span className="text-[10px] text-muted-foreground tabular-nums font-mono">
-                          {progressPct}%
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="py-6 text-center text-xs text-muted-foreground">
-                  No active pending tasks assigned to you right now.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column (40%): Today's Schedule and Upcoming Activities */}
-        <div className="lg:col-span-5 glass aslenix-dashboard-card card-tone-blue rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-2">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
-                  <CalendarDays size={14} />
-                </div>
-                <h2 className="text-sm font-bold text-foreground">Schedule & Activities</h2>
+                    );
+                  })
+                ) : (
+                  <div className="py-6 text-center text-xs text-muted-foreground">
+                    All caught up! No active tasks assigned to you right now.
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/60 p-0.5 text-[11px] font-medium text-muted-foreground">
-                <button
-                  type="button"
-                  onClick={() => setActivityFilter("all")}
-                  className={cn(
-                    "px-2 py-0.5 rounded transition-colors",
-                    activityFilter === "all"
-                      ? "font-bold text-[#0F172A] shadow-xs"
-                      : "hover:text-foreground",
-                  )}
-                  style={activityFilter === "all" ? { background: "var(--gradient-brand)" } : undefined}
-                >
-                  All
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActivityFilter("meetings")}
-                  className={cn(
-                    "px-2 py-0.5 rounded transition-colors",
-                    activityFilter === "meetings"
-                      ? "font-bold text-[#0F172A] shadow-xs"
-                      : "hover:text-foreground",
-                  )}
-                  style={activityFilter === "meetings" ? { background: "var(--gradient-brand)" } : undefined}
-                >
-                  Meetings
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActivityFilter("holidays")}
-                  className={cn(
-                    "px-2 py-0.5 rounded transition-colors",
-                    activityFilter === "holidays"
-                      ? "font-bold text-[#0F172A] shadow-xs"
-                      : "hover:text-foreground",
-                  )}
-                  style={activityFilter === "holidays" ? { background: "var(--gradient-brand)" } : undefined}
-                >
-                  Holidays
-                </button>
-              </div>
-            </div>
+            )}
 
-            <div className="divide-y divide-border/40">
-              {upcomingActivities.length > 0 ? (
-                upcomingActivities.map((item) => (
-                  <div
-                    key={item.id}
-                    className="py-2.5 first:pt-1 last:pb-1 flex items-center justify-between gap-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
+            {/* TAB CONTENT: SCHEDULE & EVENTS */}
+            {taskScheduleTab === "schedule" && (
+              <div className="space-y-2">
+                {upcomingActivities.length > 0 ? (
+                  upcomingActivities.map((item) => (
+                    <div
+                      key={item.id}
+                      className="rounded-xl border border-border/60 bg-white/60 dark:bg-card/60 p-2.5 flex items-center justify-between gap-3"
+                    >
+                      <div className="min-w-0 flex-1 flex items-center gap-2">
                         <span
                           className={cn(
-                            "rounded px-1.5 py-0.2 text-[10px] font-bold uppercase tracking-wider shrink-0 border",
+                            "rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider shrink-0 border",
                             item.type === "meeting"
                               ? "bg-primary/10 text-primary border-primary/20"
                               : item.type === "holiday"
@@ -1046,103 +1068,419 @@ function EmployeeDashboard() {
                           {item.type}
                         </span>
                         {item.isToday && (
-                          <span className="rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-1 py-0.2 text-[9px] font-bold uppercase shrink-0">
+                          <span className="rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.2 text-[9px] font-bold uppercase shrink-0">
                             Today
                           </span>
                         )}
-                        <h3 className="truncate text-xs sm:text-sm font-semibold text-foreground">
+                        <h3 className="truncate text-xs font-bold text-foreground">
                           {item.title}
                         </h3>
                       </div>
-                      <div className="mt-0.5 text-[11px] text-muted-foreground flex items-center gap-1.5">
-                        <Clock size={11} className="shrink-0" />
-                        <span>{item.timeLabel}</span>
-                        {item.subLabel && <span className="truncate">· {item.subLabel}</span>}
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+                          <Clock size={11} />
+                          <span>{item.timeLabel}</span>
+                        </span>
+                        {item.actionUrl && (
+                          <a
+                            href={item.actionUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 rounded-lg border border-primary/25 bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary hover:bg-primary/20 transition-colors"
+                          >
+                            <span>Join</span>
+                            <ExternalLink size={10} />
+                          </a>
+                        )}
                       </div>
                     </div>
-                    {item.actionUrl && (
-                      <a
-                        href={item.actionUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1 rounded-lg border border-primary/25 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary/20 transition-colors shrink-0"
-                      >
-                        <span>Join</span>
-                        <ExternalLink size={11} />
-                      </a>
-                    )}
+                  ))
+                ) : (
+                  <div className="py-6 text-center text-xs text-muted-foreground">
+                    No upcoming schedule or activities planned.
                   </div>
-                ))
-              ) : (
-                <div className="py-6 text-center text-xs text-muted-foreground">
-                  No upcoming activities scheduled.
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column (40%): Quick Actions & Shortcuts */}
+        <div className="lg:col-span-5 glass aslenix-dashboard-card card-tone-mint rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
+                  <Sparkles size={14} />
                 </div>
-              )}
+                <h2 className="text-sm font-bold text-foreground">Quick Actions</h2>
+              </div>
+              <span className="text-xs text-muted-foreground font-medium">Self-service shortcuts</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              <Link
+                to="/my-leaves"
+                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 dark:bg-card/75 hover:bg-white dark:hover:bg-card p-3 hover:border-primary/40 hover:shadow-xs transition-all group"
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                  <CalendarPlus size={15} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                    Apply Leave
+                  </div>
+                </div>
+              </Link>
+
+              <Link
+                to="/my-attendance"
+                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 dark:bg-card/75 hover:bg-white dark:hover:bg-card p-3 hover:border-primary/40 hover:shadow-xs transition-all group"
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  <CalendarCheck size={15} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                    My Attendance
+                  </div>
+                </div>
+              </Link>
+
+              <Link
+                to="/my-attendance"
+                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 dark:bg-card/75 hover:bg-white dark:hover:bg-card p-3 hover:border-primary/40 hover:shadow-xs transition-all group"
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                  <FileEdit size={15} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                    Correction
+                  </div>
+                </div>
+              </Link>
+
+              <Link
+                to="/tasks"
+                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 dark:bg-card/75 hover:bg-white dark:hover:bg-card p-3 hover:border-primary/40 hover:shadow-xs transition-all group"
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
+                  <CheckSquare size={15} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                    My Tasks
+                  </div>
+                </div>
+              </Link>
+
+              <Link
+                to="/meetings"
+                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 dark:bg-card/75 hover:bg-white dark:hover:bg-card p-3 hover:border-primary/40 hover:shadow-xs transition-all group"
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                  <Video size={15} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                    Meetings
+                  </div>
+                </div>
+              </Link>
+
+              <Link
+                to="/profile"
+                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 dark:bg-card/75 hover:bg-white dark:hover:bg-card p-3 hover:border-primary/40 hover:shadow-xs transition-all group"
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground border border-border/80">
+                  <UserCheck size={15} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-foreground group-hover:text-primary transition-colors truncate">
+                    Profile Details
+                  </div>
+                </div>
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
       {/* ========================================================================= */}
-      {/* ROW 5: Two-column Layout: Leave Request Status (Left) & Notifications     */}
+      {/* ROW 5: Weekly Attendance Visual Tracker (Left) + Leaves & Updates (Right) */}
       {/* ========================================================================= */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Left Column (60%): Leave Request Status */}
-        <div className="lg:col-span-7 glass aslenix-dashboard-card card-tone-amber rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+        {/* Left Column (60%): Weekly Attendance Visual Tracker */}
+        <div className="lg:col-span-7 glass aslenix-dashboard-card card-tone-lavender rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-2">
-              <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-3">
+              <div className="flex items-center gap-2">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
-                  <Calendar size={14} />
+                  <Clock size={14} />
                 </div>
-                <h2 className="text-sm font-bold text-foreground">Leave Requests Status</h2>
-                <span className="rounded-md bg-muted/80 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground border border-border/60">
-                  {recentLeaves.filter((r) => r.status === "pending").length} pending
-                </span>
+                <div>
+                  <h2 className="text-sm font-bold text-foreground">Attendance Tracker</h2>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
+
+              <div className="flex items-center gap-2">
+                {/* Visual vs Table View Switcher */}
+                <div className="inline-flex items-center rounded-lg border border-border bg-muted/60 p-0.5 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setAttendanceViewMode("visual")}
+                    className={cn(
+                      "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all",
+                      attendanceViewMode === "visual"
+                        ? "bg-white dark:bg-card text-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    Visual Strip
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAttendanceViewMode("table")}
+                    className={cn(
+                      "px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all",
+                      attendanceViewMode === "table"
+                        ? "bg-white dark:bg-card text-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    Table
+                  </button>
+                </div>
+
                 <Link
-                  to="/my-leaves"
-                  className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
+                  to="/my-attendance"
+                  className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 hidden sm:inline-flex"
                 >
-                  <span>Apply Leave</span>
-                  <CalendarPlus size={13} />
-                </Link>
-                <Link
-                  to="/my-leaves"
-                  className="text-xs font-medium text-muted-foreground hover:text-foreground hover:underline hidden sm:inline"
-                >
-                  View all
+                  <span>Full log</span>
+                  <ArrowRight size={12} />
                 </Link>
               </div>
             </div>
 
-            <div className="divide-y divide-border/40">
-              {recentLeaves.length > 0 ? (
-                recentLeaves.slice(0, 4).map((request) => (
-                  <div
-                    key={request.id}
-                    className="py-2.5 first:pt-1 last:pb-1 flex items-center justify-between gap-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap">
-                        <span className="text-xs sm:text-sm font-semibold capitalize text-foreground truncate">
-                          {request.leave_type.replace("_", " ")} Leave
-                        </span>
-                        <span className="text-[11px] text-muted-foreground/60 hidden sm:inline">·</span>
-                        <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
+            {/* MODE 1: VISUAL 7-DAY ATTENDANCE STRIP */}
+            {attendanceViewMode === "visual" ? (
+              <div className="space-y-2">
+                {recentAttendance.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    {recentAttendance.slice(0, 5).map((row) => {
+                      const isRowToday = row.date === todayDate;
+                      const hours = row.work_hours
+                        ? Number(row.work_hours)
+                        : isRowToday && workedHours
+                          ? workedHours
+                          : 0;
+                      const pct = Math.min(
+                        100,
+                        Math.round((hours / (expectedDailyHours || 9)) * 100),
+                      );
+                      const isLate = row.is_late || row.status === "late";
+
+                      return (
+                        <div
+                          key={row.id}
+                          className={cn(
+                            "rounded-xl border p-2.5 flex flex-col justify-between transition-all",
+                            isRowToday
+                              ? "border-primary/50 bg-primary/5 shadow-xs ring-1 ring-primary/20"
+                              : "border-border/60 bg-white/60 dark:bg-card/60",
+                          )}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between text-[11px] font-bold">
+                              <span className="text-foreground">
+                                {format(new Date(row.date), "EEE")}
+                              </span>
+                              <span
+                                className={cn(
+                                  "rounded px-1.5 py-0.2 text-[9px] font-bold uppercase",
+                                  row.status === "present" && !isLate
+                                    ? "bg-emerald-500/10 text-emerald-600"
+                                    : isLate
+                                      ? "bg-amber-500/10 text-amber-600"
+                                      : "bg-muted text-muted-foreground",
+                                )}
+                              >
+                                {isLate ? "Late" : row.status}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-muted-foreground mt-0.5">
+                              {format(new Date(row.date), "MMM d")}
+                            </div>
+                          </div>
+
+                          <div className="my-2">
+                            <div className="text-xs font-extrabold text-foreground tabular-nums">
+                              {hours ? formatWorkHours(hours) : "—"}
+                            </div>
+                            <div className="mt-1 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                              <div
+                                className={cn(
+                                  "h-full rounded-full transition-all duration-300",
+                                  row.status === "present" && !isLate
+                                    ? "bg-emerald-500"
+                                    : isLate
+                                      ? "bg-amber-500"
+                                      : "bg-primary",
+                                )}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          <div className="text-[10px] text-muted-foreground/80 tabular-nums truncate">
+                            {row.check_in_time ? formatTime12Hour(row.check_in_time) : "—"}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="py-6 text-center text-xs text-muted-foreground">
+                    No attendance records captured yet.
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* MODE 2: COMPACT CLEAN TABLE */
+              <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+                <table className="w-full min-w-[440px] text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-border/60 text-muted-foreground text-[11px]">
+                      <th className="py-2 px-2.5 first:pl-0 font-semibold">Date</th>
+                      <th className="py-2 px-2.5 font-semibold">In</th>
+                      <th className="py-2 px-2.5 font-semibold">Out</th>
+                      <th className="py-2 px-2.5 font-semibold">Hours</th>
+                      <th className="py-2 px-2.5 last:pr-0 font-semibold text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/40">
+                    {recentAttendance.map((row) => (
+                      <tr key={row.id} className="hover:bg-muted/40 transition-colors">
+                        <td className="py-2 px-2.5 first:pl-0 font-semibold text-foreground tabular-nums whitespace-nowrap">
+                          {format(new Date(row.date), "MMM d, yyyy")}
+                        </td>
+                        <td className="py-2 px-2.5 text-muted-foreground tabular-nums whitespace-nowrap">
+                          {row.check_in_time ? formatTime12Hour(row.check_in_time) : "—"}
+                        </td>
+                        <td className="py-2 px-2.5 text-muted-foreground tabular-nums whitespace-nowrap">
+                          {row.check_out_time ? formatTime12Hour(row.check_out_time) : "—"}
+                        </td>
+                        <td className="py-2 px-2.5 text-foreground font-bold tabular-nums whitespace-nowrap">
+                          {row.work_hours ? formatWorkHours(row.work_hours) : "—"}
+                        </td>
+                        <td className="py-2 px-2.5 last:pr-0 text-right whitespace-nowrap">
+                          <span
+                            className={cn(
+                              "inline-block rounded px-2 py-0.5 text-[10px] font-bold capitalize border",
+                              row.status === "present" && !row.is_late
+                                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                                : row.is_late || row.status === "late"
+                                  ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                                  : "bg-muted text-muted-foreground border-border",
+                            )}
+                          >
+                            {row.is_late ? "Late" : row.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column (40%): Activity & Leaves Hub (Tabs: Leaves | Notifications) */}
+        <div className="lg:col-span-5 glass aslenix-dashboard-card card-tone-cyan rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-3">
+              {/* Tab Switcher */}
+              <div className="flex items-center gap-1 rounded-xl border border-border/80 bg-muted/60 p-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setLeavesNoticesTab("leaves")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
+                    leavesNoticesTab === "leaves"
+                      ? "bg-white dark:bg-card text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <Calendar size={13} className="text-primary" />
+                  <span>Leaves</span>
+                  <span className="rounded-md bg-muted px-1.5 py-0.2 text-[10px] font-bold text-muted-foreground">
+                    {recentLeaves.length}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLeavesNoticesTab("notices")}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
+                    leavesNoticesTab === "notices"
+                      ? "bg-white dark:bg-card text-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <Bell size={13} className="text-primary" />
+                  <span>Notices</span>
+                  <span className="rounded-md bg-muted px-1.5 py-0.2 text-[10px] font-bold text-muted-foreground">
+                    {uniqueNotifications.length}
+                  </span>
+                </button>
+              </div>
+
+              {leavesNoticesTab === "leaves" ? (
+                <Link
+                  to="/my-leaves"
+                  className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
+                >
+                  <span>Apply</span>
+                  <CalendarPlus size={12} />
+                </Link>
+              ) : (
+                <Link
+                  to="/notifications"
+                  className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
+                >
+                  <span>All</span>
+                  <ArrowRight size={12} />
+                </Link>
+              )}
+            </div>
+
+            {/* TAB CONTENT: LEAVES */}
+            {leavesNoticesTab === "leaves" && (
+              <div className="space-y-2">
+                {recentLeaves.length > 0 ? (
+                  recentLeaves.slice(0, 3).map((request) => (
+                    <div
+                      key={request.id}
+                      className="rounded-xl border border-border/60 bg-white/60 dark:bg-card/60 p-2.5 flex items-center justify-between gap-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold capitalize text-foreground truncate">
+                            {request.leave_type.replace("_", " ")} Leave
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground tabular-nums mt-0.5">
                           {format(new Date(request.start_date), "MMM d")} –{" "}
                           {format(new Date(request.end_date), "MMM d, yyyy")}
-                        </span>
+                        </div>
                       </div>
-                      <div className="mt-0.5 text-[11px] text-muted-foreground truncate">
-                        {request.reason ? `Reason: ${request.reason}` : "No specific reason provided"}
-                      </div>
-                    </div>
-                    <div className="shrink-0">
+
                       <span
                         className={cn(
-                          "rounded-md px-2 py-0.5 text-[11px] font-semibold capitalize border",
+                          "rounded-md px-2 py-0.5 text-[10px] font-bold capitalize border shrink-0",
                           request.status === "approved"
                             ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                             : request.status === "rejected"
@@ -1155,279 +1493,42 @@ function EmployeeDashboard() {
                         {request.status}
                       </span>
                     </div>
+                  ))
+                ) : (
+                  <div className="py-6 text-center text-xs text-muted-foreground">
+                    No leave requests found.
                   </div>
-                ))
-              ) : (
-                <div className="py-6 text-center text-xs text-muted-foreground">
-                  No leave requests submitted recently.{" "}
-                  <Link to="/my-leaves" className="text-primary font-semibold hover:underline">
-                    Submit a request
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column (40%): Recent Notifications */}
-        <div className="lg:col-span-5 glass aslenix-dashboard-card card-tone-cyan rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-2">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
-                  <Bell size={14} />
-                </div>
-                <h2 className="text-sm font-bold text-foreground">Recent Notifications</h2>
-                {notifications.filter((n) => !n.is_read).length > 0 && (
-                  <span className="rounded-full bg-primary/15 text-primary px-1.5 py-0.2 text-[10px] font-bold">
-                    {notifications.filter((n) => !n.is_read).length} new
-                  </span>
                 )}
               </div>
-              <Link
-                to="/notifications"
-                className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
-              >
-                <span>View all</span>
-                <ArrowRight size={12} />
-              </Link>
-            </div>
+            )}
 
-            <div className="divide-y divide-border/40">
-              {notifications.length > 0 ? (
-                notifications.slice(0, 4).map((n) => (
-                  <div
-                    key={n.id}
-                    className="py-2.5 first:pt-1 last:pb-1 flex items-start justify-between gap-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        {!n.is_read && (
-                          <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                        )}
-                        <h3 className="truncate text-xs sm:text-sm font-semibold text-foreground">
-                          {n.title}
-                        </h3>
+            {/* TAB CONTENT: NOTICES & ALERTS */}
+            {leavesNoticesTab === "notices" && (
+              <div className="space-y-2">
+                {uniqueNotifications.length > 0 ? (
+                  uniqueNotifications.map((n) => (
+                    <div
+                      key={n.id}
+                      className="rounded-xl border border-border/60 bg-white/60 dark:bg-card/60 p-2.5 flex items-center justify-between gap-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <h4 className="truncate text-xs font-bold text-foreground">{n.title}</h4>
+                        <p className="truncate text-[11px] text-muted-foreground mt-0.5">
+                          {n.message}
+                        </p>
                       </div>
-                      <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-                        {n.message}
-                      </p>
+                      <span className="text-[10px] text-muted-foreground/80 shrink-0 tabular-nums whitespace-nowrap">
+                        {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                      </span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground/80 shrink-0 tabular-nums whitespace-nowrap">
-                      {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
-                    </span>
+                  ))
+                ) : (
+                  <div className="py-6 text-center text-xs text-muted-foreground">
+                    No notifications right now.
                   </div>
-                ))
-              ) : (
-                <div className="py-6 text-center text-xs text-muted-foreground">
-                  No notifications yet.
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ========================================================================= */}
-      {/* ROW 6: Two-column Layout: Recent Attendance History & Quick Actions       */}
-      {/* ========================================================================= */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Left Column (60%): Recent Attendance History */}
-        <div className="lg:col-span-7 glass aslenix-dashboard-card card-tone-lavender rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-2">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
-                  <Clock size={14} />
-                </div>
-                <h2 className="text-sm font-bold text-foreground">Recent Attendance History</h2>
-                <span className="text-[11px] text-muted-foreground hidden sm:inline">
-                  (Past 5 records)
-                </span>
+                )}
               </div>
-              <Link
-                to="/my-attendance"
-                className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
-              >
-                <span>View full log</span>
-                <ArrowRight size={12} />
-              </Link>
-            </div>
-
-            <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-              <table className="w-full min-w-[480px] text-left text-xs">
-                <thead>
-                  <tr className="border-b border-border/60 text-muted-foreground text-[11px]">
-                    <th className="py-2.5 px-3 first:pl-0 font-semibold">Date</th>
-                    <th className="py-2.5 px-3 font-semibold">In</th>
-                    <th className="py-2.5 px-3 font-semibold">Out</th>
-                    <th className="py-2.5 px-3 font-semibold">Hours</th>
-                    <th className="py-2.5 px-3 last:pr-0 font-semibold text-right">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/40">
-                  {recentAttendance.length > 0 ? (
-                    recentAttendance.map((row) => (
-                      <tr key={row.id} className="hover:bg-muted/40 transition-colors">
-                        <td className="py-2.5 px-3 first:pl-0 font-semibold text-foreground tabular-nums whitespace-nowrap">
-                          {format(new Date(row.date), "MMM d, yyyy")}
-                        </td>
-                        <td className="py-2.5 px-3 text-muted-foreground tabular-nums whitespace-nowrap">
-                          {row.check_in_time ? formatTime12Hour(row.check_in_time) : "—"}
-                        </td>
-                        <td className="py-2.5 px-3 text-muted-foreground tabular-nums whitespace-nowrap">
-                          {row.check_out_time ? formatTime12Hour(row.check_out_time) : "—"}
-                        </td>
-                        <td className="py-2.5 px-3 text-foreground font-bold tabular-nums whitespace-nowrap">
-                          {row.work_hours ? formatWorkHours(row.work_hours) : "—"}
-                        </td>
-                        <td className="py-2.5 px-3 last:pr-0 text-right whitespace-nowrap">
-                          <span
-                            className={cn(
-                              "inline-block rounded px-2 py-0.5 text-[10px] font-bold capitalize border",
-                              row.status === "present" && !row.is_late
-                                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                                : row.is_late || row.status === "late"
-                                  ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                                  : row.status === "leave"
-                                    ? "bg-purple-500/10 text-purple-600 border-purple-500/20"
-                                    : "bg-muted text-muted-foreground border-border",
-                            )}
-                          >
-                            {row.is_late ? "Late" : row.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="py-6 text-center text-xs text-muted-foreground">
-                        No recent attendance records found.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column (40%): Employee Quick Actions */}
-        <div className="lg:col-span-5 glass aslenix-dashboard-card card-tone-mint rounded-2xl border border-border/70 p-4 sm:p-5 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between border-b border-border/70 pb-3 mb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
-                  <Sparkles size={14} />
-                </div>
-                <h2 className="text-sm font-bold text-foreground">Quick Actions</h2>
-              </div>
-              <span className="text-xs text-muted-foreground">Self-service</span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5">
-              <Link
-                to="/my-leaves"
-                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 hover:bg-white p-2.5 hover:border-primary/40 hover:shadow-2xs transition-all group shadow-2xs"
-              >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-500/10 text-purple-600 border border-purple-500/20">
-                  <CalendarPlus size={15} />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors truncate">
-                    Apply Leave
-                  </div>
-                  <div className="text-[10px] text-muted-foreground truncate">
-                    Vacation & sick leave
-                  </div>
-                </div>
-              </Link>
-
-              <Link
-                to="/my-attendance"
-                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 hover:bg-white p-2.5 hover:border-primary/40 hover:shadow-2xs transition-all group shadow-2xs"
-              >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                  <CalendarCheck size={15} />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors truncate">
-                    My Attendance
-                  </div>
-                  <div className="text-[10px] text-muted-foreground truncate">
-                    Logs & time report
-                  </div>
-                </div>
-              </Link>
-
-              <Link
-                to="/my-attendance"
-                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 hover:bg-white p-2.5 hover:border-primary/40 hover:shadow-2xs transition-all group shadow-2xs"
-              >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 border border-amber-500/20">
-                  <FileEdit size={15} />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors truncate">
-                    Correction
-                  </div>
-                  <div className="text-[10px] text-muted-foreground truncate">
-                    Request time adjustment
-                  </div>
-                </div>
-              </Link>
-
-              <Link
-                to="/tasks"
-                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 hover:bg-white p-2.5 hover:border-primary/40 hover:shadow-2xs transition-all group shadow-2xs"
-              >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
-                  <CheckSquare size={15} />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors truncate">
-                    My Tasks
-                  </div>
-                  <div className="text-[10px] text-muted-foreground truncate">
-                    Kanban & sprint work
-                  </div>
-                </div>
-              </Link>
-
-              <Link
-                to="/meetings"
-                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 hover:bg-white p-2.5 hover:border-primary/40 hover:shadow-2xs transition-all group shadow-2xs"
-              >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 border border-blue-500/20">
-                  <Video size={15} />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors truncate">
-                    Meetings
-                  </div>
-                  <div className="text-[10px] text-muted-foreground truncate">
-                    Team calls & standups
-                  </div>
-                </div>
-              </Link>
-
-              <Link
-                to="/profile"
-                className="flex items-center gap-2.5 rounded-xl border border-border/80 bg-white/75 hover:bg-white p-2.5 hover:border-primary/40 hover:shadow-2xs transition-all group shadow-2xs"
-              >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/80 text-muted-foreground border border-border/70">
-                  <UserCheck size={15} />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-semibold text-foreground group-hover:text-primary transition-colors truncate">
-                    Account Details
-                  </div>
-                  <div className="text-[10px] text-muted-foreground truncate">
-                    Profile & emergency
-                  </div>
-                </div>
-              </Link>
-            </div>
+            )}
           </div>
         </div>
       </section>
