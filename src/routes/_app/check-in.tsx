@@ -604,6 +604,16 @@ function CheckInPage() {
                             <Sparkles size={13} className="mr-1.5 text-emerald-500" />
                             View Day Summary
                           </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => nav({ to: "/my-attendance" })}
+                            className="mt-2 rounded-xl text-xs font-semibold"
+                          >
+                            <FileText size={13} className="mr-1.5" />
+                            Request Check-out Correction
+                          </Button>
                         </div>
                       </div>
                     )}

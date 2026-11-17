@@ -41,6 +41,7 @@ export const Route = createFileRoute("/_app/my-attendance")({ component: MyAtten
 
 type CorrectionType =
   | "wrong_time"
+  | "checkout_correction"
   | "late_checkin"
   | "early_checkout"
   | "status_correction"
@@ -50,6 +51,7 @@ type CorrectionType =
 
 const CORRECTION_TYPES: Array<{ value: CorrectionType; label: string }> = [
   { value: "wrong_time", label: "Wrong Time" },
+  { value: "checkout_correction", label: "Check-out Correction" },
   { value: "late_checkin", label: "Late Check-in" },
   { value: "early_checkout", label: "Early Check-out" },
   { value: "status_correction", label: "Status Correction" },
@@ -742,6 +744,7 @@ function shouldShowCheckIn(correctionType: CorrectionType) {
 function shouldShowCheckOut(correctionType: CorrectionType) {
   return (
     correctionType === "wrong_time" ||
+    correctionType === "checkout_correction" ||
     correctionType === "early_checkout" ||
     correctionType === "missed_checkout"
   );
@@ -774,7 +777,9 @@ function validateCorrectionForm(form: {
   ) {
     errors.correctionField = "New check-in time is required.";
   } else if (
-    (form.correctionType === "early_checkout" || form.correctionType === "missed_checkout") &&
+    (form.correctionType === "checkout_correction" ||
+      form.correctionType === "early_checkout" ||
+      form.correctionType === "missed_checkout") &&
     !form.checkOut
   ) {
     errors.correctionField = "New check-out time is required.";
