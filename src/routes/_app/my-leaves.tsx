@@ -235,73 +235,122 @@ function MyLeaves() {
         title="My Leaves"
         subtitle="Request, review, and track your time off requests"
         actions={
-          <Button
+          <button
+            type="button"
             onClick={() => {
               setVacationConsent(false);
               setOpen(true);
             }}
-            className="rounded-xl px-4 py-2 h-10 gap-2 font-bold text-xs sm:text-sm bg-gradient-to-r from-primary to-indigo-600 text-white shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:brightness-105 active:scale-[0.98] transition-all cursor-pointer"
+            className="h-11 rounded-2xl px-6 font-bold text-xs sm:text-sm bg-gradient-to-r from-primary via-indigo-600 to-primary text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:brightness-110 active:scale-[0.98] transition-all flex items-center gap-2 cursor-pointer"
           >
-            <Plus size={16} />
+            <Plus size={18} strokeWidth={2.5} />
             <span>New Leave Request</span>
-          </Button>
+          </button>
         }
       />
 
       {/* ========================================================================= */}
-      {/* 1. EXECUTIVE POLICY & GUIDELINES HUB (No Quota Left exposed)               */}
+      {/* 1. EXECUTIVE POLICY & GUIDELINES HUB (Styled like reference cards)         */}
       {/* ========================================================================= */}
-      <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-3.5">
-        <GlassCard className="p-4 border-border/80 bg-white/70 dark:bg-card/70 hover:border-primary/40 transition-all flex items-start gap-3.5 shadow-xs">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20">
-            <CalendarClock size={20} />
-          </div>
+      <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* Card 1: Standard Accrual Quota */}
+        <div className="rounded-3xl sm:rounded-[1.75rem] border p-6 sm:p-7 transition-all flex flex-col justify-between shadow-xs hover:shadow-xl hover:-translate-y-0.5 duration-300 border-indigo-500/25 bg-gradient-to-br from-indigo-500/[0.04] via-card to-card hover:border-indigo-500/40 hover:shadow-indigo-500/5 ring-1 ring-indigo-500/10">
           <div>
-            <div className="text-xs font-bold text-foreground">Standard Accrual Quota</div>
-            <div className="text-xl font-extrabold text-primary tracking-tight mt-0.5">
-              2 Days / Month
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-xs">
+                <CalendarClock size={22} strokeWidth={2.2} />
+              </div>
+              <span className="text-[11px] sm:text-xs font-black tracking-widest uppercase select-none text-indigo-600 dark:text-indigo-400 pt-1">
+                ACCRUAL
+              </span>
             </div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">
-              24 days total annual quota accrual
+            <div className="mt-5 space-y-1">
+              <h3 className="text-xl font-extrabold text-foreground tracking-tight">
+                Standard Accrual Quota
+              </h3>
+              <div className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                2 Days / Month
+              </div>
             </div>
+            <p className="mt-3.5 text-sm text-muted-foreground leading-relaxed">
+              Standard monthly allocation providing 24 days total annual quota accrual based on regular employment policy.
+            </p>
           </div>
-        </GlassCard>
+          <div className="mt-5 pt-3.5 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground font-medium">
+            <span className="text-[11px] font-semibold text-foreground/85">Annual Accrual Balance</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+              24 Days / Year
+            </span>
+          </div>
+        </div>
 
-        <GlassCard className="p-4 border-border/80 bg-white/70 dark:bg-card/70 hover:border-purple-500/40 transition-all flex items-start gap-3.5 shadow-xs">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-            <Palmtree size={20} />
-          </div>
+        {/* Card 2: Vacation Leave Policy */}
+        <div className="rounded-3xl sm:rounded-[1.75rem] border p-6 sm:p-7 transition-all flex flex-col justify-between shadow-xs hover:shadow-xl hover:-translate-y-0.5 duration-300 border-purple-500/25 bg-gradient-to-br from-purple-500/[0.04] via-card to-card hover:border-purple-500/40 hover:shadow-purple-500/5 ring-1 ring-purple-500/10">
           <div>
-            <div className="text-xs font-bold text-foreground">Vacation Leave Policy</div>
-            <div className="text-xl font-extrabold text-purple-600 dark:text-purple-400 tracking-tight mt-0.5">
-              1 Full Month Only
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400 shadow-xs">
+                <Palmtree size={22} strokeWidth={2.2} />
+              </div>
+              <span className="text-[11px] sm:text-xs font-black tracking-widest uppercase select-none text-purple-600 dark:text-purple-400 pt-1">
+                POLICY
+              </span>
             </div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">
-              Strictly 1-month block · Admin approval required
+            <div className="mt-5 space-y-1">
+              <h3 className="text-xl font-extrabold text-foreground tracking-tight">
+                Vacation Leave Policy
+              </h3>
+              <div className="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
+                1 Full Month Only
+              </div>
             </div>
+            <p className="mt-3.5 text-sm text-muted-foreground leading-relaxed">
+              Annual vacation strictly requires a continuous 1-month block (28–31 days) with mandatory administrator consent.
+            </p>
           </div>
-        </GlassCard>
+          <div className="mt-5 pt-3.5 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground font-medium">
+            <span className="text-[11px] font-semibold text-foreground/85">Admin Authorization</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">
+              Mandatory Check
+            </span>
+          </div>
+        </div>
 
-        <GlassCard className="p-4 border-border/80 bg-white/70 dark:bg-card/70 hover:border-emerald-500/40 transition-all flex items-start gap-3.5 shadow-xs">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-            <ShieldCheck size={20} />
-          </div>
+        {/* Card 3: Approval Routing */}
+        <div className="rounded-3xl sm:rounded-[1.75rem] border p-6 sm:p-7 transition-all flex flex-col justify-between shadow-xs hover:shadow-xl hover:-translate-y-0.5 duration-300 border-emerald-500/25 bg-gradient-to-br from-emerald-500/[0.04] via-card to-card hover:border-emerald-500/40 hover:shadow-emerald-500/5 ring-1 ring-emerald-500/10">
           <div>
-            <div className="text-xs font-bold text-foreground">Approval Routing</div>
-            <div className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight mt-0.5">
-              Admin Verified
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-xs">
+                <ShieldCheck size={22} strokeWidth={2.2} />
+              </div>
+              <span className="text-[11px] sm:text-xs font-black tracking-widest uppercase select-none text-emerald-600 dark:text-emerald-400 pt-1">
+                VERIFIED
+              </span>
             </div>
-            <div className="text-[11px] text-muted-foreground mt-0.5">
-              Every request is reviewed & confirmed by Admin
+            <div className="mt-5 space-y-1">
+              <h3 className="text-xl font-extrabold text-foreground tracking-tight">
+                Approval Routing
+              </h3>
+              <div className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                Admin Verified
+              </div>
             </div>
+            <p className="mt-3.5 text-sm text-muted-foreground leading-relaxed">
+              Every time-off request is routed to organizational leadership and confirmed by administrators before recording.
+            </p>
           </div>
-        </GlassCard>
+          <div className="mt-5 pt-3.5 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground font-medium">
+            <span className="text-[11px] font-semibold text-foreground/85">Review System</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+              Active Workflow
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* ========================================================================= */}
-      {/* 2. SUMMARY METRIC TILES                                                  */}
+      {/* 2. SUMMARY METRIC TILES (Styled like reference cards)                     */}
       {/* ========================================================================= */}
-      <div className="mb-6 grid grid-cols-1 gap-3.5 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <LeaveMetric label="Pending review" value={pendingCount} icon={Clock} tone="amber" />
         <LeaveMetric label="Approved leaves" value={approvedCount} icon={CheckCircle2} tone="green" />
         <LeaveMetric label="Rejected requests" value={rejectedCount} icon={ShieldAlert} tone="red" />
@@ -894,74 +943,77 @@ function LeaveMetric({
   icon: typeof Clock;
   tone: "amber" | "green" | "blue" | "red";
 }) {
-  const colors = {
-    amber: "border-warning/25 bg-warning/10 text-warning",
-    green: "border-success/25 bg-success/10 text-success",
-    blue: "border-blue-500/25 bg-blue-500/10 text-blue-600 dark:text-blue-400",
-    red: "border-red-500/25 bg-red-500/10 text-red-600 dark:text-red-400",
-  };
+  const meta = {
+    amber: {
+      tag: "PENDING",
+      border: "border-amber-500/25 hover:border-amber-500/40 ring-amber-500/10 hover:shadow-amber-500/5",
+      bg: "from-amber-500/[0.04] via-card to-card",
+      iconBox: "border-amber-500/30 bg-amber-500/10 text-amber-500 dark:text-amber-400",
+      textColor: "text-amber-500 dark:text-amber-400",
+      desc: "Awaiting review",
+    },
+    green: {
+      tag: "APPROVED",
+      border: "border-emerald-500/25 hover:border-emerald-500/40 ring-emerald-500/10 hover:shadow-emerald-500/5",
+      bg: "from-emerald-500/[0.04] via-card to-card",
+      iconBox: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+      textColor: "text-emerald-600 dark:text-emerald-400",
+      desc: "Confirmed active",
+    },
+    red: {
+      tag: "REJECTED",
+      border: "border-rose-500/30 hover:border-rose-500/45 ring-rose-500/10 hover:shadow-rose-500/5",
+      bg: "from-rose-500/[0.05] via-card to-card",
+      iconBox: "border-rose-500/30 bg-rose-500/10 text-rose-500 dark:text-rose-400",
+      textColor: "text-rose-500 dark:text-rose-400",
+      desc: "Declined requests",
+    },
+    blue: {
+      tag: "TOTAL",
+      border: "border-blue-500/25 hover:border-blue-500/40 ring-blue-500/10 hover:shadow-blue-500/5",
+      bg: "from-blue-500/[0.04] via-card to-card",
+      iconBox: "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400",
+      textColor: "text-blue-600 dark:text-blue-400",
+      desc: "Requested days",
+    },
+  }[tone];
 
   return (
-    <GlassCard className="border-border/80 bg-white/70 dark:bg-card/70 shadow-xs hover:shadow-sm transition-all">
+    <div
+      className={cn(
+        "rounded-3xl sm:rounded-[1.75rem] border p-6 transition-all flex flex-col justify-between shadow-xs hover:shadow-xl hover:-translate-y-0.5 duration-300 ring-1 bg-gradient-to-br",
+        meta.border,
+        meta.bg,
+      )}
+    >
+      {/* Top Row: Square-rounded Icon Badge (Left) + Minimal Uppercase Tag (Right, like CORE) */}
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-            {label}
-          </div>
-          <div className="mt-1.5 text-2xl font-extrabold tabular-nums text-foreground tracking-tight">
-            {value}
-          </div>
-        </div>
         <div
           className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border shadow-xs",
-            colors[tone],
+            "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border shadow-xs transition-transform",
+            meta.iconBox,
           )}
         >
-          <Icon size={18} />
+          <Icon size={22} strokeWidth={2.2} />
         </div>
+        <span className={cn("text-[11px] font-black tracking-widest uppercase select-none pt-1", meta.textColor)}>
+          {meta.tag}
+        </span>
       </div>
-    </GlassCard>
-  );
-}
 
-function LeaveStatusPill({ status }: { status: string }) {
-  const isApproved = status === "approved";
-  const isRejected = status === "rejected";
-  const isCancelled = status === "cancelled";
-
-  if (isRejected) {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-red-500/40 bg-red-500/15 px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-red-600 dark:text-red-400 shrink-0">
-        <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
-        <span>Rejected</span>
-      </span>
-    );
-  }
-
-  if (isApproved) {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/35 bg-emerald-500/15 px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 shrink-0">
-        <CheckCircle2 size={12} className="text-emerald-600" />
-        <span>Approved</span>
-      </span>
-    );
-  }
-
-  if (isCancelled) {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground shrink-0">
-        <X size={11} />
-        <span>Cancelled</span>
-      </span>
-    );
-  }
-
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/35 bg-amber-500/15 px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-wider text-amber-700 dark:text-amber-300 shrink-0">
-      <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-      <span>Pending</span>
-    </span>
+      {/* Main Metric Value + Label (Matching Reference Hierarchy) */}
+      <div className="mt-4">
+        <div className="text-3xl sm:text-4xl font-extrabold tracking-tight tabular-nums text-foreground">
+          {value}
+        </div>
+        <div className={cn("text-xs font-bold uppercase tracking-wider mt-1", meta.textColor)}>
+          {label}
+        </div>
+        <p className="text-[11px] text-muted-foreground mt-1">
+          {meta.desc}
+        </p>
+      </div>
+    </div>
   );
 }
 
