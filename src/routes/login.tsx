@@ -225,6 +225,10 @@ function LoginPage() {
       }
 
       setAvatarState("celebrating");
+      // The dashboard consumes this one-time session handoff only after the
+      // authenticated employee profile is ready. It is intentionally not a
+      // persistent preference, so refreshes and navigation cannot reopen it.
+      sessionStorage.setItem(`aslenix_welcome_pending_${authData.user.id}`, "true");
       toast.success("Welcome back");
 
       // AuthProvider already loads the profile and roles after sign-in. Going through

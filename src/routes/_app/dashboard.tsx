@@ -454,23 +454,25 @@ function EmployeeDashboard() {
     return () => window.clearInterval(interval);
   }, []);
 
-  // Morning Greeting & Daily Brief: opens once per day after morning login if already checked in
+  // The welcome is handed off by a successful login, then consumed once after
+  // this employee's profile is ready. It never derives from dashboard renders,
+  // attendance state, refreshes, or navigation.
   useEffect(() => {
-    if (!user || !today?.check_in_time) return;
-    const storageKey = `aslenix_morning_greeting_${user.id}_${todayDate}`;
-    const alreadyShown = localStorage.getItem(storageKey);
-    if (!alreadyShown) {
+    if (!user || !profile) return;
+    const storageKey = `aslenix_welcome_pending_${user.id}`;
+    if (sessionStorage.getItem(storageKey) === "true") {
+      sessionStorage.removeItem(storageKey);
       const timer = window.setTimeout(() => {
         setGreetingOpen(true);
-        localStorage.setItem(storageKey, "true");
-      }, 750);
+      }, 250);
       return () => window.clearTimeout(timer);
     }
-  }, [user, today, todayDate]);
+  }, [user, profile]);
 
   // Functional Check-in
   const checkIn = async () => {
     if (!user) return;
+    if (busy) return;
     if (isWeeklyOff) return toast.info(`Today is a weekly off (${WEEKLY_OFF_LABEL}). Attendance is not required.`);
     if (isAttendanceCutoffPassed()) {
       return;
@@ -517,14 +519,12 @@ function EmployeeDashboard() {
         : `Checked in on time for ${assignedShift.name}`,
     );
 
-    // ASLENIX Smart Greeting: trigger morning greeting automatically after successful check-in confirmation
-    setGreetingOpen(true);
-    localStorage.setItem(`aslenix_morning_greeting_${user.id}_${todayDate}`, "true");
   };
 
   // Functional Check-out
   const checkOut = async () => {
     if (!user || !today) return;
+    if (busy) return;
     setBusy(true);
     let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
     try {
@@ -762,16 +762,6 @@ function EmployeeDashboard() {
             {/* Live Time Count: Placed to the left side of the profile */}
             <LiveTimeCount />
 
-            {/* Daily Brief & Morning Greeting trigger */}
-            <button
-              type="button"
-              onClick={() => setGreetingOpen(true)}
-              title="Daily Morning Brief & Greeting"
-              className="flex-initial inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 px-3 py-2 text-xs font-semibold text-amber-700 dark:text-amber-300 shadow-xs hover:border-amber-400 transition-all cursor-pointer"
-            >
-              <Sparkles size={13} className="text-amber-500" />
-              <span className="hidden sm:inline">Daily Brief</span>
-            </button>
 
             <Link
               to="/profile"
@@ -890,36 +880,14 @@ function EmployeeDashboard() {
             >
               <LogIn size={15} className="mr-1.5" /> Check In
             </Button>
-            {today?.check_out_time ? (
-              <Button
-                type="button"
-                onClick={() => {
-                  setCheckoutModalData({
-                    checkInTime: today.check_in_time ? format(new Date(today.check_in_time), "hh:mm a") : null,
-                    checkOutTime: today.check_out_time ? format(new Date(today.check_out_time), "hh:mm a") : null,
-                    workHours: today.work_hours,
-                    isEarly: today.is_early_checkout,
-                    earlyMinutes: today.early_checkout_minutes,
-                    overtimeMinutes: today.overtime_minutes,
-                  });
-                  setCheckoutGreetingOpen(true);
-                }}
-                variant="outline"
-                title="View shift completion summary & farewell message"
-                className="flex-1 xl:flex-initial h-9 sm:h-10 rounded-xl border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-semibold px-4 text-xs sm:text-sm shadow-xs transition-colors cursor-pointer"
-              >
-                <CheckCircle2 size={15} className="mr-1.5 text-emerald-500" /> Day Completed
-              </Button>
-            ) : (
-              <Button
-                onClick={checkOut}
-                disabled={busy || !today || Boolean(today?.check_out_time)}
-                variant="outline"
-                className="flex-1 xl:flex-initial h-9 sm:h-10 rounded-xl border-border/80 bg-white/80 hover:bg-white text-foreground font-semibold px-4 text-xs sm:text-sm shadow-xs transition-colors"
-              >
-                <LogOut size={15} className="mr-1.5" /> Check Out
-              </Button>
-            )}
+            <Button
+              onClick={checkOut}
+              disabled={busy || !today || Boolean(today?.check_out_time)}
+              variant="outline"
+              className="flex-1 xl:flex-initial h-9 sm:h-10 rounded-xl border-border/80 bg-white/80 hover:bg-white text-foreground font-semibold px-4 text-xs sm:text-sm shadow-xs transition-colors"
+            >
+              <LogOut size={15} className="mr-1.5" /> {today?.check_out_time ? "Day Completed" : "Check Out"}
+            </Button>
           </div>
         </div>
       </section>
@@ -1933,11 +1901,12 @@ function EmployeeDashboard() {
         </div>
       </section>
 
-      {/* Morning Greeting & Daily Motivation Modal (Once per day after login / check-in) */}
+      {/* Welcome is opened only from the one-time successful-login handoff above. */}
       <MorningGreetingModal
         open={greetingOpen}
         onOpenChange={setGreetingOpen}
         userName={profile?.full_name || user?.user_metadata?.full_name || firstName}
+        employeeId={user?.id}
         nepaliDate={nepaliToday}
         gregorianDate={format(new Date(), "EEEE, MMM d, yyyy")}
         shiftName={assignedShift?.name || "Morning Shift"}
@@ -1948,7 +1917,6 @@ function EmployeeDashboard() {
         }
         isCheckedIn={!!today?.check_in_time}
         checkInTime={today?.check_in_time ? format(new Date(today.check_in_time), "hh:mm a") : null}
-        onCheckIn={checkIn}
         isWeeklyOff={isWeeklyOff}
       />
 
@@ -1957,6 +1925,7 @@ function EmployeeDashboard() {
         open={checkoutGreetingOpen}
         onOpenChange={setCheckoutGreetingOpen}
         userName={profile?.full_name || user?.user_metadata?.full_name || firstName}
+        employeeId={user?.id}
         checkInTime={
           checkoutModalData?.checkInTime ??
           (today?.check_in_time ? format(new Date(today.check_in_time), "hh:mm a") : null)

@@ -1,31 +1,16 @@
-import { useMemo, useEffect, useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { useEffect, useMemo, useState } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { AslenixLogo } from "@/components/AslenixLogo";
-import {
-  getSmartGreetingMessage,
-  getDynamicMorningTitle,
-  GreetingMessage,
-} from "@/lib/greeting-service";
-import {
-  Sparkles,
-  ArrowRight,
-  Sun,
-  Moon,
-  Heart,
-  CheckCircle2,
-} from "lucide-react";
+import { getSmartGreetingMessage, getWelcomeGreeting, GreetingMessage, GreetingMode, MOTIVATIONAL_QUOTES } from "@/lib/greeting-service";
+import { ArrowRight, CheckCircle2, MoonStar, Sparkles, Sun, Sunset } from "lucide-react";
 
 export interface AslenixSmartGreetingModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  mode: "morning" | "evening";
+  mode: GreetingMode;
   employeeName?: string;
-  onAction?: () => void;
+  employeeId?: string;
+  isCheckedIn?: boolean;
 }
 
 export function AslenixSmartGreetingModal({
@@ -33,140 +18,73 @@ export function AslenixSmartGreetingModal({
   onOpenChange,
   mode,
   employeeName = "Team Member",
-  onAction,
+  employeeId,
+  isCheckedIn = false,
 }: AslenixSmartGreetingModalProps) {
-  const isMorning = mode === "morning";
+  const [smartMessage, setSmartMessage] = useState<GreetingMessage>(MOTIVATIONAL_QUOTES[0]);
+  const isWelcome = mode === "welcome";
 
-  // Select a personalized rotating company-approved message
-  const [smartMessage, setSmartMessage] = useState<GreetingMessage>(() =>
-    getSmartGreetingMessage(mode),
-  );
-
-  // Rotate / re-select message whenever modal opens
   useEffect(() => {
-    if (open) {
-      setSmartMessage(getSmartGreetingMessage(mode));
-    }
-  }, [open, mode]);
+    if (open) setSmartMessage(getSmartGreetingMessage(mode, employeeId));
+  }, [open, mode, employeeId]);
 
-  // Dynamic greeting title
-  const dynamicGreetingTitle = useMemo(() => {
-    return isMorning ? getDynamicMorningTitle() : "Day Completed!";
-  }, [isMorning]);
-
-  // Personalized employee headline
-  const employeeHeadline = useMemo(() => {
-    return isMorning
-      ? `Welcome back, ${employeeName}.`
-      : `Great work today, ${employeeName}!`;
-  }, [isMorning, employeeName]);
-
-  // Closing friendly sign-off
-  const closingMessage = useMemo(() => {
-    return isMorning
-      ? "Wishing you a productive day!"
-      : "Take a well-deserved rest. See you tomorrow!";
-  }, [isMorning]);
-
-  const handleActionClick = () => {
-    onAction?.();
-    onOpenChange(false);
-  };
+  const greeting = useMemo(() => (isWelcome ? getWelcomeGreeting() : "DAY COMPLETED!"), [isWelcome, open]);
+  const headline = isWelcome ? `Welcome, ${employeeName}.` : `Thank you, ${employeeName}.`;
+  const supportingMessage = isWelcome
+    ? "Wishing you a focused, productive day ahead."
+    : "Your dedication moves ASLENIX forward. Have a wonderful evening.";
+  const Icon = isWelcome
+    ? greeting === "GOOD AFTERNOON!" ? Sunset : greeting === "GOOD EVENING!" || greeting === "WELCOME BACK!" ? MoonStar : Sun
+    : MoonStar;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md sm:max-w-lg p-0 overflow-hidden rounded-3xl border border-border/80 bg-card shadow-2xl animate-in fade-in-0 zoom-in-95 duration-200">
-        {/* Modal Header using system's standard primary/purple subtle gradient */}
-        <div className="border-b border-border/70 bg-gradient-to-r from-primary/10 via-purple-500/10 to-transparent px-6 sm:px-7 py-5 flex items-center justify-between">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-md overflow-hidden rounded-3xl border border-[#dcd7f3] bg-[#f8f7fc] p-0 text-[#171c2d] shadow-2xl data-[state=open]:zoom-in-95 data-[state=open]:fade-in-0 motion-reduce:animate-none sm:max-w-lg">
+        <div className="flex items-center justify-between border-b border-[#e2def1] bg-gradient-to-r from-[#e9dfff] via-[#d8e5ff] to-white px-5 py-4 sm:px-7 sm:py-5">
           <AslenixLogo size="sm" />
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
-            <Sparkles size={11} />
-            <span>{isMorning ? "Smart Welcome" : "Shift Complete"}</span>
+          <div className="mr-7 inline-flex items-center gap-1.5 rounded-full border border-[#6250d5]/20 bg-white/70 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6250d5]">
+            <Sparkles size={11} /> Smart Welcome
           </div>
         </div>
 
-        {/* Modal Core Body */}
-        <div className="p-6 sm:p-7 text-center space-y-5">
-          {/* System standard pastel gradient icon box */}
+        <div className="space-y-5 bg-white px-5 py-6 text-center sm:px-7 sm:py-7">
           <div className="flex justify-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#c4daff] to-[#e5ccff] text-[#0f172a] shadow-xs border border-white/60">
-              {isMorning ? (
-                <Sun size={26} className="text-amber-500" />
-              ) : (
-                <Moon size={24} className="text-primary" />
-              )}
+            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white bg-gradient-to-br from-[#e9dfff] to-[#d8e5ff] text-[#6250d5] shadow-sm animate-in fade-in zoom-in-90 duration-500 motion-reduce:animate-none">
+              <Icon size={28} strokeWidth={1.8} />
             </div>
           </div>
 
-          {/* Titles & Personal Greeting */}
-          <div className="space-y-1">
-            <DialogTitle className="text-xs font-bold uppercase tracking-wider text-primary">
-              {dynamicGreetingTitle}
-            </DialogTitle>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-foreground tracking-tight leading-snug">
-              {employeeHeadline}
-            </h2>
+          <div className="space-y-1.5">
+            <DialogTitle className="text-xs font-extrabold tracking-[0.16em] text-[#6250d5]">{greeting}</DialogTitle>
+            <h2 className="text-xl font-extrabold tracking-tight text-[#171c2d] sm:text-2xl">{headline}</h2>
           </div>
 
-          {/* Personalized Message Card matching system theme */}
-          <div className="rounded-2xl border border-border/80 bg-muted/40 p-4 text-left relative overflow-hidden">
+          <div key={smartMessage.id} className="rounded-2xl border border-[#ded9f1] bg-[#f8f7fc] p-4 text-left shadow-sm animate-in fade-in slide-in-from-bottom-1 duration-300 motion-reduce:animate-none">
             <div className="flex items-start gap-3">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
-                <Sparkles size={13} />
+              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#6250d5]/15 bg-[#e9dfff] text-[#6250d5]">
+                <Sparkles size={14} />
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm font-medium text-foreground leading-relaxed italic">
-                  "{smartMessage.text}"
-                </p>
-                {smartMessage.tag && (
-                  <div className="mt-2 text-[10px] font-bold uppercase tracking-wider text-primary">
-                    · {smartMessage.tag}
-                  </div>
-                )}
+              <div>
+                <p className="text-sm font-medium leading-relaxed text-[#171c2d]">“{smartMessage.text}”</p>
+                <p className="mt-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-[#6250d5]">{smartMessage.category}</p>
               </div>
             </div>
           </div>
 
-          {/* Friendly Closing Line */}
-          <DialogDescription className="text-xs font-medium text-muted-foreground">
-            {closingMessage}
-          </DialogDescription>
+          <DialogDescription className="text-xs font-medium leading-relaxed text-slate-600">{supportingMessage}</DialogDescription>
 
-          {/* Action Button: Styled in Signature ASLENIX Gradient */}
-          <div className="pt-2">
-            <button
-              type="button"
-              onClick={handleActionClick}
-              className="w-full h-11 sm:h-12 rounded-xl bg-gradient-to-r from-[#c4daff] via-[#d5d3ff] to-[#e5ccff] text-[#0f172a] font-bold text-sm shadow-md hover:shadow-lg hover:brightness-105 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group cursor-pointer border-0"
-            >
-              {isMorning ? (
-                <>
-                  <span>Let's Get Started</span>
-                  <ArrowRight
-                    size={16}
-                    className="group-hover:translate-x-0.5 transition-transform"
-                  />
-                </>
-              ) : (
-                <>
-                  <Heart
-                    size={16}
-                    className="text-rose-500 fill-rose-500/30 group-hover:scale-110 transition-transform"
-                  />
-                  <span>Have a Great Evening</span>
-                </>
-              )}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="group flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-[#6250d5]/15 bg-gradient-to-r from-[#d8e5ff] via-[#e9dfff] to-[#d8e5ff] text-sm font-bold text-[#171c2d] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 motion-reduce:transform-none"
+          >
+            <span>{isWelcome ? "Let's Get Started" : "Done"}</span>
+            <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none" />
+          </button>
 
-          {/* Subtle System Status Note */}
-          <div className="text-center text-[11px] text-muted-foreground flex items-center justify-center gap-1.5 pt-1">
+          <div className="flex items-center justify-center gap-1.5 pt-0.5 text-[11px] text-slate-500">
             <CheckCircle2 size={13} className="text-emerald-500" />
-            <span>
-              {isMorning
-                ? "Attendance recorded · Have a great shift"
-                : "Shift checkout recorded · Rest well"}
-            </span>
+            <span>{isWelcome ? (isCheckedIn ? "Attendance recorded" : "Ready when you are") : "Checkout completed"}</span>
           </div>
         </div>
       </DialogContent>

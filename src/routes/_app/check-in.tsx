@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/PageHeader";
@@ -58,7 +58,6 @@ import {
   isAttendanceCutoffPassed,
 } from "@/lib/attendance-engine";
 import { CheckoutGreetingModal } from "@/components/CheckoutGreetingModal";
-import { MorningGreetingModal } from "@/components/MorningGreetingModal";
 
 export const Route = createFileRoute("/_app/check-in")({ component: CheckInPage });
 
@@ -83,12 +82,13 @@ type AttendanceRow = {
 };
 
 function CheckInPage() {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, profile, isAdmin, signOut } = useAuth();
   const nav = useNavigate();
   const [today, setToday] = useState<AttendanceRow | null>(null);
   const [history, setHistory] = useState<AttendanceRow[]>([]);
   const [assignedShift, setAssignedShift] = useState<Shift>(DEFAULT_MORNING_SHIFT);
   const [busy, setBusy] = useState(false);
+  const checkInInFlight = useRef(false);
   const [loading, setLoading] = useState(true);
   const todayDate = format(new Date(), "yyyy-MM-dd");
   const isWeeklyOff = isWeeklyOffDate(todayDate);
@@ -96,7 +96,6 @@ function CheckInPage() {
   // Attendance closes at 2:00 PM Nepal time.
   const [isPastCutoff, setIsPastCutoff] = useState(() => isAttendanceCutoffPassed());
   const [showProhibitedDialog, setShowProhibitedDialog] = useState(false);
-  const [morningGreetingOpen, setMorningGreetingOpen] = useState(false);
   const [checkoutGreetingOpen, setCheckoutGreetingOpen] = useState(false);
   const [checkoutModalData, setCheckoutModalData] = useState<{
     checkInTime?: string | null;
@@ -157,17 +156,27 @@ function CheckInPage() {
   const checkIn = async () => {
     if (!user) return;
     if (isWeeklyOff) return toast.info("Saturday is a weekly off. Attendance is not required.");
+    if (busy || checkInInFlight.current) return;
+
+    // A resumed or stale screen can briefly show the check-in action after an
+    // attendance row already exists. Refresh instead of creating a duplicate.
+    if (today?.check_in_time) {
+      await load();
+      return toast.info("You are already checked in for today.");
+    }
 
     if (isAttendanceCutoffPassed()) {
       return;
     }
 
+    checkInInFlight.current = true;
     setBusy(true);
 
     let location: Awaited<ReturnType<typeof getVerifiedAttendanceLocation>>;
     try {
       location = await getVerifiedAttendanceLocation();
     } catch (error) {
+      checkInInFlight.current = false;
       setBusy(false);
       return toast.error(error instanceof Error ? error.message : "Unable to verify location");
     }
@@ -196,8 +205,15 @@ function CheckInPage() {
       .select()
       .maybeSingle();
 
+    checkInInFlight.current = false;
     setBusy(false);
-    if (error || !insertedToday) return toast.error(error?.message ?? "Unable to check in");
+    if (error || !insertedToday) {
+      if (error?.code === "23505") {
+        await load();
+        return toast.info("Today's attendance already exists. Your check-in status has been refreshed.");
+      }
+      return toast.error(error?.message ?? "Unable to check in");
+    }
     setToday(insertedToday as AttendanceRow);
     await load();
     if (evalResult.is_late) {
@@ -206,11 +222,6 @@ function CheckInPage() {
       toast.success(`Checked in on time for ${assignedShift.name}!\nWhatsApp notification: Queued`);
     }
 
-    // ASLENIX Smart Greeting: trigger morning greeting automatically upon successful check-in
-    setMorningGreetingOpen(true);
-    if (user) {
-      localStorage.setItem(`aslenix_morning_greeting_${user.id}_${todayDate}`, "true");
-    }
   };
 
   const checkOut = async () => {
@@ -586,26 +597,6 @@ function CheckInPage() {
                           )}
                           <Button
                             type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setCheckoutModalData({
-                                checkInTime: today.check_in_time ? format(new Date(today.check_in_time), "hh:mm a") : null,
-                                checkOutTime: today.check_out_time ? format(new Date(today.check_out_time), "hh:mm a") : null,
-                                workHours: today.work_hours,
-                                isEarly: today.is_early_checkout,
-                                earlyMinutes: today.early_checkout_minutes ?? 0,
-                                overtimeMinutes: today.overtime_minutes ?? 0,
-                              });
-                              setCheckoutGreetingOpen(true);
-                            }}
-                            className="mt-3 rounded-xl border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold cursor-pointer"
-                          >
-                            <Sparkles size={13} className="mr-1.5 text-emerald-500" />
-                            View Day Summary
-                          </Button>
-                          <Button
-                            type="button"
                             variant="ghost"
                             size="sm"
                             onClick={() => nav({ to: "/my-attendance" })}
@@ -723,18 +714,12 @@ function CheckInPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Morning Greeting & Daily Motivation Modal */}
-      <MorningGreetingModal
-        open={morningGreetingOpen}
-        onOpenChange={setMorningGreetingOpen}
-        userName={user?.user_metadata?.full_name || "Team Member"}
-      />
-
       {/* Shift Checkout Farewell & Day Completion Modal */}
       <CheckoutGreetingModal
         open={checkoutGreetingOpen}
         onOpenChange={setCheckoutGreetingOpen}
-        userName={user?.user_metadata?.full_name || "Team Member"}
+        userName={profile?.full_name || user?.user_metadata?.full_name || "Team Member"}
+        employeeId={user?.id}
         checkInTime={
           checkoutModalData?.checkInTime ??
           (today?.check_in_time ? format(new Date(today.check_in_time), "hh:mm a") : null)
