@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PageHeader } from "@/components/PageHeader";
@@ -44,7 +44,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { formatNepaliDate } from "@/lib/nepali-calendar";
+import { formatNepaliDate, getNepaliDate } from "@/lib/nepali-calendar";
 import { isWeeklyOffDate, WEEKLY_OFF_LABEL } from "@/lib/weekly-off";
 import { useAppResume } from "@/lib/use-app-resume";
 import {
@@ -116,7 +116,8 @@ function CheckInPage() {
   const load = async () => {
     if (!user) return;
     setLoading(true);
-    const historyStart = format(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000), "yyyy-MM-dd");
+    // The Nepali calendar below presents one month plus 15 days (45 days total).
+    const historyStart = format(new Date(Date.now() - 44 * 24 * 60 * 60 * 1000), "yyyy-MM-dd");
     const [
       { data: todayRow, error: todayError },
       { data: historyRows, error: historyError },
@@ -646,6 +647,8 @@ function CheckInPage() {
         </GlassCard>
       </div>
 
+      <AttendanceHistoryCalendar history={history} />
+
       {/* Pop-up dialog notifying employees that attendance after 2:00 PM is prohibited */}
       <Dialog open={showProhibitedDialog} onOpenChange={setShowProhibitedDialog}>
         <DialogContent className="max-w-md border-destructive/30 bg-background/95 backdrop-blur-xl sm:rounded-2xl">
@@ -807,6 +810,137 @@ function HistoryTime({ label, value }: { label: string; value: string }) {
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
       <div className="mt-1 font-semibold tabular-nums text-foreground">{value}</div>
     </div>
+  );
+}
+
+const ATTENDANCE_CALENDAR_DAYS = 45;
+
+function AttendanceHistoryCalendar({ history }: { history: AttendanceRow[] }) {
+  const calendar = useMemo(() => {
+    const byDate = new Map(history.map((record) => [record.date, record]));
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const rangeStart = new Date(today);
+    rangeStart.setDate(rangeStart.getDate() - (ATTENDANCE_CALENDAR_DAYS - 1));
+
+    const cells: Array<{ date: Date; key: string; attendance: AttendanceRow | null; weeklyOff: boolean } | null> = [];
+    for (let blank = 0; blank < rangeStart.getDay(); blank += 1) cells.push(null);
+
+    for (let offset = 0; offset < ATTENDANCE_CALENDAR_DAYS; offset += 1) {
+      const date = new Date(rangeStart);
+      date.setDate(rangeStart.getDate() + offset);
+      const key = format(date, "yyyy-MM-dd");
+      cells.push({ date, key, attendance: byDate.get(key) ?? null, weeklyOff: isWeeklyOffDate(key) });
+    }
+
+    const recorded = history.filter((record) => record.check_in_time).length;
+    const completed = history.filter((record) => record.check_out_time).length;
+    return { cells, rangeStart, today, recorded, completed };
+  }, [history]);
+
+  return (
+    <GlassCard tone="blue" className="mt-6 overflow-hidden border-border p-0 shadow-sm">
+      <div className="flex flex-col gap-4 border-b border-border/70 bg-gradient-to-r from-primary/10 via-transparent to-accent/10 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-card text-primary shadow-xs">
+            <CalendarDays size={20} />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-foreground sm:text-lg">Nepali Attendance Calendar</h2>
+            <p className="text-xs text-muted-foreground">
+              Last 1 month and 15 days · {formatNepaliDate(calendar.rangeStart, "DD MMMM YYYY")} – {formatNepaliDate(calendar.today, "DD MMMM YYYY")} BS
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 text-[10px] font-semibold uppercase tracking-wider">
+          <CalendarSummary label="Checked in" value={calendar.recorded} tone="text-primary" />
+          <CalendarSummary label="Completed" value={calendar.completed} tone="text-success" />
+        </div>
+      </div>
+
+      <div className="border-b border-border/60 px-4 py-3 sm:px-5">
+        <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
+          <CalendarLegend className="bg-success" label="Completed" />
+          <CalendarLegend className="bg-primary" label="Checked in" />
+          <CalendarLegend className="bg-warning" label="Working / pending checkout" />
+          <CalendarLegend className="bg-muted-foreground/50" label="No record" />
+          <CalendarLegend className="bg-accent" label={WEEKLY_OFF_LABEL} />
+        </div>
+      </div>
+
+      <div className="overflow-x-auto p-3 sm:p-4">
+        <div className="min-w-[640px]">
+          <div className="grid grid-cols-7 gap-1.5 pb-1.5">
+            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+              <div key={day} className="px-2 py-1 text-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                {day}
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-1.5">
+            {calendar.cells.map((cell, index) =>
+              cell ? <AttendanceCalendarDay key={cell.key} cell={cell} todayKey={format(calendar.today, "yyyy-MM-dd")} /> : <div key={`blank-${index}`} aria-hidden="true" className="min-h-[108px] rounded-xl bg-muted/20" />,
+            )}
+          </div>
+        </div>
+      </div>
+    </GlassCard>
+  );
+}
+
+function AttendanceCalendarDay({
+  cell,
+  todayKey,
+}: {
+  cell: { date: Date; key: string; attendance: AttendanceRow | null; weeklyOff: boolean };
+  todayKey: string;
+}) {
+  const bsDate = getNepaliDate(cell.date);
+  const isToday = cell.key === todayKey;
+  const status = getCalendarStatus(cell.attendance, cell.weeklyOff);
+  const showMonth = bsDate.getDate() === 1 || cell.date.getDate() === 1;
+
+  return (
+    <div
+      className={`min-h-[108px] rounded-xl border p-2 transition-colors ${isToday ? "border-primary/50 bg-primary/5 shadow-xs" : "border-border/70 bg-card/70"}`}
+      title={`${formatNepaliDate(cell.key, "dddd, DD MMMM YYYY")} BS · ${status.label}`}
+    >
+      <div className="flex items-start justify-between gap-1">
+        <div>
+          <div className="text-sm font-bold tabular-nums text-foreground">{bsDate.getDate()}</div>
+          {showMonth && <div className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">{bsDate.format("MMM")}</div>}
+        </div>
+        <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${status.dotClass}`} aria-label={status.label} />
+      </div>
+      <div className={`mt-1.5 line-clamp-1 text-[10px] font-semibold ${status.textClass}`}>{status.label}</div>
+      {cell.attendance?.check_in_time ? (
+        <div className="mt-1.5 space-y-0.5 text-[10px] tabular-nums text-muted-foreground">
+          <div>In {format(new Date(cell.attendance.check_in_time), "HH:mm")}</div>
+          <div>Out {cell.attendance.check_out_time ? format(new Date(cell.attendance.check_out_time), "HH:mm") : "—"}</div>
+        </div>
+      ) : (
+        <div className="mt-1.5 text-[10px] text-muted-foreground">{format(cell.date, "EEE")}</div>
+      )}
+    </div>
+  );
+}
+
+function getCalendarStatus(attendance: AttendanceRow | null, weeklyOff: boolean) {
+  if (attendance?.check_out_time) return { label: "Completed", dotClass: "bg-success", textClass: "text-success" };
+  if (attendance?.check_in_time) return { label: "Working", dotClass: "bg-warning", textClass: "text-warning" };
+  if (weeklyOff) return { label: WEEKLY_OFF_LABEL, dotClass: "bg-accent", textClass: "text-accent" };
+  return { label: "No record", dotClass: "bg-muted-foreground/50", textClass: "text-muted-foreground" };
+}
+
+function CalendarLegend({ className, label }: { className: string; label: string }) {
+  return <span className="inline-flex items-center gap-1.5"><i className={`h-2 w-2 rounded-full ${className}`} />{label}</span>;
+}
+
+function CalendarSummary({ label, value, tone }: { label: string; value: number; tone: string }) {
+  return (
+    <span className="rounded-lg border border-border bg-card px-2.5 py-1.5 text-muted-foreground">
+      <strong className={`mr-1 tabular-nums ${tone}`}>{value}</strong>{label}
+    </span>
   );
 }
 
