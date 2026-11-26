@@ -7,7 +7,7 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const { loading, user, isAdmin, isApproved, profile } = useAuth();
+  const { loading, user, isAdmin, isHR, isApproved, profile } = useAuth();
 
   if (isPasswordRecoveryHash()) return <Navigate to="/reset-password" />;
 
@@ -44,7 +44,7 @@ function Index() {
   )
     return <Navigate to="/account-locked" />;
   if (!isApproved) return <Navigate to="/pending" />;
-  return <Navigate to={isAdmin ? "/admin" : "/dashboard"} />;
+  return <Navigate to={isAdmin || isHR ? "/admin" : "/dashboard"} />;
 }
 
 function isPasswordRecoveryHash() {
