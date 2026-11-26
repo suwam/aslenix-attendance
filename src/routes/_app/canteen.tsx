@@ -37,7 +37,8 @@ import {
 export const Route = createFileRoute("/_app/canteen")({ component: CanteenPage });
 
 function CanteenPage() {
-  const { profile, user, isAdmin, signOut } = useAuth();
+  const { profile, user, isAdmin, isHR, signOut } = useAuth();
+  const isManager = isAdmin || isHR;
   const nav = useNavigate();
 
   const [loading, setLoading] = useState(true);
@@ -247,15 +248,15 @@ function CanteenPage() {
 
   // For employees, auto-highlight their own row
   useEffect(() => {
-    if (!isAdmin && currentEmployee && !highlightEmployeeId) {
+    if (!isManager && currentEmployee && !highlightEmployeeId) {
       setHighlightEmployeeId(currentEmployee.id);
     }
-  }, [isAdmin, currentEmployee, highlightEmployeeId]);
+  }, [isManager, currentEmployee, highlightEmployeeId]);
 
   // Check if current user can edit a given employee's attendance
   const canEditEmployee = useCallback(
     (emp: CanteenEmployee): boolean => {
-      if (isAdmin) return true;
+      if (isManager) return true;
       if (!user) return false;
 
       // Link by user_id
@@ -270,7 +271,7 @@ function CanteenPage() {
 
       return false;
     },
-    [isAdmin, user, profile],
+    [isManager, user, profile],
   );
 
   // Toggle attendance for an employee and date
@@ -281,28 +282,28 @@ function CanteenPage() {
   ) => {
     if (!currentPeriod) return;
 
-    if (currentPeriod.is_locked && !isAdmin) {
+    if (currentPeriod.is_locked && !isManager) {
       toast.error("This canteen period is locked for edits.");
       return;
     }
 
     // Employees can only mark canteen attendance for the same day (today)
     const todayDateString = format(new Date(), "yyyy-MM-dd");
-    if (!isAdmin && dateString !== todayDateString) {
+    if (!isManager && dateString !== todayDateString) {
       toast.error("Employees can only mark canteen attendance for today. Only an admin can mark other days.");
       return;
     }
 
     // Strict 2:00 PM (14:00) cutoff: canteen attendance after 2:00 PM is prohibited
     const now = new Date();
-    if (!isAdmin && now.getHours() >= 14) {
+    if (!isManager && now.getHours() >= 14) {
       toast.error("Canteen meal attendance after 2:00 PM is prohibited. Lunch hours have closed.");
       setShowCanteenCutoffDialog(true);
       return;
     }
 
     // Employees cannot uncheck or change attendance once marked — only admin can
-    if (!isAdmin && currentVal === true) {
+    if (!isManager && currentVal === true) {
       toast.error("Attendance is already recorded. Only an admin can change or remove it.");
       return;
     }
@@ -626,7 +627,7 @@ function CanteenPage() {
       <PageHeader
         title="Canteen Attendance"
         subtitle={
-          isAdmin
+          isManager
             ? "Official ASLENIX Tech and Solution Canteen Attendance Sheet"
             : "Enjoy food! • Official ASLENIX Tech and Solution Canteen Attendance"
         }
@@ -653,14 +654,14 @@ function CanteenPage() {
 
             <span className="rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
               <Utensils size={13} className="text-primary" />
-              {isAdmin ? "Admin View" : "Employee View"}
+              {isManager ? "Management View" : "Employee View"}
             </span>
           </div>
         }
       />
 
       {/* Admin View: Full Controls Toolbar (Export, Periods, Employee Roster, Holidays, Reports) */}
-      {isAdmin ? (
+      {isManager ? (
         <CanteenAdminControls
           periods={periods}
           currentPeriod={currentPeriod}
@@ -678,7 +679,7 @@ function CanteenPage() {
           holidays={holidays}
           onSaveHolidayConfig={handleSaveHolidayConfig}
           attendance={attendance}
-          isAdmin={isAdmin}
+          isAdmin={isManager}
           highlightEmployeeId={highlightEmployeeId}
           onHighlightEmployee={setHighlightEmployeeId}
           showTotalColumn={showTotalColumn}
@@ -760,7 +761,7 @@ function CanteenPage() {
             canEditEmployee={canEditEmployee}
             currentUserId={user?.id}
             currentUserName={profile?.full_name}
-            isAdmin={isAdmin}
+            isAdmin={isManager}
             highlightEmployeeId={highlightEmployeeId}
             showTotalColumn={showTotalColumn}
           />

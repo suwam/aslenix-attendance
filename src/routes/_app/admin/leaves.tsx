@@ -128,6 +128,22 @@ function LeavesPage() {
       .in("user_id", ids.length ? ids : ["00000000-0000-0000-0000-000000000000"]);
     const map = new Map((profs ?? []).map((p) => [p.user_id, p]));
 
+    // Fetch reviewer info (who approved or rejected the leave request)
+    const reviewerIds = [...new Set(employeeLeaves.map((l) => l.reviewed_by).filter(Boolean))];
+    const [{ data: reviewerRoles }, { data: reviewerProfiles }] = await Promise.all([
+      reviewerIds.length
+        ? supabase.from("user_roles").select("user_id, role").in("user_id", reviewerIds)
+        : { data: [] },
+      reviewerIds.length
+        ? supabase.from("profiles").select("user_id, full_name").in("user_id", reviewerIds)
+        : { data: [] },
+    ]);
+
+    const reviewerRoleMap = new Map<string, string>();
+    (reviewerRoles ?? []).forEach((r: any) => reviewerRoleMap.set(r.user_id, r.role));
+    const reviewerNameMap = new Map<string, string>();
+    (reviewerProfiles ?? []).forEach((p: any) => reviewerNameMap.set(p.user_id, p.full_name));
+
     const mappedLeaves = employeeLeaves.map((l) => {
       const duration = l.is_half_day
         ? 0.5
@@ -143,6 +159,8 @@ function LeavesPage() {
       });
 
       const conflictLog = auditLogs.find((log) => log.leave_id === l.id) || null;
+      const reviewerRole = l.reviewed_by ? reviewerRoleMap.get(l.reviewed_by) : null;
+      const reviewerName = l.reviewed_by ? reviewerNameMap.get(l.reviewed_by) : null;
 
       return {
         ...l,
@@ -150,6 +168,8 @@ function LeavesPage() {
         duration,
         conflicts,
         conflictLog,
+        reviewer_role: reviewerRole,
+        reviewer_name: reviewerName,
       };
     });
 
@@ -392,6 +412,17 @@ function LeavesPage() {
                       <span className="inline-flex rounded-full bg-[#f5dd9c] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[#8b5a1c]">
                         {r.status.replace(/_/g, " ")}
                       </span>
+                      {r.status !== "pending" && (
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wider ${
+                            r.reviewer_role === "hr_manager"
+                              ? "border border-purple-500/35 bg-purple-500/15 text-purple-700 dark:text-purple-300"
+                              : "border border-blue-500/35 bg-blue-500/15 text-blue-700 dark:text-blue-300"
+                          }`}
+                        >
+                          {r.reviewer_role === "hr_manager" ? "Done by HR" : "Done by Admin"}
+                        </span>
+                      )}
                       <span className="inline-flex rounded-full border border-slate-200 bg-white/70 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">
                         {formatBsDate(r.created_at)}
                       </span>
@@ -460,8 +491,20 @@ function LeavesPage() {
                       </div>
                       <div className="flex items-center justify-between gap-3">
                         <span>Approval</span>
-                        <span className="font-semibold text-slate-800">
-                          {r.status === "pending" ? "Waiting" : "Completed"}
+                        <span className="font-semibold text-slate-800 flex items-center gap-1.5">
+                          {r.status === "pending" ? (
+                            "Waiting"
+                          ) : (
+                            <span
+                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                r.reviewer_role === "hr_manager"
+                                  ? "border border-purple-500/35 bg-purple-500/15 text-purple-700 dark:text-purple-300"
+                                  : "border border-blue-500/35 bg-blue-500/15 text-blue-700 dark:text-blue-300"
+                              }`}
+                            >
+                              {r.reviewer_role === "hr_manager" ? "Done by HR" : "Done by Admin"}
+                            </span>
+                          )}
                         </span>
                       </div>
                     </div>
@@ -528,6 +571,21 @@ function LeavesPage() {
                           <p className="mt-2 text-foreground">
                             {r.admin_comment || "No admin note provided."}
                           </p>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <span>Reviewed by</span>
+                          <span className="font-semibold text-foreground flex items-center gap-1.5">
+                            {r.reviewer_name || (r.reviewer_role === "hr_manager" ? "HR Manager" : "Administrator")}
+                            <span
+                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                r.reviewer_role === "hr_manager"
+                                  ? "border border-purple-500/35 bg-purple-500/15 text-purple-700 dark:text-purple-300"
+                                  : "border border-blue-500/35 bg-blue-500/15 text-blue-700 dark:text-blue-300"
+                              }`}
+                            >
+                              {r.reviewer_role === "hr_manager" ? "Done by HR" : "Done by Admin"}
+                            </span>
+                          </span>
                         </div>
                         <div className="flex items-center justify-between gap-3">
                           <span>Date updated</span>

@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, Navigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAppResume } from "@/lib/use-app-resume";
 import { supabase } from "@/integrations/supabase/client";
@@ -189,6 +189,10 @@ function EmployeeDashboard() {
       nav({ to: "/admin" });
     }
   }, [isAdmin, isHR, nav]);
+
+  if (isAdmin || isHR) {
+    return <Navigate to="/admin" />;
+  }
 
   const [today, setToday] = useState<any>(null);
   const [assignedShift, setAssignedShift] = useState<Shift>(DEFAULT_MORNING_SHIFT);

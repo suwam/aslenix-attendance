@@ -186,19 +186,32 @@ function LoginPage() {
       if (!id.includes("@")) {
         const lower = id.toLowerCase();
         if (
-          ["alenix-admin", "aslenix-admin", "admin", "alenix_admin", "aslenix_admin"].includes(lower)
+          ["alenix-admin", "aslenix-admin", "admin", "alenix_admin", "aslenix_admin", "aslenix", "alenix"].includes(lower)
         ) {
           loginEmail = "info.aslenix.np@gmail.com";
+        } else if (
+          ["hr", "hr-admin", "hr_admin", "aslenix-hr", "aslenix_hr", "hrmanager", "hr_manager", "hr-manager"].includes(lower)
+        ) {
+          loginEmail = "hr@aslenix.tech";
         } else {
           const { data: resolvedEmail, error: rpcError } = await supabase.rpc("get_login_email", {
             p_identifier: id,
           });
-          if (resolvedEmail) {
+          if (resolvedEmail && resolvedEmail.includes("@")) {
             loginEmail = resolvedEmail;
           } else if (rpcError) {
             console.warn("RPC username resolution notice:", rpcError.message);
           }
         }
+      }
+
+      if (!loginEmail.includes("@")) {
+        setAvatarState("error");
+        toast.error("User not found. Please enter a valid username or email.");
+        setTimeout(() => {
+          setAvatarState("idle");
+        }, 3000);
+        return;
       }
 
       const { data: authData, error } = await supabase.auth.signInWithPassword({

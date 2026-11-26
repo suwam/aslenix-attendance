@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Navigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -84,6 +84,10 @@ type AttendanceRow = {
 function CheckInPage() {
   const { user, profile, isAdmin, isHR, signOut } = useAuth();
   const nav = useNavigate();
+
+  if (isAdmin || isHR) {
+    return <Navigate to="/admin" />;
+  }
   const [today, setToday] = useState<AttendanceRow | null>(null);
   const [history, setHistory] = useState<AttendanceRow[]>([]);
   const [assignedShift, setAssignedShift] = useState<Shift>(DEFAULT_MORNING_SHIFT);

@@ -109,9 +109,25 @@ export function AppShell({ children }: { children: ReactNode }) {
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
   const isAdministrativePath = currentPath === "/admin" || currentPath.startsWith("/admin/");
   const requiredPermission = requiredAdminPermission(currentPath);
+  const isHRExemptRoute =
+    isHR &&
+    (currentPath === "/admin" ||
+      currentPath === "/admin/attendance" ||
+      currentPath === "/admin/attendance-corrections" ||
+      currentPath === "/admin/employees" ||
+      currentPath === "/admin/leaves" ||
+      currentPath === "/admin/meetings" ||
+      currentPath === "/admin/shifts" ||
+      currentPath === "/admin/reports" ||
+      currentPath === "/admin/settings" ||
+      currentPath === "/admin/notifications" ||
+      currentPath === "/admin/card-reader-attendance" ||
+      currentPath === "/admin/tasks" ||
+      currentPath === "/canteen");
+
   const canAccessAdminRoute =
     isAdmin ||
-    (currentPath === "/admin" && isHR) ||
+    isHRExemptRoute ||
     (currentPath === "/admin" && ["employees.view", "attendance.view", "leaves.view", "shifts.view", "reports.view", "meetings.view"].some(hasPermission)) ||
     (currentPath === "/admin/user-role-management" && isSuperAdmin) ||
     (requiredPermission !== undefined && requiredPermission !== null && hasPermission(requiredPermission));
@@ -120,6 +136,25 @@ export function AppShell({ children }: { children: ReactNode }) {
         if (item.to === "/admin") return true;
         if (item.to === "/admin/user-role-management") return isSuperAdmin;
         if (isAdmin) return true;
+        // HR can access standard HR features + Canteen, Card Reader, and Tasks
+        if (
+          item.to === "/admin/attendance" ||
+          item.to === "/admin/attendance-corrections" ||
+          item.to === "/admin/employees" ||
+          item.to === "/admin/leaves" ||
+          item.to === "/admin/meetings" ||
+          item.to === "/admin/shifts" ||
+          item.to === "/admin/reports" ||
+          item.to === "/calendar" ||
+          item.to === "/canteen" ||
+          item.to === "/admin/card-reader-attendance" ||
+          item.to === "/admin/tasks" ||
+          item.to === "/messages" ||
+          item.to === "/admin/notifications" ||
+          item.to === "/admin/settings"
+        ) {
+          return true;
+        }
         const permission = requiredAdminPermission(item.to);
         return permission !== undefined && permission !== null && hasPermission(permission);
       })
@@ -524,7 +559,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
               <div className="border-t border-border p-2">
                 <Link
-                  to={isAdmin ? "/admin/notifications" : "/notifications"}
+                  to={isAdmin || isHR ? "/admin/notifications" : "/notifications"}
                   className="block rounded-xl border border-border bg-card px-3 py-2 text-center text-sm font-semibold text-muted-foreground transition-colors hover:border-border hover:bg-card hover:text-foreground"
                 >
                   View all notifications
@@ -568,7 +603,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   Profile
                 </Link>
                 <Link
-                  to={isAdmin ? "/admin/settings" : "/settings"}
+                  to={isAdmin || isHR ? "/admin/settings" : "/settings"}
                   onClick={() => setProfileDropdownOpen(false)}
                   className="flex items-center gap-2 px-2 py-2 text-sm text-foreground hover:bg-muted rounded-lg transition-colors"
                 >

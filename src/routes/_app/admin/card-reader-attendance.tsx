@@ -116,7 +116,8 @@ const FORCE_REASONS = [
 type AttendanceAction = "check_in" | "check_out";
 
 function CardReaderAttendancePage() {
-  const { isAdmin, profile, roles } = useAuth();
+  const { isAdmin, isHR, profile, roles } = useAuth();
+  const hasAccess = isAdmin || isHR;
   const scanInputRef = useRef<HTMLInputElement>(null);
   const [readerId, setReaderId] = useState(
     () =>
@@ -158,10 +159,10 @@ function CardReaderAttendancePage() {
   );
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!hasAccess) return;
     loadEmployees();
     loadHistory();
-  }, [isAdmin]);
+  }, [hasAccess]);
 
   useEffect(() => {
     if (!connected) return;
@@ -393,7 +394,7 @@ function CardReaderAttendancePage() {
     await scanCard(lastRawCardUid);
   };
 
-  if (!isAdmin) {
+  if (!hasAccess) {
     return (
       <>
         <PageHeader
@@ -402,7 +403,7 @@ function CardReaderAttendancePage() {
         />
         <GlassCard className="p-8 text-center">
           <ShieldCheck className="mx-auto mb-3 h-10 w-10 text-destructive" />
-          <div className="text-lg font-semibold">Admin access required</div>
+          <div className="text-lg font-semibold">Admin or HR access required</div>
           <p className="mt-2 text-sm text-muted-foreground">
             Employees cannot access card reader attendance.
           </p>

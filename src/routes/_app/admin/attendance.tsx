@@ -71,6 +71,7 @@ type AttendanceRecord = {
   is_late: boolean;
   is_early_checkout: boolean;
   is_edited?: boolean;
+  editor_role?: "hr" | "admin" | string;
   shift_id?: string | null;
   shift_name_snapshot?: string | null;
   scheduled_check_in?: string | null;
@@ -137,7 +138,8 @@ type EditForm = {
 };
 
 function AttendancePage() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isHR, hasPermission } = useAuth();
+  const canEditAttendance = isAdmin || hasPermission("attendance.edit");
   const [bsDate, setBsDate] = useState(formatBsInput());
   const date = bsInputToAdDateString(bsDate) ?? format(new Date(), "yyyy-MM-dd");
   const [rows, setRows] = useState<EmployeeRow[]>([]);
@@ -193,17 +195,49 @@ function AttendancePage() {
       setShifts(shiftsList);
       const attendanceRecords = (att ?? []) as AttendanceRecord[];
       const adminUserIds = new Set((roleRows ?? []).map((row) => row.user_id));
+      const hrUserIds = new Set((roleRows ?? []).filter((r: any) => r.role === "hr_manager").map((r: any) => r.user_id));
+      const adminOnlyUserIds = new Set((roleRows ?? []).filter((r: any) => r.role === "admin" || r.role === "super_admin").map((r: any) => r.user_id));
+
+      // Fetch latest audit logs for edited records to detect if edited by HR or Admin
+      const editedAttIds = attendanceRecords.filter((a) => a.is_edited).map((a) => a.id);
+      let editorRoleMap = new Map<string, "hr" | "admin">();
+      if (editedAttIds.length > 0) {
+        const { data: auditLogs } = await supabase
+          .from("attendance_audit_logs")
+          .select("attendance_id, edited_by, edited_by_name, created_at")
+          .in("attendance_id", editedAttIds)
+          .order("created_at", { ascending: false });
+
+        (auditLogs ?? []).forEach((log: any) => {
+          if (!editorRoleMap.has(log.attendance_id)) {
+            if (hrUserIds.has(log.edited_by)) {
+              editorRoleMap.set(log.attendance_id, "hr");
+            } else if (adminOnlyUserIds.has(log.edited_by)) {
+              editorRoleMap.set(log.attendance_id, "admin");
+            } else {
+              editorRoleMap.set(log.attendance_id, "admin");
+            }
+          }
+        });
+      }
+
       const employeeProfiles = buildHistoricalEmployeeRows(
         (profs ?? []) as EmployeeRow[],
         attendanceRecords,
         adminUserIds,
       );
       const map = new Map(attendanceRecords.map((a) => [a.user_id, a]));
-      const merged = employeeProfiles.map((p) => ({
-        ...p,
-        attendance: map.get(p.user_id),
-        assigned_shift: shiftMap.get(p.user_id),
-      }));
+      const merged = employeeProfiles.map((p) => {
+        const attRec = map.get(p.user_id);
+        if (attRec && attRec.is_edited) {
+          attRec.editor_role = editorRoleMap.get(attRec.id) || "admin";
+        }
+        return {
+          ...p,
+          attendance: attRec,
+          assigned_shift: shiftMap.get(p.user_id),
+        };
+      });
       setRows(merged);
       setCorrectionRequests(
         ((correctionsResult.data ?? []) as CorrectionRequest[]).filter(
@@ -577,7 +611,9 @@ function AttendancePage() {
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 font-semibold text-foreground">
                               <span className="truncate">{r.full_name}</span>
-                              {r.attendance?.is_edited && <EditedBadge />}
+                              {r.attendance?.is_edited && (
+                                <EditedBadge editorRole={r.attendance?.editor_role} />
+                              )}
                             </div>
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                               {r.employee_id && (
@@ -694,7 +730,7 @@ function AttendancePage() {
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-2 whitespace-nowrap">
-                          {isAdmin && (
+                          {canEditAttendance && (
                             <Button
                               size="icon"
                               disabled={!r.attendance}
@@ -1095,10 +1131,17 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function EditedBadge() {
+function EditedBadge({ editorRole }: { editorRole?: string }) {
+  if (editorRole === "hr") {
+    return (
+      <span className="rounded-full border border-purple-500/35 bg-purple-500/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-purple-700 dark:text-purple-300">
+        Done by HR
+      </span>
+    );
+  }
   return (
-    <span className="rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
-      Edited
+    <span className="rounded-full border border-blue-500/35 bg-blue-500/15 px-2 py-0.5 text-[10px] font-bold tracking-wider text-blue-700 dark:text-blue-300">
+      Done by Admin
     </span>
   );
 }
