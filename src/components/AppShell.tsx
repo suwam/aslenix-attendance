@@ -30,6 +30,8 @@ import {
   CheckCheck,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { requiredAdminPermission } from "@/lib/rbac";
+import { AccessDenied } from "@/components/AccessDenied";
 import { AslenixLogo } from "@/components/AslenixLogo";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -76,6 +78,7 @@ const adminNav: NavItem[] = [
   { to: "/admin/tasks", label: "Tasks", icon: ClipboardList },
   { to: "/admin/approvals", label: "User Approvals", icon: UserCheck },
   { to: "/admin/whatsapp-settings", label: "WhatsApp Setup", icon: MessageSquare },
+  { to: "/admin/user-role-management", label: "User & Role Management", icon: ShieldCheck },
 ];
 
 const empNav: NavItem[] = [
@@ -93,7 +96,7 @@ const empNav: NavItem[] = [
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { isAdmin, profile, signOut } = useAuth();
+  const { isAdmin, isSuperAdmin, hasPermission, profile, signOut } = useAuth();
   const nav = useNavigate();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -103,8 +106,24 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const notificationCloseTimer = useRef<number | null>(null);
 
-  const items = isAdmin ? adminNav : empNav;
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
+  const isAdministrativePath = currentPath === "/admin" || currentPath.startsWith("/admin/");
+  const requiredPermission = requiredAdminPermission(currentPath);
+  const canAccessAdminRoute =
+    isAdmin ||
+    (currentPath === "/admin" && ["employees.view", "attendance.view", "leaves.view", "shifts.view", "reports.view", "meetings.view"].some(hasPermission)) ||
+    (currentPath === "/admin/user-role-management" && isSuperAdmin) ||
+    (requiredPermission !== undefined && requiredPermission !== null && hasPermission(requiredPermission));
+  const items = isAdmin
+    ? adminNav.filter((item) => item.to !== "/admin/user-role-management" || isSuperAdmin)
+    : isAdministrativePath || requiredPermission !== undefined
+      ? adminNav.filter((item) => {
+          if (item.to === "/admin") return canAccessAdminRoute;
+          if (item.to === "/admin/user-role-management") return false;
+          const permission = requiredAdminPermission(item.to);
+          return permission !== undefined && permission !== null && hasPermission(permission);
+        })
+      : empNav;
 
   useEffect(() => {
     if (!profile) {
@@ -578,7 +597,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             key={currentPath}
             className={isMessagesPage ? "flex-1 min-h-0 h-full flex flex-col" : ""}
           >
-            {children}
+            {isAdministrativePath && !canAccessAdminRoute ? <AccessDenied /> : children}
           </div>
         </main>
 

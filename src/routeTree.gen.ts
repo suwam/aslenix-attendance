@@ -45,6 +45,7 @@ import { Route as AppAdminReportsRouteImport } from './routes/_app/admin/reports
 import { Route as AppAdminSettingsRouteImport } from './routes/_app/admin/settings'
 import { Route as AppAdminShiftsRouteImport } from './routes/_app/admin/shifts'
 import { Route as AppAdminTasksRouteImport } from './routes/_app/admin/tasks'
+import { Route as AppAdminUserRoleManagementRouteImport } from './routes/_app/admin/user-role-management'
 import { Route as AppAdminWhatsappHistoryRouteImport } from './routes/_app/admin/whatsapp-history'
 import { Route as AppAdminWhatsappSettingsRouteImport } from './routes/_app/admin/whatsapp-settings'
 
@@ -229,6 +230,12 @@ const AppAdminTasksRoute = AppAdminTasksRouteImport.update({
   path: '/admin/tasks',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminUserRoleManagementRoute =
+  AppAdminUserRoleManagementRouteImport.update({
+    id: '/admin/user-role-management',
+    path: '/admin/user-role-management',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppAdminWhatsappHistoryRoute = AppAdminWhatsappHistoryRouteImport.update({
   id: '/admin/whatsapp-history',
   path: '/admin/whatsapp-history',
@@ -276,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AppAdminSettingsRoute
   '/admin/shifts': typeof AppAdminShiftsRoute
   '/admin/tasks': typeof AppAdminTasksRoute
+  '/admin/user-role-management': typeof AppAdminUserRoleManagementRoute
   '/admin/whatsapp-history': typeof AppAdminWhatsappHistoryRoute
   '/admin/whatsapp-settings': typeof AppAdminWhatsappSettingsRoute
   '/admin/': typeof AppAdminIndexRoute
@@ -315,6 +323,7 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AppAdminSettingsRoute
   '/admin/shifts': typeof AppAdminShiftsRoute
   '/admin/tasks': typeof AppAdminTasksRoute
+  '/admin/user-role-management': typeof AppAdminUserRoleManagementRoute
   '/admin/whatsapp-history': typeof AppAdminWhatsappHistoryRoute
   '/admin/whatsapp-settings': typeof AppAdminWhatsappSettingsRoute
   '/admin': typeof AppAdminIndexRoute
@@ -356,6 +365,7 @@ export interface FileRoutesById {
   '/_app/admin/settings': typeof AppAdminSettingsRoute
   '/_app/admin/shifts': typeof AppAdminShiftsRoute
   '/_app/admin/tasks': typeof AppAdminTasksRoute
+  '/_app/admin/user-role-management': typeof AppAdminUserRoleManagementRoute
   '/_app/admin/whatsapp-history': typeof AppAdminWhatsappHistoryRoute
   '/_app/admin/whatsapp-settings': typeof AppAdminWhatsappSettingsRoute
   '/_app/admin/': typeof AppAdminIndexRoute
@@ -397,6 +407,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/shifts'
     | '/admin/tasks'
+    | '/admin/user-role-management'
     | '/admin/whatsapp-history'
     | '/admin/whatsapp-settings'
     | '/admin/'
@@ -436,6 +447,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/shifts'
     | '/admin/tasks'
+    | '/admin/user-role-management'
     | '/admin/whatsapp-history'
     | '/admin/whatsapp-settings'
     | '/admin'
@@ -476,6 +488,7 @@ export interface FileRouteTypes {
     | '/_app/admin/settings'
     | '/_app/admin/shifts'
     | '/_app/admin/tasks'
+    | '/_app/admin/user-role-management'
     | '/_app/admin/whatsapp-history'
     | '/_app/admin/whatsapp-settings'
     | '/_app/admin/'
@@ -747,6 +760,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminTasksRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin/user-role-management': {
+      id: '/_app/admin/user-role-management'
+      path: '/admin/user-role-management'
+      fullPath: '/admin/user-role-management'
+      preLoaderRoute: typeof AppAdminUserRoleManagementRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/admin/whatsapp-history': {
       id: '/_app/admin/whatsapp-history'
       path: '/admin/whatsapp-history'
@@ -791,6 +811,7 @@ interface AppRouteChildren {
   AppAdminSettingsRoute: typeof AppAdminSettingsRoute
   AppAdminShiftsRoute: typeof AppAdminShiftsRoute
   AppAdminTasksRoute: typeof AppAdminTasksRoute
+  AppAdminUserRoleManagementRoute: typeof AppAdminUserRoleManagementRoute
   AppAdminWhatsappHistoryRoute: typeof AppAdminWhatsappHistoryRoute
   AppAdminWhatsappSettingsRoute: typeof AppAdminWhatsappSettingsRoute
   AppAdminIndexRoute: typeof AppAdminIndexRoute
@@ -823,6 +844,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminSettingsRoute: AppAdminSettingsRoute,
   AppAdminShiftsRoute: AppAdminShiftsRoute,
   AppAdminTasksRoute: AppAdminTasksRoute,
+  AppAdminUserRoleManagementRoute: AppAdminUserRoleManagementRoute,
   AppAdminWhatsappHistoryRoute: AppAdminWhatsappHistoryRoute,
   AppAdminWhatsappSettingsRoute: AppAdminWhatsappSettingsRoute,
   AppAdminIndexRoute: AppAdminIndexRoute,

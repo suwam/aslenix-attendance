@@ -39,6 +39,26 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_activity_logs: {
+        Row: { id: string; actor_user_id: string | null; action: string; module: string; target_user_id: string | null; target_record_id: string | null; details: Json; created_at: string }
+        Insert: { id?: string; actor_user_id?: string | null; action: string; module: string; target_user_id?: string | null; target_record_id?: string | null; details?: Json; created_at?: string }
+        Update: { id?: string; actor_user_id?: string | null; action?: string; module?: string; target_user_id?: string | null; target_record_id?: string | null; details?: Json; created_at?: string }
+        Relationships: []
+      }
+      permissions: {
+        Row: { id: string; permission_key: string; module: string; action: string; description: string | null; created_at: string }
+        Insert: { id?: string; permission_key: string; module: string; action: string; description?: string | null; created_at?: string }
+        Update: { id?: string; permission_key?: string; module?: string; action?: string; description?: string | null; created_at?: string }
+        Relationships: []
+      }
+      user_permissions: {
+        Row: { id: string; user_id: string; permission_id: string; granted_by: string; created_at: string }
+        Insert: { id?: string; user_id: string; permission_id: string; granted_by: string; created_at?: string }
+        Update: { id?: string; user_id?: string; permission_id?: string; granted_by?: string; created_at?: string }
+        Relationships: [
+          { foreignKeyName: "user_permissions_permission_id_fkey"; columns: ["permission_id"]; isOneToOne: false; referencedRelation: "permissions"; referencedColumns: ["id"] },
+        ]
+      }
       shifts: {
         Row: {
           id: string
@@ -2321,6 +2341,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_permission: { Args: { _permission_key: string }; Returns: boolean }
+      is_super_admin: { Args: never; Returns: boolean }
+      rbac_list_hr_accounts: { Args: never; Returns: { user_id: string; full_name: string; email: string; department: string | null; approval_status: Database["public"]["Enums"]["approval_status"]; is_suspended: boolean; permission_count: number; created_at: string }[] }
+      rbac_set_hr_access: { Args: { p_user_id: string; p_enabled: boolean }; Returns: undefined }
+      rbac_set_hr_permissions: { Args: { p_user_id: string; p_permission_keys: string[] }; Returns: undefined }
+      rbac_set_hr_suspension: { Args: { p_user_id: string; p_suspended: boolean }; Returns: undefined }
       admin_card_reader_audit_history: {
         Args: never
         Returns: {
