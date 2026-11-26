@@ -182,8 +182,18 @@ function UserRoleManagementPage() {
   };
   const grant = async () => {
     if (!candidateId) return;
+    // Grant HR access to the selected candidate
     await setAccess({ user_id: candidateId, full_name: "Selected employee" } as HrAccount, true);
-    setGrantOpen(false); setCandidateId("");
+    // Refresh the Supabase session so the new role is reflected without logout
+    try {
+      await supabase.auth.refreshSession();
+      toast.success("Session refreshed – HR role applied.");
+    } catch (e) {
+      console.error("Failed to refresh session", e);
+      toast.error("Could not refresh session; please reload the page.");
+    }
+    setGrantOpen(false);
+    setCandidateId("");
   };
 
   if (!isSuperAdmin) return <AccessDenied />;
