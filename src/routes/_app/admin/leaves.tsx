@@ -473,6 +473,19 @@ function LeavesPage() {
                       <p className="mt-2 text-[1.03rem] text-slate-700">{r.reason}</p>
                     </div>
                   )}
+                  {(r.status === "approved" || r.status === "half_day_approved") && (
+                    <div className="rounded-[1.5rem] bg-white/70 p-4 text-sm text-slate-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+                      Paid:{" "}
+                      <span className="font-semibold text-slate-800">
+                        {Number(r.paid_days || 0)} days
+                      </span>
+                      <span className="mx-2">·</span>
+                      Unpaid:{" "}
+                      <span className="font-semibold text-slate-800">
+                        {Number(r.unpaid_days || 0)} days
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-4">

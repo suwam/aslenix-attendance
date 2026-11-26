@@ -1018,10 +1018,12 @@ export type Database = {
           id: string
           is_half_day: boolean
           leave_type: Database["public"]["Enums"]["leave_type"]
+          paid_days: number
           reason: string | null
           reviewed_by: string | null
           start_date: string
           status: Database["public"]["Enums"]["leave_status"]
+          unpaid_days: number
           updated_at: string
           user_id: string
         }
@@ -1033,10 +1035,12 @@ export type Database = {
           id?: string
           is_half_day?: boolean
           leave_type: Database["public"]["Enums"]["leave_type"]
+          paid_days?: number
           reason?: string | null
           reviewed_by?: string | null
           start_date: string
           status?: Database["public"]["Enums"]["leave_status"]
+          unpaid_days?: number
           updated_at?: string
           user_id: string
         }
@@ -1048,10 +1052,12 @@ export type Database = {
           id?: string
           is_half_day?: boolean
           leave_type?: Database["public"]["Enums"]["leave_type"]
+          paid_days?: number
           reason?: string | null
           reviewed_by?: string | null
           start_date?: string
           status?: Database["public"]["Enums"]["leave_status"]
+          unpaid_days?: number
           updated_at?: string
           user_id?: string
         }
@@ -2520,6 +2526,7 @@ export type Database = {
         }[]
       }
       get_login_email: { Args: { p_identifier: string }; Returns: string }
+      get_paid_leave_usage: { Args: { p_year: number }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

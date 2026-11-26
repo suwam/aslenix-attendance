@@ -273,7 +273,8 @@ function MyLeaves() {
               </div>
             </div>
             <p className="mt-3.5 text-sm text-muted-foreground leading-relaxed">
-              Standard monthly allocation providing 24 days total annual quota accrual based on regular employment policy.
+              Standard monthly allocation of 2 paid working days. Additional leave can still be approved
+              as unpaid leave, with up to 24 paid days accrued each year.
             </p>
           </div>
           <div className="mt-5 pt-3.5 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground font-medium">
@@ -842,6 +843,20 @@ function MyLeaves() {
                       {requestedDays} {requestedDays === 1 ? "Day" : "Days"}
                     </span>
                   </div>
+
+                  {isApproved && (
+                    <div className="mt-3 rounded-xl border border-border/50 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                      Paid leave:{" "}
+                      <span className="font-semibold text-foreground">
+                        {Number(r.paid_days || 0)} days
+                      </span>
+                      <span className="mx-2 opacity-50">·</span>
+                      Unpaid leave:{" "}
+                      <span className="font-semibold text-foreground">
+                        {Number(r.unpaid_days || 0)} days
+                      </span>
+                    </div>
+                  )}
 
                   {/* Admin Comment (Distinct Red on Rejected, Emerald on Approved) */}
                   {r.admin_comment && (

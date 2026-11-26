@@ -269,6 +269,7 @@ function EmployeeDashboard() {
 
     const monthStart = nepaliMonth.startAd;
     const monthEnd = nepaliMonth.endAd;
+    const currentYear = new Date().getFullYear();
 
     // Load attendance, shifts, leave balances, leave requests, history, meetings, holidays, notifications, and tasks in parallel
     const [
@@ -278,6 +279,7 @@ function EmployeeDashboard() {
       userShift,
       { data: leaveBalances },
       { data: leaveRequestRows },
+      { data: paidLeaveUsage, error: paidLeaveUsageError },
       { data: meetingRows },
       { data: holidayRows },
       { data: notificationRows },
@@ -314,6 +316,7 @@ function EmployeeDashboard() {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(5),
+      supabase.rpc("get_paid_leave_usage", { p_year: currentYear }),
       supabase
         .from("meetings")
         .select("*")
@@ -353,25 +356,20 @@ function EmployeeDashboard() {
       hours,
     });
 
-    // Compute leave quota: 2 days per month = 24 days per year
-    const ANNUAL_LEAVE_QUOTA = 24;
-    const currentYear = new Date().getFullYear();
-    const approvedThisYear = (leaveRequestRows || []).filter(
-      (r: any) => r.status === "approved" && new Date(r.start_date).getFullYear() === currentYear,
-    );
-    const usedDays = approvedThisYear.reduce((sum: number, r: any) => {
-      const s = new Date(r.start_date);
-      const e = new Date(r.end_date);
-      const diff = Math.round((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      return sum + (r.is_half_day ? 0.5 : Math.max(1, isNaN(diff) ? 1 : diff));
-    }, 0);
-    const availableDays = Math.max(0, ANNUAL_LEAVE_QUOTA - usedDays);
-    setAvailableLeaveDays(availableDays);
-    setLeaveQuotaSummary({
-      total: ANNUAL_LEAVE_QUOTA,
-      used: usedDays,
-      available: availableDays,
-    });
+    if (paidLeaveUsageError) {
+      toast.error(`Unable to load paid leave balance: ${paidLeaveUsageError.message}`);
+    } else {
+      // Paid leave accrues at 2 working days per month, up to 24 per year.
+      const accruedQuota = Math.min(24, (new Date().getMonth() + 1) * 2);
+      const usedDays = Number(paidLeaveUsage || 0);
+      const availableDays = Math.max(0, accruedQuota - usedDays);
+      setAvailableLeaveDays(availableDays);
+      setLeaveQuotaSummary({
+        total: accruedQuota,
+        used: usedDays,
+        available: availableDays,
+      });
+    }
 
     // Set leave requests
     setRecentLeaves((leaveRequestRows as LeaveRequestItem[]) || []);
@@ -1748,7 +1746,10 @@ function EmployeeDashboard() {
                     />
                   </div>
                   <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-1">
-                    <span>{leaveQuotaSummary.used} of {leaveQuotaSummary.total} days used (2 days/month)</span>
+                    <span>
+                      {leaveQuotaSummary.used} of {leaveQuotaSummary.total} paid days used (2 accrued/month,
+                      up to 24/year)
+                    </span>
                     <Link to="/my-leaves" className="font-semibold text-primary hover:underline">
                       Apply leave →
                     </Link>
