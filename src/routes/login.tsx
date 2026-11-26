@@ -44,7 +44,7 @@ function LoginPage() {
           return "Hi there! Welcome to ASLENIX!";
         case "guidance":
         case "idle":
-          return "Ready to start your day? Sign in to check in!";
+          return "Welcome to ASLENIX! Sign in to your workspace.";
         case "look_at_form":
           return "Enter your username or email.";
         case "cover_eyes":

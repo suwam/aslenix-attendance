@@ -66,7 +66,7 @@ function LiveTimeCount() {
 }
 
 export default function AdminDashboard() {
-  const { profile } = useAuth();
+  const { profile, isAdmin, isHR, hasPermission } = useAuth();
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -263,7 +263,7 @@ export default function AdminDashboard() {
   return (
     <>
       <PageHeader
-        title={`Welcome back, ${profile?.full_name?.split(" ")[0] ?? "Admin"}`}
+        title={`Welcome back, ${profile?.full_name?.split(" ")[0] ?? (isHR ? "HR Manager" : "Admin")}`}
         subtitle={`Live Operations · ${format(new Date(), "EEEE, MMMM d, yyyy")} (${formatNepaliDate(new Date().toISOString(), "DD MMMM YYYY")} BS)`}
         actions={
           <div className="flex flex-wrap items-center gap-2">
@@ -271,31 +271,37 @@ export default function AdminDashboard() {
             <LiveTimeCount />
 
             {/* Quick Action: QR / Card Reader Attendance */}
-            <Link
-              to="/admin/card-reader-attendance"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-border/80 bg-white/80 dark:bg-card/80 hover:bg-white dark:hover:bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs hover:border-primary/40 transition-all"
-            >
-              <QrCode size={13} className="text-primary" />
-              <span>Scan & Attend</span>
-            </Link>
+            {isAdmin && (
+              <Link
+                to="/admin/card-reader-attendance"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-border/80 bg-white/80 dark:bg-card/80 hover:bg-white dark:hover:bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs hover:border-primary/40 transition-all"
+              >
+                <QrCode size={13} className="text-primary" />
+                <span>Scan & Attend</span>
+              </Link>
+            )}
 
             {/* Quick Action: Add Employee */}
-            <Link
-              to="/admin/employees"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-border/80 bg-white/80 dark:bg-card/80 hover:bg-white dark:hover:bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs hover:border-primary/40 transition-all"
-            >
-              <UserPlus size={13} className="text-primary" />
-              <span>Add Employee</span>
-            </Link>
+            {(isAdmin || hasPermission("employees.create")) && (
+              <Link
+                to="/admin/employees"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-border/80 bg-white/80 dark:bg-card/80 hover:bg-white dark:hover:bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs hover:border-primary/40 transition-all"
+              >
+                <UserPlus size={13} className="text-primary" />
+                <span>Add Employee</span>
+              </Link>
+            )}
 
             {/* Quick Action: Reports */}
-            <Link
-              to="/admin/reports"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-border/80 bg-white/80 dark:bg-card/80 hover:bg-white dark:hover:bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs hover:border-primary/40 transition-all"
-            >
-              <FileSpreadsheet size={13} className="text-primary" />
-              <span>Reports</span>
-            </Link>
+            {(isAdmin || hasPermission("reports.view")) && (
+              <Link
+                to="/admin/reports"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-border/80 bg-white/80 dark:bg-card/80 hover:bg-white dark:hover:bg-card px-3.5 py-2 text-xs font-semibold text-foreground shadow-xs hover:border-primary/40 transition-all"
+              >
+                <FileSpreadsheet size={13} className="text-primary" />
+                <span>Reports</span>
+              </Link>
+            )}
 
             {/* Live Refresh Button */}
             <button
@@ -368,15 +374,15 @@ export default function AdminDashboard() {
           value={stats.total}
           icon={Users}
           accent="blue"
-          to="/admin/employees"
-          hint="Click to manage staff"
+          to={isAdmin || hasPermission("employees.view") ? "/admin/employees" : undefined}
+          hint={isAdmin || hasPermission("employees.view") ? "Click to manage staff" : undefined}
         />
         <StatCard
           label="Active"
           value={stats.active}
           icon={UserCheck}
           accent="green"
-          to="/admin/employees"
+          to={isAdmin || hasPermission("employees.view") ? "/admin/employees" : undefined}
           hint={`${stats.total - stats.active} inactive`}
         />
         <StatCard
@@ -384,7 +390,7 @@ export default function AdminDashboard() {
           value={stats.present}
           icon={Activity}
           accent="green"
-          to="/admin/attendance"
+          to={isAdmin || hasPermission("attendance.view") ? "/admin/attendance" : undefined}
           hint={`${stats.pct}% attendance rate`}
         />
         <StatCard
@@ -392,7 +398,7 @@ export default function AdminDashboard() {
           value={stats.absent}
           icon={AlertTriangle}
           accent="red"
-          to="/admin/attendance"
+          to={isAdmin || hasPermission("attendance.view") ? "/admin/attendance" : undefined}
           hint={`${stats.active ? Math.round((stats.absent / stats.active) * 100) : 0}% absent`}
         />
         <StatCard
@@ -400,7 +406,7 @@ export default function AdminDashboard() {
           value={stats.late}
           icon={Clock}
           accent="amber"
-          to="/admin/attendance"
+          to={isAdmin || hasPermission("attendance.view") ? "/admin/attendance" : undefined}
           hint="Checked in after grace"
         />
         <StatCard
@@ -408,7 +414,7 @@ export default function AdminDashboard() {
           value={stats.leaves}
           icon={Calendar}
           accent="blue"
-          to="/admin/leaves"
+          to={isAdmin || hasPermission("leaves.view") ? "/admin/leaves" : undefined}
           hint={stats.leaves > 0 ? "Requires review" : "All cleared"}
         />
         <StatCard
@@ -416,7 +422,7 @@ export default function AdminDashboard() {
           value={stats.pending}
           icon={BellDot}
           accent="red"
-          to="/admin/approvals"
+          to={isAdmin ? "/admin/approvals" : undefined}
           hint={stats.pending > 0 ? "Action required" : "Zero pending"}
         />
         <StatCard
@@ -424,7 +430,7 @@ export default function AdminDashboard() {
           value={`${stats.pct}%`}
           icon={TrendingUp}
           accent="green"
-          to="/admin/attendance"
+          to={isAdmin || hasPermission("attendance.view") ? "/admin/attendance" : undefined}
           hint="Live today status"
         />
       </div>

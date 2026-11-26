@@ -96,7 +96,7 @@ const empNav: NavItem[] = [
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { isAdmin, isSuperAdmin, hasPermission, profile, signOut } = useAuth();
+  const { isAdmin, isSuperAdmin, isHR, hasPermission, profile, signOut } = useAuth();
   const nav = useNavigate();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -111,19 +111,19 @@ export function AppShell({ children }: { children: ReactNode }) {
   const requiredPermission = requiredAdminPermission(currentPath);
   const canAccessAdminRoute =
     isAdmin ||
+    (currentPath === "/admin" && isHR) ||
     (currentPath === "/admin" && ["employees.view", "attendance.view", "leaves.view", "shifts.view", "reports.view", "meetings.view"].some(hasPermission)) ||
     (currentPath === "/admin/user-role-management" && isSuperAdmin) ||
     (requiredPermission !== undefined && requiredPermission !== null && hasPermission(requiredPermission));
-  const items = isAdmin
-    ? adminNav.filter((item) => item.to !== "/admin/user-role-management" || isSuperAdmin)
-    : isAdministrativePath || requiredPermission !== undefined
-      ? adminNav.filter((item) => {
-          if (item.to === "/admin") return canAccessAdminRoute;
-          if (item.to === "/admin/user-role-management") return false;
-          const permission = requiredAdminPermission(item.to);
-          return permission !== undefined && permission !== null && hasPermission(permission);
-        })
-      : empNav;
+  const items = isAdmin || isHR
+    ? adminNav.filter((item) => {
+        if (item.to === "/admin") return true;
+        if (item.to === "/admin/user-role-management") return isSuperAdmin;
+        if (isAdmin) return true;
+        const permission = requiredAdminPermission(item.to);
+        return permission !== undefined && permission !== null && hasPermission(permission);
+      })
+    : empNav;
 
   useEffect(() => {
     if (!profile) {
@@ -540,7 +540,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     {profile?.full_name}
                   </div>
                   <div className="text-[11px] text-muted-foreground capitalize">
-                    {isAdmin ? "Administrator" : profile?.position || "Employee"}
+                    {isAdmin ? "Administrator" : isHR ? "HR Manager" : profile?.position || "Employee"}
                   </div>
                 </div>
                 <Avatar profile={profile} />
@@ -556,7 +556,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     {profile?.full_name}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {isAdmin ? "Administrator" : profile?.position || "Employee"}
+                    {isAdmin ? "Administrator" : isHR ? "HR Manager" : profile?.position || "Employee"}
                   </p>
                 </div>
                 <Link
@@ -601,7 +601,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </main>
 
-        {!isAdmin && currentPath !== "/messages" && (
+        {!isAdmin && !isHR && currentPath !== "/messages" && (
           <Link
             to="/messages"
             className="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-r from-[#C4DAFF] to-[#E5CCFF] text-[#0F172A] shadow-md ring-1 ring-[#E2E8F0]/50 transition hover:-translate-y-1 hover:scale-105 sm:bottom-6 sm:right-6 print:hidden"

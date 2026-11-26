@@ -82,7 +82,7 @@ type AttendanceRow = {
 };
 
 function CheckInPage() {
-  const { user, profile, isAdmin, signOut } = useAuth();
+  const { user, profile, isAdmin, isHR, signOut } = useAuth();
   const nav = useNavigate();
   const [today, setToday] = useState<AttendanceRow | null>(null);
   const [history, setHistory] = useState<AttendanceRow[]>([]);
@@ -92,6 +92,13 @@ function CheckInPage() {
   const [loading, setLoading] = useState(true);
   const todayDate = format(new Date(), "yyyy-MM-dd");
   const isWeeklyOff = isWeeklyOffDate(todayDate);
+
+  // Administrators and HR Managers do not need to check in
+  useEffect(() => {
+    if (isAdmin || isHR) {
+      nav({ to: "/admin" });
+    }
+  }, [isAdmin, isHR, nav]);
 
   // Attendance closes at 2:00 PM Nepal time.
   const [isPastCutoff, setIsPastCutoff] = useState(() => isAttendanceCutoffPassed());

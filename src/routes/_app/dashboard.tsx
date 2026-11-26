@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useAppResume } from "@/lib/use-app-resume";
 import { supabase } from "@/integrations/supabase/client";
@@ -181,7 +181,15 @@ function getLeaveIcon(type: string) {
 }
 
 function EmployeeDashboard() {
-  const { user, profile, isAdmin } = useAuth();
+  const { user, profile, isAdmin, isHR } = useAuth();
+  const nav = useNavigate();
+
+  useEffect(() => {
+    if (isAdmin || isHR) {
+      nav({ to: "/admin" });
+    }
+  }, [isAdmin, isHR, nav]);
+
   const [today, setToday] = useState<any>(null);
   const [assignedShift, setAssignedShift] = useState<Shift>(DEFAULT_MORNING_SHIFT);
   const [monthStats, setMonthStats] = useState({ present: 0, late: 0, leave: 0, hours: 0 });
