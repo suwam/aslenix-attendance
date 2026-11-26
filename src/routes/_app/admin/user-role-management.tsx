@@ -403,37 +403,21 @@ function UserRoleManagementPage() {
           <p className="text-sm text-muted-foreground">
             Select an existing employee account. New HR accounts start with no permissions.
           </p>
-          {candidates.filter((candidate) => !accounts.some((account) => account.user_id === candidate.user_id)).length === 0 ? (
-            <p className="text-sm text-muted-foreground">No employees available to grant HR access.</p>
-          ) : (
-            <Select value={candidateId} onValueChange={setCandidateId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select employee" />
-              </SelectTrigger>
-              <SelectContent>
-                {candidates
-                  .filter((candidate) => !accounts.some((account) => account.user_id === candidate.user_id))
-                  .map((candidate) => (
-                    <SelectItem key={candidate.user_id} value={candidate.user_id}>
-                      {candidate.full_name} — {candidate.email}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          )}
-            <SelectTrigger>
-              <SelectValue placeholder="Select employee" />
-            </SelectTrigger>
-            <SelectContent>
-              {candidates
-                .filter((candidate) => !accounts.some((account) => account.user_id === candidate.user_id))
-                .map((candidate) => (
-                  <SelectItem key={candidate.user_id} value={candidate.user_id}>
-                    {candidate.full_name} — {candidate.email}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
+          <Select value={candidateId} onValueChange={setCandidateId} disabled={candidates.filter((candidate) => !accounts.some((account) => account.user_id === candidate.user_id)).length === 0}>
+  <SelectTrigger>
+    <SelectValue placeholder={candidates.filter((candidate) => !accounts.some((account) => account.user_id === candidate.user_id)).length === 0 ? "No employees available" : "Select employee"} />
+  </SelectTrigger>
+  <SelectContent>
+    {candidates
+      .filter((candidate) => !accounts.some((account) => account.user_id === candidate.user_id))
+      .map((candidate) => (
+        <SelectItem key={candidate.user_id} value={candidate.user_id}>
+          {candidate.full_name} — {candidate.email}
+        </SelectItem>
+      ))}
+  </SelectContent>
+</Select>
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setGrantOpen(false)}>
               Cancel
