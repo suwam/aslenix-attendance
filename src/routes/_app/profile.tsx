@@ -23,8 +23,10 @@ import {
   CalendarDays,
   Camera,
   ClipboardList,
+  Clock,
   HeartPulse,
   IdCard,
+  LayoutDashboard,
   Loader2,
   Mail,
   MapPin,
@@ -33,6 +35,7 @@ import {
   ShieldCheck,
   Sparkles,
   UserRound,
+  Users,
   MessageCircle,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
@@ -44,7 +47,7 @@ export const Route = createFileRoute("/_app/profile")({ component: ProfilePage }
 const DEFAULT_JOINING_DATE = "2026-05-01";
 
 function ProfilePage() {
-  const { profile, user, roles, refresh } = useAuth();
+  const { profile, user, roles, refresh, isAdmin, isHR, hasPermission } = useAuth();
   const [form, setForm] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -282,15 +285,32 @@ function ProfilePage() {
           <GlassCard className="border-border bg-card">
             <h3 className="mb-4 font-semibold text-foreground">Quick links</h3>
             <div className="grid gap-2">
-              <QuickProfileLink to="/my-attendance" icon={CalendarDays} label="My attendance" />
-              <QuickProfileLink to="/my-leaves" icon={ClipboardList} label="My leaves" />
-              <QuickProfileLink to="/notifications" icon={BadgeCheck} label="Notifications" />
+              {isAdmin || isHR ? (
+                <>
+                  <QuickProfileLink to="/admin" icon={LayoutDashboard} label="Command Dashboard" />
+                  {(isAdmin || hasPermission("employees.view")) && (
+                    <QuickProfileLink to="/admin/employees" icon={Users} label="Employees" />
+                  )}
+                  {(isAdmin || hasPermission("attendance.view")) && (
+                    <QuickProfileLink to="/admin/attendance" icon={Clock} label="Attendance" />
+                  )}
+                  {(isAdmin || hasPermission("leaves.view")) && (
+                    <QuickProfileLink to="/admin/leaves" icon={ClipboardList} label="Leave Requests" />
+                  )}
+                </>
+              ) : (
+                <>
+                  <QuickProfileLink to="/my-attendance" icon={CalendarDays} label="My attendance" />
+                  <QuickProfileLink to="/my-leaves" icon={ClipboardList} label="My leaves" />
+                  <QuickProfileLink to="/notifications" icon={BadgeCheck} label="Notifications" />
+                </>
+              )}
             </div>
           </GlassCard>
         </div>
 
         <div className="grid gap-5">
-          {form.approval_status === "approved" && form.qr_status === "active" && (
+          {!isAdmin && !isHR && form.approval_status === "approved" && form.qr_status === "active" && (
             <div className="flex flex-col items-center justify-center gap-2 lg:flex-row lg:items-start lg:justify-start rounded-2xl bg-card p-5 border border-border">
               <div className="flex flex-col gap-1 w-full max-w-sm mr-auto text-left mb-4 lg:mb-0">
                 <h3 className="text-lg font-semibold text-foreground">Digital Employee ID</h3>
