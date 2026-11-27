@@ -118,7 +118,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       currentPath === "/admin/leaves" ||
       currentPath === "/admin/meetings" ||
       currentPath === "/admin/shifts" ||
-      currentPath === "/admin/reports" ||
       currentPath === "/admin/settings" ||
       currentPath === "/admin/notifications" ||
       currentPath === "/admin/card-reader-attendance" ||
@@ -136,7 +135,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         if (item.to === "/admin") return true;
         if (item.to === "/admin/user-role-management") return isSuperAdmin;
         if (isAdmin) return true;
-        // HR can access standard HR features + Canteen, Card Reader, and Tasks
+        // HR can access the standard HR features below without an individual grant.
+        // Reports remain permission-controlled because they expose organization-wide data.
         if (
           item.to === "/admin/attendance" ||
           item.to === "/admin/attendance-corrections" ||
@@ -144,7 +144,6 @@ export function AppShell({ children }: { children: ReactNode }) {
           item.to === "/admin/leaves" ||
           item.to === "/admin/meetings" ||
           item.to === "/admin/shifts" ||
-          item.to === "/admin/reports" ||
           item.to === "/calendar" ||
           item.to === "/canteen" ||
           item.to === "/admin/card-reader-attendance" ||

@@ -17,6 +17,7 @@ import { Download, FileDown, Printer, Loader2 } from "lucide-react";
 import { addDays, format, startOfWeek } from "date-fns";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth-context";
 import { formatWorkHours } from "@/lib/work-hours";
 import { captureSanitizedPdfPage } from "@/lib/pdf-utils";
 import {
@@ -82,6 +83,8 @@ const EMPTY_WORKING_DAY_SUMMARY: WorkingDaySummary = {
 };
 
 function ReportsPage() {
+  const { hasPermission } = useAuth();
+  const canExportReports = hasPermission("reports.export");
   const [period, setPeriod] = useState<ReportPeriod>("daily");
   const [monthlyMode, setMonthlyMode] = useState<MonthlyMode>("full");
   const [bsDate, setBsDate] = useState(formatBsInput());
@@ -618,22 +621,26 @@ function ReportsPage() {
           subtitle="Generate, filter and export daily, weekly or monthly attendance reports"
           actions={
             <>
-              <Button variant="outline" onClick={() => window.print()}>
-                <Printer size={14} className="mr-1" />
-                Print
-              </Button>
-              <Button variant="outline" onClick={savePDF} disabled={savingPdf || loading}>
-                {savingPdf ? (
-                  <Loader2 size={14} className="mr-1 animate-spin" />
-                ) : (
-                  <FileDown size={14} className="mr-1" />
-                )}
-                Save PDF
-              </Button>
-              <Button onClick={exportCSV} className="neon-button rounded-lg">
-                <Download size={14} className="mr-1" />
-                Export CSV
-              </Button>
+              {canExportReports && (
+                <>
+                  <Button variant="outline" onClick={() => window.print()}>
+                    <Printer size={14} className="mr-1" />
+                    Print
+                  </Button>
+                  <Button variant="outline" onClick={savePDF} disabled={savingPdf || loading}>
+                    {savingPdf ? (
+                      <Loader2 size={14} className="mr-1 animate-spin" />
+                    ) : (
+                      <FileDown size={14} className="mr-1" />
+                    )}
+                    Save PDF
+                  </Button>
+                  <Button onClick={exportCSV} className="neon-button rounded-lg">
+                    <Download size={14} className="mr-1" />
+                    Export CSV
+                  </Button>
+                </>
+              )}
             </>
           }
         />
