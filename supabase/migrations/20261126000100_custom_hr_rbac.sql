@@ -93,6 +93,9 @@ ALTER TABLE public.permissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_permissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.admin_activity_logs ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "authenticated users read permission catalog" ON public.permissions;
+DROP POLICY IF EXISTS "users read their own permission assignments" ON public.user_permissions;
+DROP POLICY IF EXISTS "super admins read activity logs" ON public.admin_activity_logs;
 CREATE POLICY "authenticated users read permission catalog" ON public.permissions FOR SELECT TO authenticated USING (true);
 CREATE POLICY "users read their own permission assignments" ON public.user_permissions FOR SELECT TO authenticated USING (user_id = auth.uid() OR public.is_super_admin());
 CREATE POLICY "super admins read activity logs" ON public.admin_activity_logs FOR SELECT TO authenticated USING (public.is_super_admin());
@@ -173,6 +176,16 @@ GRANT EXECUTE ON FUNCTION public.rbac_set_hr_suspension(uuid, boolean) TO authen
 GRANT EXECUTE ON FUNCTION public.rbac_list_hr_accounts() TO authenticated;
 
 -- Explicit HR policies. Existing is_admin()-based policies now remain Admin/Super Admin only.
+DROP POLICY IF EXISTS "hr view employee profiles" ON public.profiles;
+DROP POLICY IF EXISTS "hr edit employee profiles" ON public.profiles;
+DROP POLICY IF EXISTS "hr view attendance" ON public.attendance;
+DROP POLICY IF EXISTS "hr edit attendance" ON public.attendance;
+DROP POLICY IF EXISTS "hr view leave requests" ON public.leave_requests;
+DROP POLICY IF EXISTS "hr edit leave requests" ON public.leave_requests;
+DROP POLICY IF EXISTS "hr view shifts" ON public.shifts;
+DROP POLICY IF EXISTS "hr create shifts" ON public.shifts;
+DROP POLICY IF EXISTS "hr edit shifts" ON public.shifts;
+DROP POLICY IF EXISTS "hr delete shifts" ON public.shifts;
 CREATE POLICY "hr view employee profiles" ON public.profiles FOR SELECT TO authenticated USING (public.has_permission('employees.view'));
 CREATE POLICY "hr edit employee profiles" ON public.profiles FOR UPDATE TO authenticated USING (public.has_permission('employees.edit')) WITH CHECK (public.has_permission('employees.edit'));
 CREATE POLICY "hr view attendance" ON public.attendance FOR SELECT TO authenticated USING (public.has_permission('attendance.view'));
@@ -198,6 +211,9 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS rbac_audit_attendance ON public.attendance;
+DROP TRIGGER IF EXISTS rbac_audit_leave_requests ON public.leave_requests;
+DROP TRIGGER IF EXISTS rbac_audit_profiles ON public.profiles;
 CREATE TRIGGER rbac_audit_attendance AFTER INSERT OR UPDATE OR DELETE ON public.attendance FOR EACH ROW EXECUTE FUNCTION public.rbac_log_hr_activity('attendance');
 CREATE TRIGGER rbac_audit_leave_requests AFTER INSERT OR UPDATE OR DELETE ON public.leave_requests FOR EACH ROW EXECUTE FUNCTION public.rbac_log_hr_activity('leaves');
 CREATE TRIGGER rbac_audit_profiles AFTER INSERT OR UPDATE OR DELETE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.rbac_log_hr_activity('employees');
