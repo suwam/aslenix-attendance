@@ -107,6 +107,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const notificationCloseTimer = useRef<number | null>(null);
 
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
+  const hubLabel = isAdmin ? "Admin Hub" : isHR ? "HR Hub" : "Attendance";
   const isAdministrativePath = currentPath === "/admin" || currentPath.startsWith("/admin/");
   const requiredPermission = requiredAdminPermission(currentPath);
   const isHRExemptRoute =
@@ -442,7 +443,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
           <div className="min-w-0">
             <div className="attendance-wordmark text-lg font-black uppercase leading-none sm:text-2xl">
-              Attendance
+              {hubLabel}
             </div>
           </div>
           <div className="flex-1" />

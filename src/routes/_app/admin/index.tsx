@@ -263,7 +263,7 @@ export default function AdminDashboard() {
   return (
     <>
       <PageHeader
-        title={`Welcome back, ${profile?.full_name?.split(" ")[0] ?? (isHR ? "HR Manager" : "Admin")}`}
+        title={`Welcome back, ${isAdmin ? "Admin" : isHR ? "HR" : profile?.full_name?.split(" ")[0] ?? "Admin"}`}
         subtitle={`Live Operations · ${format(new Date(), "EEEE, MMMM d, yyyy")} (${formatNepaliDate(new Date().toISOString(), "DD MMMM YYYY")} BS)`}
         actions={
           <div className="flex flex-wrap items-center gap-2">
